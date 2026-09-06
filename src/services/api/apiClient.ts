@@ -7,6 +7,8 @@ import {
   fetchWithTimeout,
 } from '../../utils/concurrency';
 import { normalizeUrl } from '../../utils/serverUrl';
+import { isLocalDataMode } from '../dataMode';
+import { localApiFetch } from '../local/localApi';
 
 export { normalizeUrl };
 
@@ -21,6 +23,7 @@ interface ApiFetchOptions {
 }
 
 export async function apiFetch<T>(options: ApiFetchOptions): Promise<T> {
+  if (isLocalDataMode()) return localApiFetch<T>(options);
   const {
     endpoint,
     serviceName,

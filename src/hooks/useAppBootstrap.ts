@@ -4,6 +4,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initializeAppLanguage } from '../localization';
 import { getActiveServerConfig } from '../services/storage';
 import { addLog } from '../services/LogService';
+import { isLocalDataMode } from '../services/dataMode';
+import { localApiFetch } from '../services/local/localApi';
 
 export type BootstrapRoute = 'Tabs' | 'Onboarding';
 
@@ -35,10 +37,12 @@ export function useAppBootstrap(): AppBootstrapResult {
       if (cancelled) return;
 
       try {
-        const config = await getActiveServerConfig();
+        const local = isLocalDataMode();
+        if (local) await localApiFetch({ endpoint: '/api/user-preferences' });
+        const config = local ? null : await getActiveServerConfig();
         if (cancelled) return;
 
-        const route: BootstrapRoute = config ? 'Tabs' : 'Onboarding';
+        const route: BootstrapRoute = local || config ? 'Tabs' : 'Onboarding';
         setInitialRoute(route);
         setLinkingEnabled(route === 'Tabs');
       } catch (error) {

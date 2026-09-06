@@ -1,12 +1,13 @@
 {
   "cli": {
-    "version": ">= 3.0.0",
-    "appVersionSource": "remote"
+    "version": ">= 16.28.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "env": {
-        "APP_VARIANT": "development"
+        "APP_VARIANT": "development",
+        "FITNESS_DATA_MODE": "local"
       },
       "developmentClient": true,
       "distribution": "internal"

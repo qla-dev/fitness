@@ -3,11 +3,9 @@
 // can't load TypeScript/ESM.
 
 const DEV_BUNDLE_IDENTIFIER =
-  process.env.EXPO_DEV_BUNDLE_IDENTIFIER ||
-  'org.SparkyApps.SparkyFitnessMobile1.dev';
+  process.env.EXPO_DEV_BUNDLE_IDENTIFIER || 'fitness.qla.dev';
 const IOS_APP_GROUP_DEV =
-  process.env.IOS_APP_GROUP_DEV ||
-  'group.org.SparkyApps.SparkyFitnessMobile1.dev';
+  process.env.IOS_APP_GROUP_DEV || `group.${DEV_BUNDLE_IDENTIFIER}`;
 const IOS_APP_GROUP_PROD =
   process.env.IOS_APP_GROUP_PROD ||
   'group.com.SparkyApps.SparkyFitnessMobile.shared';

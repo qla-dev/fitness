@@ -1,4 +1,5 @@
 import { apiFetch, normalizeUrl } from './apiClient';
+import { isLocalDataMode } from '../dataMode';
 import { ApiError } from './errors';
 import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
 import { getAuthHeaders, notifySessionExpired } from './authService';
@@ -274,6 +275,9 @@ export const fetchExerciseById = async (id: string): Promise<Exercise> => {
 export async function createExercise(
   payload: CreateExercisePayload
 ): Promise<Exercise> {
+  if (isLocalDataMode()) {
+    return transformExerciseRow(await apiFetch<Record<string, unknown>>({ endpoint: '/api/exercises', method: 'POST', body: payload, serviceName: 'Exercise API', operation: 'create exercise' }));
+  }
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');
   const baseUrl = normalizeUrl(config.url);
@@ -436,6 +440,9 @@ export async function updateExercise(
   id: string,
   payload: UpdateExercisePayload
 ): Promise<Exercise> {
+  if (isLocalDataMode()) {
+    return transformExerciseRow(await apiFetch<Record<string, unknown>>({ endpoint: `/api/exercises/${id}`, method: 'PUT', body: payload, serviceName: 'Exercise API', operation: 'update exercise' }));
+  }
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');
   const baseUrl = normalizeUrl(config.url);

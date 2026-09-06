@@ -1,3 +1,5 @@
+import { isLocalDataMode } from '../dataMode';
+import { localApiFetch } from '../local/localApi';
 import {
   getActiveServerConfig,
   proxyHeadersToRecord,
@@ -520,6 +522,10 @@ export const syncHealthData = async (
  * Checks the server connection status.
  */
 export const checkServerConnection = async (): Promise<boolean> => {
+  if (isLocalDataMode()) {
+    await localApiFetch({ endpoint: '/api/user-preferences' });
+    return true;
+  }
   const config = await getActiveServerConfig();
   if (!config || !config.url) {
     addLog(

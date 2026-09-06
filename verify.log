@@ -1,0 +1,288 @@
+﻿########## EXPO DOCTOR ##########
+Running 21 checks on your project...
+19/21 checks passed. 2 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check package.json for common issues
+The following scripts in package.json conflict with the contents of node_modules/.bin: knip.
+Advice:
+Update your package.json to remove conflicts.
+
+✖ Validate packages against React Native Directory package metadata
+The following issues were found when validating your dependencies against React Native Directory:
+  Unmaintained: expo-health-connect
+Advice:
+Use libraries that are actively maintained and support the New Architecture. Find alternative libraries with https://reactnative.directory.
+Add packages to expo.doctor.reactNativeDirectoryCheck.exclude in package.json to selectively skip validations, if the warning is not relevant.
+
+pnpm.cmd : 2 checks failed, indicating possible issues with the project.
+At line:4 char:1
++ & "$env:APPDATA\npm\pnpm.cmd" dlx expo-doctor@latest *>&1 | Out-File  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2 checks failed...th the project.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+=== doctor exit: 1 ===
+########## JEST RERUN (failed only, 30s timeout) ##########
+pnpm.cmd : PASS __tests__/hooks/useFoodsLibrary.test.ts (5.116 s)
+At line:7 char:1
++ & "$env:APPDATA\npm\pnpm.cmd" exec jest --onlyFailures --testTimeout= ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS __tests__/...st.ts (5.116 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/OnboardingScreen.test.tsx
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/hooks/useStartLiveWorkout.test.ts (7.775 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/PregnancySetupScreen.test.tsx (14.182 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/CopyMealSheet.test.tsx (14.091 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/WorkoutReorderList.test.tsx (15.43 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/LibraryScreen.test.tsx (15.62 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/HealthTrendsPager.test.tsx
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/ExerciseSearchScreen.test.tsx (7.347 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+    console.error
+      An update to VirtualizedList inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at 
+https://react.dev/link/wrap-tests-with-act
+
+      at node_modules/.pnpm/react-test-renderer@19.2.3_react@19.2.3/node_modules/react-test-renderer/cjs/react-test-ren
+derer.development.js:14402:19
+      at runWithFiberInDEV (node_modules/.pnpm/react-test-renderer@19.2.3_react@19.2.3/node_modules/react-test-renderer
+/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/.pnpm/react-test-renderer@19.2.3_react@19.2.3/node_modules/rea
+ct-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (node_modules/.pnpm/react-test-renderer@19.2.3_react@19.2.3/node_modules/react-test-rend
+erer/cjs/react-test-renderer.development.js:12086:9)
+      at Object.enqueueSetState (node_modules/.pnpm/react-test-renderer@19.2.3_react@19.2.3/node_modules/react-test-ren
+derer/cjs/react-test-renderer.development.js:16926:13)
+      at VirtualizedList.Object.<anonymous>.process.env.NODE_ENV.Component.setState 
+(node_modules/.pnpm/react@19.2.3/node_modules/react/cjs/react.development.js:655:20)
+      at node_modules/.pnpm/@babel+runtime@7.29.7/node_modules/@babel/runtime/helpers/superPropGet.js:6:14
+      at VirtualizedList.setState (node_modules/.pnpm/@react-native+virtualized-l_b46b707d3fb989ead3e365308abae021/node
+_modules/@react-native/virtualized-lists/Lists/StateSafePureComponent.js:40:7)
+      at VirtualizedList.setState [as _updateCellsToRender] (node_modules/.pnpm/@react-native+virtualized-l_b46b707d3fb
+989ead3e365308abae021/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js:1909:10)
+      at _updateCellsToRender (node_modules/.pnpm/@react-native+virtualized-l_b46b707d3fb989ead3e365308abae021/node_mod
+ules/@react-native/virtualized-lists/Lists/VirtualizedList.js:1806:16)
+      at Timeout.task [as _onTimeout] 
+(node_modules/.pnpm/jsdom@20.0.3/node_modules/jsdom/lib/jsdom/browser/Window.js:520:19)
+
+PASS __tests__/screens/CycleOnboardingScreen.test.tsx (10.349 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/ServerConfigModal.test.tsx (19.555 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/CheckInPhotosSummary.test.tsx
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/NotificationSettingsScreen.test.tsx
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/components/SleepCards.test.tsx
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+FAIL __tests__/config/widgetResourceContract.test.ts
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+  ● Android widget localization contract › widget locale override contract › refreshes the broadcast locale payload 
+before LOCALE_CHANGED updateAll
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 504
+    Received:   -1
+
+      717 |       );
+      718 |       expect(appBranchStart).toBeGreaterThan(-1);
+    > 719 |       expect(appBranchEnd).toBeGreaterThan(appBranchStart);
+          |                            ^
+      720 |       expect(appPayloadBranch).not.toMatch(
+      721 |         /currentPlatformLanguage\(context\)/
+      722 |       );
+
+      at Object.toBeGreaterThan (__tests__/config/widgetResourceContract.test.ts:719:28)
+
+FAIL __tests__/scripts/i18nAudit.test.ts
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+  ● Scan failure fail-closed behavior › records a blocking source-scan-error when a source file cannot be read
+
+    EPERM: operation not permitted, symlink 
+'C:\Users\OAMILS~1\AppData\Local\Temp\i18n-audit-test-B3G6Qo\does-not-exist-target' -> 
+'C:\Users\OAMILS~1\AppData\Local\Temp\i18n-audit-test-B3G6Qo\src\broken.ts'
+
+      1277 |     // A broken symlink with a source extension: readFileSync throws, and the
+      1278 |     // audit must fail closed instead of silently passing with partial coverage.
+    > 1279 |     fs.symlinkSync(
+           |        ^
+      1280 |       path.join(tmpDir, 'does-not-exist-target'),
+      1281 |       path.join(tmpDir, 'src', 'broken.ts')
+      1282 |     );
+
+      at Object.symlinkSync (__tests__/scripts/i18nAudit.test.ts:1279:8)
+
+PASS __tests__/screens/FoodScanScreen.test.tsx (7.089 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+PASS __tests__/screens/ActiveWorkoutScreen.workoutPlanEnd.test.tsx (6.131 s)
+  ● Console
+
+    console.info
+      🌐 i18next is made possible by our own product, Locize — consider powering your project with managed 
+localization (AI, CDN, integrations): https://locize.com 💙
+
+      at I18n.init 
+(node_modules/.pnpm/i18next@25.8.18_typescript@6.0.3/node_modules/i18next/dist/cjs/i18next.js:1789:90)
+
+
+Test Suites: 2 failed, 16 passed, 18 total
+Tests:       2 failed, 340 passed, 342 total
+Snapshots:   0 total
+Time:        25.068 s, estimated 126 s
+Ran all test suites.
+=== jest exit: 1 ===

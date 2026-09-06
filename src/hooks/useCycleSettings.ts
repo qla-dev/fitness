@@ -36,15 +36,16 @@ export function useCycleSettings() {
 
       // Optimistically update to new value immediately
       if (previousSettings) {
+        const optimisticSettings: SharedCycleSettings = {
+          ...previousSettings,
+          ...newVars,
+          onboarded_at: newVars.mark_onboarded
+            ? new Date().toISOString()
+            : previousSettings.onboarded_at,
+        };
         queryClient.setQueryData<SharedCycleSettings | null>(
           cycleSettingsQueryKey,
-          {
-            ...previousSettings,
-            ...newVars,
-            onboarded_at: newVars.mark_onboarded
-              ? new Date().toISOString()
-              : previousSettings.onboarded_at,
-          }
+          optimisticSettings
         );
       }
 

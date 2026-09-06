@@ -21,6 +21,7 @@ import {
   recordAutoSyncTime,
 } from '../services/autoSyncCoordinator';
 import { addLog } from '../services/LogService';
+import { isLocalDataMode } from '../services/dataMode';
 
 const AUTO_SYNC_WATCHDOG_MS = 90_000;
 
@@ -110,7 +111,7 @@ export function useAutoSyncOnOpen({
   }, [triggerAutoSync]);
 
   useEffect(() => {
-    if (initialRoute !== 'Tabs') return;
+    if (initialRoute !== 'Tabs' || isLocalDataMode()) return;
 
     const triggerColdStartSync = async () => {
       const syncOnOpen = await loadSyncOnOpenEnabled();

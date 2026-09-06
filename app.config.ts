@@ -8,7 +8,7 @@ const {
 } = require('./app.identifiers.js');
 
 const APP_NAME = 'SparkyFitness';
-const APP_SLUG = 'sparkyfitnessmobile';
+const APP_SLUG = 'fitness';
 const ANDROID_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
 const IOS_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
 const DEV_APPLE_TEAM_ID = process.env.EXPO_DEV_APPLE_TEAM_ID || '';
@@ -222,10 +222,8 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
     extra: {
       ...config.extra,
       APP_VARIANT: environment,
+      dataMode: process.env.FITNESS_DATA_MODE || (isDev ? 'local' : 'server'),
       iosAppGroup: getIosAppGroup(),
-      eas: {
-        projectId: '498a86c5-344f-4d2c-9033-dfd720e4a383',
-      },
     },
   };
 };

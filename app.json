@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SparkyFitnessMobile",
-    "slug": "sparkyfitnessmobile",
+    "slug": "fitness",
     "scheme": "sparkyfitnessmobile",
     "orientation": "portrait",
     "icon": "./assets/icons/appstore.png",
@@ -65,11 +65,42 @@
       "autolinkingModuleResolution": true
     },
     "extra": {
-      "eas": {
-        "projectId": "498a86c5-344f-4d2c-9033-dfd720e4a383"
+      "APP_VARIANT": "dev",
+      "iosAppGroup": "group.fitness.qla.dev",
+      "expo-navigation-bar": {
+        "enforceContrast": false
       },
-      "APP_VARIANT": "production"
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "fitness.qla.dev.widget",
+                  "targetName": "CalorieTracker",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.fitness.qla.dev"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "fitness.qla.dev.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.fitness.qla.dev"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "28f98299-f213-404c-a9ff-2eaef31c6750"
+      }
     },
-    "version": "1.6.4"
+    "version": "1.6.4",
+    "owner": "kulasinn"
   }
 }

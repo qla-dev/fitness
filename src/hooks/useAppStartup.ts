@@ -23,6 +23,7 @@ import {
 import { initMedicationNotificationActions } from '../services/medicationNotificationHandler';
 import { initWorkoutLiveActivity } from '../services/workoutLiveActivity';
 import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
+import { isLocalDataMode } from '../services/dataMode';
 
 interface AppStartupArgs {
   /**
@@ -89,6 +90,7 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     });
 
     const initializeSyncServices = async () => {
+      if (isLocalDataMode()) return;
       // Bootstrap timezone before any sync path is configured so the server
       // has a stable timezone for the very first sync.
       const timezone = await ensureTimezoneBootstrapped();
