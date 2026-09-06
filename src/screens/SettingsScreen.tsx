@@ -28,6 +28,8 @@ import { loadLastSyncedTime } from '../services/storage';
 import { formatRelativeTime } from '../utils/dateUtils';
 import type { DiagnosticQueryState } from '../types/diagnosticReport';
 import Constants from 'expo-constants';
+import { isLocalDataMode } from '../services/dataMode';
+import { exportLocalData } from '../services/local/exportLocalData';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -199,39 +201,74 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             </View>
           )}
 
-          <SettingsRow
-            icon="server"
-            title={t('settings.rows.server', { defaultValue: 'Server' })}
-            subtitle={serverSubtitle}
-            onPress={() => navigation.navigate('ServerSettings')}
-            iconColor={catSlate}
-            accessibilityLabel={
-              activeConfig
-                ? isConnected
-                  ? t('settings.serverConnected', {
-                      defaultValue: 'Server settings. Connected.',
+          {isLocalDataMode() ? (
+            <SettingsRowGroup
+              title={t('localData.title', {
+                defaultValue: 'On-device storage',
+              })}
+              subtitle={t('localData.description', {
+                defaultValue:
+                  'Your data is saved on this device. No backend is connected.',
+              })}
+            >
+              <SettingsRow
+                icon="server"
+                title={t('localData.export', {
+                  defaultValue: 'Export local data',
+                })}
+                subtitle={t('localData.exportDescription', {
+                  defaultValue:
+                    'Save a JSON backup for a future backend import.',
+                })}
+                onPress={() => {
+                  void exportLocalData().catch(() =>
+                    Toast.show({
+                      type: 'error',
+                      text1: t('localData.exportFailed', {
+                        defaultValue: 'Could not export local data.',
+                      }),
                     })
-                  : t('settings.serverConnectionFailed', {
-                      defaultValue: 'Server settings. Connection failed.',
+                  );
+                }}
+              />
+            </SettingsRowGroup>
+          ) : (
+            <SettingsRow
+              icon="server"
+              title={t('settings.rows.server', { defaultValue: 'Server' })}
+              subtitle={serverSubtitle}
+              onPress={() => navigation.navigate('ServerSettings')}
+              iconColor={catSlate}
+              accessibilityLabel={
+                activeConfig
+                  ? isConnected
+                    ? t('settings.serverConnected', {
+                        defaultValue: 'Server settings. Connected.',
+                      })
+                    : t('settings.serverConnectionFailed', {
+                        defaultValue: 'Server settings. Connection failed.',
+                      })
+                  : t('settings.serverNotConfigured', {
+                      defaultValue: 'Server settings. No server configured.',
                     })
-                : t('settings.serverNotConfigured', {
-                    defaultValue: 'Server settings. No server configured.',
-                  })
-            }
-          />
+              }
+            />
+          )}
 
           <SectionErrorBoundary
             sectionName={t('settings.title', { defaultValue: 'Settings' })}
           >
-            <SettingsRow
-              icon="health-data-sync"
-              title={t('settings.rows.healthSync', {
-                defaultValue: 'Health Data Sync',
-              })}
-              subtitle={syncSubtitle}
-              onPress={() => navigation.navigate('Sync')}
-              iconColor={catPink}
-            />
+            {!isLocalDataMode() && (
+              <SettingsRow
+                icon="health-data-sync"
+                title={t('settings.rows.healthSync', {
+                  defaultValue: 'Health Data Sync',
+                })}
+                subtitle={syncSubtitle}
+                onPress={() => navigation.navigate('Sync')}
+                iconColor={catPink}
+              />
+            )}
 
             <SettingsRowGroup>
               <SettingsRow

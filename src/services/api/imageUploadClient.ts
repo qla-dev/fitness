@@ -1,4 +1,7 @@
-import { File } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
+import { randomUUID } from 'expo-crypto';
+import { isLocalDataMode } from '../dataMode';
+import { localApiFetch } from '../local/localApi';
 import { normalizeUrl } from './apiClient';
 import { ApiError } from './errors';
 import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
@@ -44,6 +47,40 @@ export async function postImageMultipart<T>(params: {
     payload,
     wrapperField,
   } = params;
+
+  if (isLocalDataMode()) {
+    const directory = new Directory(Paths.document, 'fitness-images');
+    directory.create({ idempotent: true, intermediates: true });
+    const copied: File[] = [];
+    try {
+      const uris = newUris.map((uri) => {
+        const source = new File(uri);
+        const target = new File(
+          directory,
+          `${randomUUID()}${source.extension || '.jpg'}`
+        );
+        source.copy(target);
+        copied.push(target);
+        return target.uri;
+      });
+      const images = order.map((item) => {
+        if (!item.startsWith('__new__')) return item;
+        const uri = uris[Number(item.slice('__new__'.length))];
+        if (!uri) throw new Error('Missing local image.');
+        return uri;
+      });
+      return await localApiFetch<T>({
+        endpoint,
+        method,
+        body: { ...((payload as object) ?? {}), images },
+      });
+    } catch (error) {
+      copied.forEach((file) => {
+        if (file.exists) file.delete();
+      });
+      throw error;
+    }
+  }
 
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');

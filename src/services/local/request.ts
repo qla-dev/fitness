@@ -6,4 +6,6 @@ export interface LocalRequest {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body: LocalRecord;
 }
-export interface LocalResult { value: unknown }
+export interface LocalResult {
+  value: unknown;
+}

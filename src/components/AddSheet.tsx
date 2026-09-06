@@ -1,3 +1,4 @@
+import { isLocalDataMode } from '../services/dataMode';
 import React, {
   useCallback,
   useEffect,
@@ -360,16 +361,17 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
               </View>
               <View className="flex-row">
                 {renderCard(cards[2])}
-                {renderCard(cards[3])}
+                {!isLocalDataMode() && renderCard(cards[3])}
               </View>
-              {renderSecondaryRow(
-                t('addSheet.progressPhotos', {
-                  defaultValue: 'Progress Photos',
-                }),
-                'camera',
-                onAddProgressPhotos
-              )}
-              {showCycleCard && onOpenCycle
+              {!isLocalDataMode() &&
+                renderSecondaryRow(
+                  t('addSheet.progressPhotos', {
+                    defaultValue: 'Progress Photos',
+                  }),
+                  'camera',
+                  onAddProgressPhotos
+                )}
+              {!isLocalDataMode() && showCycleCard && onOpenCycle
                 ? renderSecondaryRow(
                     cycleLabel ??
                       t('addSheet.wellness', { defaultValue: 'Wellness' }),
@@ -377,16 +379,20 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
                     onOpenCycle
                   )
                 : null}
-              {renderSecondaryRow(
-                t('addSheet.askSparky', { defaultValue: 'Ask Sparky' }),
-                'sparkles',
-                onAskSparky
-              )}
-              {renderSecondaryRow(
-                t('addSheet.syncHealth', { defaultValue: 'Sync Health Data' }),
-                'sync',
-                onSyncHealthData
-              )}
+              {!isLocalDataMode() &&
+                renderSecondaryRow(
+                  t('addSheet.askSparky', { defaultValue: 'Ask Sparky' }),
+                  'sparkles',
+                  onAskSparky
+                )}
+              {!isLocalDataMode() &&
+                renderSecondaryRow(
+                  t('addSheet.syncHealth', {
+                    defaultValue: 'Sync Health Data',
+                  }),
+                  'sync',
+                  onSyncHealthData
+                )}
             </>
           )}
         </BottomSheetView>

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isLocalDataMode } from './dataMode';
 import * as SecureStore from 'expo-secure-store';
 import { CATEGORY_ORDER } from '../HealthMetrics';
 import { addLog } from './LogService';
@@ -152,6 +153,9 @@ export const getActiveServerConfigId = async (): Promise<string | null> => {
  * Retrieves the currently active server configuration.
  */
 export const getActiveServerConfig = async (): Promise<ServerConfig | null> => {
+  // Raw upload/auth clients also use this accessor. Local mode must not expose
+  // credentials from an earlier server session or accidentally send local data.
+  if (isLocalDataMode()) return null;
   if (activeServerConfigCache !== undefined) {
     return activeServerConfigCache;
   }

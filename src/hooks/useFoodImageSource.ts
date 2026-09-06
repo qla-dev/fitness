@@ -92,7 +92,11 @@ export function useFoodImageSource() {
 
       let source: ImageSource;
       // Absolute URLs (provider images that never localized) — use directly.
-      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      if (
+        imagePath.startsWith('file://') ||
+        imagePath.startsWith('http://') ||
+        imagePath.startsWith('https://')
+      ) {
         source = { uri: imagePath, headers: {} };
       } else if (!config) {
         // Don't cache until config resolves, so the path resolves once ready.

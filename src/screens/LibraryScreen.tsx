@@ -1,3 +1,4 @@
+import { isLocalDataMode } from '../services/dataMode';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -373,23 +374,25 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
             <Icon name="chevron-forward" size={20} color="#999" />
           </View>
         </Pressable>
-        <Pressable
-          className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-          onPress={() => navigation.navigate('MealPlans')}
-          style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-        >
-          <View className="flex-1 mr-3">
-            <Text className="text-base font-semibold text-text-primary">
-              {t('screens.library.mealPlans', { defaultValue: 'Meal plans' })}
-            </Text>
-            <Text className="text-sm text-text-secondary mt-0.5">
-              {t('screens.library.mealPlansSubtitle', {
-                defaultValue: 'Repeat meals on selected days',
-              })}
-            </Text>
-          </View>
-          <Icon name="chevron-forward" size={20} color="#999" />
-        </Pressable>
+        {!isLocalDataMode() && (
+          <Pressable
+            className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
+            onPress={() => navigation.navigate('MealPlans')}
+            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
+          >
+            <View className="flex-1 mr-3">
+              <Text className="text-base font-semibold text-text-primary">
+                {t('screens.library.mealPlans', { defaultValue: 'Meal plans' })}
+              </Text>
+              <Text className="text-sm text-text-secondary mt-0.5">
+                {t('screens.library.mealPlansSubtitle', {
+                  defaultValue: 'Repeat meals on selected days',
+                })}
+              </Text>
+            </View>
+            <Icon name="chevron-forward" size={20} color="#999" />
+          </Pressable>
+        )}
         <Pressable
           className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
           onPress={() => navigation.navigate('ExercisesLibrary')}
@@ -422,21 +425,25 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
             <Icon name="chevron-forward" size={20} color="#999" />
           </View>
         </Pressable>
-        <Pressable
-          className="px-4 py-4 flex-row items-center justify-between"
-          onPress={() => navigation.navigate('MedicationsList')}
-          style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-        >
-          <Text className="text-base font-semibold text-text-primary">
-            {t('screens.library.medications', { defaultValue: 'Medications' })}
-          </Text>
-          <View className="flex-row items-center">
-            <Text className="text-text-secondary text-base mr-2">
-              {medications?.length ?? '-'}
+        {!isLocalDataMode() && (
+          <Pressable
+            className="px-4 py-4 flex-row items-center justify-between"
+            onPress={() => navigation.navigate('MedicationsList')}
+            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
+          >
+            <Text className="text-base font-semibold text-text-primary">
+              {t('screens.library.medications', {
+                defaultValue: 'Medications',
+              })}
             </Text>
-            <Icon name="chevron-forward" size={20} color="#999" />
-          </View>
-        </Pressable>
+            <View className="flex-row items-center">
+              <Text className="text-text-secondary text-base mr-2">
+                {medications?.length ?? '-'}
+              </Text>
+              <Icon name="chevron-forward" size={20} color="#999" />
+            </View>
+          </Pressable>
+        )}
       </View>
 
       <View className="mb-3">

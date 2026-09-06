@@ -276,7 +276,15 @@ export async function createExercise(
   payload: CreateExercisePayload
 ): Promise<Exercise> {
   if (isLocalDataMode()) {
-    return transformExerciseRow(await apiFetch<Record<string, unknown>>({ endpoint: '/api/exercises', method: 'POST', body: payload, serviceName: 'Exercise API', operation: 'create exercise' }));
+    return transformExerciseRow(
+      await apiFetch<Record<string, unknown>>({
+        endpoint: '/api/exercises',
+        method: 'POST',
+        body: payload,
+        serviceName: 'Exercise API',
+        operation: 'create exercise',
+      })
+    );
   }
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');
@@ -441,7 +449,15 @@ export async function updateExercise(
   payload: UpdateExercisePayload
 ): Promise<Exercise> {
   if (isLocalDataMode()) {
-    return transformExerciseRow(await apiFetch<Record<string, unknown>>({ endpoint: `/api/exercises/${id}`, method: 'PUT', body: payload, serviceName: 'Exercise API', operation: 'update exercise' }));
+    return transformExerciseRow(
+      await apiFetch<Record<string, unknown>>({
+        endpoint: `/api/exercises/${id}`,
+        method: 'PUT',
+        body: payload,
+        serviceName: 'Exercise API',
+        operation: 'update exercise',
+      })
+    );
   }
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');

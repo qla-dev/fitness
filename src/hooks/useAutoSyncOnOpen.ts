@@ -148,6 +148,7 @@ export function useAutoSyncOnOpen({
 
   useEffect(() => {
     const FOREGROUND_SYNC_MIN_AWAY_MS = 5 * 60 * 1000;
+    if (isLocalDataMode()) return;
 
     const subscription = AppState.addEventListener(
       'change',

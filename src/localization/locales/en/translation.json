@@ -4968,5 +4968,12 @@
     "rangeA11y": "Choose how far back to play",
     "deltaBadge": "Δ {{value}}",
     "frameCountRanged": "{{current}} of {{total}} · {{range}}"
+  },
+  "localData": {
+    "title": "On-device storage",
+    "description": "Your data is saved on this device. No backend is connected.",
+    "export": "Export local data",
+    "exportDescription": "Save a JSON backup for a future backend import.",
+    "exportFailed": "Could not export local data."
   }
 }

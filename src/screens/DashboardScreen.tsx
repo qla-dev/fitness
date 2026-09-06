@@ -1,3 +1,4 @@
+import { isLocalDataMode } from '../services/dataMode';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -436,7 +437,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             on this screen more trouble than it's worth. The composer autofocuses
             on arrival so the affordance is honored immediately. Visibility is a
             local app setting toggled from Dashboard Settings. */}
-        {askSparkyVisible && (
+        {!isLocalDataMode() && askSparkyVisible && (
           <Pressable
             onPress={() => navigation.navigate('Chat')}
             className="flex-row items-center bg-surface rounded-lg  px-4 py-3 mb-3 shadow-sm"
@@ -633,13 +634,19 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             current/active fast regardless of the date navigator. Do not wire it
             to `selectedDate`. Visibility is a local app setting toggled from
             Dashboard Settings. */}
-        <FastingGoalReconciler />
-        {fastingCardVisible && <FastingCard navigation={navigation} />}
-        {cycleCardVisible && <CycleCard navigation={navigation} />}
+        {!isLocalDataMode() && <FastingGoalReconciler />}
+        {!isLocalDataMode() && fastingCardVisible && (
+          <FastingCard navigation={navigation} />
+        )}
+        {!isLocalDataMode() && cycleCardVisible && (
+          <CycleCard navigation={navigation} />
+        )}
 
-        {medicationsCardVisible && <MedicationsCard navigation={navigation} />}
+        {!isLocalDataMode() && medicationsCardVisible && (
+          <MedicationsCard navigation={navigation} />
+        )}
 
-        {progressPhotosCardVisible && (
+        {!isLocalDataMode() && progressPhotosCardVisible && (
           <ProgressPhotosCard navigation={navigation} date={selectedDate} />
         )}
 
