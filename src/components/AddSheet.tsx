@@ -361,7 +361,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
               </View>
               <View className="flex-row">
                 {renderCard(cards[2])}
-                {!isLocalDataMode() && renderCard(cards[3])}
+                {renderCard(cards[3])}
               </View>
               {!isLocalDataMode() &&
                 renderSecondaryRow(

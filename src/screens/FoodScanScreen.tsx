@@ -1,3 +1,4 @@
+import { isLocalDataMode } from '../services/dataMode';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -142,10 +143,13 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
         label: t('foodScan.segment.barcode', { defaultValue: 'Barcode' }),
       }));
     }
+    // Label and Photo are AI-backed and have no local adapter; barcode
+    // resolves against Open Food Facts directly, so it stays.
+    const available = isLocalDataMode()
+      ? SCAN_SEGMENTS.filter((key) => key === 'barcode')
+      : SCAN_SEGMENTS;
     return (
-      isSelectionMode
-        ? SCAN_SEGMENTS.filter((key) => key !== 'photo')
-        : SCAN_SEGMENTS
+      isSelectionMode ? available.filter((key) => key !== 'photo') : available
     ).map((key) => ({
       key,
       label:

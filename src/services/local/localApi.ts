@@ -11,6 +11,7 @@ import {
 } from './database';
 import { foodRepository } from './foodRepository';
 import { localSessions, workoutRepository } from './workoutRepository';
+import { LOCAL_PROVIDER_SEEDS, catalogRoute } from './providerCatalog';
 import type { LocalRequest } from './request';
 
 // Starter display values, not a personalised recommendation. Stored goals can
@@ -52,6 +53,16 @@ function initialise(db: LocalDatabase) {
       },
     ];
   if (!db.tables.goals) db.tables.goals = [{ id: 'goals', ...initialGoals }];
+  // The upstream server creates these rows per user at signup; local mode
+  // seeds the ones `providerCatalog` can actually answer for.
+  if (!db.tables.providers)
+    db.tables.providers = LOCAL_PROVIDER_SEEDS.map((provider) => ({
+      id: newId(),
+      ...provider,
+      is_active: true,
+      shared_with_public: false,
+      created_at: new Date().toISOString(),
+    }));
   if (!db.tables.waterContainers)
     db.tables.waterContainers = [
       {
@@ -140,6 +151,8 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     );
   }
   if (path === '/api/water-containers') return table(db, 'waterContainers');
+  if (path === '/api/external-providers' && method === 'GET')
+    return table(db, 'providers');
   if (path.startsWith('/api/measurements/check-in-measurements-range/'))
     return table(db, 'measurements')
       .filter(
@@ -204,7 +217,6 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     if (
       [
         '/api/v2/medications',
-        '/api/external-providers',
         '/api/custom-nutrients',
         '/api/identity/users/accessible-users',
         '/api/sleep',
@@ -245,6 +257,17 @@ export async function localApiFetch<T>(options: {
     method,
     body,
   };
+  // Provider catalogs are network reads and must resolve before the
+  // transaction opens: `localTransaction` serializes the whole database behind
+  // one queue, so awaiting a remote call inside it would stall every other
+  // read and write for the length of that request. Anything the catalog does
+  // not own falls through to the local database router below.
+  const catalog = await catalogRoute(
+    request,
+    (endpoint, innerMethod, innerBody) =>
+      localApiFetch({ endpoint, method: innerMethod, body: innerBody })
+  );
+  if (catalog) return catalog.value as T;
   return localTransaction(
     (db) => route(db, request) as T,
     method === 'GET' ? undefined : { method, endpoint: options.endpoint, body }

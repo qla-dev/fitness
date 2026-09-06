@@ -157,6 +157,25 @@ export function foodRepository(
     }
     return { value: undefined };
   }
+  // Local-first half of the v2 barcode lookup: `providerCatalog` asks here
+  // before it reaches Open Food Facts, so a saved food (and the user's own
+  // corrections to it) always wins over the provider's copy. Both EAN-13 and
+  // UPC-A forms match, since a scanner may report either for one product.
+  if (parts[2] === 'foods' && parts[3] === 'by-barcode' && method === 'GET') {
+    const code = parts[4] ?? '';
+    const alternates = new Set(
+      [
+        code,
+        code.length === 12 ? `0${code}` : null,
+        code.length === 13 && code.startsWith('0') ? code.slice(1) : null,
+      ].filter((value): value is string => !!value)
+    );
+    return {
+      value:
+        table(db, 'foods').find((row) => alternates.has(String(row.barcode))) ??
+        null,
+    };
+  }
   if (path === '/api/foods' && method === 'GET') {
     const rows = table(db, 'foods');
     return {

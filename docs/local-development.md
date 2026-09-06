@@ -21,12 +21,45 @@ stored under `@Fitness/local-database/v1` in AsyncStorage. Food/meal pictures ar
 copied into the app's document directory. App preferences and workout drafts keep
 their existing storage. Uninstalling the app removes its local data.
 
-AI, online providers, health ingestion/writeback, recurring meal plans,
-medications, cycle/pregnancy, progress photos, and nested meal templates are not
-implemented by this local adapter. Their main dashboard/add/library entry points
-are hidden where applicable; unsupported requests fail explicitly and never
-fall through to HTTP. Starter nutrition goals are display defaults, not a
-personalized plan.
+AI (chat, photo estimates, label scan), health ingestion/writeback, recurring
+meal plans, medications, cycle/pregnancy, progress photos, and nested meal
+templates are not implemented by this local adapter. Their main dashboard/add/
+library entry points are hidden where applicable; unsupported requests fail
+explicitly and never fall through to HTTP. Starter nutrition goals are display
+defaults, not a personalized plan.
+
+## Provider catalogs
+
+The libraries start empty: SparkyFitness ships no bundled food or exercise
+catalog, and the server does not hold one either — it proxies public APIs and
+creates a provider row per user at signup. Those APIs need no key, so
+`providerCatalog.ts` calls them from the device and `initialise()` seeds the
+matching provider rows.
+
+| Provider | Source | Covers |
+| --- | --- | --- |
+| Free Exercise DB | `raw.githubusercontent.com/yuhonas/free-exercise-db` | exercise search and import |
+| Open Food Facts | Search-a-licious + Product Opener | food search, details, barcode |
+
+Only these two are seeded, so no picker offers a source that cannot answer.
+wger is left out on purpose: its importer needs the id-to-name lookups the
+server keeps in `wgerNameMapping`, and Free Exercise DB already covers the
+exercise catalog. Searching an unimplemented provider raises the same explicit
+"a backend is required" error as any other unsupported request.
+
+These calls run in `catalogRoute` **before** `localTransaction` opens, because
+that transaction serializes the whole database behind one queue and awaiting a
+remote call inside it would stall every other read and write. Imports write
+through the normal local endpoints, so they land in the mutation journal as
+ordinary creates and a failed fetch leaves nothing behind. Exercise import is
+idempotent on `(source, source_id)`, mirroring the server's unique index.
+
+Images stay as upstream URLs rather than being copied locally: the server
+downloads them because its clients fetch images through it, while
+`useExerciseImageSource` and `useFoodImageSource` hand absolute URLs straight to
+`expo-image`. Calories per hour for an imported exercise use the server's MET
+table against the latest recorded weight (70kg when there is none); the server's
+age and gender adjustments are skipped because the local profile has neither.
 
 Settings → On-device storage → Export local data shares a JSON snapshot with
 schema version, device/user IDs, tables, and the ordered mutation journal. Images
