@@ -4158,7 +4158,11 @@
     "empty": "Exercises you save or log will appear here.",
     "moreFailed": "Failed to load more exercises.",
     "view": "View exercise",
-    "noun": "exercises"
+    "noun": "exercises",
+    "savedSection": "My exercises",
+    "onlineSection": "Online",
+    "addOnline": "Add {{name}} to your exercises",
+    "onlineFailed": "Could not search online exercises."
   },
   "foodLibrary": {
     "title": "Foods",

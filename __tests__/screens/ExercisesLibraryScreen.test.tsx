@@ -10,6 +10,9 @@ import {
   __resetAppPreferencesStoreForTests,
 } from '../../src/stores/appPreferencesStore';
 import { pressHeaderMenuAction } from './helpers/nativeHeaderTestUtils';
+import { useExternalProviders } from '../../src/hooks/useExternalProviders';
+import { useExternalExerciseSearch } from '../../src/hooks/useExternalExerciseSearch';
+import { importExercise } from '../../src/services/api/externalExerciseSearchApi';
 
 jest.mock('../../src/hooks', () => ({
   useExercisesLibrary: jest.fn(),
@@ -19,6 +22,27 @@ jest.mock('../../src/hooks', () => ({
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
+}));
+
+jest.mock('../../src/hooks/useExternalProviders', () => ({
+  useExternalProviders: jest.fn(() => ({ providers: [], isLoading: false })),
+}));
+
+jest.mock('../../src/hooks/useExternalExerciseSearch', () => ({
+  useExternalExerciseSearch: jest.fn(() => ({
+    searchResults: [],
+    isSearching: false,
+    isSearchActive: false,
+    isSearchError: false,
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    isFetchNextPageError: false,
+  })),
+}));
+
+jest.mock('../../src/services/api/externalExerciseSearchApi', () => ({
+  importExercise: jest.fn(),
 }));
 
 // The row thumbnail's hook calls useFocusEffect, which needs a navigation
@@ -43,6 +67,8 @@ const mockNavigation = {
   setOptions: jest.fn(),
   // The screen is a Library drill-in here, so it has somewhere to go back to.
   canGoBack: jest.fn(() => true),
+  // The import handler only navigates while the screen is still focused.
+  isFocused: jest.fn(() => true),
 } as any;
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -214,5 +240,127 @@ describe('ExercisesLibraryScreen', () => {
     expect(screen.getByText('Failed to load exercises')).toBeTruthy();
     fireEvent.press(screen.getByText('Retry'));
     expect(refetch).toHaveBeenCalled();
+  });
+});
+
+describe('ExercisesLibraryScreen online search', () => {
+  const navigation = mockNavigation;
+  const route = {
+    key: 'ExercisesLibrary-key',
+    name: 'ExercisesLibrary' as const,
+    params: undefined,
+  };
+
+  const mockUseExternalProviders = useExternalProviders as jest.MockedFunction<
+    typeof useExternalProviders
+  >;
+  const mockUseExternalExerciseSearch =
+    useExternalExerciseSearch as jest.MockedFunction<
+      typeof useExternalExerciseSearch
+    >;
+  const mockImportExercise = importExercise as jest.MockedFunction<
+    typeof importExercise
+  >;
+
+  const renderScreen = () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider initialMetrics={{ insets, frame }}>
+          <ExercisesLibraryScreen navigation={navigation} route={route} />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    );
+  };
+
+  const configureOnline = (results: { id: string; name: string }[]) => {
+    mockUseExternalProviders.mockReturnValue({
+      providers: [{ id: 'p1', provider_type: 'wger', provider_name: 'wger' }],
+    } as unknown as ReturnType<typeof useExternalProviders>);
+    mockUseExternalExerciseSearch.mockReturnValue({
+      searchResults: results.map((r) => ({ ...r, source: 'wger' })),
+      isSearching: false,
+      isSearchActive: true,
+      isSearchError: false,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isFetchNextPageError: false,
+    } as unknown as ReturnType<typeof useExternalExerciseSearch>);
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __resetAppPreferencesStoreForTests();
+    mockUseServerConnection.mockReturnValue({
+      isConnected: true,
+      isLoading: false,
+      isError: false,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useServerConnection>);
+  });
+
+  it('shows saved exercises first, then only the online results that are not already saved', async () => {
+    mockUseExercisesLibrary.mockReturnValue(
+      buildHookReturn({ exercises: [createExercise('1', 'Bench Press')] })
+    );
+    configureOnline([
+      // Same name as the saved one: it must not appear twice in the list.
+      { id: 'w1', name: 'Bench Press' },
+      { id: 'w2', name: 'Incline Bench' },
+    ]);
+
+    const screen = renderScreen();
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Search exercises...'),
+      'bench'
+    );
+
+    await waitFor(() => expect(screen.getByText('Online')).toBeTruthy());
+    expect(screen.getByText('My exercises')).toBeTruthy();
+    expect(screen.getByText('Incline Bench')).toBeTruthy();
+    // The duplicate is filtered out, so the saved row is the only match.
+    expect(screen.getAllByText('Bench Press')).toHaveLength(1);
+  });
+
+  it('imports an online exercise on tap and opens the saved copy', async () => {
+    const imported = createExercise('new-1', 'Incline Bench');
+    mockImportExercise.mockResolvedValue(imported);
+    mockUseExercisesLibrary.mockReturnValue(buildHookReturn({ exercises: [] }));
+    configureOnline([{ id: 'w2', name: 'Incline Bench' }]);
+
+    const screen = renderScreen();
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Search exercises...'),
+      'bench'
+    );
+
+    await waitFor(() => expect(screen.getByText('Incline Bench')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Incline Bench'));
+    });
+
+    expect(mockImportExercise).toHaveBeenCalledWith('wger', 'w2');
+    await waitFor(() =>
+      expect(navigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
+        item: imported,
+      })
+    );
+  });
+
+  it('keeps the plain library list when the search box is empty', () => {
+    mockUseExercisesLibrary.mockReturnValue(
+      buildHookReturn({ exercises: [createExercise('1', 'Bench Press')] })
+    );
+    configureOnline([{ id: 'w2', name: 'Incline Bench' }]);
+
+    const screen = renderScreen();
+
+    // No headings and no online rows until the user actually searches.
+    expect(screen.queryByText('My exercises')).toBeNull();
+    expect(screen.queryByText('Online')).toBeNull();
+    expect(screen.queryByText('Incline Bench')).toBeNull();
   });
 });
