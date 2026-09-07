@@ -89,10 +89,6 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
       value: 'Dark',
     },
     {
-      label: t('settings.theme.amoled', { defaultValue: 'AMOLED' }),
-      value: 'Amoled',
-    },
-    {
       label: t('settings.theme.system', { defaultValue: 'System' }),
       value: 'System',
     },

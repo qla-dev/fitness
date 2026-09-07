@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { addDays, getTodayDate } from '../../src/utils/dateUtils';
 import { localApiFetch } from '../../src/services/local/localApi';
 import {
   LOCAL_DATABASE_KEY,
@@ -33,6 +34,39 @@ const foodPayload = {
 beforeEach(async () => {
   await AsyncStorage.clear();
   jest.clearAllMocks();
+});
+
+test('goal edits affect daily summaries from today and leave historical summaries intact', async () => {
+  const today = getTodayDate();
+  const yesterday = addDays(today, -1);
+  const before = await request(`/api/daily-summary?date=${yesterday}`);
+  await request('/api/goals', 'PUT', {
+    calories: 2100,
+    protein: 125,
+    steps: 9000,
+  });
+  const historical = await request(`/api/daily-summary?date=${yesterday}`);
+  const current = await request(`/api/daily-summary?date=${today}`);
+  expect(historical.goals).toEqual(before.goals);
+  expect(current.goals).toMatchObject({
+    calories: 2100,
+    protein: 125,
+    steps: 9000,
+  });
+  expect(
+    await request(`/api/goals/for-date?date=${addDays(today, 10)}`)
+  ).toMatchObject({ calories: 2100 });
+});
+
+test('persists the profile name without creating duplicate profile rows', async () => {
+  await request('/api/identity/profiles', 'PUT', { full_name: 'Example Name' });
+  await request('/api/identity/profiles', 'PUT', { full_name: 'Updated Name' });
+  expect(await request('/api/identity/profiles')).toMatchObject({
+    full_name: 'Updated Name',
+    bio: null,
+  });
+  const stored = JSON.parse((await AsyncStorage.getItem(LOCAL_DATABASE_KEY))!);
+  expect(stored.tables.profile).toHaveLength(1);
 });
 
 test('persists food and diary snapshots across module reload, edits and deletes', async () => {

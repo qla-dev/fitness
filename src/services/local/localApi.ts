@@ -13,6 +13,8 @@ import { foodRepository } from './foodRepository';
 import { localSessions, workoutRepository } from './workoutRepository';
 import { LOCAL_PROVIDER_SEEDS, catalogRoute } from './providerCatalog';
 import type { LocalRequest } from './request';
+import { goalsForDate, saveGoalsFromToday } from './goalHistory';
+import { getTodayDate } from '../../utils/dateUtils';
 
 // Starter display values, not a personalised recommendation. Stored goals can
 // later be imported/edited through the same API contract.
@@ -83,7 +85,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   if (path === '/api/daily-summary') {
     const date = query.get('date') ?? '';
     return {
-      goals: table(db, 'goals')[0],
+      goals: goalsForDate(db, date),
       foodEntries: table(db, 'entries').filter(
         (row) => row.entry_date === date
       ),
@@ -93,7 +95,9 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
       ),
     };
   }
-  if (path === '/api/identity/profiles')
+  if (path === '/api/identity/profiles') {
+    if (method !== 'GET')
+      return saveRecord(db, 'profile', body, table(db, 'profile')[0]?.id);
     return {
       id: db.userId,
       full_name: null,
@@ -102,7 +106,9 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
       bio: null,
       avatar_url: null,
       gender: null,
+      ...table(db, 'profile')[0],
     };
+  }
   if (
     path === '/api/user-preferences' ||
     path === '/api/user-preferences/bootstrap-timezone'
@@ -111,8 +117,9 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     return saveRecord(db, 'preferences', body, 'preferences');
   }
   if (path.startsWith('/api/goals')) {
-    if (method === 'GET') return table(db, 'goals')[0];
-    return saveRecord(db, 'goals', body, 'goals');
+    if (method === 'GET')
+      return goalsForDate(db, query.get('date') ?? getTodayDate());
+    return saveGoalsFromToday(db, body);
   }
   if (path.startsWith('/api/preferences/nutrient-display')) {
     if (method === 'GET') return table(db, 'nutrientDisplay');

@@ -1,18 +1,15 @@
 import {
   createNativeHeaderDatePickerItems,
+  createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
 } from '../../src/utils/nativeHeaderDatePicker';
 import type { TFunction } from 'i18next';
 
 describe('nativeHeaderDatePicker', () => {
-  const onPreviousDate = jest.fn();
   const onDatePress = jest.fn();
-  const onNextDate = jest.fn();
   const options = {
     selectedDate: '2025-01-15',
-    onPreviousDate,
     onDatePress,
-    onNextDate,
     tintColor: '#0A84FF',
     accessibilityLabel: 'Choose diary date',
     t: ((key: string, values?: { defaultValue?: string }) =>
@@ -24,28 +21,21 @@ describe('nativeHeaderDatePicker', () => {
     jest.clearAllMocks();
   });
 
-  it('creates tappable accent-colored date controls', () => {
+  it('creates one tappable accent-colored date control, with no day chevrons', () => {
     const items = createNativeHeaderDatePickerItems(options);
 
-    expect(items).toHaveLength(3);
-    expect(items.map((item) => item.identifier)).toEqual([
-      'date-picker-previous',
-      'date-picker',
-      'date-picker-next',
-    ]);
-    expect(items.every((item) => item.tintColor === '#0A84FF')).toBe(true);
-    expect(items[1]?.label).toContain('Jan 15');
+    // The day steps by swiping the content, matching the fallback TabHeader —
+    // the native header shows only the label that opens the picker.
+    expect(items).toHaveLength(1);
+    expect(items[0]?.identifier).toBe('date-picker');
+    expect(items[0]?.tintColor).toBe('#0A84FF');
+    expect(items[0]?.label).toContain('Jan 15');
 
     items[0]?.onPress();
-    items[1]?.onPress();
-    items[2]?.onPress();
-
-    expect(onPreviousDate).toHaveBeenCalledTimes(1);
     expect(onDatePress).toHaveBeenCalledTimes(1);
-    expect(onNextDate).toHaveBeenCalledTimes(1);
   });
 
-  it('writes handlers to screen options instead of route params', () => {
+  it('puts the day on the left so the native header can center the title', () => {
     const setOptions = jest.fn();
 
     setNativeHeaderDatePickerOptions({ setOptions }, options);
@@ -53,43 +43,55 @@ describe('nativeHeaderDatePicker', () => {
     expect(setOptions).toHaveBeenCalledTimes(1);
     const configuredOptions = setOptions.mock.calls[0]?.[0];
     expect(configuredOptions).toEqual({
-      unstable_headerRightItems: expect.any(Function),
-      unstable_headerLeftItems: undefined,
+      unstable_headerLeftItems: expect.any(Function),
+      unstable_headerRightItems: undefined,
     });
-    expect(configuredOptions.unstable_headerRightItems()).toHaveLength(3);
+    expect(configuredOptions.unstable_headerLeftItems()).toHaveLength(1);
   });
 
-  it('adds a leading family diary action when one is supplied', () => {
-    const onPress = jest.fn();
+  it('puts the trailing actions on the right, profile last', () => {
+    const onFamilyPress = jest.fn();
+    const onProfilePress = jest.fn();
     const setOptions = jest.fn();
 
     setNativeHeaderDatePickerOptions(
       { setOptions },
       {
         ...options,
-        leadingAction: {
-          sfSymbol: 'person.2.fill',
-          onPress,
-          accessibilityLabel: 'Open family diaries',
-          identifier: 'family-diaries',
-        },
+        trailingActions: [
+          {
+            sfSymbol: 'person.2.fill',
+            onPress: onFamilyPress,
+            accessibilityLabel: 'Open family diaries',
+            identifier: 'family-diaries',
+          },
+          createNativeProfileAction(onProfilePress, 'Profile'),
+        ],
       }
     );
 
     const configuredOptions = setOptions.mock.calls[0]?.[0];
-    const leadingItems = configuredOptions.unstable_headerLeftItems();
-    expect(leadingItems).toEqual([
+    const trailingItems = configuredOptions.unstable_headerRightItems();
+    expect(trailingItems).toEqual([
       expect.objectContaining({
         icon: { type: 'sfSymbol', name: 'person.2.fill' },
         accessibilityLabel: 'Open family diaries',
         identifier: 'family-diaries',
       }),
+      expect.objectContaining({
+        icon: { type: 'sfSymbol', name: 'person.crop.circle' },
+        accessibilityLabel: 'Profile',
+        identifier: 'tab-header-profile',
+      }),
     ]);
-    leadingItems[0]?.onPress();
-    expect(onPress).toHaveBeenCalledTimes(1);
+
+    trailingItems[0]?.onPress();
+    trailingItems[1]?.onPress();
+    expect(onFamilyPress).toHaveBeenCalledTimes(1);
+    expect(onProfilePress).toHaveBeenCalledTimes(1);
   });
 
-  it('clears a previously configured leading action when access disappears', () => {
+  it('clears previously configured trailing actions when they disappear', () => {
     let configuredOptions: Record<string, unknown> = {};
     const setOptions = jest.fn((nextOptions: Record<string, unknown>) => {
       configuredOptions = { ...configuredOptions, ...nextOptions };
@@ -99,20 +101,15 @@ describe('nativeHeaderDatePicker', () => {
       { setOptions },
       {
         ...options,
-        leadingAction: {
-          sfSymbol: 'person.2.fill',
-          onPress: jest.fn(),
-          accessibilityLabel: 'Open family diaries',
-          identifier: 'family-diaries',
-        },
+        trailingActions: [createNativeProfileAction(jest.fn(), 'Profile')],
       }
     );
-    expect(configuredOptions.unstable_headerLeftItems).toEqual(
+    expect(configuredOptions.unstable_headerRightItems).toEqual(
       expect.any(Function)
     );
 
     setNativeHeaderDatePickerOptions({ setOptions }, options);
 
-    expect(configuredOptions.unstable_headerLeftItems).toBeUndefined();
+    expect(configuredOptions.unstable_headerRightItems).toBeUndefined();
   });
 });

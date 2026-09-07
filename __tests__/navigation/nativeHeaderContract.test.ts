@@ -51,6 +51,14 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   Logs: 'Root-stack settings route presented above the tab host.',
   Sync: 'Root-stack settings route presented above the tab host.',
   MeasurementsAdd: 'Root-stack measurement modal presented from the tab host.',
+  Profile:
+    'Root-stack profile route reached from the profile button every tab header carries.',
+  ProfileGoals: 'Root-stack profile route presented above the tab host.',
+  ProfileEdit:
+    'Root-stack single-value profile editor presented above the tab host.',
+  ProfileTheme: 'Root-stack profile route presented above the tab host.',
+  ProfilePremium:
+    'Root-stack profile upsell route presented above the tab host.',
   CalorieSettings: 'Root-stack settings route presented above the tab host.',
   FoodSettings: 'Root-stack settings route presented above the tab host.',
   DashboardSettings: 'Root-stack settings route presented above the tab host.',
@@ -585,16 +593,29 @@ describe('native header navigation contract', () => {
       nonAddTabs,
       nativeTabScreens.filter((name) => name !== 'Add')
     );
-    const missingStackScreens = nonAddTabs.filter(
-      (name) =>
+    const missingStackScreens = nonAddTabs.filter((name) => {
+      // Internal route IDs need not be display titles (Settings now displays
+      // Profile). Verify the header and native tab use the same localized label.
+      const tabLabelKey = tabsSource.match(
+        new RegExp(
+          `<NativeTab\\.Screen\\s+name="${name}"[\\s\\S]*?tabBarLabel:\\s*t\\('([^']+)'`
+        )
+      )?.[1];
+      const stackSource =
+        tabsSource.match(
+          new RegExp(
+            `function ${name}StackScreen\\([\\s\\S]*?</${name}Stack\\.Navigator>`
+          )
+        )?.[0] ?? '';
+      return (
+        !tabLabelKey ||
         !new RegExp(`function ${name}StackScreen\\(`).test(tabsSource) ||
         !new RegExp(
           `${name}Stack\\.Navigator[\\s\\S]*${name}Stack\\.Screen`
         ).test(tabsSource) ||
-        !new RegExp(
-          `${name}Stack\\.Screen[\\s\\S]*title:\\s*(?:'${name}'|t\\([^)]*defaultValue:\\s*'${name}'[^)]*\\))`
-        ).test(tabsSource)
-    );
+        !stackSource.includes(`title: t('${tabLabelKey}'`)
+      );
+    });
 
     if (missingContentTabs.length > 0 || missingStackScreens.length > 0) {
       failNativeHeaderContract(

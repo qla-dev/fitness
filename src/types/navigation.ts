@@ -35,12 +35,17 @@ export type TabParamList = {
   Diary: { selectedDate?: string } | undefined;
   Add: undefined;
   Library: undefined;
-  Settings: undefined;
+  Exercises: undefined;
 };
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
+  /**
+   * The profile screen. It left the tab bar when Exercises took its slot, so
+   * it is now pushed from the profile button every tab header carries.
+   */
+  Profile: undefined;
   FamilyMembers: undefined;
   FamilyDiary: { familyUser: FamilyDiaryUser };
   FamilyMealDetail: {
@@ -292,6 +297,18 @@ export type RootStackParamList = {
   ProgressPhotoCompare: { angle?: PhotoType } | undefined;
   /** Cross-fading time-lapse of every photo for one angle, oldest to newest. */
   ProgressPhotoTimelapse: { angle?: PhotoType } | undefined;
+  /**
+   * Single-value profile editor. `name` writes the profile, `goal` writes one
+   * key of the daily goals — the goal label and unit are derived from
+   * `goalKey` so they re-localize with the app language.
+   */
+  ProfileEdit: { field: 'name' } | { field: 'goal'; goalKey: string };
+  /** Every editable daily goal as a row, each drilling into `ProfileEdit`. */
+  ProfileGoals: undefined;
+  /** Appearance options as rows instead of a picker sheet. */
+  ProfileTheme: undefined;
+  /** Preview of the paid tier reached from the profile card's premium rows. */
+  ProfilePremium: undefined;
   CalorieSettings: undefined;
   MealTypeSettings: undefined;
   FoodSettings: undefined;

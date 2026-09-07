@@ -1,12 +1,10 @@
+import ProfileSummary from '../components/ProfileSummary';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  useFocusEffect,
-  type CompositeScreenProps,
-} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useCSSVariable } from 'uniwind';
 import {
   useServerConnection,
@@ -23,23 +21,18 @@ import {
   sanitizeQueryKey,
 } from '../services/diagnosticReportService';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import { useScreenHeader } from '../hooks/useScreenHeader';
 import { loadLastSyncedTime } from '../services/storage';
 import { formatRelativeTime } from '../utils/dateUtils';
 import type { DiagnosticQueryState } from '../types/diagnosticReport';
 import Constants from 'expo-constants';
 import { isLocalDataMode } from '../services/dataMode';
-import { exportLocalData } from '../services/local/exportLocalData';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList, TabParamList } from '../types/navigation';
+import type { RootStackScreenProps } from '../types/navigation';
 
-type SettingsScreenProps = CompositeScreenProps<
-  BottomTabScreenProps<TabParamList, 'Settings'>,
-  NativeStackScreenProps<RootStackParamList>
->;
+type SettingsScreenProps = RootStackScreenProps<'Profile'>;
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { t, i18n: translationI18n } = useTranslation();
@@ -47,8 +40,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     ? 'pl-PL'
     : 'en-US';
   const insets = useSafeAreaInsets();
-  const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
-  const usesNativeTabs = useNativeIOSTabsActive();
+  const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
+  const usesNativeHeader = useNativeIOSHeadersActive();
 
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
 
@@ -176,62 +169,47 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     }
   };
 
+  const header = useScreenHeader({
+    title: t('profile.title', { defaultValue: 'Profile' }),
+    left: { kind: 'back' },
+  });
+
   return (
-    <>
+    <View
+      className="flex-1 bg-background"
+      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+    >
+      {header}
       <ScrollView
         className="flex-1 bg-background"
-        style={[
-          { flex: 1 },
-          usesNativeTabs ? undefined : { paddingTop: insets.top },
-        ]}
+        style={{ flex: 1 }}
         contentContainerStyle={{
-          ...(!usesNativeTabs ? { paddingTop: 0 } : null),
-          paddingBottom: 80 + activeWorkoutBarPadding,
+          ...(!usesNativeHeader ? { paddingTop: 0 } : null),
+          paddingBottom: 16 + activeWorkoutBarPadding,
         }}
         scrollEventThrottle={16}
-        contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
+        contentInsetAdjustmentBehavior={
+          usesNativeHeader ? 'automatic' : 'never'
+        }
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
       >
-        <View className={usesNativeTabs ? 'px-4 pb-4' : 'flex-1 p-4'}>
-          {!usesNativeTabs && (
-            <View className="mb-6">
-              <Text className="text-2xl font-bold text-text-primary">
-                {t('settings.title', { defaultValue: 'Settings' })}
-              </Text>
-            </View>
-          )}
+        <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
+          <ProfileSummary enabled={isConnected} />
 
           {isLocalDataMode() ? (
-            <SettingsRowGroup
-              title={t('localData.title', {
-                defaultValue: 'On-device storage',
-              })}
-              subtitle={t('localData.description', {
-                defaultValue:
-                  'Your data is saved on this device. No backend is connected.',
-              })}
-            >
-              <SettingsRow
-                icon="server"
-                title={t('localData.export', {
-                  defaultValue: 'Export local data',
-                })}
-                subtitle={t('localData.exportDescription', {
+            // Local mode has no server to configure, so the row is replaced by
+            // a plain note saying where the data actually lives.
+            <View className="px-4 mb-4">
+              <Text className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                {t('localData.title', { defaultValue: 'On-device storage' })}
+              </Text>
+              <Text className="text-xs text-text-secondary mt-0.5">
+                {t('localData.description', {
                   defaultValue:
-                    'Save a JSON backup for a future backend import.',
+                    'Your data is saved on this device. No backend is connected.',
                 })}
-                onPress={() => {
-                  void exportLocalData().catch(() =>
-                    Toast.show({
-                      type: 'error',
-                      text1: t('localData.exportFailed', {
-                        defaultValue: 'Could not export local data.',
-                      }),
-                    })
-                  );
-                }}
-              />
-            </SettingsRowGroup>
+              </Text>
+            </View>
           ) : (
             <SettingsRow
               icon="server"
@@ -270,10 +248,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               />
             )}
 
-            <SettingsRowGroup>
+            <SettingsRowGroup
+              title={t('profile.preferences', { defaultValue: 'Preferences' })}
+            >
               <SettingsRow
                 icon="app-settings"
                 title={t('settings.rows.app', { defaultValue: 'App Settings' })}
+                subtitle={t('profile.appSubtitle', {
+                  defaultValue: 'Appearance, language, and notifications',
+                })}
                 onPress={() => navigation.navigate('AppSettings')}
                 iconColor={catViolet}
               />
@@ -293,6 +276,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   title={t('settings.rows.calories', {
                     defaultValue: 'Calories & BMR',
                   })}
+                  subtitle={t('profile.caloriesSubtitle', {
+                    defaultValue: 'Energy balance and calorie calculations',
+                  })}
                   onPress={() => navigation.navigate('CalorieSettings')}
                   iconColor={catCalories}
                 />
@@ -301,6 +287,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <SettingsRow
                   icon="food-search-settings"
                   title={t('settings.rows.food', { defaultValue: 'Food' })}
+                  subtitle={t('profile.foodSubtitle', {
+                    defaultValue: 'Search providers and food preferences',
+                  })}
                   onPress={() => navigation.navigate('FoodSettings')}
                   iconColor={catOrange}
                 />
@@ -311,6 +300,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   title={t('settings.rows.dashboard', {
                     defaultValue: 'Dashboard',
                   })}
+                  subtitle={t('profile.dashboardSubtitle', {
+                    defaultValue: 'Cards, nutrients, and health trends',
+                  })}
                   onPress={() => navigation.navigate('DashboardSettings')}
                   iconColor={macroGreen}
                 />
@@ -319,6 +311,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <SettingsRow
                   icon="diary-settings"
                   title={t('settings.rows.diary', { defaultValue: 'Diary' })}
+                  subtitle={t('profile.diarySubtitle', {
+                    defaultValue: 'Meal types and diary layout',
+                  })}
                   onPress={() => navigation.navigate('DiarySettings')}
                   iconColor={catTeal}
                 />
@@ -342,16 +337,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               <SettingsRow
                 icon="workout-settings"
                 title={t('settings.rows.workout', { defaultValue: 'Workout' })}
+                subtitle={t('profile.workoutSubtitle', {
+                  defaultValue: 'Rest timers and workout preferences',
+                })}
                 onPress={() => navigation.navigate('WorkoutSettings')}
                 iconColor={catBlue}
               />
             </SettingsRowGroup>
 
-            <SettingsRowGroup>
+            <SettingsRowGroup
+              title={t('profile.support', {
+                defaultValue: 'Support & Information',
+              })}
+            >
               <SettingsRow
                 icon="whats-new"
                 title={t('settings.rows.whatsNew', {
                   defaultValue: "What's New",
+                })}
+                subtitle={t('profile.whatsNewSubtitle', {
+                  defaultValue: 'Latest features and improvements',
                 })}
                 onPress={() => navigation.navigate('WhatsNew')}
                 iconColor={catPink}
@@ -359,12 +364,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               <SettingsRow
                 icon="document-text"
                 title={t('settings.rows.logs', { defaultValue: 'View Logs' })}
+                subtitle={t('profile.logsSubtitle', {
+                  defaultValue: 'Activity and troubleshooting logs',
+                })}
                 onPress={() => navigation.navigate('Logs')}
                 iconColor={catSlate}
               />
               <SettingsRow
                 icon="info-circle"
                 title={t('settings.rows.about', { defaultValue: 'About' })}
+                subtitle={t('profile.aboutSubtitle', {
+                  defaultValue: 'App details and version information',
+                })}
                 onPress={() => navigation.navigate('About')}
                 iconColor={hydration}
               />
@@ -402,7 +413,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
       />
-    </>
+    </View>
   );
 };
 

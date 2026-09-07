@@ -2,30 +2,39 @@ import type { NativeStackHeaderItem } from '@react-navigation/native-stack';
 import { formatDateLabel } from './dateUtils';
 import { createNativeHeaderIconButtonItem } from './nativeHeaderItems';
 
+/**
+ * The iOS-native half of the shared tab header. It mirrors `TabHeader` on the
+ * fallback path: the day sits on the LEFT, the native header centers the
+ * title, and the trailing actions — the profile button every tab carries, plus
+ * anything screen-specific — sit on the right.
+ *
+ * There are no previous/next day chevrons here, matching the fallback bar:
+ * the day moves by swiping the content or through the picker this button
+ * opens.
+ */
+export type NativeHeaderAction = {
+  sfSymbol: string;
+  onPress: () => void;
+  accessibilityLabel: string;
+  identifier: string;
+};
+
 export type NativeHeaderDatePickerOptions = {
   selectedDate: string;
-  onPreviousDate: () => void;
   onDatePress: () => void;
-  onNextDate: () => void;
   tintColor: string;
   accessibilityLabel: string;
-  previousDayLabel?: string;
-  nextDayLabel?: string;
   dateLabel?: string;
   t: import('i18next').TFunction;
   locale: string;
-  leadingAction?: {
-    sfSymbol: string;
-    onPress: () => void;
-    accessibilityLabel: string;
-    identifier: string;
-  };
+  /** Right-hand buttons, in order. The profile button belongs last. */
+  trailingActions?: NativeHeaderAction[];
 };
 
 export type NativeHeaderDatePickerNavigation = {
   setOptions: (options: {
-    unstable_headerRightItems: () => NativeStackHeaderItem[];
-    unstable_headerLeftItems?: () => NativeStackHeaderItem[];
+    unstable_headerLeftItems: () => NativeStackHeaderItem[];
+    unstable_headerRightItems?: () => NativeStackHeaderItem[];
   }) => void;
 };
 
@@ -33,50 +42,36 @@ export function setNativeHeaderDatePickerOptions(
   navigation: NativeHeaderDatePickerNavigation,
   options: NativeHeaderDatePickerOptions
 ) {
-  const leadingAction = options.leadingAction;
+  const trailingActions = options.trailingActions ?? [];
 
   navigation.setOptions({
-    unstable_headerRightItems: () => createNativeHeaderDatePickerItems(options),
-    unstable_headerLeftItems: leadingAction
-      ? () => [
-          createNativeHeaderIconButtonItem({
-            sfSymbol: leadingAction.sfSymbol,
-            onPress: leadingAction.onPress,
-            tintColor: options.tintColor,
-            accessibilityLabel: leadingAction.accessibilityLabel,
-            identifier: leadingAction.identifier,
-          }),
-        ]
-      : undefined,
+    unstable_headerLeftItems: () => createNativeHeaderDatePickerItems(options),
+    unstable_headerRightItems:
+      trailingActions.length > 0
+        ? () =>
+            trailingActions.map((action) =>
+              createNativeHeaderIconButtonItem({
+                sfSymbol: action.sfSymbol,
+                onPress: action.onPress,
+                tintColor: options.tintColor,
+                accessibilityLabel: action.accessibilityLabel,
+                identifier: action.identifier,
+              })
+            )
+        : undefined,
   });
 }
 
 export function createNativeHeaderDatePickerItems({
   selectedDate,
-  onPreviousDate,
   onDatePress,
-  onNextDate,
   tintColor,
   accessibilityLabel,
-  previousDayLabel,
-  nextDayLabel,
   dateLabel,
   t,
   locale,
 }: NativeHeaderDatePickerOptions): NativeStackHeaderItem[] {
   return [
-    {
-      type: 'button',
-      label: '',
-      icon: { type: 'sfSymbol', name: 'chevron.left' },
-      onPress: onPreviousDate,
-      tintColor,
-      // i18n-audit-ignore-next-line hardcoded-ui-text -- legacy API fallback; production callers pass localized previousDayLabel.
-      accessibilityLabel: `${accessibilityLabel}${previousDayLabel ?? ': previous day'}`,
-      identifier: 'date-picker-previous',
-      sharesBackground: true,
-      disabled: false,
-    },
     {
       type: 'button',
       label: dateLabel ?? `${formatDateLabel(selectedDate, t, locale)} ▾`,
@@ -87,17 +82,48 @@ export function createNativeHeaderDatePickerItems({
       identifier: 'date-picker',
       sharesBackground: true,
     },
-    {
-      type: 'button',
-      label: '',
-      icon: { type: 'sfSymbol', name: 'chevron.right' },
-      onPress: onNextDate,
-      tintColor,
-      // i18n-audit-ignore-next-line hardcoded-ui-text -- legacy API fallback; production callers pass localized nextDayLabel.
-      accessibilityLabel: `${accessibilityLabel}${nextDayLabel ?? ': next day'}`,
-      identifier: 'date-picker-next',
-      sharesBackground: true,
-      disabled: false,
-    },
   ];
+}
+
+/**
+ * Trailing-only variant for a tab with no date of its own (Library). Screens
+ * call this rather than writing header items themselves, so the native header
+ * wiring stays in one place.
+ */
+export type NativeTabHeaderNavigation = {
+  setOptions: (options: {
+    unstable_headerRightItems: () => NativeStackHeaderItem[];
+  }) => void;
+};
+
+export function setNativeTabHeaderActions(
+  navigation: NativeTabHeaderNavigation,
+  actions: NativeHeaderAction[],
+  tintColor: string
+) {
+  navigation.setOptions({
+    unstable_headerRightItems: () =>
+      actions.map((action) =>
+        createNativeHeaderIconButtonItem({
+          sfSymbol: action.sfSymbol,
+          onPress: action.onPress,
+          tintColor,
+          accessibilityLabel: action.accessibilityLabel,
+          identifier: action.identifier,
+        })
+      ),
+  });
+}
+
+/** The profile button shared by every tab's native header. */
+export function createNativeProfileAction(
+  onPress: () => void,
+  accessibilityLabel: string
+): NativeHeaderAction {
+  return {
+    sfSymbol: 'person.crop.circle',
+    onPress,
+    accessibilityLabel,
+    identifier: 'tab-header-profile',
+  };
 }

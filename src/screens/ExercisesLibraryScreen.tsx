@@ -206,7 +206,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           })}
           action={{
             label: t('exerciseLibrary.go', { defaultValue: 'Go to Settings' }),
-            onPress: () => navigation.navigate('Tabs', { screen: 'Settings' }),
+            onPress: () => navigation.navigate('Profile'),
             variant: 'primary',
           }}
         />
@@ -285,25 +285,45 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     );
   };
 
+  // The screen is both a tab root and a Library drill-in. Only the pushed
+  // copy has somewhere to go back to, and only the tab root carries the
+  // profile button every tab header shows.
+  const isTabRoot = !navigation.canGoBack();
   const header = useScreenHeader({
     title: t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
-    left: { kind: 'back' },
-    right: ownershipFilterHeaderMenu({
-      noun: t('exerciseLibrary.noun', { defaultValue: 'exercises' }),
-      labels: {
-        all: t('ownership.all', { defaultValue: 'All' }),
-        mine: t('ownership.mine', { defaultValue: 'Mine' }),
-        family: t('ownership.family', { defaultValue: 'Family' }),
-        public: t('ownership.public', { defaultValue: 'Public' }),
-      },
-      showLabel: t('ownership.show', { defaultValue: 'Show' }),
-      filterAccessibilityLabel: t('ownership.filter', {
-        defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+    left: isTabRoot ? null : { kind: 'back' },
+    right: [
+      ...(isTabRoot
+        ? [
+            {
+              kind: 'icon' as const,
+              sfSymbol: 'person.crop.circle',
+              ionicon: 'person-circle-outline',
+              accessibilityLabel: t('profile.title', {
+                defaultValue: 'Profile',
+              }),
+              identifier: 'exercises-library-profile',
+              onPress: () => navigation.navigate('Profile'),
+            },
+          ]
+        : []),
+      ownershipFilterHeaderMenu({
+        noun: t('exerciseLibrary.noun', { defaultValue: 'exercises' }),
+        labels: {
+          all: t('ownership.all', { defaultValue: 'All' }),
+          mine: t('ownership.mine', { defaultValue: 'Mine' }),
+          family: t('ownership.family', { defaultValue: 'Family' }),
+          public: t('ownership.public', { defaultValue: 'Public' }),
+        },
+        showLabel: t('ownership.show', { defaultValue: 'Show' }),
+        filterAccessibilityLabel: t('ownership.filter', {
+          defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+        }),
+        identifier: 'exercises-library-filter',
+        filter: ownershipFilter,
+        onSelect: setOwnershipFilter,
       }),
-      identifier: 'exercises-library-filter',
-      filter: ownershipFilter,
-      onSelect: setOwnershipFilter,
-    }),
+    ],
   });
 
   return (

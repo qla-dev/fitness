@@ -1,4 +1,6 @@
 export interface DailyGoals {
+  steps?: number;
+  stand_hours?: number;
   calories: number;
   protein: number;
   carbs: number;

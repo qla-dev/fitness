@@ -292,7 +292,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
             label: t('screens.library.goToSettings', {
               defaultValue: 'Go to Settings',
             }),
-            onPress: () => navigation.navigate('Tabs', { screen: 'Settings' }),
+            onPress: () => navigation.navigate('Profile'),
             variant: 'primary',
           }}
         />

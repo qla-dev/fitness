@@ -103,7 +103,7 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
     '--color-icon-warning',
     '--color-icon-danger',
   ]) as [string, string, string, string, string, string, string, string];
-  const isDarkMode = theme === 'dark' || theme === 'amoled';
+  const isDarkMode = theme === 'dark';
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Confidence-tinted color for the AI-provenance Sparkles icon. All three

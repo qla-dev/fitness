@@ -160,7 +160,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   const finishOnboarding = () => {
     void markCurrentVersionSeen();
-    navigation.replace('Tabs', { screen: 'Settings' });
+    navigation.replace('Tabs', { screen: 'Dashboard' });
   };
 
   const finishWithConnection = () => {

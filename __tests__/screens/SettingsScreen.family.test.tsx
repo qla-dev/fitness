@@ -10,18 +10,28 @@ import {
 
 type ScreenProps = React.ComponentProps<typeof SettingsScreen>;
 
-const navigation = {
+const mockHeaderNavigation = {
   navigate: jest.fn(),
-} as unknown as ScreenProps['navigation'];
+  goBack: jest.fn(),
+  setOptions: jest.fn(),
+  canGoBack: jest.fn(() => true),
+};
+const navigation = mockHeaderNavigation as unknown as ScreenProps['navigation'];
 const route = {
-  key: 'Settings-1',
-  name: 'Settings',
+  key: 'Profile-1',
+  name: 'Profile',
   params: undefined,
 } as unknown as ScreenProps['route'];
 
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
-  return { ...actual, useFocusEffect: (callback: () => void) => callback() };
+  return {
+    ...actual,
+    useFocusEffect: (callback: () => void) => callback(),
+    // The screen is pushed on the root stack now, so its useScreenHeader call
+    // resolves a navigation object that this render has no container for.
+    useNavigation: () => mockHeaderNavigation,
+  };
 });
 
 jest.mock('../../src/hooks', () => ({
@@ -39,8 +49,12 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));
 
+// Profile queries and preview modals are independent of family navigation.
+jest.mock('../../src/components/ProfileSummary', () => () => null);
+
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSTabsActive: () => false,
+  useNativeIOSHeadersActive: () => false,
 }));
 
 jest.mock('../../src/services/storage', () => ({

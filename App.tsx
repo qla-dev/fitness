@@ -70,6 +70,11 @@ import {
   SafeProgressPhotoCompare,
   SafeProgressPhotoTimelapse,
   SafeChat,
+  SafeProfile,
+  SafeProfileEdit,
+  SafeProfileGoals,
+  SafeProfileTheme,
+  SafeProfilePremium,
   SafeCalorieSettings,
   SafeMealTypeSettings,
   SafeFoodSettings,
@@ -219,7 +224,7 @@ function AppContent() {
   );
 
   // Determine if we're in dark mode based on current theme
-  const isDarkMode = theme === 'dark' || theme === 'amoled';
+  const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -380,53 +385,53 @@ function AppContent() {
           <Stack.Screen
             name="FoodsLibrary"
             component={SafeFoodsLibrary}
-            options={createStackScreenOptions(t('screens.foods', { defaultValue: 'Foods' }), { headerBackTitle: t('navigation.library', { defaultValue: 'Library' }) })}
+            options={createStackScreenOptions(t('screens.foods', { defaultValue: 'Foods' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealsLibrary"
             component={SafeMealsLibrary}
-            options={createStackScreenOptions(t('screens.meals', { defaultValue: 'Meals' }), { headerBackTitle: t('navigation.library', { defaultValue: 'Library' }) })}
+            options={createStackScreenOptions(t('screens.meals', { defaultValue: 'Meals' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealPlans"
             component={SafeMealPlans}
-            options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackTitle: t('navigation.library', { defaultValue: 'Library' }) })}
+            options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealPlanForm"
             component={SafeMealPlanForm}
-            options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackTitle: t('common.back', { defaultValue: 'Back' }) })}
+            options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ExercisesLibrary"
             component={SafeExercisesLibrary}
-            options={createStackScreenOptions(t('screens.exercises', { defaultValue: 'Exercises' }), { headerBackTitle: t('navigation.library', { defaultValue: 'Library' }) })}
+            options={createStackScreenOptions(t('screens.exercises', { defaultValue: 'Exercises' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutPresetsLibrary"
             component={SafeWorkoutPresetsLibrary}
-            options={createStackScreenOptions(t('screens.workoutPresets', { defaultValue: 'Workout Presets' }), { headerBackTitle: t('navigation.library', { defaultValue: 'Library' }) })}
+            options={createStackScreenOptions(t('screens.workoutPresets', { defaultValue: 'Workout Presets' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutPresetDetail"
             component={SafeWorkoutPresetDetail}
-            options={({ route }) => createStackScreenOptions(route.params.updatedPreset?.name ?? route.params.preset.name, { headerBackTitle: t('navigation.presets', { defaultValue: 'Presets' }) })}
+            options={({ route }) => createStackScreenOptions(route.params.updatedPreset?.name ?? route.params.preset.name, { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="FoodDetail"
             component={SafeFoodDetail}
-            options={({ route }) => createStackScreenOptions(route.params.updatedItem?.name ?? route.params.item.name, { headerBackTitle: t('screens.foods', { defaultValue: 'Foods' }) })}
+            options={({ route }) => createStackScreenOptions(route.params.updatedItem?.name ?? route.params.item.name, { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealDetail"
             component={SafeMealDetail}
-            options={createStackScreenOptions(t('screens.meal', { defaultValue: 'Meal' }), { headerBackTitle: t('screens.meals', { defaultValue: 'Meals' }) })}
+            options={createStackScreenOptions(t('screens.meal', { defaultValue: 'Meal' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ExerciseDetail"
             component={SafeExerciseDetail}
             options={({ route }) => createStackScreenOptions(route.params.updatedItem?.name ?? route.params.item.name, {
-              headerBackTitle: t('screens.exercises', { defaultValue: 'Exercises' }),
+              headerBackButtonDisplayMode: 'minimal',
               // iOS 26 defaults the pop gesture to full-screen swipes; keep it
               // edge-only here so interior right-swipes switch tabs instead of
               // navigating back.
@@ -471,7 +476,7 @@ function AppContent() {
           <Stack.Screen
             name="EditBarcode"
             component={SafeEditBarcode}
-            options={createStackScreenOptions(t('screens.barcodes', { defaultValue: 'Barcodes' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.barcodes', { defaultValue: 'Barcodes' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ExerciseForm"
@@ -540,17 +545,17 @@ function AppContent() {
           <Stack.Screen
             name="FoodEntryView"
             component={SafeFoodEntryView}
-            options={({ route }) => createStackScreenOptions(route.params.entry.food_name ?? t('screens.foodEntry', { defaultValue: 'Food Entry' }), { headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }) })}
+            options={({ route }) => createStackScreenOptions(route.params.entry.food_name ?? t('screens.foodEntry', { defaultValue: 'Food Entry' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="EditLoggedMeal"
             component={SafeEditLoggedMeal}
-            options={createStackScreenOptions(t('screens.editMeal', { defaultValue: 'Edit Meal' }), { headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }) })}
+            options={createStackScreenOptions(t('screens.editMeal', { defaultValue: 'Edit Meal' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealTypeDetail"
             component={SafeMealTypeDetail}
-            options={({ route }) => createStackScreenOptions(route.params.mealLabel ?? t('screens.meal', { defaultValue: 'Meal' }), { headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }) })}
+            options={({ route }) => createStackScreenOptions(route.params.mealLabel ?? t('screens.meal', { defaultValue: 'Meal' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="DailyNutritionDetails"
@@ -564,7 +569,7 @@ function AppContent() {
           <Stack.Screen
             name="NutrientTrends"
             component={SafeNutrientTrends}
-            options={createStackScreenOptions(t('screens.trends', { defaultValue: 'Trends' }), { headerBackTitle: t('navigation.details', { defaultValue: 'Details' }) })}
+            options={createStackScreenOptions(t('screens.trends', { defaultValue: 'Trends' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ExerciseSearch"
@@ -593,7 +598,7 @@ function AppContent() {
             component={SafeWorkoutDetail}
             options={({ route }) =>
               createStackScreenOptions(route.params?.session?.name ?? t('screens.workout', { defaultValue: 'Workout' }), {
-                headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }),
+                headerBackButtonDisplayMode: 'minimal',
               })
             }
           />
@@ -616,7 +621,7 @@ function AppContent() {
           <Stack.Screen
             name="ActivityDetail"
             component={SafeActivityDetail}
-            options={({ route }) => createStackScreenOptions(route.params.session.name ?? t('screens.activity', { defaultValue: 'Activity' }), { headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }) })}
+            options={({ route }) => createStackScreenOptions(route.params.session.name ?? t('screens.activity', { defaultValue: 'Activity' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="FastingDetail"
@@ -629,22 +634,22 @@ function AppContent() {
           <Stack.Screen
             name="SleepDetail"
             component={SafeSleepDetail}
-            options={createStackScreenOptions(t('screens.sleep', { defaultValue: 'Sleep' }), { headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }) })}
+            options={createStackScreenOptions(t('screens.sleep', { defaultValue: 'Sleep' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Logs"
             component={SafeLogs}
-            options={createStackScreenOptions(t('screens.logs', { defaultValue: 'Logs' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.logs', { defaultValue: 'Logs' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Sync"
             component={SafeSync}
-            options={createStackScreenOptions(t('screens.healthSync', { defaultValue: 'Health Sync' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.healthSync', { defaultValue: 'Health Sync' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ImportHistory"
             component={SafeImportHistory}
-            options={createStackScreenOptions(t('screens.importHistory', { defaultValue: 'Import History' }), { headerBackTitle: t('screens.healthSync', { defaultValue: 'Health Sync' }) })}
+            options={createStackScreenOptions(t('screens.importHistory', { defaultValue: 'Import History' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MeasurementsAdd"
@@ -670,74 +675,99 @@ function AppContent() {
             options={createStackScreenOptions(t('screens.progressPhotoTimelapse', { defaultValue: 'Time-lapse' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
+            name="Profile"
+            component={SafeProfile}
+            options={createStackScreenOptions(t('profile.title', { defaultValue: 'Profile' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="ProfileGoals"
+            component={SafeProfileGoals}
+            options={createStackScreenOptions(t('profile.goals', { defaultValue: 'Goals' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="ProfileEdit"
+            component={SafeProfileEdit}
+            options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="ProfileTheme"
+            component={SafeProfileTheme}
+            options={createStackScreenOptions(t('settings.theme.title', { defaultValue: 'Theme' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="ProfilePremium"
+            component={SafeProfilePremium}
+            options={createStackScreenOptions(t('profile.paywallTitle', { defaultValue: 'More with Premium' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
             name="CalorieSettings"
             component={SafeCalorieSettings}
-            options={createStackScreenOptions(t('screens.calorieSettings', { defaultValue: 'Calorie Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.calorieSettings', { defaultValue: 'Calorie Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="FoodSettings"
             component={SafeFoodSettings}
-            options={createStackScreenOptions(t('screens.foodSettings', { defaultValue: 'Food Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.foodSettings', { defaultValue: 'Food Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealTypeSettings"
             component={SafeMealTypeSettings}
-            options={createStackScreenOptions(t('screens.mealTypes', { defaultValue: 'Meal Types' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.mealTypes', { defaultValue: 'Meal Types' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="DashboardSettings"
             component={SafeDashboardSettings}
-            options={createStackScreenOptions(t('screens.dashboardSettings', { defaultValue: 'Dashboard Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.dashboardSettings', { defaultValue: 'Dashboard Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="HealthTrendsSettings"
             component={SafeHealthTrendsSettings}
-            options={createStackScreenOptions(t('screens.healthTrendsSettings', { defaultValue: 'Health Trends' }), { headerBackTitle: t('screens.dashboardSettings', { defaultValue: 'Dashboard Settings' }) })}
+            options={createStackScreenOptions(t('screens.healthTrendsSettings', { defaultValue: 'Health Trends' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="DiarySettings"
             component={SafeDiarySettings}
-            options={createStackScreenOptions(t('screens.diarySettings', { defaultValue: 'Diary Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.diarySettings', { defaultValue: 'Diary Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutSettings"
             component={SafeWorkoutSettings}
-            options={createStackScreenOptions(t('screens.workoutSettings', { defaultValue: 'Workout Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.workoutSettings', { defaultValue: 'Workout Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ServerSettings"
             component={SafeServerSettings}
-            options={createStackScreenOptions(t('screens.serverSettings', { defaultValue: 'Server Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.serverSettings', { defaultValue: 'Server Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="PasskeySettings"
             component={SafePasskeySettings}
-            options={createStackScreenOptions(t('screens.passkeys', { defaultValue: 'Passkeys' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.passkeys', { defaultValue: 'Passkeys' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="AppSettings"
             component={SafeAppSettings}
-            options={createStackScreenOptions(t('settings.app', { defaultValue: 'App Settings' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('settings.app', { defaultValue: 'App Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="NotificationSettings"
             component={SafeNotificationSettings}
-            options={createStackScreenOptions(t('notifications.title', { defaultValue: 'Notifications' }), { headerBackTitle: t('settings.app', { defaultValue: 'App Settings' }) })}
+            options={createStackScreenOptions(t('notifications.title', { defaultValue: 'Notifications' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="About"
             component={SafeAbout}
-            options={createStackScreenOptions(t('screens.about', { defaultValue: 'About' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.about', { defaultValue: 'About' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WhatsNew"
             component={SafeWhatsNew}
-            options={createStackScreenOptions(t('screens.whatsNew', { defaultValue: "What's New" }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.whatsNew', { defaultValue: "What's New" }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="CycleSettings"
             component={SafeCycleSettings}
-            options={createStackScreenOptions(t('screens.cyclePregnancy', { defaultValue: 'Cycle & Pregnancy' }), { headerBackTitle: t('navigation.settings', { defaultValue: 'Settings' }) })}
+            options={createStackScreenOptions(t('screens.cyclePregnancy', { defaultValue: 'Cycle & Pregnancy' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="CycleOnboarding"
@@ -751,7 +781,7 @@ function AppContent() {
           <Stack.Screen
             name="CycleHub"
             component={SafeCycleHub}
-            options={createStackScreenOptions(t('screens.wellnessHub', { defaultValue: 'Wellness Hub' }), { headerBackTitle: t('navigation.dashboard', { defaultValue: 'Dashboard' }) })}
+            options={createStackScreenOptions(t('screens.wellnessHub', { defaultValue: 'Wellness Hub' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="CycleLogModal"
@@ -779,7 +809,7 @@ function AppContent() {
           <Stack.Screen
             name="MedicationDetail"
             component={SafeMedicationDetail}
-            options={createStackScreenOptions(t('screens.medication', { defaultValue: 'Medication' }), { headerBackTitle: t('screens.medications', { defaultValue: 'Medications' }) })}
+            options={createStackScreenOptions(t('screens.medication', { defaultValue: 'Medication' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MedicationForm"

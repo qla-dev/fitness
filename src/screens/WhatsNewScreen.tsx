@@ -213,7 +213,7 @@ const LiquidGlassMockup: React.FC = () => {
     },
     {
       name: 'settings',
-      label: t('navigation.settings', { defaultValue: 'Settings' }),
+      label: t('profile.title', { defaultValue: 'Profile' }),
     },
   ];
 

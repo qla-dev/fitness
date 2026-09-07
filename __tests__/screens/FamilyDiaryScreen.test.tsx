@@ -64,7 +64,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));
 
-jest.mock('../../src/components/DateNavigator', () => {
+jest.mock('../../src/components/TabHeader', () => {
   const { Pressable, Text, View } = require('react-native');
   return ({
     title,

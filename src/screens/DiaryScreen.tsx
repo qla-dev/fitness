@@ -26,7 +26,7 @@ import CalendarSheet, {
   type CalendarSheetRef,
 } from '../components/CalendarSheet';
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
-import DateNavigator from '../components/DateNavigator';
+import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import EmptyDayIllustration from '../components/EmptyDayIllustration';
 import ExerciseSummary from '../components/ExerciseSummary';
@@ -68,6 +68,7 @@ import {
   getMealTypeDisplayLabel,
 } from '../utils/mealNutrition';
 import {
+  createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
 } from '../utils/nativeHeaderDatePicker';
@@ -148,33 +149,35 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
       navigation as unknown as NativeHeaderDatePickerNavigation,
       {
         selectedDate,
-        onPreviousDate: goToPreviousDay,
         onDatePress: openCalendar,
-        onNextDate: goToNextDay,
         tintColor: nativeHeaderActionColor,
         accessibilityLabel: t('diary.chooseDate', {
           defaultValue: 'Choose diary date',
         }),
-        previousDayLabel: t('common.previousDay', {
-          defaultValue: ': previous day',
-        }),
-        nextDayLabel: t('common.nextDay', { defaultValue: ': next day' }),
         dateLabel: `${formatDateLabel(selectedDate, t, dateLocale)} ▾`,
         t,
         locale: dateLocale,
-        leadingAction: hasFamilyDiaries
-          ? {
-              sfSymbol: 'person.2.fill',
-              onPress: openFamilyDiaries,
-              accessibilityLabel: familyDiariesAccessibilityLabel,
-              identifier: 'family-diaries',
-            }
-          : undefined,
+        // Family diaries first, then the profile button, so profile stays in
+        // the corner position it occupies on every other tab.
+        trailingActions: [
+          ...(hasFamilyDiaries
+            ? [
+                {
+                  sfSymbol: 'person.2.fill',
+                  onPress: openFamilyDiaries,
+                  accessibilityLabel: familyDiariesAccessibilityLabel,
+                  identifier: 'family-diaries',
+                },
+              ]
+            : []),
+          createNativeProfileAction(
+            () => navigation.navigate('Profile'),
+            t('profile.title', { defaultValue: 'Profile' })
+          ),
+        ],
       }
     );
   }, [
-    goToNextDay,
-    goToPreviousDay,
     nativeHeaderActionColor,
     navigation,
     openFamilyDiaries,
@@ -376,7 +379,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           })}
           action={{
             label: t('diary.goToSettings', { defaultValue: 'Go to Settings' }),
-            onPress: () => navigation.navigate('Settings'),
+            onPress: () => navigation.navigate('Profile'),
             variant: 'primary',
           }}
         />
@@ -428,7 +431,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
-          paddingBottom: 80 + activeWorkoutBarPadding,
+          paddingBottom: 16 + activeWorkoutBarPadding,
         }}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -571,14 +574,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const content = (
     <>
       {!isConnectionLoading && isConnected ? (
-        <DateNavigator
+        <TabHeader
           title={t('diary.title', { defaultValue: 'Diary' })}
           selectedDate={selectedDate}
-          onPreviousDay={goToPreviousDay}
-          onNextDay={goToNextDay}
-          onToday={goToToday}
           onDatePress={openCalendar}
-          showDateAlways
+          onProfilePress={() => navigation.navigate('Profile')}
           action={
             hasFamilyDiaries
               ? {

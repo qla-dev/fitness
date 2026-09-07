@@ -168,14 +168,14 @@ describe('OnboardingScreen', () => {
       });
     });
 
-    test('Later navigates to Settings', async () => {
+    test('Later navigates into the tabs', async () => {
       const { getByText } = renderScreen();
 
       await act(async () => {
         fireEvent.press(getByText('Later'));
       });
 
-      expect(mockReplace).toHaveBeenCalledWith('Tabs', { screen: 'Settings' });
+      expect(mockReplace).toHaveBeenCalledWith('Tabs', { screen: 'Dashboard' });
     });
 
     test('settings-fetch timeout skips the reachability fallback', async () => {
@@ -249,7 +249,7 @@ describe('OnboardingScreen', () => {
       ).toBe('https://example.com');
     });
 
-    test('Later on page 2 navigates to Settings', async () => {
+    test('Later on page 2 navigates into the tabs', async () => {
       const result = renderScreen();
       await goToPage2(result);
 
@@ -257,7 +257,7 @@ describe('OnboardingScreen', () => {
         fireEvent.press(result.getByText('Later'));
       });
 
-      expect(mockReplace).toHaveBeenCalledWith('Tabs', { screen: 'Settings' });
+      expect(mockReplace).toHaveBeenCalledWith('Tabs', { screen: 'Dashboard' });
     });
 
     test('Connect with API key saves config and finishes', async () => {

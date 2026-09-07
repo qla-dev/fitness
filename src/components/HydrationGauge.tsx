@@ -1,3 +1,4 @@
+import DashboardCardTitle from './DashboardCardTitle';
 import React, { useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable } from 'react-native';
@@ -140,9 +141,9 @@ const HydrationGauge: React.FC<HydrationGaugeProps> = ({
 
   return (
     <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
-      <Text className="text-md font-bold text-text-secondary mb-3">
+      <DashboardCardTitle className="mb-3">
         {t('dashboard.hydration', { defaultValue: 'Hydration' })}
-      </Text>
+      </DashboardCardTitle>
       <View className="flex-row items-center">
         <View className="flex-row items-center mr-4">
           {showButtons && (

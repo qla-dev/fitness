@@ -41,6 +41,8 @@ const mockNavigation = {
   navigate: jest.fn(),
   goBack: jest.fn(),
   setOptions: jest.fn(),
+  // The screen is a Library drill-in here, so it has somewhere to go back to.
+  canGoBack: jest.fn(() => true),
 } as any;
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -198,9 +200,7 @@ describe('ExercisesLibraryScreen', () => {
 
     expect(screen.getByText('No server configured')).toBeTruthy();
     fireEvent.press(screen.getByText('Go to Settings'));
-    expect(navigation.navigate).toHaveBeenCalledWith('Tabs', {
-      screen: 'Settings',
-    });
+    expect(navigation.navigate).toHaveBeenCalledWith('Profile');
   });
 
   it('renders an error state with a working Retry button', () => {

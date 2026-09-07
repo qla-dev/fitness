@@ -18,7 +18,7 @@ const TAB_ICONS: Record<string, IconName> = {
   Dashboard: 'tab-dashboard',
   Diary: 'book',
   Library: 'tab-library',
-  Settings: 'settings',
+  Exercises: 'exercise-weights',
 };
 
 const CustomTabBar: React.FC<BottomTabBarProps> = ({

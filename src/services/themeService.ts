@@ -6,17 +6,43 @@ import { addLog } from './LogService';
 
 const THEME_KEY = '@HealthConnect:appTheme';
 
-export type ThemePreference = 'System' | 'Light' | 'Dark' | 'Amoled';
+/**
+ * There is exactly one dark appearance. It is called Dark everywhere the user
+ * can see it, and the Uniwind `dark` theme it maps to carries the true-black
+ * AMOLED palette, so the OS dark appearance under `System` renders the same
+ * colors as picking Dark by hand.
+ */
+export type ThemePreference = 'System' | 'Light' | 'Dark';
+
+/**
+ * Reads a stored preference, folding away the retired separate `Amoled`
+ * choice. Anyone who had picked either dark option before the two were merged
+ * lands on the one that remains rather than silently falling back to System.
+ */
+function normalizePreference(saved: string | null): ThemePreference {
+  switch (saved) {
+    case 'Light':
+      return 'Light';
+    case 'Dark':
+    case 'Amoled':
+      return 'Dark';
+    default:
+      return 'System';
+  }
+}
 
 /**
  * Convert user-facing theme preference to Uniwind theme string
  */
-function toUniwindTheme(
-  pref: ThemePreference
-): 'system' | 'light' | 'dark' | 'amoled' {
-  return pref === 'System'
-    ? 'system'
-    : (pref.toLowerCase() as 'light' | 'dark' | 'amoled');
+function toUniwindTheme(pref: ThemePreference): 'system' | 'light' | 'dark' {
+  switch (pref) {
+    case 'Light':
+      return 'light';
+    case 'Dark':
+      return 'dark';
+    default:
+      return 'system';
+  }
 }
 
 /**
@@ -32,8 +58,6 @@ function fromUniwindTheme(
       return 'Light';
     case 'dark':
       return 'Dark';
-    case 'amoled':
-      return 'Amoled';
     default:
       return 'System';
   }
@@ -46,8 +70,7 @@ function fromUniwindTheme(
 export async function initializeTheme(): Promise<void> {
   try {
     const savedTheme = await AsyncStorage.getItem(THEME_KEY);
-    const preference = savedTheme ? (savedTheme as ThemePreference) : 'System';
-    Uniwind.setTheme(toUniwindTheme(preference));
+    Uniwind.setTheme(toUniwindTheme(normalizePreference(savedTheme)));
   } catch (error) {
     addLog(
       `Failed to load theme preference: ${getErrorMessage(error)}`,
@@ -76,7 +99,7 @@ export async function setThemePreference(
 
 /**
  * Hook to get the current theme preference for UI display.
- * Returns the user-facing preference (System/Light/Dark/Amoled).
+ * Returns the user-facing preference (System/Light/Dark).
  */
 export function useThemePreference(): ThemePreference {
   const { theme, hasAdaptiveThemes } = useUniwind();
@@ -86,7 +109,7 @@ export function useThemePreference(): ThemePreference {
     // Load saved preference to get accurate user selection
     AsyncStorage.getItem(THEME_KEY).then((saved) => {
       if (saved) {
-        setPreference(saved as ThemePreference);
+        setPreference(normalizePreference(saved));
       } else {
         setPreference(fromUniwindTheme(theme, hasAdaptiveThemes));
       }

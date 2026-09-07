@@ -22,7 +22,7 @@ export const sheetContainer =
  */
 export function useSheetBackdrop() {
   const { theme } = useUniwind();
-  const isDarkMode = theme === 'dark' || theme === 'amoled';
+  const isDarkMode = theme === 'dark';
 
   return useCallback(
     (props: BottomSheetBackdropProps) => (

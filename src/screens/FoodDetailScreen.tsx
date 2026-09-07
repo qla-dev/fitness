@@ -395,7 +395,7 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
           })}
           action={{
             label: t('common.goToSettings', { defaultValue: 'Go to Settings' }),
-            onPress: () => navigation.navigate('Tabs', { screen: 'Settings' }),
+            onPress: () => navigation.navigate('Profile'),
             variant: 'primary',
           }}
         />

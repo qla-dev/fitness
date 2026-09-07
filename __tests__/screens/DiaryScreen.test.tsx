@@ -3,7 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { RefreshControl } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import DiaryScreen from '../../src/screens/DiaryScreen';
-import type DateNavigatorComponent from '../../src/components/DateNavigator';
+import type TabHeaderComponent from '../../src/components/TabHeader';
 import {
   useDailySummary,
   useCustomNutrients,
@@ -24,7 +24,7 @@ import type { FoodEntry } from '../../src/types/foodEntries';
 import { buildSleepEntry } from '../helpers/sleepFixtures';
 
 type DiaryScreenProps = React.ComponentProps<typeof DiaryScreen>;
-type DateNavigatorProps = React.ComponentProps<typeof DateNavigatorComponent>;
+type TabHeaderProps = React.ComponentProps<typeof TabHeaderComponent>;
 
 const mockNavigation = {
   setOptions: jest.fn(),
@@ -130,6 +130,15 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
 
 jest.mock('../../src/utils/nativeHeaderDatePicker', () => ({
   setNativeHeaderDatePickerOptions: jest.fn(),
+  createNativeProfileAction: (
+    onPress: () => void,
+    accessibilityLabel: string
+  ) => ({
+    sfSymbol: 'person.crop.circle',
+    onPress,
+    accessibilityLabel,
+    identifier: 'tab-header-profile',
+  }),
 }));
 
 jest.mock('../../src/stores/activeWorkoutStore', () => ({
@@ -154,12 +163,12 @@ jest.mock('../../src/components/ServingAdjustSheet', () => {
   return { __esModule: true, default: () => <View testID="serving-sheet" /> };
 });
 
-jest.mock('../../src/components/DateNavigator', () => {
+jest.mock('../../src/components/TabHeader', () => {
   const { Pressable, Text, View } = require('react-native');
   return {
     __esModule: true,
-    default: ({ title, action }: DateNavigatorProps) => (
-      <View testID="date-navigator">
+    default: ({ title, action }: TabHeaderProps) => (
+      <View testID="tab-header">
         <Text>{title}</Text>
         {action ? (
           <Pressable
@@ -519,7 +528,7 @@ describe('DiaryScreen custom queries', () => {
       '2024-06-16',
       expect.objectContaining({ enabled: true })
     );
-    expect(getByTestId('date-navigator')).toBeTruthy();
+    expect(getByTestId('tab-header')).toBeTruthy();
   });
 
   test('Test G — a failing custom refetch does not block the other refetches nor throw', async () => {
@@ -557,7 +566,7 @@ describe('DiaryScreen custom queries', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('FamilyMembers');
   });
 
-  test('opens family diaries from the native leading header action', () => {
+  test('opens family diaries from the native trailing header action', () => {
     mockUseNativeIOSTabsActive.mockReturnValue(true);
 
     renderScreen();
@@ -566,13 +575,15 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    expect(options?.leadingAction).toEqual(
+    // Family diaries first, then the profile button every tab header carries.
+    expect(options?.trailingActions).toEqual([
       expect.objectContaining({
         sfSymbol: 'person.2.fill',
         accessibilityLabel: 'Open family diaries',
-      })
-    );
-    options?.leadingAction?.onPress();
+      }),
+      expect.objectContaining({ identifier: 'tab-header-profile' }),
+    ]);
+    options?.trailingActions?.[0]?.onPress();
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('FamilyMembers');
   });
@@ -587,7 +598,10 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    expect(options?.leadingAction).toBeUndefined();
+    // Only the profile button is left when no diary is shared.
+    expect(options?.trailingActions).toEqual([
+      expect.objectContaining({ identifier: 'tab-header-profile' }),
+    ]);
   });
 
   test('hides the custom family diaries action when no diary is shared', () => {
@@ -608,7 +622,10 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    expect(options?.leadingAction).toBeUndefined();
+    // Only the profile button is left when no diary is shared.
+    expect(options?.trailingActions).toEqual([
+      expect.objectContaining({ identifier: 'tab-header-profile' }),
+    ]);
   });
 });
 

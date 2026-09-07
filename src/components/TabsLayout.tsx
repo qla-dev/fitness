@@ -5,11 +5,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useCSSVariable } from 'uniwind';
-import { createIOSNativeHeaderOptions } from '../utils/nativeHeaderItems';
+import {
+  createIOSNativeHeaderOptions,
+  createIOSSmallNativeHeaderOptions,
+} from '../utils/nativeHeaderItems';
 import DashboardScreen from '../screens/DashboardScreen';
 import DiaryScreen from '../screens/DiaryScreen';
 import LibraryScreen from '../screens/LibraryScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import ExercisesLibraryScreen from '../screens/ExercisesLibraryScreen';
 import type { TabParamList } from '../types/navigation';
 import {
   useBottomTabBarHeight,
@@ -33,7 +36,7 @@ export const NON_ADD_TABS = [
   'Dashboard',
   'Diary',
   'Library',
-  'Settings',
+  'Exercises',
 ] as const;
 export type NonAddTabName = (typeof NON_ADD_TABS)[number];
 const ADD_TAB_ICON: AppleIcon = { sfSymbol: 'plus' };
@@ -71,7 +74,7 @@ const AddRedirectScreen = ({
 const SafeDashboard = withErrorBoundary(DashboardScreen, 'Dashboard');
 const SafeDiary = withErrorBoundary(DiaryScreen, 'Diary');
 const SafeLibrary = withErrorBoundary(LibraryScreen, 'Library');
-const SafeSettings = withErrorBoundary(SettingsScreen, 'Settings');
+const SafeExercises = withErrorBoundary(ExercisesLibraryScreen, 'Exercises');
 
 // Native iOS Tab Navigator (iOS 26+ Liquid Glass)
 const NativeTab = createNativeBottomTabNavigator<TabParamList>();
@@ -86,12 +89,12 @@ type DiaryStackParamList = {
   DiaryRoot: { selectedDate?: string } | undefined;
 };
 type LibraryStackParamList = { LibraryRoot: undefined };
-type SettingsStackParamList = { SettingsRoot: undefined };
+type ExercisesStackParamList = { ExercisesRoot: undefined };
 
 const DashboardStack = createNativeStackNavigator<DashboardStackParamList>();
 const DiaryStack = createNativeStackNavigator<DiaryStackParamList>();
 const LibraryStack = createNativeStackNavigator<LibraryStackParamList>();
-const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
 
 const NativeTabsOverlayContext = React.createContext<ReturnType<
   typeof useWhatsNewBannerState
@@ -144,9 +147,7 @@ function DashboardStackScreen() {
           component={SafeDashboard as React.ComponentType}
           options={{
             title: t('navigation.dashboard', { defaultValue: 'Dashboard' }),
-            headerBackTitle: t('navigation.dashboard', {
-              defaultValue: 'Dashboard',
-            }),
+            headerBackButtonDisplayMode: 'minimal',
           }}
         />
       </DashboardStack.Navigator>
@@ -172,7 +173,7 @@ function DiaryStackScreen() {
           component={SafeDiary as React.ComponentType}
           options={{
             title: t('navigation.diary', { defaultValue: 'Diary' }),
-            headerBackTitle: t('navigation.diary', { defaultValue: 'Diary' }),
+            headerBackButtonDisplayMode: 'minimal',
           }}
         />
       </DiaryStack.Navigator>
@@ -198,9 +199,7 @@ function LibraryStackScreen() {
           component={SafeLibrary as React.ComponentType}
           options={{
             title: t('navigation.library', { defaultValue: 'Library' }),
-            headerBackTitle: t('navigation.library', {
-              defaultValue: 'Library',
-            }),
+            headerBackButtonDisplayMode: 'minimal',
           }}
         />
       </LibraryStack.Navigator>
@@ -209,29 +208,33 @@ function LibraryStackScreen() {
   );
 }
 
-function SettingsStackScreen() {
+function ExercisesStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
   const textPrimary = useCSSVariable('--color-text-primary') as string;
+  // A small (non-large) title, unlike the other tabs. A large title needs the
+  // scrolling content to opt into iOS inset adjustment, and this screen pins a
+  // search bar above its list, outside the scroll view — under a large title
+  // that bar renders at the very top of the screen, above the header. The
+  // small header pushes content down instead, so the tab lays out exactly like
+  // the same screen pushed from the Library.
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
+    () => createIOSSmallNativeHeaderOptions(defaultColor, textPrimary),
     [defaultColor, textPrimary]
   );
 
   return (
     <View className="flex-1">
-      <SettingsStack.Navigator screenOptions={screenOptions}>
-        <SettingsStack.Screen
-          name="SettingsRoot"
-          component={SafeSettings as React.ComponentType}
+      <ExercisesStack.Navigator screenOptions={screenOptions}>
+        <ExercisesStack.Screen
+          name="ExercisesRoot"
+          component={SafeExercises as React.ComponentType}
           options={{
-            title: t('navigation.settings', { defaultValue: 'Settings' }),
-            headerBackTitle: t('navigation.settings', {
-              defaultValue: 'Settings',
-            }),
+            title: t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
+            headerBackButtonDisplayMode: 'minimal',
           }}
         />
-      </SettingsStack.Navigator>
+      </ExercisesStack.Navigator>
       <NativeTabsBannerOverlay />
     </View>
   );
@@ -320,12 +323,16 @@ export function NativeTabsLayout({
           }}
         />
         <NativeTab.Screen
-          name="Settings"
-          component={SettingsStackScreen}
+          name="Exercises"
+          component={ExercisesStackScreen}
           options={{
-            tabBarLabel: t('navigation.settings', { defaultValue: 'Settings' }),
+            tabBarLabel: t('exerciseLibrary.title', {
+              defaultValue: 'Exercises',
+            }),
             tabBarIcon: () =>
-              ({ sfSymbol: 'gearshape.fill' }) as unknown as AppleIcon,
+              ({
+                sfSymbol: 'figure.strengthtraining.traditional',
+              }) as unknown as AppleIcon,
           }}
         />
       </NativeTab.Navigator>
@@ -413,12 +420,14 @@ export function FallbackTabsLayout({
         }}
       />
       <FallbackTab.Screen
-        name="Settings"
-        component={SafeSettings}
+        name="Exercises"
+        component={SafeExercises as React.ComponentType}
         options={{
-          tabBarLabel: t('navigation.settings', { defaultValue: 'Settings' }),
-          tabBarAccessibilityLabel: t('navigation.settings', {
-            defaultValue: 'Settings',
+          tabBarLabel: t('exerciseLibrary.title', {
+            defaultValue: 'Exercises',
+          }),
+          tabBarAccessibilityLabel: t('exerciseLibrary.title', {
+            defaultValue: 'Exercises',
           }),
         }}
       />

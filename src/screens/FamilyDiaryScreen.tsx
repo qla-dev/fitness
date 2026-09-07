@@ -7,7 +7,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import CalendarSheet, {
   type CalendarSheetRef,
 } from '../components/CalendarSheet';
-import DateNavigator from '../components/DateNavigator';
+import TabHeader from '../components/TabHeader';
 import Icon from '../components/Icon';
 import StatusView from '../components/StatusView';
 import Button from '../components/ui/Button';
@@ -177,40 +177,31 @@ const FamilyDiaryScreen: React.FC<FamilyDiaryScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <DateNavigator
+      <TabHeader
         title={t('familyDiary.diary', { defaultValue: 'Family diary' })}
         selectedDate={selectedDate}
+        onDatePress={() => calendarRef.current?.present()}
         onPreviousDay={() => setSelectedDate((date) => addDays(date, -1))}
         onNextDay={() => setSelectedDate((date) => addDays(date, 1))}
-        onToday={() => setSelectedDate(getTodayDate())}
-        onDatePress={() => calendarRef.current?.present()}
+        skipTopInset
         dateControls={{
-          previousDayLabel: t('familyDiary.previousDay', {
-            defaultValue: 'Previous day',
-          }),
-          previousDayHint: t('familyDiary.previousDayHint', {
-            defaultValue: 'Shows the previous day',
-          }),
-          nextDayLabel: t('familyDiary.nextDay', {
-            defaultValue: 'Next day',
-          }),
-          nextDayHint: t('familyDiary.nextDayHint', {
-            defaultValue: 'Shows the next day',
-          }),
           chooseDateLabel: t('familyDiary.chooseDate', {
             defaultValue: 'Choose date',
           }),
           chooseDateHint: t('familyDiary.chooseDateHint', {
             defaultValue: 'Opens the date picker',
           }),
-          goToTodayLabel: t('familyDiary.goToToday', {
-            defaultValue: 'Go to today',
+          previousDayLabel: t('familyDiary.previousDay', {
+            defaultValue: 'Previous day',
           }),
-          goToTodayHint: t('familyDiary.goToTodayHint', {
-            defaultValue: 'Returns to today',
+          previousDayHint: t('familyDiary.previousDayHint', {
+            defaultValue: 'Shows the previous day',
+          }),
+          nextDayLabel: t('familyDiary.nextDay', { defaultValue: 'Next day' }),
+          nextDayHint: t('familyDiary.nextDayHint', {
+            defaultValue: 'Shows the next day',
           }),
         }}
-        skipTopInset
       />
       {content}
       <CalendarSheet

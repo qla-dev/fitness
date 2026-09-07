@@ -78,6 +78,8 @@ const ICON_MAP = {
   wrench: { sf: 'wrench', ion: 'build-outline' },
   globe: { sf: 'globe', ion: 'globe-outline' },
   people: { sf: 'person.2.fill', ion: 'people' },
+  profile: { sf: 'person.crop.circle', ion: 'person-circle-outline' },
+  notifications: { sf: 'bell', ion: 'notifications-outline' },
   wifi: { sf: 'wifi', ion: 'wifi-outline' },
 
   // Food
@@ -142,6 +144,9 @@ const ICON_MAP = {
   'diary-settings': { sf: 'book', ion: 'book-outline' },
   'workout-settings': { sf: 'dumbbell', ion: 'barbell-outline' },
   'app-settings': { sf: 'slider.horizontal.3', ion: 'options-outline' },
+  'theme-light': { sf: 'sun.max', ion: 'sunny-outline' },
+  'theme-dark': { sf: 'moon', ion: 'moon-outline' },
+  'theme-system': { sf: 'iphone', ion: 'phone-portrait-outline' },
   logs: { sf: 'doc.plaintext', ion: 'document-text-outline' },
   about: { sf: 'info.circle', ion: 'information-circle-outline' },
   'whats-new': { sf: 'gift', ion: 'gift-outline' },

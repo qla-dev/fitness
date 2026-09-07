@@ -31,12 +31,9 @@ export const SettingsRowGroup: React.FC<SettingsRowGroupProps> = ({
   const items = React.Children.toArray(children).filter(Boolean);
   return (
     <SettingsRowGroupContext.Provider value={{ grouped: true }}>
-      <View
-        className={`bg-surface rounded-xl mb-4 shadow-sm ${className}`}
-        style={style}
-      >
+      <View className={`mb-4 ${className}`} style={style}>
         {title && (
-          <View className="px-4 pt-3 pb-1">
+          <View className="px-4 pb-2">
             <Text className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {title}
             </Text>
@@ -49,12 +46,16 @@ export const SettingsRowGroup: React.FC<SettingsRowGroupProps> = ({
             ) : null}
           </View>
         )}
-        {items.map((child, i) => (
-          <React.Fragment key={i}>
-            {child}
-            {i < items.length - 1 && <View className="h-px bg-border-subtle" />}
-          </React.Fragment>
-        ))}
+        <View className="bg-surface rounded-2xl overflow-hidden">
+          {items.map((child, i) => (
+            <React.Fragment key={i}>
+              {child}
+              {i < items.length - 1 && (
+                <View className="h-px bg-border-subtle" />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
       </View>
     </SettingsRowGroupContext.Provider>
   );
@@ -91,16 +92,17 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   testID,
 }) => {
   const { grouped } = useContext(SettingsRowGroupContext);
-  const [textSecondary] = useCSSVariable(['--color-text-secondary']) as [
-    string,
-  ];
+  const [textSecondary, raised] = useCSSVariable([
+    '--color-text-secondary',
+    '--color-raised',
+  ]) as [string, string];
 
   const wrapperClass = grouped
     ? 'p-4 flex-row items-center'
-    : 'bg-surface rounded-xl p-4 mb-4 shadow-sm flex-row items-center';
+    : 'bg-surface rounded-2xl p-4 mb-4 flex-row items-center';
 
   const tintColor = iconColor ?? textSecondary;
-  const tileBg = iconBackgroundColor ?? 'transparent';
+  const tileBg = iconBackgroundColor ?? raised;
 
   const content = (
     <>
@@ -124,7 +126,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
           <Text
             className="text-sm text-text-secondary mt-0.5"
             numberOfLines={subtitleNumberOfLines}
-            ellipsizeMode="middle"
+            ellipsizeMode="tail"
           >
             {subtitle}
           </Text>

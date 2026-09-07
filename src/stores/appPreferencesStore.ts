@@ -51,6 +51,7 @@ export const PREFERENCE_DEFAULTS = {
   medicationReminderHideNames: false,
   liquidGlassTabBarEnabled: false,
   activeWorkoutMetricColumn: 'rpe' as ActiveWorkoutMetricColumn,
+  dashboardMode: 'activity' as 'activity' | 'nutrients' | 'trends',
   diarySummaryVisible: false,
   diarySummaryExpanded: false,
   defaultRestSec: DEFAULT_REST_SEC as number,
@@ -85,6 +86,7 @@ export type AppPreferencesData = {
   medicationReminderHideNames: boolean;
   liquidGlassTabBarEnabled: boolean;
   activeWorkoutMetricColumn: ActiveWorkoutMetricColumn;
+  dashboardMode: 'activity' | 'nutrients' | 'trends';
   diarySummaryVisible: boolean;
   diarySummaryExpanded: boolean;
   defaultRestSec: number;
@@ -119,6 +121,7 @@ export interface AppPreferencesState extends AppPreferencesData {
   setMedicationReminderHideNames: (value: boolean) => void;
   setLiquidGlassTabBarEnabled: (value: boolean) => void;
   setActiveWorkoutMetricColumn: (value: ActiveWorkoutMetricColumn) => void;
+  setDashboardMode: (value: 'activity' | 'nutrients' | 'trends') => void;
   setDiarySummaryVisible: (value: boolean) => void;
   setDiarySummaryExpanded: (value: boolean) => void;
   setDefaultRestSec: (value: number) => void;
@@ -206,6 +209,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         set({ liquidGlassTabBarEnabled: value }),
       setActiveWorkoutMetricColumn: (value) =>
         set({ activeWorkoutMetricColumn: value }),
+      setDashboardMode: (value) => set({ dashboardMode: value }),
       setDiarySummaryVisible: (value) => set({ diarySummaryVisible: value }),
       setDiarySummaryExpanded: (value) => set({ diarySummaryExpanded: value }),
       setDefaultRestSec: (value) => set({ defaultRestSec: value }),
@@ -254,6 +258,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         // Older persisted blobs without these keys backfill via the default
         // shallow merge — no version bump needed.
         activeWorkoutMetricColumn: state.activeWorkoutMetricColumn,
+        dashboardMode: state.dashboardMode,
         diarySummaryVisible: state.diarySummaryVisible,
         diarySummaryExpanded: state.diarySummaryExpanded,
         defaultRestSec: state.defaultRestSec,
