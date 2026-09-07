@@ -962,7 +962,7 @@ describe('ActiveWorkoutScreen stale deep link guard', () => {
   });
 });
 
-describe('ActiveWorkoutScreen source preset server-config guard', () => {
+describe('ActiveWorkoutScreen source program server-config guard', () => {
   /** Flush the config-check promise chain into the effect's state update. */
   async function flushConfigCheck() {
     await act(async () => {
@@ -999,7 +999,7 @@ describe('ActiveWorkoutScreen source preset server-config guard', () => {
     jest.useRealTimers();
   });
 
-  it('passes sourcePresetId to the stats query when the active server matches', async () => {
+  it('passes sourceProgramId to the stats query when the active server matches', async () => {
     mockGetActiveServerConfig.mockResolvedValue({
       id: 'config-1',
       url: 'https://example.com',
@@ -1017,7 +1017,7 @@ describe('ActiveWorkoutScreen source preset server-config guard', () => {
     );
   });
 
-  it('withholds sourcePresetId when the active server no longer matches the one the workout started on', async () => {
+  it('withholds sourceProgramId when the active server no longer matches the one the workout started on', async () => {
     // Preset ids can collide across servers, so a config switched since the
     // workout started must not scope stats to a same-numbered foreign preset.
     mockGetActiveServerConfig.mockResolvedValue({
@@ -1037,7 +1037,7 @@ describe('ActiveWorkoutScreen source preset server-config guard', () => {
     );
   });
 
-  it('withholds sourcePresetId for a workout that was not started from a preset', async () => {
+  it('withholds sourceProgramId for a workout that was not started from a program', async () => {
     useActiveWorkoutStore.getState().startWorkout(makeSession());
     const { getByTestId } = renderScreen();
     await flushConfigCheck();
@@ -1048,7 +1048,7 @@ describe('ActiveWorkoutScreen source preset server-config guard', () => {
     expect(mockGetActiveServerConfig).not.toHaveBeenCalled();
   });
 
-  it('re-verifies and clears the stale presetId when the active server changes after an initial successful validation', async () => {
+  it('re-verifies and clears the stale programId when the active server changes after an initial successful validation', async () => {
     mockGetActiveServerConfig.mockResolvedValue({
       id: 'config-1',
       url: 'https://example.com',
@@ -1092,7 +1092,7 @@ describe('ActiveWorkoutScreen source preset server-config guard', () => {
     );
   });
 
-  it('leaves sourcePresetId withheld without throwing when the config lookup rejects', async () => {
+  it('leaves sourceProgramId withheld without throwing when the config lookup rejects', async () => {
     mockGetActiveServerConfig.mockRejectedValue(
       new Error('storage unavailable')
     );

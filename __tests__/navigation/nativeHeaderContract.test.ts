@@ -32,7 +32,7 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   MealAdd: 'Root-stack meal create/edit modal presented above the tab host.',
   ExerciseSearch:
     'Root-stack exercise picker modal presented above the tab host.',
-  PresetSearch: 'Root-stack preset picker route presented above the tab host.',
+  PresetSearch: 'Root-stack program picker route presented above the tab host.',
   WorkoutAdd:
     'Root-stack workout create/edit route presented above the tab host.',
   ActivityAdd:
@@ -51,8 +51,7 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   Logs: 'Root-stack settings route presented above the tab host.',
   Sync: 'Root-stack settings route presented above the tab host.',
   MeasurementsAdd: 'Root-stack measurement modal presented from the tab host.',
-  ExerciseProgram:
-    'Root-stack program detail pushed from the Exercises store.',
+  ExerciseProgram: 'Root-stack program detail pushed from the Exercises store.',
   Profile:
     'Root-stack profile route reached from the profile button every tab header carries.',
   ProfileGoals: 'Root-stack profile route presented above the tab host.',

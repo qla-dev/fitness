@@ -103,7 +103,7 @@ describe('workoutPresetsApi', () => {
       expect(result).toEqual(responseData);
     });
 
-    it('rejects when the preset is gone (404)', async () => {
+    it('rejects when the program is gone (404)', async () => {
       mockGetActiveServerConfig.mockResolvedValue(testConfig);
       mockFetch.mockResolvedValue({
         ok: false,
@@ -202,7 +202,7 @@ describe('workoutPresetsApi', () => {
       expect(url).toContain('limit=20');
     });
 
-    it('returns presets and computes hasMore=true when more pages remain', async () => {
+    it('returns programs and computes hasMore=true when more pages remain', async () => {
       mockGetActiveServerConfig.mockResolvedValue(testConfig);
       mockFetch.mockResolvedValue({
         ok: true,

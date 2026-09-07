@@ -41,7 +41,7 @@ describe('getMetabolicStage', () => {
 });
 
 describe('protocolBadgeLabel', () => {
-  test('extracts the ratio from a preset name', () => {
+  test('extracts the ratio from a program name', () => {
     expect(protocolBadgeLabel('16:8 Leangains')).toBe('16:8');
     expect(protocolBadgeLabel('18:6 Warrior')).toBe('18:6');
     expect(protocolBadgeLabel('20:4 Warrior')).toBe('20:4');
@@ -69,7 +69,7 @@ describe('FASTING_PRESETS', () => {
     expect(FASTING_PRESETS.some((p) => p.id === 'circumadian')).toBe(true);
   });
 
-  test('the default preset exists', () => {
+  test('the default program exists', () => {
     expect(FASTING_PRESETS.some((p) => p.id === DEFAULT_PRESET_ID)).toBe(true);
   });
 });

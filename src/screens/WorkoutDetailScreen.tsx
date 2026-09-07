@@ -705,7 +705,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     role: 'secondary',
     onPress: handleSaveAsPreset,
     accessibilityLabel: t('workoutDetail.accessibility.saveAsPreset', {
-      defaultValue: 'Save as preset',
+      defaultValue: 'Save as program',
     }),
     identifier: 'workout-detail-save-as-preset',
   };

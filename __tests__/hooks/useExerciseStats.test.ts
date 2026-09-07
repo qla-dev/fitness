@@ -70,7 +70,7 @@ describe('useExerciseStats', () => {
     });
   });
 
-  it('forwards excludePresetEntryId to the fetch and query key', async () => {
+  it('forwards excludeProgramEntryId to the fetch and query key', async () => {
     mockFetchStats.mockResolvedValue({
       bestSet: null,
       lastSet: null,
@@ -87,7 +87,7 @@ describe('useExerciseStats', () => {
     expect(mockFetchStats).toHaveBeenCalledWith('ex-1', 'session-1', undefined);
   });
 
-  it('forwards presetId to the fetch and query key', async () => {
+  it('forwards programId to the fetch and query key', async () => {
     mockFetchStats.mockResolvedValue({
       bestSet: null,
       lastSet: null,
@@ -105,7 +105,7 @@ describe('useExerciseStats', () => {
     expect(mockFetchStats).toHaveBeenCalledWith('ex-1', 'session-1', 42);
   });
 
-  it('treats different presetId values as distinct query keys', async () => {
+  it('treats different programId values as distinct query keys', async () => {
     mockFetchStats.mockResolvedValue({
       bestSet: null,
       lastSet: null,

@@ -40,7 +40,7 @@ export function useCreateWorkoutPreset() {
       Toast.show({
         type: 'error',
         text1: i18n.t('workoutPresetMutations.errors.create', {
-          defaultValue: 'Could not create workout preset',
+          defaultValue: 'Could not create workout program',
         }),
         text2: i18n.t('common.tryAgain', { defaultValue: 'Please try again.' }),
       });
@@ -69,13 +69,13 @@ export function useUpdateWorkoutPreset() {
     onError: (error) => {
       const message = isAuthzError(error)
         ? i18n.t('workoutPresetMutations.errors.editPermission', {
-            defaultValue: "You don't have permission to edit this preset.",
+            defaultValue: "You don't have permission to edit this program.",
           })
         : i18n.t('common.tryAgain', { defaultValue: 'Please try again.' });
       Toast.show({
         type: 'error',
         text1: i18n.t('workoutPresetMutations.errors.update', {
-          defaultValue: 'Failed to update preset',
+          defaultValue: 'Failed to update program',
         }),
         text2: message,
       });
@@ -110,13 +110,13 @@ export function useDeleteWorkoutPreset({
     onError: (error) => {
       const message = isAuthzError(error)
         ? i18n.t('workoutPresetMutations.errors.deletePermission', {
-            defaultValue: "You don't have permission to delete this preset.",
+            defaultValue: "You don't have permission to delete this program.",
           })
         : i18n.t('common.tryAgain', { defaultValue: 'Please try again.' });
       Toast.show({
         type: 'error',
         text1: i18n.t('workoutPresetMutations.errors.delete', {
-          defaultValue: 'Failed to delete preset',
+          defaultValue: 'Failed to delete program',
         }),
         text2: message,
       });
@@ -126,11 +126,11 @@ export function useDeleteWorkoutPreset({
   const confirmAndDelete = () => {
     Alert.alert(
       i18n.t('workoutPresetMutations.confirm.title', {
-        defaultValue: 'Delete Workout Preset?',
+        defaultValue: 'Delete Workout Program?',
       }),
       i18n.t('workoutPresetMutations.confirm.message', {
         defaultValue:
-          'This preset will be permanently removed from your library.',
+          'This program will be permanently removed from your library.',
       }),
       [
         {

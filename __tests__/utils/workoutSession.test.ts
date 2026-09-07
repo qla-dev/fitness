@@ -151,7 +151,7 @@ const makePreset = (overrides?: Partial<PresetSession>): PresetSession => ({
 
 describe('workoutSession', () => {
   describe('getWorkoutIcon', () => {
-    it('returns exercise-weights for preset sessions', () => {
+    it('returns exercise-weights for program sessions', () => {
       expect(getWorkoutIcon(makePreset())).toBe('exercise-weights');
     });
 
@@ -420,7 +420,7 @@ describe('workoutSession', () => {
       expect(getFirstImage(session)).toBeNull();
     });
 
-    it('returns the first image from a preset session exercises', () => {
+    it('returns the first image from a program session exercises', () => {
       const session = makePreset({
         exercises: [
           {
@@ -456,14 +456,14 @@ describe('workoutSession', () => {
       expect(getFirstImage(session)).toBe('squat.jpg');
     });
 
-    it('returns null when preset session has no exercises with images', () => {
+    it('returns null when program session has no exercises with images', () => {
       const session = makePreset({ exercises: [] });
       expect(getFirstImage(session)).toBeNull();
     });
   });
 
   describe('getSessionCalories', () => {
-    it('sums exercise calories for preset sessions', () => {
+    it('sums exercise calories for program sessions', () => {
       const session = makePreset({
         exercises: [
           {
@@ -493,14 +493,14 @@ describe('workoutSession', () => {
       expect(getSessionCalories(session)).toBe(0);
     });
 
-    it('returns 0 for preset sessions with no exercises', () => {
+    it('returns 0 for program sessions with no exercises', () => {
       const session = makePreset({ exercises: [] });
       expect(getSessionCalories(session)).toBe(0);
     });
   });
 
   describe('getWorkoutSummary', () => {
-    it('returns summary for preset session', () => {
+    it('returns summary for program session', () => {
       const session = makePreset({
         name: 'Leg Day',
         total_duration_minutes: 45,
@@ -555,7 +555,7 @@ describe('workoutSession', () => {
   });
 
   describe('buildSessionSubtitle', () => {
-    describe('preset sessions', () => {
+    describe('program sessions', () => {
       it('shows exercise count and sets', () => {
         const session = makePreset({
           exercises: [
@@ -972,7 +972,7 @@ describe('workoutSession', () => {
       });
     });
 
-    it('accumulates preset session calories and duration', () => {
+    it('accumulates program session calories and duration', () => {
       const sessions = [
         makePreset({
           total_duration_minutes: 45,
@@ -1051,7 +1051,7 @@ describe('workoutSession', () => {
       expect(stats.durationMinutes).toBe(0);
     });
 
-    it('handles mixed preset and individual sessions', () => {
+    it('handles mixed program and individual sessions', () => {
       const sessions: ExerciseSessionResponse[] = [
         makePreset({
           total_duration_minutes: 60,
@@ -2046,7 +2046,7 @@ describe('workoutSession', () => {
         ...overrides,
       });
 
-      it('maps preset fields with kg passthrough and stringified ids', () => {
+      it('maps program fields with kg passthrough and stringified ids', () => {
         const card = presetExerciseToCardExercise(presetExercise());
         expect(card.id).toBe('801');
         expect(card.superset_group).toBe(3);
@@ -3168,7 +3168,7 @@ describe('workoutSession', () => {
     });
 
     describe('buildPresetStartExercisesPayload', () => {
-      it('maps preset exercises and sets field-for-field with kg passthrough', () => {
+      it('maps program exercises and sets field-for-field with kg passthrough', () => {
         const preset = makeWorkoutPreset({
           exercises: [
             makePresetExercise({
@@ -3213,7 +3213,7 @@ describe('workoutSession', () => {
         ]);
       });
 
-      it('threads superset_group from the preset into the live-start payload', () => {
+      it('threads superset_group from the program into the live-start payload', () => {
         const preset = makeWorkoutPreset({
           exercises: [
             makePresetExercise({ superset_group: 1 }),
@@ -3260,7 +3260,7 @@ describe('workoutSession', () => {
         expect(payload[0].sets[0]).not.toHaveProperty('id');
       });
 
-      it('injects one default set for a zero-set preset exercise', () => {
+      it('injects one default set for a zero-set program exercise', () => {
         const preset = makeWorkoutPreset({
           exercises: [makePresetExercise({ sets: [] })],
         });
@@ -3283,7 +3283,7 @@ describe('workoutSession', () => {
         ]);
       });
 
-      it('returns [] for a preset with no exercises', () => {
+      it('returns [] for a program with no exercises', () => {
         expect(
           buildPresetStartExercisesPayload(makeWorkoutPreset({ exercises: [] }))
         ).toEqual([]);
@@ -5007,7 +5007,7 @@ describe('workoutSession', () => {
       return { completedSetIds, plannedSetValues: {} };
     };
 
-    it('returns null when the performed session matches the preset', () => {
+    it('returns null when the performed session matches the program', () => {
       const session = makePreset({ exercises: [makeSessionExercise()] });
       expect(
         buildPresetUpdateExercises(
@@ -5051,7 +5051,7 @@ describe('workoutSession', () => {
       ]);
     });
 
-    it('emits exercises that parse under the preset request schema', () => {
+    it('emits exercises that parse under the program request schema', () => {
       const session = makePreset({
         exercises: [
           makeSessionExercise({ sets: [makeSessionSet({ weight: 105 })] }),
@@ -5204,7 +5204,7 @@ describe('workoutSession', () => {
       expect(payload![0].superset_group).toBe(1);
     });
 
-    it('keeps the preset image for matched exercises so image churn is not a deviation', () => {
+    it('keeps the program image for matched exercises so image churn is not a deviation', () => {
       const session = makePreset({
         exercises: [
           makeSessionExercise({
@@ -5369,7 +5369,7 @@ describe('workoutSession', () => {
       expect(payload![0].sets[0].duration).toBe(75);
     });
 
-    it('coerces cardio rest to 0 on both sides so preset-null vs live-0 is not a deviation', () => {
+    it('coerces cardio rest to 0 on both sides so program-null vs live-0 is not a deviation', () => {
       const runSnapshot = {
         ...strengthSnapshot,
         name: 'Run',
@@ -5522,7 +5522,7 @@ describe('workoutSession', () => {
       ).toBeNull();
     });
 
-    it('canonicalizes an untouched fabricated set back to a zero-set preset exercise', () => {
+    it('canonicalizes an untouched fabricated set back to a zero-set program exercise', () => {
       const session = makePreset({
         exercises: [
           makeSessionExercise({
@@ -5547,7 +5547,7 @@ describe('workoutSession', () => {
       ).toBeNull();
     });
 
-    it('writes the fabricated set into a zero-set preset exercise once it was actually used', () => {
+    it('writes the fabricated set into a zero-set program exercise once it was actually used', () => {
       const session = makePreset({
         exercises: [
           makeSessionExercise({

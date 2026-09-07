@@ -347,9 +347,9 @@ describe('LibraryScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('ExercisesLibrary');
   });
 
-  it('navigates to WorkoutPresetsLibrary when the Workout presets row is pressed', () => {
+  it('navigates to WorkoutProgramsLibrary when the Workout programs row is pressed', () => {
     const screen = renderScreen();
-    fireEvent.press(screen.getByText('Workout presets'));
+    fireEvent.press(screen.getByText('Workout programs'));
     expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetsLibrary');
   });
 
@@ -363,13 +363,13 @@ describe('LibraryScreen', () => {
     const screen = renderScreen();
 
     fireEvent.press(screen.getByText('Meal'));
-    fireEvent.press(screen.getByText('Workout preset'));
+    fireEvent.press(screen.getByText('Workout program'));
 
     expect(navigation.navigate).toHaveBeenCalledTimes(1);
     expect(navigation.navigate).toHaveBeenCalledWith('MealAdd');
   });
 
-  it('shows the workout presets count from the API', async () => {
+  it('shows the workout programs count from the API', async () => {
     mockFetchWorkoutPresetsPage.mockResolvedValue({
       presets: [],
       pagination: { page: 1, pageSize: 1, totalCount: 9, hasMore: true },

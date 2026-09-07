@@ -159,7 +159,7 @@ describe('useScreenHeader custom bar title layout', () => {
     const { UNSAFE_getAllByType } = render(
       <TestScreen
         title={
-          'A very long preset name that would otherwise overflow the header bar'
+          'A very long program name that would otherwise overflow the header bar'
         }
       />
     );
@@ -172,7 +172,7 @@ describe('useScreenHeader custom bar title layout', () => {
       expect.objectContaining({ position: 'absolute', left: 16, right: 16 })
     );
     expect(titleLayer?.props.children.props.children).toBe(
-      'A very long preset name that would otherwise overflow the header bar'
+      'A very long program name that would otherwise overflow the header bar'
     );
 
     const leftContainer = views.find(

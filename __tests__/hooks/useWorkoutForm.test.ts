@@ -891,7 +891,7 @@ describe('workoutFormReducer', () => {
       ...overrides,
     });
 
-    it('populates from a preset session in kg', () => {
+    it('populates from a program session in kg', () => {
       const state = makeEmptyDraft();
       const session = makeSession();
       const result = workoutFormReducer(state, {
@@ -1649,7 +1649,7 @@ describe('workoutFormReducer', () => {
       ...overrides,
     });
 
-    it('populates from a workout preset in kg', () => {
+    it('populates from a workout program in kg', () => {
       const state = makeEmptyDraft();
       const preset = makePreset();
       const result = workoutFormReducer(state, {
@@ -1699,7 +1699,7 @@ describe('workoutFormReducer', () => {
       expect(result.entryDate).toBe('2026-03-12');
     });
 
-    it('handles null weight and reps in preset sets', () => {
+    it('handles null weight and reps in program sets', () => {
       const state = makeEmptyDraft();
       const preset = makePreset({
         exercises: [
@@ -1734,7 +1734,7 @@ describe('workoutFormReducer', () => {
       expect(result.exercises[0].sets[0].reps).toBe('');
     });
 
-    it('carries rest_time from preset sets into drafts', () => {
+    it('carries rest_time from program sets into drafts', () => {
       const state = makeEmptyDraft();
       const preset = makePreset({
         exercises: [
@@ -1847,7 +1847,7 @@ describe('workoutFormReducer', () => {
       expect(payload[0].sets[0].notes).toBe('slow tempo');
     });
 
-    it('handles preset with multiple exercises', () => {
+    it('handles program with multiple exercises', () => {
       const state = makeEmptyDraft();
       const preset = makePreset({
         exercises: [

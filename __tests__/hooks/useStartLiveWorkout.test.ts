@@ -209,7 +209,7 @@ describe('useStartLiveWorkout', () => {
     });
   });
 
-  it('forwards the source preset link with the active server config id into the store', async () => {
+  it('forwards the source program link with the active server config id into the store', async () => {
     const { result } = setup();
     mockGetActiveServerConfig.mockResolvedValue({
       id: 'config-1',
@@ -235,7 +235,7 @@ describe('useStartLiveWorkout', () => {
     );
   });
 
-  it('leaves the source preset link null for starts without a preset', async () => {
+  it('leaves the source program link null for starts without a program', async () => {
     const { result } = setup();
 
     await act(async () => {

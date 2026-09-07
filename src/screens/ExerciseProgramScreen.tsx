@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -20,6 +21,7 @@ import {
   getProgramLevelLabel,
 } from '../constants/exercisePrograms';
 import { countProgramExercises } from '../types/exerciseProgram';
+import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
 import { useProgramExerciseLookup } from '../hooks/useProgramExerciseLookup';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -48,6 +50,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
 
   const program = getProgramById(route.params.programId);
   const { resolve, resolvingName } = useProgramExerciseLookup(Boolean(program));
+  const [purchasing, setPurchasing] = useState(false);
 
   // A program stores movement names; the real exercise is looked up on tap so
   // the user lands on the same detail screen the library and search open.
@@ -164,14 +167,16 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
             <Text className="text-text-secondary text-sm mt-1">
               {program.coach}
             </Text>
-            <View
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => setPurchasing(true)}
               className="px-5 py-2 rounded-full mt-3 self-start"
               style={{ backgroundColor: accentPrimary }}
             >
               <Text className="text-accent-text text-base font-bold">
                 {t('programs.start', { defaultValue: 'Start' })}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -360,6 +365,24 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+      {purchasing && (
+        <ProgramPurchaseSheet
+          program={program}
+          onClose={() => setPurchasing(false)}
+          onInstalled={(result) => {
+            setPurchasing(false);
+            Toast.show({
+              type: 'success',
+              text1: t('programs.purchase.added', {
+                count: result.presetsCreated,
+                defaultValue: '{{count}} workouts added to Programs',
+                defaultValue_one: '{{count}} workout added to Programs',
+                defaultValue_other: '{{count}} workouts added to Programs',
+              }),
+            });
+          }}
+        />
+      )}
     </View>
   );
 };

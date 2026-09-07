@@ -392,7 +392,7 @@
     "foods": "Foods",
     "meals": "Meals",
     "exercises": "Exercises",
-    "workoutPresets": "Workout Presets",
+    "workoutPresets": "Workout Programs",
     "addFood": "Add Food",
     "newFood": "New Food",
     "editFood": "Edit Food",
@@ -400,8 +400,8 @@
     "barcodes": "Barcodes",
     "editExercise": "Edit Exercise",
     "newExercise": "New Exercise",
-    "editPreset": "Edit Preset",
-    "newPreset": "New Preset",
+    "editPreset": "Edit Program",
+    "newPreset": "New Program",
     "scanFood": "Scan Food",
     "photoFood": "Photo Food",
     "sparky": "Sparky",
@@ -452,7 +452,7 @@
       "meal": "Meal",
       "groupFoods": "Group foods",
       "exercise": "Exercise",
-      "workoutPreset": "Workout preset",
+      "workoutPreset": "Workout program",
       "exerciseRoutine": "Exercise routine",
       "browse": "Browse",
       "foods": "Foods",
@@ -460,7 +460,7 @@
       "mealPlans": "Meal plans",
       "mealPlansSubtitle": "Repeat meals on selected days",
       "exercises": "Exercises",
-      "workoutPresets": "Workout presets",
+      "workoutPresets": "Workout programs",
       "medications": "Medications",
       "recentlyLogged": "Recently Logged",
       "loadingRecentItems": "Loading recent items...",
@@ -1456,13 +1456,13 @@
     "popular": "Popular",
     "recent": "Recent",
     "exercises": "Exercises",
-    "presets": "Presets",
+    "presets": "Programs",
     "searchExercises": "Search exercises...",
-    "searchPresets": "Search presets...",
+    "searchPresets": "Search programs...",
     "search": "Search",
     "noMatchingExercises": "No matching exercises found",
-    "noMatchingPresets": "No matching presets found",
-    "noPresets": "No presets yet",
+    "noMatchingPresets": "No matching programs found",
+    "noPresets": "No programs yet",
     "emptyWorkout": "Empty workout",
     "pickFirstExercise": "Pick your first exercise",
     "startWorkout": "Start Workout",
@@ -1475,25 +1475,25 @@
     "failedSearchExercises": "Failed to search exercises",
     "failedAdd": "Failed to add exercise",
     "viewExerciseDetails": "View exercise details",
-    "failedSearchPresets": "Failed to search presets",
-    "startEmptyOrSave": "Start an empty workout, or save a workout as a preset to see it here",
+    "failedSearchPresets": "Failed to search programs",
+    "startEmptyOrSave": "Start an empty workout, or save a workout as a program to see it here",
     "changeOwnership": "Try changing your ownership filter",
-    "viewPresetDetails": "View preset details",
+    "viewPresetDetails": "View program details",
     "presetNamePlaceholder": "e.g. Push Day",
     "optionalPresetNotes": "Optional notes about this routine",
     "presetDescription": "Description",
-    "presetCreated": "Workout preset created",
-    "presetUpdated": "Workout preset updated",
-    "presetDeleted": "Workout preset deleted",
+    "presetCreated": "Workout program created",
+    "presetUpdated": "Workout program updated",
+    "presetDeleted": "Workout program deleted",
     "presetAddBeforeSave": "Add at least one exercise with a set before saving.",
     "presetMissingName": "Missing name",
-    "presetNameRequired": "Please enter a name for this preset.",
+    "presetNameRequired": "Please enter a name for this program.",
     "draftInProgress": "Draft in Progress",
     "resumeDraft": "Resume Draft",
     "discardContinue": "Discard & Continue",
-    "editPreset": "Edit workout preset",
+    "editPreset": "Edit workout program",
     "makePresetPublicTitle": "Make public?",
-    "makePresetPublicMessage": "This workout preset will become visible to all users on this server.",
+    "makePresetPublicMessage": "This workout program will become visible to all users on this server.",
     "makePresetPublic": "Make Public",
     "presetDraftMessage": "You have an unsaved {{name}} draft. What would you like to do?",
     "workoutComplete": "Workout Complete",
@@ -1501,12 +1501,12 @@
     "calculating": "Calculating",
     "volume": "Volume",
     "viewWorkout": "View Workout",
-    "saveAsPreset": "Save as Preset",
-    "keepPreset": "Keep Preset",
-    "updatePresetTitle": "Update preset?",
+    "saveAsPreset": "Save as Program",
+    "keepPreset": "Keep Program",
+    "updatePresetTitle": "Update program?",
     "updatePreset": "Update",
-    "presetUpdatedToast": "Preset updated",
-    "todayDiffers": "Today's workout differs from \"{{name}}\". Update the preset to match?",
+    "presetUpdatedToast": "Program updated",
+    "todayDiffers": "Today's workout differs from \"{{name}}\". Update the program to match?",
     "of": "of",
     "setsLabel": "Sets",
     "caloriesLabel": "Calories",
@@ -1514,13 +1514,13 @@
     "durationLabel": "Duration",
     "details": "Details",
     "name": "Name",
-    "saveAsPresetLabel": "Save as preset",
+    "saveAsPresetLabel": "Save as program",
     "startHere": "Start workout here",
     "workoutNeedsExercise": "Workout needs an exercise",
-    "presetsTitle": "Workout presets",
+    "presetsTitle": "Workout programs",
     "noServer": "No server configured",
-    "configureServer": "Configure your server connection in Settings to view your workout presets.",
-    "loadingPresets": "Loading workout presets...",
+    "configureServer": "Configure your server connection in Settings to view your workout programs.",
+    "loadingPresets": "Loading workout programs...",
     "tryConnection": "Please check your connection and try again.",
     "tryOwnership": "Try changing your ownership filter.",
     "defaultRest": "Default rest period",
@@ -1572,7 +1572,7 @@
     "repsLabel": "Reps",
     "setLabel": "Set",
     "startWorkoutHere": "Start workout here",
-    "failedLoadPresets": "Failed to load workout presets",
+    "failedLoadPresets": "Failed to load workout programs",
     "deleteActivity": "Delete Activity",
     "deleting": "Deleting...",
     "addNotesPlaceholder": "Add notes...",
@@ -1600,7 +1600,7 @@
     "loadMore": "Load More",
     "failedSearchProvider": "Failed to search {{provider}}",
     "searchProviderExercises": "Search {{provider}} for exercises",
-    "failedLoadPresetsShort": "Failed to load presets",
+    "failedLoadPresetsShort": "Failed to load programs",
     "rpeEasy": "Easy",
     "rpeModerate": "Moderate",
     "rpeHard": "Hard",
@@ -1608,18 +1608,18 @@
     "addExerciseOrDelete": "Add at least one exercise with a set or delete the workout.",
     "failedToSaveWorkout": "Failed to save workout",
     "editWorkout": "Edit workout",
-    "presetShared": "Workout preset shared publicly",
-    "presetPrivate": "Workout preset made private",
+    "presetShared": "Workout program shared publicly",
+    "presetPrivate": "Workout program made private",
     "workout": "workout",
     "startWorkoutLower": "Start workout",
     "logPastWorkout": "Log past workout",
-    "deletePreset": "Delete preset",
-    "noWorkoutPresets": "No workout presets yet",
-    "tryDifferentPresetSearch": "Try a different search term to find a workout preset.",
-    "presetsAppearHere": "Workout presets you create will appear here.",
-    "failedLoadPresetsFull": "Failed to load workout presets",
-    "failedMorePresets": "Failed to load more presets.",
-    "searchWorkoutPresets": "Search workout presets...",
+    "deletePreset": "Delete program",
+    "noWorkoutPresets": "No workout programs yet",
+    "tryDifferentPresetSearch": "Try a different search term to find a workout program.",
+    "presetsAppearHere": "Workout programs you create will appear here.",
+    "failedLoadPresetsFull": "Failed to load workout programs",
+    "failedMorePresets": "Failed to load more programs.",
+    "searchWorkoutPresets": "Search workout programs...",
     "workoutPresetCount_one": "{{formattedCount}} exercise",
     "workoutPresetCount_other": "{{formattedCount}} exercises",
     "metricVolumeShort": "Vol",
@@ -3275,7 +3275,7 @@
     "accessibility": {
       "save": "Save",
       "reorder": "Reorder exercises",
-      "saveAsPreset": "Save as preset",
+      "saveAsPreset": "Save as program",
       "editWorkout": "Edit workout"
     },
     "title": {
@@ -3378,18 +3378,18 @@
       "calculating": "Calculating"
     },
     "actions": {
-      "saveAsPreset": "Save as Preset",
+      "saveAsPreset": "Save as Program",
       "viewWorkout": "View Workout",
       "done": "Done",
-      "keepPreset": "Keep Preset",
+      "keepPreset": "Keep Program",
       "update": "Update"
     },
     "success": {
-      "presetUpdated": "Preset updated"
+      "presetUpdated": "Program updated"
     },
     "confirm": {
-      "updatePresetTitle": "Update preset?",
-      "updatePresetMessage": "Today's workout differs from \"{{preset}}\". Update the preset to match?"
+      "updatePresetTitle": "Update program?",
+      "updatePresetMessage": "Today's workout differs from \"{{preset}}\". Update the program to match?"
     },
     "rpe": {
       "easy": "Easy",
@@ -3480,18 +3480,18 @@
   },
   "presetSearch": {
     "title": "Start Workout",
-    "noun": "presets",
-    "viewDetails": "View preset details",
-    "searchFailed": "Failed to search presets",
-    "noMatches": "No matching presets found",
-    "loadFailed": "Failed to load presets",
-    "noPresetsYet": "No presets yet",
-    "noPresetsYetMessage": "Start an empty workout, or save a workout as a preset to see it here",
-    "searchPlaceholder": "Search presets...",
+    "noun": "programs",
+    "viewDetails": "View program details",
+    "searchFailed": "Failed to search programs",
+    "noMatches": "No matching programs found",
+    "loadFailed": "Failed to load programs",
+    "noPresetsYet": "No programs yet",
+    "noPresetsYetMessage": "Start an empty workout, or save a workout as a program to see it here",
+    "searchPlaceholder": "Search programs...",
     "emptyWorkout": "Empty workout",
     "pickFirstExercise": "Pick your first exercise",
     "noPresetsIn": "No {{noun}} in {{filter}}",
-    "changeFilter": "Change the filter to see your other presets."
+    "changeFilter": "Change the filter to see your other programs."
   },
   "ownership": {
     "all": "All",
@@ -3512,13 +3512,13 @@
     "description": "Description",
     "descriptionPlaceholder": "Optional notes about this routine",
     "reorderExercises": "Reorder exercises",
-    "newTitle": "New Preset",
-    "editTitle": "Edit Preset",
-    "created": "Workout preset created",
-    "updated": "Workout preset updated",
+    "newTitle": "New Program",
+    "editTitle": "Edit Program",
+    "created": "Workout program created",
+    "updated": "Workout program updated",
     "errors": {
       "missingName": "Missing name",
-      "nameRequired": "Please enter a name for this preset.",
+      "nameRequired": "Please enter a name for this program.",
       "addExercise": "Add an exercise",
       "addExerciseSet": "Add at least one exercise with a set before saving."
     }
@@ -3871,14 +3871,14 @@
   },
   "workoutPresetDetail": {
     "toast": {
-      "shared": "Workout preset shared publicly",
-      "private": "Workout preset made private",
-      "deleted": "Workout preset deleted",
-      "duplicated": "Workout preset duplicated"
+      "shared": "Workout program shared publicly",
+      "private": "Workout program made private",
+      "deleted": "Workout program deleted",
+      "duplicated": "Workout program duplicated"
     },
     "share": {
       "title": "Make public?",
-      "message": "This workout preset will become visible to all users on this server.",
+      "message": "This workout program will become visible to all users on this server.",
       "confirm": "Make public"
     },
     "draft": {
@@ -3892,8 +3892,8 @@
     "accessibility": {
       "makePrivate": "Make private",
       "sharePublic": "Share with public",
-      "edit": "Edit workout preset",
-      "duplicate": "Duplicate workout preset"
+      "edit": "Edit workout program",
+      "duplicate": "Duplicate workout program"
     },
     "duplicateName": "{{name}} (Copy)",
     "exerciseCount_other": "{{count}} exercises",
@@ -3901,24 +3901,24 @@
       "starting": "Starting…",
       "start": "Start workout",
       "logPast": "Log past workout",
-      "delete": "Delete preset",
+      "delete": "Delete program",
       "deleting": "Deleting…",
       "duplicating": "Duplicating…",
-      "duplicate": "Duplicate preset"
+      "duplicate": "Duplicate program"
     },
     "exerciseCount_one": "{{count}} exercise"
   },
   "workoutPresetMutations": {
     "errors": {
-      "create": "Could not create workout preset",
-      "update": "Failed to update preset",
-      "delete": "Failed to delete preset",
-      "editPermission": "You don't have permission to edit this preset.",
-      "deletePermission": "You don't have permission to delete this preset."
+      "create": "Could not create workout program",
+      "update": "Failed to update program",
+      "delete": "Failed to delete program",
+      "editPermission": "You don't have permission to edit this program.",
+      "deletePermission": "You don't have permission to delete this program."
     },
     "confirm": {
-      "title": "Delete Workout Preset?",
-      "message": "This preset will be permanently removed from your library."
+      "title": "Delete Workout Program?",
+      "message": "This program will be permanently removed from your library."
     }
   },
   "babyGrowth": {
@@ -4012,7 +4012,7 @@
     "goToWorkout": "Go to Workout",
     "clearAndStart": "Clear & Start",
     "nothingToStart": "Nothing to start",
-    "noExercises": "This preset has no exercises.",
+    "noExercises": "This program has no exercises.",
     "noServerTitle": "No Server Connected",
     "noServerMessage": "Configure your server connection in Settings to start a workout."
   },
@@ -4199,25 +4199,25 @@
     "noun": "meals"
   },
   "presetLibrary": {
-    "title": "Workout presets",
-    "search": "Search workout presets...",
+    "title": "Workout programs",
+    "search": "Search workout programs...",
     "noServer": "No server configured",
-    "configure": "Configure your server connection in Settings to view your workout presets.",
+    "configure": "Configure your server connection in Settings to view your workout programs.",
     "go": "Go to Settings",
-    "loading": "Loading workout presets...",
-    "failed": "Failed to load workout presets",
+    "loading": "Loading workout programs...",
+    "failed": "Failed to load workout programs",
     "retry": "Retry",
     "check": "Please check your connection and try again.",
-    "noMatch": "No matching presets found",
-    "noItems": "No workout presets yet",
-    "trySearch": "Try a different search term to find a workout preset.",
-    "empty": "Workout presets you create will appear here.",
-    "moreFailed": "Failed to load more presets.",
+    "noMatch": "No matching programs found",
+    "noItems": "No workout programs yet",
+    "trySearch": "Try a different search term to find a workout program.",
+    "empty": "Workout programs you create will appear here.",
+    "moreFailed": "Failed to load more programs.",
     "exercise": "exercise",
     "exercises": "exercises",
     "exerciseCount_one": "{{count}} exercise",
     "exerciseCount_other": "{{count}} exercises",
-    "noun": "workout presets"
+    "noun": "workout programs"
   },
   "workoutForm": {
     "viewExercise": "View exercise",
@@ -4794,7 +4794,7 @@
     }
   },
   "workoutPresetLibrary": {
-    "configure": "Configure your server connection in Settings to view your workout presets."
+    "configure": "Configure your server connection in Settings to view your workout programs."
   },
   "time": {
     "hoursShort": "h",
@@ -5111,6 +5111,19 @@
       "lean": "Drop the Fat",
       "leanSubtitle": "Lose fat, keep the muscle"
     },
-    "storeTab": "Store"
+    "storeTab": "Store",
+    "startProgram": "Start {{name}}",
+    "purchase": {
+      "sessions": "Workouts added",
+      "exercises": "Exercises",
+      "price": "Price",
+      "free": "Free",
+      "explainer": "Each session is saved as its own workout, ready to start from Programs. Nothing is charged.",
+      "progress": "Adding exercises… {{resolved}} of {{total}}, workout {{session}} of {{sessions}}",
+      "failed": "Could not add this program. Please try again.",
+      "confirm": "Add to my programs",
+      "added_one": "{{count}} workout added to Programs",
+      "added_other": "{{count}} workouts added to Programs"
+    }
   }
 }

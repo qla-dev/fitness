@@ -148,7 +148,7 @@ test('concurrent hydration writes are not lost and measurement nulls are preserv
   ).toEqual([expect.objectContaining({ weight: 80, waist: null })]);
 });
 
-test('workouts and presets match shared backend schemas and preserve set IDs', async () => {
+test('workouts and programs match shared backend schemas and preserve set IDs', async () => {
   const exercise = await request('/api/exercises', 'POST', {
     name: 'Squat',
     category: 'strength',

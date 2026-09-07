@@ -45,13 +45,13 @@ describe('localizeProtocolBadge', () => {
     ['16:8', '16:8'],
     ['18 : 6', '18:6'],
   ])(
-    'preserves compact ratios from application presets: %s → %s',
+    'preserves compact ratios from application programs: %s → %s',
     (input, expected) => {
       expect(localizeProtocolBadge(en as never, input)).toBe(expected);
     }
   );
 
-  it('localizes known non-ratio presets', () => {
+  it('localizes known non-ratio programs', () => {
     expect(localizeProtocolBadge(pl as never, 'Circadian Rhythm')).toBe(
       'Post zgodny z rytmem dobowym'
     );

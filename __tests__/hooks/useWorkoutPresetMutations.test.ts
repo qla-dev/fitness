@@ -74,7 +74,7 @@ describe('useWorkoutPresetMutations', () => {
   }
 
   describe('useCreateWorkoutPreset', () => {
-    it('creates the preset and invalidates caches on success', async () => {
+    it('creates the program and invalidates caches on success', async () => {
       mockCreate.mockResolvedValue({ id: 'p1' } as never);
       const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
       const resetSpy = jest.spyOn(queryClient, 'resetQueries');
@@ -107,7 +107,7 @@ describe('useWorkoutPresetMutations', () => {
       await waitFor(() => {
         expect(Toast.show).toHaveBeenCalledWith({
           type: 'error',
-          text1: 'Could not create workout preset',
+          text1: 'Could not create workout program',
           text2: 'Please try again.',
         });
       });
@@ -115,7 +115,7 @@ describe('useWorkoutPresetMutations', () => {
   });
 
   describe('useUpdateWorkoutPreset', () => {
-    it('updates the preset and invalidates caches on success', async () => {
+    it('updates the program and invalidates caches on success', async () => {
       mockUpdate.mockResolvedValue({ id: 'p1', name: 'Updated' } as never);
       const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
       const resetSpy = jest.spyOn(queryClient, 'resetQueries');
@@ -149,8 +149,8 @@ describe('useWorkoutPresetMutations', () => {
       await waitFor(() => {
         expect(Toast.show).toHaveBeenCalledWith({
           type: 'error',
-          text1: 'Failed to update preset',
-          text2: "You don't have permission to edit this preset.",
+          text1: 'Failed to update program',
+          text2: "You don't have permission to edit this program.",
         });
       });
     });
@@ -171,7 +171,7 @@ describe('useWorkoutPresetMutations', () => {
       await waitFor(() => {
         expect(Toast.show).toHaveBeenCalledWith({
           type: 'error',
-          text1: 'Failed to update preset',
+          text1: 'Failed to update program',
           text2: 'Please try again.',
         });
       });
@@ -188,7 +188,7 @@ describe('useWorkoutPresetMutations', () => {
       act(() => result.current.confirmAndDelete());
 
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Delete Workout Preset?',
+        'Delete Workout Program?',
         expect.stringContaining('permanently removed'),
         expect.arrayContaining([
           expect.objectContaining({ text: 'Cancel', style: 'cancel' }),
@@ -271,8 +271,8 @@ describe('useWorkoutPresetMutations', () => {
       await waitFor(() => {
         expect(Toast.show).toHaveBeenCalledWith({
           type: 'error',
-          text1: 'Failed to delete preset',
-          text2: "You don't have permission to delete this preset.",
+          text1: 'Failed to delete program',
+          text2: "You don't have permission to delete this program.",
         });
       });
     });

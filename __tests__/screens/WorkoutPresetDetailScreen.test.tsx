@@ -203,7 +203,7 @@ describe('WorkoutPresetDetailScreen', () => {
       })
     );
     expect(screen.getByText('Start workout')).toBeTruthy();
-    expect(screen.getByText('Duplicate preset')).toBeTruthy();
+    expect(screen.getByText('Duplicate program')).toBeTruthy();
     await act(async () => {
       await i18n.changeLanguage('pl');
     });
@@ -232,7 +232,7 @@ describe('WorkoutPresetDetailScreen', () => {
     expect(createPresetAsync.mock.calls[0][0].name).toContain('Push Day');
   });
 
-  it('starts a live workout with the preset-built payload on Start workout', () => {
+  it('starts a live workout with the program-built payload on Start workout', () => {
     const preset = buildPreset({
       exercises: [
         {
@@ -277,7 +277,7 @@ describe('WorkoutPresetDetailScreen', () => {
     });
     const screen = renderScreen(preset);
 
-    fireEvent.press(screen.getByLabelText('Duplicate workout preset'));
+    fireEvent.press(screen.getByLabelText('Duplicate workout program'));
 
     await waitFor(() => expect(createPresetAsync).toHaveBeenCalledTimes(1));
     expect(createPresetAsync).toHaveBeenCalledWith({
@@ -346,7 +346,7 @@ describe('WorkoutPresetDetailScreen', () => {
     });
     const screen = renderScreen(preset);
 
-    fireEvent.press(screen.getByLabelText('Duplicate workout preset'));
+    fireEvent.press(screen.getByLabelText('Duplicate workout program'));
 
     await waitFor(() => expect(createPresetAsync).toHaveBeenCalledTimes(1));
     const sentExercises = createPresetAsync.mock.calls[0][0].exercises;
@@ -355,7 +355,7 @@ describe('WorkoutPresetDetailScreen', () => {
     ).toEqual([0, 1]);
   });
 
-  it('navigates to WorkoutAdd with the preset and popCount=2 on Log past workout', async () => {
+  it('navigates to WorkoutAdd with the program and popCount=2 on Log past workout', async () => {
     const preset = buildPreset();
     const screen = renderScreen(preset);
 
@@ -370,7 +370,7 @@ describe('WorkoutPresetDetailScreen', () => {
     expect(startLiveWorkout).not.toHaveBeenCalled();
   });
 
-  it('prompts with Polish draft actions before logging a past preset workout', async () => {
+  it('prompts with Polish draft actions before logging a past program workout', async () => {
     await i18n.changeLanguage('pl');
     const alertSpy = jest.spyOn(Alert, 'alert');
     mockLoadActiveDraft.mockResolvedValue({
@@ -443,7 +443,7 @@ describe('WorkoutPresetDetailScreen', () => {
     }
   );
 
-  it('renders preset name, description, and exercise count', () => {
+  it('renders program name, description, and exercise count', () => {
     const preset = buildPreset({
       exercises: [
         {

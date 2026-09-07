@@ -320,12 +320,12 @@ describe('WorkoutDetailScreen', () => {
     expect(imported.queryByLabelText('Rest 1:30')).toBeNull();
   });
 
-  describe('save as preset', () => {
+  describe('save as program', () => {
     it('routes the header bookmark to the prefilled create form', () => {
       const session = buildSession();
       const screen = renderScreen(session);
 
-      fireEvent.press(screen.getByLabelText('Save as preset'));
+      fireEvent.press(screen.getByLabelText('Save as program'));
 
       expect(mockNavigation.navigate).toHaveBeenCalledWith(
         'WorkoutPresetForm',
@@ -340,7 +340,7 @@ describe('WorkoutDetailScreen', () => {
       const session = buildSession({ source: 'healthkit' });
       const screen = renderScreen(session);
 
-      fireEvent.press(screen.getByLabelText('Save as preset'));
+      fireEvent.press(screen.getByLabelText('Save as program'));
 
       expect(mockNavigation.navigate).toHaveBeenCalledWith(
         'WorkoutPresetForm',

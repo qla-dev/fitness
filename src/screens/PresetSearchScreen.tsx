@@ -106,7 +106,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       identifier: 'preset-search-cancel',
     },
     right: ownershipFilterHeaderMenu({
-      noun: t('presetSearch.noun', { defaultValue: 'presets' }),
+      noun: t('presetSearch.noun', { defaultValue: 'programs' }),
       labels: {
         all: t('ownership.all', { defaultValue: 'All' }),
         mine: t('ownership.mine', { defaultValue: 'Mine' }),
@@ -234,7 +234,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
             hitSlop={8}
             disabled={isNavigationLocked || isStarting}
             accessibilityLabel={t('presetSearch.viewDetails', {
-              defaultValue: 'View preset details',
+              defaultValue: 'View program details',
             })}
             onPress={() => handlePreviewPreset(item)}
           >
@@ -275,7 +275,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
         <StatusView
           icon="alert-circle"
           title={t('presetSearch.searchFailed', {
-            defaultValue: 'Failed to search presets',
+            defaultValue: 'Failed to search programs',
           })}
         />
       );
@@ -285,7 +285,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
         return (
           <StatusView
             {...ownershipFilterEmptyState({
-              noun: t('presetSearch.noun', { defaultValue: 'presets' }),
+              noun: t('presetSearch.noun', { defaultValue: 'programs' }),
               filter: ownershipFilter as Exclude<typeof ownershipFilter, 'all'>,
               onReset: () => setOwnershipFilter('all'),
               labels: {
@@ -298,7 +298,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
                 defaultValue: 'No {{noun}} in {{filter}}',
               }),
               emptySubtitle: t('presetSearch.changeFilter', {
-                defaultValue: 'Change the filter to see your other presets.',
+                defaultValue: 'Change the filter to see your other programs.',
               }),
               showAllLabel: t('ownership.showAll', {
                 defaultValue: 'Show All',
@@ -310,7 +310,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       return (
         <StatusView
           title={t('presetSearch.noMatches', {
-            defaultValue: 'No matching presets found',
+            defaultValue: 'No matching programs found',
           })}
         />
       );
@@ -340,7 +340,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
         <StatusView
           icon="alert-circle"
           title={t('presetSearch.loadFailed', {
-            defaultValue: 'Failed to load presets',
+            defaultValue: 'Failed to load programs',
           })}
           action={{
             label: t('common.retry', { defaultValue: 'Retry' }),
@@ -353,11 +353,11 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       return (
         <StatusView
           title={t('presetSearch.noPresetsYet', {
-            defaultValue: 'No presets yet',
+            defaultValue: 'No programs yet',
           })}
           subtitle={t('presetSearch.noPresetsYetMessage', {
             defaultValue:
-              'Start an empty workout, or save a workout as a preset to see it here',
+              'Start an empty workout, or save a workout as a program to see it here',
           })}
         />
       );
@@ -366,7 +366,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       return (
         <StatusView
           {...ownershipFilterEmptyState({
-            noun: t('presetSearch.noun', { defaultValue: 'presets' }),
+            noun: t('presetSearch.noun', { defaultValue: 'programs' }),
             filter: ownershipFilter as Exclude<typeof ownershipFilter, 'all'>,
             onReset: () => setOwnershipFilter('all'),
             labels: {
@@ -379,7 +379,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
               defaultValue: 'No {{noun}} in {{filter}}',
             }),
             emptySubtitle: t('presetSearch.changeFilter', {
-              defaultValue: 'Change the filter to see your other presets.',
+              defaultValue: 'Change the filter to see your other programs.',
             }),
             showAllLabel: t('ownership.showAll', { defaultValue: 'Show All' }),
           })}
@@ -421,7 +421,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
               className="text-text-primary"
               style={{ fontSize: 16, padding: 0, includeFontPadding: false }}
               placeholder={t('presetSearch.searchPlaceholder', {
-                defaultValue: 'Search presets...',
+                defaultValue: 'Search programs...',
               })}
               placeholderTextColor={textMuted}
               value={searchText}

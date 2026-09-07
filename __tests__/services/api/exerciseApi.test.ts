@@ -687,7 +687,7 @@ describe('exerciseApi', () => {
       expect(calculateCaloriesBurned(entries)).toBe(150);
     });
 
-    test('sums nested exercise calories for preset sessions', () => {
+    test('sums nested exercise calories for program sessions', () => {
       const entries: ExerciseSessionResponse[] = [
         preset({
           exercises: [
@@ -725,7 +725,7 @@ describe('exerciseApi', () => {
       expect(calculateCaloriesBurned(entries)).toBe(300);
     });
 
-    test('sums both individual and preset entries', () => {
+    test('sums both individual and program entries', () => {
       const entries: ExerciseSessionResponse[] = [
         individual({ id: '1', calories_burned: 100 }),
         preset({
@@ -817,7 +817,7 @@ describe('exerciseApi', () => {
       expect(calculateActiveCalories(entries)).toBe(300);
     });
 
-    test('returns 0 for preset sessions', () => {
+    test('returns 0 for program sessions', () => {
       const entries: ExerciseSessionResponse[] = [
         preset({
           exercises: [
@@ -1037,7 +1037,7 @@ describe('exerciseApi', () => {
       expect(calculateOtherExerciseCalories(entries)).toBe(200);
     });
 
-    test('sums all nested exercise calories for preset sessions', () => {
+    test('sums all nested exercise calories for program sessions', () => {
       const entries: ExerciseSessionResponse[] = [
         preset({
           exercises: [
@@ -1106,14 +1106,14 @@ describe('exerciseApi', () => {
       expect(calculateExerciseDuration(entries)).toBe(50);
     });
 
-    test('uses total_duration_minutes for preset sessions', () => {
+    test('uses total_duration_minutes for program sessions', () => {
       const entries: ExerciseSessionResponse[] = [
         preset({ total_duration_minutes: 60 }),
       ];
       expect(calculateExerciseDuration(entries)).toBe(60);
     });
 
-    test('sums both individual and preset durations', () => {
+    test('sums both individual and program durations', () => {
       const entries: ExerciseSessionResponse[] = [
         individual({
           id: '1',

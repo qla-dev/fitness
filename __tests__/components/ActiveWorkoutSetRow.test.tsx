@@ -580,7 +580,7 @@ describe('ActiveWorkoutSetRow', () => {
       expect(getByTestId('set-row')).toBeTruthy();
     });
 
-    it('renders without onLongPress (preset detail passes none)', () => {
+    it('renders without onLongPress (program detail passes none)', () => {
       const { getByTestId } = render(
         <ActiveWorkoutSetRow
           set={makeSet()}
@@ -1092,7 +1092,7 @@ describe('ActiveWorkoutSetRow', () => {
         expect(callbacks.onActivateRpe).toHaveBeenCalledWith('101');
       });
 
-      it('renders no RPE input when RPE is not editable (preset)', () => {
+      it('renders no RPE input when RPE is not editable (program)', () => {
         const { queryByLabelText } = renderRow({
           mode: 'edit',
           state: 'upcoming',

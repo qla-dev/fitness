@@ -411,7 +411,7 @@ function AppContent() {
           <Stack.Screen
             name="WorkoutPresetsLibrary"
             component={SafeWorkoutPresetsLibrary}
-            options={createStackScreenOptions(t('screens.workoutPresets', { defaultValue: 'Workout Presets' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.workoutPresets', { defaultValue: 'Workout Programs' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutPresetDetail"
@@ -494,7 +494,7 @@ function AppContent() {
             name="WorkoutPresetForm"
             component={SafeWorkoutPresetForm}
             options={({ route }) => createStackScreenOptions(
-              route.params.mode === 'edit-preset' ? t('screens.editPreset', { defaultValue: 'Edit Preset' }) : t('screens.newPreset', { defaultValue: 'New Preset' }),
+              route.params.mode === 'edit-preset' ? t('screens.editPreset', { defaultValue: 'Edit Program' }) : t('screens.newPreset', { defaultValue: 'New Program' }),
               {
               presentation: 'modal',
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),

@@ -340,7 +340,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
           <CreateTile
             icon="bookmark-filled"
             title={t('screens.library.workoutPreset', {
-              defaultValue: 'Workout preset',
+              defaultValue: 'Workout program',
             })}
             subtitle={t('screens.library.exerciseRoutine', {
               defaultValue: 'Exercise routine',
@@ -438,7 +438,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
           >
             <Text className="text-base font-semibold text-text-primary">
               {t('screens.library.workoutPresets', {
-                defaultValue: 'Workout presets',
+                defaultValue: 'Workout programs',
               })}
             </Text>
             <View className="flex-row items-center">

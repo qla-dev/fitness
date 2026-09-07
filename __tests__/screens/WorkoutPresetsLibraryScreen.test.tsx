@@ -117,7 +117,7 @@ describe('WorkoutPresetsLibraryScreen', () => {
     mockUseWorkoutPresetsLibrary.mockReturnValue(buildHookReturn());
   });
 
-  it('lists presets from the hook with their exercise counts', async () => {
+  it('lists programs from the hook with their exercise counts', async () => {
     mockUseWorkoutPresetsLibrary.mockReturnValue(
       buildHookReturn({
         presets: [
@@ -135,7 +135,7 @@ describe('WorkoutPresetsLibraryScreen', () => {
     expect(screen.getByText('1 exercise')).toBeTruthy();
   });
 
-  it('navigates to WorkoutPresetDetail with the preset on row tap', async () => {
+  it('navigates to WorkoutProgramDetail with the program on row tap', async () => {
     const preset = createPreset('p-1', 'Push Day', 2);
     mockUseWorkoutPresetsLibrary.mockReturnValue(
       buildHookReturn({ presets: [preset] })
@@ -150,12 +150,12 @@ describe('WorkoutPresetsLibraryScreen', () => {
     });
   });
 
-  it('passes the typed term through to useWorkoutPresetsLibrary', async () => {
+  it('passes the typed term through to useWorkoutProgramsLibrary', async () => {
     const screen = renderScreen();
 
     await act(async () => {
       fireEvent.changeText(
-        screen.getByPlaceholderText('Search workout presets...'),
+        screen.getByPlaceholderText('Search workout programs...'),
         'pu'
       );
     });
@@ -176,7 +176,7 @@ describe('WorkoutPresetsLibraryScreen', () => {
 
     await act(async () => {
       fireEvent.changeText(
-        screen.getByPlaceholderText('Search workout presets...'),
+        screen.getByPlaceholderText('Search workout programs...'),
         'pu'
       );
     });
@@ -233,13 +233,13 @@ describe('WorkoutPresetsLibraryScreen', () => {
 
     const screen = renderScreen();
 
-    expect(screen.getByText('Failed to load workout presets')).toBeTruthy();
+    expect(screen.getByText('Failed to load workout programs')).toBeTruthy();
     fireEvent.press(screen.getByText('Retry'));
     expect(refetch).toHaveBeenCalled();
   });
 
-  it('shows an empty-state message when there are no presets', () => {
+  it('shows an empty-state message when there are no programs', () => {
     const screen = renderScreen();
-    expect(screen.getByText('No workout presets yet')).toBeTruthy();
+    expect(screen.getByText('No workout programs yet')).toBeTruthy();
   });
 });

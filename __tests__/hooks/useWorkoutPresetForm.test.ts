@@ -230,7 +230,7 @@ describe('presetFormReducer', () => {
   });
 
   describe('UPDATE_SET_META', () => {
-    it('patches setType on the targeted set and round-trips into the preset payload', () => {
+    it('patches setType on the targeted set and round-trips into the program payload', () => {
       const next = presetFormReducer(draftWithExercise(), {
         type: 'UPDATE_SET_META',
         exerciseClientId: 'e1',
@@ -406,7 +406,7 @@ describe('presetFormReducer', () => {
       { exerciseClientId: 'e1', setClientIds: ['s1', 's2'] },
     ];
 
-    it('maps a preset to a draft, keeping weight in kg when the unit is kg', () => {
+    it('maps a program to a draft, keeping weight in kg when the unit is kg', () => {
       const next = presetFormReducer(
         { name: '', description: '', exercises: [] },
         {
@@ -465,7 +465,7 @@ describe('presetFormReducer', () => {
       expect(next.exercises[0].sets[1].reps).toBe('');
     });
 
-    it('preserves an explicit modality, recording null when the preset omits it', () => {
+    it('preserves an explicit modality, recording null when the program omits it', () => {
       const mixed = preset({
         exercises: [
           { ...preset().exercises[0], modality: 'duration' },
@@ -555,7 +555,7 @@ describe('presetFormReducer', () => {
       expect(next.exercises[0].exerciseCategory).toBeNull();
     });
 
-    it('maps preset set distance (km) into display-unit draft text', () => {
+    it('maps program set distance (km) into display-unit draft text', () => {
       const cardioPreset = preset();
       cardioPreset.exercises[0].sets = [
         { ...cardioPreset.exercises[0].sets[0], distance: 1.609344 },
@@ -695,7 +695,7 @@ describe('presetFormReducer', () => {
       });
     });
 
-    it('drops session-only fields so they cannot leak into the preset payload', () => {
+    it('drops session-only fields so they cannot leak into the program payload', () => {
       const next = presetFormReducer(
         { name: '', description: '', exercises: [] },
         {
@@ -948,7 +948,7 @@ describe('useWorkoutPresetForm', () => {
     expect(result.current.exercisesModifiedRef.current).toBe(true);
   });
 
-  it('populateFromPreset returns the exercise client ids and resets the modified ref', () => {
+  it('populateFromProgram returns the exercise client ids and resets the modified ref', () => {
     const { result } = renderHook(() => useWorkoutPresetForm());
 
     // Dirty the form first so we can prove populate resets the flag.

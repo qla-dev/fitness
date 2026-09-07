@@ -27,7 +27,7 @@ describe('useWorkoutPresets', () => {
     queryClient.clear();
   });
 
-  it('returns empty presets array when loading', () => {
+  it('returns empty programs array when loading', () => {
     mockFetchPresets.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useWorkoutPresets(), {
@@ -38,7 +38,7 @@ describe('useWorkoutPresets', () => {
     expect(result.current.isLoading).toBe(true);
   });
 
-  it('returns fetched presets', async () => {
+  it('returns fetched programs', async () => {
     const data = {
       presets: [
         { id: 'preset-1', name: 'Push Day' },

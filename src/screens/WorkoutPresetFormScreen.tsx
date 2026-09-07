@@ -337,7 +337,7 @@ const CreatePresetMode: React.FC<CreatePresetModeProps> = ({
           defaultValue: 'Missing name',
         }),
         text2: t('workoutPresetForm.errors.nameRequired', {
-          defaultValue: 'Please enter a name for this preset.',
+          defaultValue: 'Please enter a name for this program.',
         }),
       });
       return;
@@ -374,7 +374,7 @@ const CreatePresetMode: React.FC<CreatePresetModeProps> = ({
       Toast.show({
         type: 'success',
         text1: t('workoutPresetForm.created', {
-          defaultValue: 'Workout preset created',
+          defaultValue: 'Workout program created',
         }),
       });
       navigation.replace('WorkoutPresetDetail', { preset: created });
@@ -384,7 +384,7 @@ const CreatePresetMode: React.FC<CreatePresetModeProps> = ({
   };
   return (
     <FormScreenChrome
-      title={t('workoutPresetForm.newTitle', { defaultValue: 'New Preset' })}
+      title={t('workoutPresetForm.newTitle', { defaultValue: 'New Program' })}
       saveLabel={t('common.save', { defaultValue: 'Save' })}
       savingLabel={t('common.saving', { defaultValue: 'Saving…' })}
       isSaving={isPending}
@@ -610,7 +610,7 @@ const EditPresetMode: React.FC<EditPresetModeProps> = ({
           defaultValue: 'Missing name',
         }),
         text2: t('workoutPresetForm.errors.nameRequired', {
-          defaultValue: 'Please enter a name for this preset.',
+          defaultValue: 'Please enter a name for this program.',
         }),
       });
       return;
@@ -639,7 +639,7 @@ const EditPresetMode: React.FC<EditPresetModeProps> = ({
       Toast.show({
         type: 'success',
         text1: t('workoutPresetForm.updated', {
-          defaultValue: 'Workout preset updated',
+          defaultValue: 'Workout program updated',
         }),
       });
       navigation.dispatch({
@@ -653,7 +653,7 @@ const EditPresetMode: React.FC<EditPresetModeProps> = ({
   };
   return (
     <FormScreenChrome
-      title={t('workoutPresetForm.editTitle', { defaultValue: 'Edit Preset' })}
+      title={t('workoutPresetForm.editTitle', { defaultValue: 'Edit Program' })}
       saveLabel={t('common.save', { defaultValue: 'Save' })}
       savingLabel={t('common.saving', { defaultValue: 'Saving…' })}
       isSaving={isPending}

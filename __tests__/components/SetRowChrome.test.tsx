@@ -102,7 +102,7 @@ describe('useSetEditAccessoryBar', () => {
     expect(utils.getByText('Next Set')).toBeTruthy();
   });
 
-  it('skips the RPE hop when RPE is disabled (preset form) or another metric column shows', () => {
+  it('skips the RPE hop when RPE is disabled (program form) or another metric column shows', () => {
     const handles = { set1: makeHandle() };
     const props = {
       activeSetKey: 'ex1:set1',

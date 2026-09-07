@@ -354,7 +354,7 @@ describe('WorkoutFormExerciseList', () => {
     });
   });
 
-  it('forwards excludePresetEntryId to every card when editing a saved workout', () => {
+  it('forwards excludeProgramEntryId to every card when editing a saved workout', () => {
     const utils = renderList([makeExercise('a'), makeExercise('b')], {
       excludePresetEntryId: 'session-1',
     });
@@ -362,7 +362,7 @@ describe('WorkoutFormExerciseList', () => {
     expect(cardInfo(utils, 'b').excludePresetEntryId).toBe('session-1');
   });
 
-  it('passes no excludePresetEntryId in create mode', () => {
+  it('passes no excludeProgramEntryId in create mode', () => {
     const utils = renderList([makeExercise('a')]);
     expect(cardInfo(utils, 'a').excludePresetEntryId).toBeNull();
   });
@@ -667,7 +667,7 @@ describe('WorkoutFormExerciseList', () => {
       expect(cardInfo(utils, 'a').noteEditorOpen).toBe(true);
     });
 
-    it('omits the Notes item and note wiring without the prop (the preset form)', () => {
+    it('omits the Notes item and note wiring without the prop (the program form)', () => {
       const utils = renderList([makeExercise('a')]);
       fireEvent.press(utils.getByTestId('card-a-overflow'));
       expect(utils.queryByTestId('menu-item-notes')).toBeNull();
@@ -809,7 +809,7 @@ describe('WorkoutFormExerciseList', () => {
       });
     });
 
-    it('does not wire the toggle without showCompletion (preset form)', () => {
+    it('does not wire the toggle without showCompletion (program form)', () => {
       const utils = renderList([
         makeExercise('a', {
           sets: [{ clientId: 'a-s1', weight: '100', reps: '5' }],
@@ -947,7 +947,7 @@ describe('WorkoutFormExerciseList', () => {
     expect(utils.callbacks.onAddExercisePress).toHaveBeenCalledTimes(1);
   });
 
-  describe('preset RPE handling (rpeEditable=false)', () => {
+  describe('program RPE handling (rpeEditable=false)', () => {
     it('omits RPE from the metric column picker', () => {
       const utils = renderList([makeExercise('a')], { rpeEditable: false });
       fireEvent.press(utils.getByTestId('card-a-metric-header'));

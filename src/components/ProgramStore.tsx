@@ -75,6 +75,8 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 interface ProgramStoreProps {
   onSelectProgram: (program: ExerciseProgram) => void;
+  /** Start opens the add sheet; the rest of the row opens the detail page. */
+  onStartProgram: (program: ExerciseProgram) => void;
 }
 
 /**
@@ -82,7 +84,10 @@ interface ProgramStoreProps {
  * featured programs, then themed shelves — each shelf pages sideways four
  * rows at a time rather than growing into an endless column.
  */
-const ProgramStore: React.FC<ProgramStoreProps> = ({ onSelectProgram }) => {
+const ProgramStore: React.FC<ProgramStoreProps> = ({
+  onSelectProgram,
+  onStartProgram,
+}) => {
   const { t } = useTranslation();
   const accents = useProgramAccents();
   const { width } = useWindowDimensions();
@@ -149,11 +154,19 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({ onSelectProgram }) => {
             {getProgramLevelLabel(t, program.level)}
           </Text>
         </View>
-        <View className="px-4 py-1.5 rounded-full bg-raised">
-          <Text className="text-accent-primary text-sm font-bold">
-            {t('programs.start', { defaultValue: 'Start' })}
-          </Text>
-        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('programs.startProgram', {
+          defaultValue: 'Start {{name}}',
+          name: program.name,
+        })}
+        onPress={() => onStartProgram(program)}
+        className="absolute right-2 top-5 px-4 py-1.5 rounded-full bg-raised"
+      >
+        <Text className="text-accent-primary text-sm font-bold">
+          {t('programs.start', { defaultValue: 'Start' })}
+        </Text>
       </TouchableOpacity>
       {!isLast && <View className="h-px bg-border-subtle ml-[68px]" />}
     </View>
@@ -290,11 +303,19 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({ onSelectProgram }) => {
                     {program.tagline}
                   </Text>
                   <View className="flex-row items-center mt-4">
-                    <View className="px-4 py-1.5 rounded-full bg-white/25">
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={t('programs.startProgram', {
+                        defaultValue: 'Start {{name}}',
+                        name: program.name,
+                      })}
+                      onPress={() => onStartProgram(program)}
+                      className="px-4 py-1.5 rounded-full bg-white/25"
+                    >
                       <Text className="text-white text-sm font-bold">
                         {t('programs.start', { defaultValue: 'Start' })}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                     <Text className="text-white text-xs ml-3 opacity-90">
                       {t('programs.featuredMeta', {
                         count: countProgramExercises(program),

@@ -313,7 +313,7 @@ describe('ActiveWorkoutExerciseCard', () => {
       expect(utils.queryByText('Km')).toBeNull();
     });
 
-    it('keeps the Sec table for cardio when the form is disabled (preset surfaces)', () => {
+    it('keeps the Sec table for cardio when the form is disabled (program surfaces)', () => {
       const utils = renderCard(true, {
         exercise: withModality('duration_distance'),
         cardioFormEnabled: false,
@@ -818,7 +818,7 @@ describe('ActiveWorkoutExerciseCard', () => {
       });
     }
 
-    it('passes the session id as excludePresetEntryId to the stats query', () => {
+    it('passes the session id as excludeProgramEntryId to the stats query', () => {
       renderCard(true, { mode: 'live', excludePresetEntryId: 'session-1' });
       expect(mockUseExerciseStats).toHaveBeenCalledWith(
         'ex-1',
@@ -827,7 +827,7 @@ describe('ActiveWorkoutExerciseCard', () => {
       );
     });
 
-    it('passes sourcePresetId through to the stats query', () => {
+    it('passes sourceProgramId through to the stats query', () => {
       renderCard(true, { mode: 'live', sourcePresetId: 42 });
       expect(mockUseExerciseStats).toHaveBeenCalledWith('ex-1', undefined, 42);
     });
@@ -1191,7 +1191,7 @@ describe('ActiveWorkoutExerciseCard', () => {
       );
     });
 
-    it('stays hidden without a commit handler (the preset form)', () => {
+    it('stays hidden without a commit handler (the program form)', () => {
       const { queryByLabelText } = renderCard(true, {
         mode: 'edit',
         onCommitExerciseNote: undefined,

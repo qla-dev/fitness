@@ -89,7 +89,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
         <StatusView
           inline
           {...ownershipFilterEmptyState({
-            noun: t('presetLibrary.noun', { defaultValue: 'workout presets' }),
+            noun: t('presetLibrary.noun', { defaultValue: 'workout programs' }),
             filter: ownershipFilter,
             onReset: () => setOwnershipFilter('all'),
             labels: {
@@ -115,20 +115,20 @@ const WorkoutPresetsLibraryScreen: React.FC<
         title={
           searchText.trim().length > 0
             ? t('presetLibrary.noMatch', {
-                defaultValue: 'No matching presets found',
+                defaultValue: 'No matching programs found',
               })
             : t('presetLibrary.noItems', {
-                defaultValue: 'No workout presets yet',
+                defaultValue: 'No workout programs yet',
               })
         }
         subtitle={
           searchText.trim().length > 0
             ? t('presetLibrary.trySearch', {
                 defaultValue:
-                  'Try a different search term to find a workout preset.',
+                  'Try a different search term to find a workout program.',
               })
             : t('presetLibrary.empty', {
-                defaultValue: 'Workout presets you create will appear here.',
+                defaultValue: 'Workout programs you create will appear here.',
               })
         }
       />
@@ -183,7 +183,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
           })}
           subtitle={t('workoutPresetLibrary.configure', {
             defaultValue:
-              'Configure your server connection in Settings to view your workout presets.',
+              'Configure your server connection in Settings to view your workout programs.',
           })}
           action={{
             label: t('presetLibrary.go', { defaultValue: 'Go to Settings' }),
@@ -199,7 +199,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
         <StatusView
           loading
           title={t('presetLibrary.loading', {
-            defaultValue: 'Loading workout presets...',
+            defaultValue: 'Loading workout programs...',
           })}
         />
       );
@@ -212,7 +212,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
           iconTone="danger"
           iconSize={64}
           title={t('presetLibrary.failed', {
-            defaultValue: 'Failed to load workout presets',
+            defaultValue: 'Failed to load workout programs',
           })}
           subtitle={t('presetLibrary.check', {
             defaultValue: 'Please check your connection and try again.',
@@ -239,7 +239,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
             isFetchingNextPage={isFetchingNextPage}
             isFetchNextPageError={isFetchNextPageError}
             errorMessage={t('presetLibrary.moreFailed', {
-              defaultValue: 'Failed to load more presets.',
+              defaultValue: 'Failed to load more programs.',
             })}
             onRetry={loadMore}
           />
@@ -267,10 +267,10 @@ const WorkoutPresetsLibraryScreen: React.FC<
   };
 
   const header = useScreenHeader({
-    title: t('presetLibrary.title', { defaultValue: 'Workout presets' }),
+    title: t('presetLibrary.title', { defaultValue: 'Workout programs' }),
     left: { kind: 'back' },
     right: ownershipFilterHeaderMenu({
-      noun: t('presetLibrary.noun', { defaultValue: 'workout presets' }),
+      noun: t('presetLibrary.noun', { defaultValue: 'workout programs' }),
       labels: {
         all: t('ownership.all', { defaultValue: 'All' }),
         mine: t('ownership.mine', { defaultValue: 'Mine' }),
@@ -298,7 +298,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
           value={searchText}
           onChangeText={setSearchText}
           placeholder={t('presetLibrary.search', {
-            defaultValue: 'Search workout presets...',
+            defaultValue: 'Search workout programs...',
           })}
           isSearching={isSearching}
         />

@@ -120,7 +120,7 @@ export function useStartLiveWorkout(navigation: StartLiveWorkoutNavigation): {
             defaultValue: 'Nothing to start',
           }),
           text2: t('liveWorkout.noExercises', {
-            defaultValue: 'This preset has no exercises.',
+            defaultValue: 'This program has no exercises.',
           }),
         });
         return;

@@ -519,17 +519,19 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
       promptedRef.current = true;
       Alert.alert(
         t('workoutComplete.confirm.updatePresetTitle', {
-          defaultValue: 'Update preset?',
+          defaultValue: 'Update program?',
         }),
         t('workoutComplete.confirm.updatePresetMessage', {
           defaultValue:
-            'Today\'s workout differs from \"{{preset}}\". Update the preset to match?',
+            // The placeholder keeps its original name: renaming it would
+            // invalidate every existing translation of this string.
+            'Today\'s workout differs from \"{{preset}}\". Update the program to match?',
           preset: sourcePreset.name,
         }),
         [
           {
             text: t('workoutComplete.actions.keepPreset', {
-              defaultValue: 'Keep Preset',
+              defaultValue: 'Keep Program',
             }),
             style: 'cancel',
           },
@@ -547,7 +549,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
                   Toast.show({
                     type: 'success',
                     text1: t('workoutComplete.success.presetUpdated', {
-                      defaultValue: 'Preset updated',
+                      defaultValue: 'Program updated',
                     }),
                   });
                 } catch {
@@ -930,7 +932,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
           <DockedActionButton
             icon="bookmark"
             label={t('workoutComplete.actions.saveAsPreset', {
-              defaultValue: 'Save as Preset',
+              defaultValue: 'Save as Program',
             })}
             onPress={handleSaveAsPreset}
           />

@@ -16,6 +16,8 @@ import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
 import StatusView from '../components/StatusView';
 import ProgramStore from '../components/ProgramStore';
+import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
+import type { ExerciseProgram } from '../types/exerciseProgram';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
@@ -134,6 +136,8 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   );
 
   const queryClient = useQueryClient();
+  // The program the add sheet is open for, if any.
+  const [purchasing, setPurchasing] = useState<ExerciseProgram | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
   // `importingId` only disables the rows after a re-render; the ref blocks a
   // second tap landing before that.
@@ -463,6 +467,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
                     programId: program.id,
                   })
                 }
+                onStartProgram={setPurchasing}
               />
               <View className="px-4 pt-6 pb-2">
                 <Text className="text-lg font-bold text-text-primary">
@@ -589,6 +594,24 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         />
       ) : null}
       {renderContent()}
+      {purchasing && (
+        <ProgramPurchaseSheet
+          program={purchasing}
+          onClose={() => setPurchasing(null)}
+          onInstalled={(result) => {
+            setPurchasing(null);
+            Toast.show({
+              type: 'success',
+              text1: t('programs.purchase.added', {
+                count: result.presetsCreated,
+                defaultValue: '{{count}} workouts added to Programs',
+                defaultValue_one: '{{count}} workout added to Programs',
+                defaultValue_other: '{{count}} workouts added to Programs',
+              }),
+            });
+          }}
+        />
+      )}
     </View>
   );
 };

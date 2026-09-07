@@ -301,7 +301,7 @@ describe('ProgressPhotoTimelapseScreen', () => {
     expect(sheetProps()?.markedDates).toEqual([daysAgo(9), daysAgo(1)]);
   });
 
-  it('says it widened rather than claiming the history fits the preset', () => {
+  it('says it widened rather than claiming the history fits the program', () => {
     // One shoot inside the default window and older ones outside it. Playing
     // only the one would be a dead screen, so the window widens - but the
     // counter has to admit it, or it claims a year of photos is from the last
@@ -314,7 +314,7 @@ describe('ProgressPhotoTimelapseScreen', () => {
     expect(queryByText(/Last 3 months/)).toBeNull();
   });
 
-  it('keeps the preset label when the window stands on its own', () => {
+  it('keeps the program label when the window stands on its own', () => {
     setGallery([day(daysAgo(5)), day(daysAgo(20))]);
 
     const { getByText } = renderScreen();

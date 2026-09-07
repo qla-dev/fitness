@@ -370,7 +370,7 @@ describe('activeWorkoutStore', () => {
       expect(useActiveWorkoutStore.getState().createdByLiveStart).toBe(false);
     });
 
-    it('records the source preset link when passed', () => {
+    it('records the source program link when passed', () => {
       useActiveWorkoutStore.getState().startWorkout(makeSession(), {
         createdByLiveStart: true,
         sourcePresetId: 42,
@@ -381,7 +381,7 @@ describe('activeWorkoutStore', () => {
       expect(state.sourceServerConfigId).toBe('config-1');
     });
 
-    it('defaults the source preset link to null', () => {
+    it('defaults the source program link to null', () => {
       useActiveWorkoutStore
         .getState()
         .startWorkout(makeSession(), { createdByLiveStart: true });
@@ -390,7 +390,7 @@ describe('activeWorkoutStore', () => {
       expect(state.sourceServerConfigId).toBeNull();
     });
 
-    it('clearWorkout resets the source preset link', () => {
+    it('clearWorkout resets the source program link', () => {
       useActiveWorkoutStore.getState().startWorkout(makeSession(), {
         sourcePresetId: 42,
         sourceServerConfigId: 'config-1',
@@ -401,7 +401,7 @@ describe('activeWorkoutStore', () => {
       expect(state.sourceServerConfigId).toBeNull();
     });
 
-    it('startWorkoutAtSet clears any source preset link', () => {
+    it('startWorkoutAtSet clears any source program link', () => {
       useActiveWorkoutStore.setState({
         sourcePresetId: 42,
         sourceServerConfigId: 'config-1',
@@ -412,7 +412,7 @@ describe('activeWorkoutStore', () => {
       expect(state.sourceServerConfigId).toBeNull();
     });
 
-    it('persists the source preset link via partialize', () => {
+    it('persists the source program link via partialize', () => {
       useActiveWorkoutStore.getState().startWorkout(makeSession(), {
         sourcePresetId: 42,
         sourceServerConfigId: 'config-1',

@@ -451,10 +451,10 @@ describe('WorkoutCompleteScreen', () => {
     });
   });
 
-  it('Save as Preset opens the prefilled preset create form', () => {
+  it('Save as Program opens the prefilled program create form', () => {
     const { getByText } = renderScreen();
 
-    fireEvent.press(getByText('Save as Preset'));
+    fireEvent.press(getByText('Save as Program'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetForm', {
       mode: 'create-preset',
@@ -481,7 +481,7 @@ describe('WorkoutCompleteScreen', () => {
     });
   });
 
-  describe('update-preset prompt', () => {
+  describe('update-program prompt', () => {
     let alertSpy: jest.SpyInstance;
 
     function makePresetSet(
@@ -597,10 +597,10 @@ describe('WorkoutCompleteScreen', () => {
 
       expect(alertSpy).toHaveBeenCalledTimes(1);
       expect(alertSpy).toHaveBeenCalledWith(
-        'Update preset?',
+        'Update program?',
         expect.stringContaining('"Push Day"'),
         expect.arrayContaining([
-          expect.objectContaining({ text: 'Keep Preset' }),
+          expect.objectContaining({ text: 'Keep Program' }),
           expect.objectContaining({ text: 'Update' }),
         ])
       );
@@ -640,7 +640,7 @@ describe('WorkoutCompleteScreen', () => {
       });
       expect(Toast.show).toHaveBeenCalledWith({
         type: 'success',
-        text1: 'Preset updated',
+        text1: 'Program updated',
       });
     });
 
@@ -661,7 +661,7 @@ describe('WorkoutCompleteScreen', () => {
       );
     });
 
-    it('does not prompt when the performed workout matches the preset', async () => {
+    it('does not prompt when the performed workout matches the program', async () => {
       mockGetPresetById.mockResolvedValue(makeMatchingPreset());
       renderScreen(promptParams);
       await flushFetch();
@@ -670,7 +670,7 @@ describe('WorkoutCompleteScreen', () => {
       expect(alertSpy).not.toHaveBeenCalled();
     });
 
-    it('does not prompt for a preset the user does not own', async () => {
+    it('does not prompt for a program the user does not own', async () => {
       mockGetPresetById.mockResolvedValue(
         makeDeviatingPreset({ user_id: 'someone-else' })
       );
@@ -682,7 +682,7 @@ describe('WorkoutCompleteScreen', () => {
       expect(updatePresetAsync).not.toHaveBeenCalled();
     });
 
-    it('does not fetch or prompt for a workout without a source preset', async () => {
+    it('does not fetch or prompt for a workout without a source program', async () => {
       renderScreen();
       await flushFetch();
       firePromptTimer();
@@ -691,7 +691,7 @@ describe('WorkoutCompleteScreen', () => {
       expect(alertSpy).not.toHaveBeenCalled();
     });
 
-    it('does not prompt when the preset fetch fails (e.g. deleted mid-workout)', async () => {
+    it('does not prompt when the program fetch fails (e.g. deleted mid-workout)', async () => {
       mockGetPresetById.mockRejectedValue(new Error('404'));
       renderScreen(promptParams);
       await flushFetch();

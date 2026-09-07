@@ -137,10 +137,10 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
           type: 'success',
           text1: updated.is_public
             ? t('workoutPresetDetail.toast.shared', {
-                defaultValue: 'Workout preset shared publicly',
+                defaultValue: 'Workout program shared publicly',
               })
             : t('workoutPresetDetail.toast.private', {
-                defaultValue: 'Workout preset made private',
+                defaultValue: 'Workout program made private',
               }),
         });
       } catch {
@@ -153,7 +153,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
         t('workoutPresetDetail.share.title', { defaultValue: 'Make public?' }),
         t('workoutPresetDetail.share.message', {
           defaultValue:
-            'This workout preset will become visible to all users on this server.',
+            'This workout program will become visible to all users on this server.',
         }),
         [
           {
@@ -180,7 +180,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
         Toast.show({
           type: 'success',
           text1: t('workoutPresetDetail.toast.deleted', {
-            defaultValue: 'Workout preset deleted',
+            defaultValue: 'Workout program deleted',
           }),
         });
         navigation.goBack();
@@ -307,7 +307,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
       Toast.show({
         type: 'success',
         text1: t('workoutPresetDetail.toast.duplicated', {
-          defaultValue: 'Workout preset duplicated',
+          defaultValue: 'Workout program duplicated',
         }),
       });
       // navigate() to the route already focused replaces its params instead of
@@ -345,7 +345,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
           role: 'secondary',
           onPress: handleEdit,
           accessibilityLabel: t('workoutPresetDetail.accessibility.edit', {
-            defaultValue: 'Edit workout preset',
+            defaultValue: 'Edit workout program',
           }),
           identifier: 'workout-preset-detail-edit',
         } as const,
@@ -473,7 +473,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
           className="mt-3"
           textClassName="text-text-secondary font-medium"
           accessibilityLabel={t('workoutPresetDetail.accessibility.duplicate', {
-            defaultValue: 'Duplicate workout preset',
+            defaultValue: 'Duplicate workout program',
           })}
         >
           {isDuplicatePending
@@ -481,7 +481,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
                 defaultValue: 'Duplicating…',
               })
             : t('workoutPresetDetail.actions.duplicate', {
-                defaultValue: 'Duplicate preset',
+                defaultValue: 'Duplicate program',
               })}
         </Button>
 
@@ -497,7 +497,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
                   defaultValue: 'Deleting…',
                 })
               : t('workoutPresetDetail.actions.delete', {
-                  defaultValue: 'Delete preset',
+                  defaultValue: 'Delete program',
                 })}
           </Button>
         )}

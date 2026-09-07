@@ -57,7 +57,7 @@ const baseDraft: PresetDraft = {
   ],
 };
 
-describe('WorkoutPresetFormScreen — buildPresetEditPayload', () => {
+describe('WorkoutProgramFormScreen — buildProgramEditPayload', () => {
   it('returns empty object when nothing changed', () => {
     expect(
       buildPresetEditPayload({
@@ -252,7 +252,7 @@ describe('WorkoutPresetFormScreen — buildPresetEditPayload', () => {
     expect(payload).not.toHaveProperty('description');
   });
 
-  it('handles a preset with null initial description', () => {
+  it('handles a program with null initial description', () => {
     const presetWithoutDesc: WorkoutPreset = {
       ...basePreset,
       description: null,

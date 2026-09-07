@@ -149,7 +149,7 @@ describe('ExerciseHistoryList', () => {
     expect(screen.getByText('30s')).toBeTruthy();
   });
 
-  it('shows only the matching exercise from a preset session, with the workout name', () => {
+  it('shows only the matching exercise from a program session, with the workout name', () => {
     mockUseExerciseHistory.mockReturnValue({
       ...baseHookResult,
       sessions: [

@@ -225,7 +225,7 @@ describe('PresetSearchScreen', () => {
 
     const screen = renderScreen();
 
-    expect(screen.getByText('No presets in Public')).toBeTruthy();
+    expect(screen.getByText('No programs in Public')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Show All'));
 
@@ -235,7 +235,7 @@ describe('PresetSearchScreen', () => {
     expect(screen.getByText('Push Day')).toBeTruthy();
   });
 
-  it('starts a live workout from a tapped preset with the preset-built payload and source link', () => {
+  it('starts a live workout from a tapped program with the program-built payload and source link', () => {
     const preset = buildPreset();
     const screen = renderScreen();
 
@@ -249,7 +249,7 @@ describe('PresetSearchScreen', () => {
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('opens the preset preview from the thumbnail without starting', () => {
+  it('opens the program preview from the thumbnail without starting', () => {
     const screen = renderScreen();
 
     fireEvent.press(screen.getByTestId('preset-thumbnail'));
@@ -260,10 +260,10 @@ describe('PresetSearchScreen', () => {
     expect(startLiveWorkout).not.toHaveBeenCalled();
   });
 
-  it('opens the preset preview from the info button without starting', () => {
+  it('opens the program preview from the info button without starting', () => {
     const screen = renderScreen();
 
-    fireEvent.press(screen.getByLabelText('View preset details'));
+    fireEvent.press(screen.getByLabelText('View program details'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetDetail', {
       preset: expect.objectContaining({ id: 7 }),
@@ -279,7 +279,7 @@ describe('PresetSearchScreen', () => {
     const screen = renderScreen();
 
     fireEvent.press(screen.getByTestId('preset-thumbnail'));
-    fireEvent.press(screen.getByLabelText('View preset details'));
+    fireEvent.press(screen.getByLabelText('View program details'));
 
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
@@ -335,7 +335,7 @@ describe('PresetSearchScreen', () => {
     expect(startLiveWorkout).toHaveBeenCalledTimes(1);
   });
 
-  it('disables preset rows and the empty row while a start is in flight', () => {
+  it('disables program rows and the empty row while a start is in flight', () => {
     mockUseStartLiveWorkout.mockReturnValue({
       startLiveWorkout,
       isStarting: true,
