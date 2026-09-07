@@ -73,6 +73,8 @@ export type RootStackParamList = {
   MealPlans: undefined;
   MealPlanForm: { template?: MealPlanTemplate; initialMeal?: Meal } | undefined;
   ExercisesLibrary: undefined;
+  /** A training program's product page, opened from the Exercises store. */
+  ExerciseProgram: { programId: string };
   WorkoutPresetsLibrary: undefined;
   WorkoutPresetDetail: { preset: WorkoutPreset; updatedPreset?: WorkoutPreset };
   WorkoutPresetForm:

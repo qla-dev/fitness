@@ -34,6 +34,7 @@ import SleepDetailScreen from '../screens/SleepDetailScreen';
 import ExerciseSearchScreen from '../screens/ExerciseSearchScreen';
 import PresetSearchScreen from '../screens/PresetSearchScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ExerciseProgramScreen from '../screens/ExerciseProgramScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileGoalsScreen from '../screens/ProfileGoalsScreen';
 import ProfileThemeScreen from '../screens/ProfileThemeScreen';
@@ -118,6 +119,7 @@ export const SafeProgressPhotos = withErrorBoundary(ProgressPhotosScreen, 'Progr
 export const SafeProgressPhotoCompare = withErrorBoundary(ProgressPhotoCompareScreen, 'ProgressPhotoCompare', { canGoBack: true });
 export const SafeProgressPhotoTimelapse = withErrorBoundary(ProgressPhotoTimelapseScreen, 'ProgressPhotoTimelapse', { canGoBack: true });
 export const SafeChat = withErrorBoundary(ChatScreen, 'Chat', { canGoBack: true });
+export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'ExerciseProgram', { canGoBack: true });
 export const SafeProfile = withErrorBoundary(SettingsScreen, 'Profile', { canGoBack: true });
 export const SafeProfileEdit = withErrorBoundary(ProfileEditScreen, 'ProfileEdit', { canGoBack: true });
 export const SafeProfileGoals = withErrorBoundary(ProfileGoalsScreen, 'ProfileGoals', { canGoBack: true });

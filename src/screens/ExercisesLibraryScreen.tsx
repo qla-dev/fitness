@@ -15,6 +15,7 @@ import { useCSSVariable } from 'uniwind';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
 import StatusView from '../components/StatusView';
+import ProgramStore from '../components/ProgramStore';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
@@ -453,6 +454,26 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           if (row.kind === 'online') return renderOnlineRow(row.item);
           return renderRow({ item: row.exercise, index });
         }}
+        ListHeaderComponent={
+          searchText.trim().length > 0 ? null : (
+            <>
+              <ProgramStore
+                onSelectProgram={(program) =>
+                  navigation.navigate('ExerciseProgram', {
+                    programId: program.id,
+                  })
+                }
+              />
+              <View className="px-4 pt-6 pb-2">
+                <Text className="text-lg font-bold text-text-primary">
+                  {t('exerciseLibrary.savedSection', {
+                    defaultValue: 'My exercises',
+                  })}
+                </Text>
+              </View>
+            </>
+          )
+        }
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={
           <>
@@ -511,7 +532,11 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   // profile button every tab header shows.
   const isTabRoot = !navigation.canGoBack();
   const header = useScreenHeader({
-    title: t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
+    // The tab root is the program store; the Library drill-in is still the
+    // exercise library.
+    title: isTabRoot
+      ? t('programs.storeTab', { defaultValue: 'Store' })
+      : t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
     left: isTabRoot ? null : { kind: 'back' },
     right: [
       ...(isTabRoot

@@ -70,6 +70,7 @@ import {
   SafeProgressPhotoCompare,
   SafeProgressPhotoTimelapse,
   SafeChat,
+  SafeExerciseProgram,
   SafeProfile,
   SafeProfileEdit,
   SafeProfileGoals,
@@ -673,6 +674,11 @@ function AppContent() {
             name="ProgressPhotoTimelapse"
             component={SafeProgressPhotoTimelapse}
             options={createStackScreenOptions(t('screens.progressPhotoTimelapse', { defaultValue: 'Time-lapse' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="ExerciseProgram"
+            component={SafeExerciseProgram}
+            options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Profile"

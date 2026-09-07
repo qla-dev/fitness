@@ -230,7 +230,7 @@ function ExercisesStackScreen() {
           name="ExercisesRoot"
           component={SafeExercises as React.ComponentType}
           options={{
-            title: t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
+            title: t('programs.storeTab', { defaultValue: 'Store' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
@@ -326,9 +326,7 @@ export function NativeTabsLayout({
           name="Exercises"
           component={ExercisesStackScreen}
           options={{
-            tabBarLabel: t('exerciseLibrary.title', {
-              defaultValue: 'Exercises',
-            }),
+            tabBarLabel: t('programs.storeTab', { defaultValue: 'Store' }),
             tabBarIcon: () =>
               ({
                 sfSymbol: 'figure.strengthtraining.traditional',
@@ -423,11 +421,9 @@ export function FallbackTabsLayout({
         name="Exercises"
         component={SafeExercises as React.ComponentType}
         options={{
-          tabBarLabel: t('exerciseLibrary.title', {
-            defaultValue: 'Exercises',
-          }),
-          tabBarAccessibilityLabel: t('exerciseLibrary.title', {
-            defaultValue: 'Exercises',
+          tabBarLabel: t('programs.storeTab', { defaultValue: 'Store' }),
+          tabBarAccessibilityLabel: t('programs.storeTab', {
+            defaultValue: 'Store',
           }),
         }}
       />

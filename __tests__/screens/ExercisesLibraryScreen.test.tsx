@@ -358,8 +358,11 @@ describe('ExercisesLibraryScreen online search', () => {
 
     const screen = renderScreen();
 
-    // No headings and no online rows until the user actually searches.
-    expect(screen.queryByText('My exercises')).toBeNull();
+    // The store sits above the library, and the library keeps its heading —
+    // but nothing from the provider shows until the user actually searches.
+    expect(screen.getByText('Featured')).toBeTruthy();
+    expect(screen.getByText('Build Serious Muscle')).toBeTruthy();
+    expect(screen.getByText('My exercises')).toBeTruthy();
     expect(screen.queryByText('Online')).toBeNull();
     expect(screen.queryByText('Incline Bench')).toBeNull();
   });
