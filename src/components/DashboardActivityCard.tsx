@@ -103,11 +103,14 @@ export default function DashboardActivityCard({
                     {metric.label}
                   </Text>
                 </View>
+                {/* Nothing recorded is a real zero, not an unknown: "0/200
+                    kcal" states the day so far, where an em dash reads as a
+                    fault in the app. */}
                 <Text
                   style={{ color: metric.color }}
                   className="font-bold text-xl"
                 >
-                  {metric.value == null ? '—' : number(metric.value)}
+                  {number(metric.value ?? 0)}
                   {metric.goal > 0 ? `/${number(metric.goal)}` : ''}{' '}
                   {metric.unit}
                 </Text>
@@ -129,11 +132,14 @@ export default function DashboardActivityCard({
                 <Icon name={metric.icon} size={18} color={metric.color} />
                 <DashboardCardTitle>{metric.label}</DashboardCardTitle>
               </View>
+              {/* The tiles carry the same value/goal pair as the ring legend
+                  above, so the two never disagree at a glance. */}
               <Text
                 style={{ color: metric.color }}
                 className="text-3xl font-semibold mt-1"
               >
-                {metric.value == null ? '—' : number(metric.value)}
+                {number(metric.value ?? 0)}
+                {metric.goal > 0 ? `/${number(metric.goal)}` : ''}
               </Text>
               <Text className="text-text-muted text-sm mt-1">
                 {metric.unit ||

@@ -51,8 +51,11 @@ export default function ActivityMetricChart({
         <Icon name={icon} size={20} color={color} />
         <DashboardCardTitle>{title}</DashboardCardTitle>
       </View>
+      {/* Nothing recorded reads as a real zero rather than an em dash: the
+          metric is a count of what you did today, and "0/30 min" says that far
+          more plainly than "— min". */}
       <Text style={{ color }} className="text-3xl font-semibold mt-1 mb-3">
-        {value == null ? '—' : number(value)}
+        {number(value ?? 0)}
         {goal && goal > 0 ? `/${number(goal)}` : ''} {unit}
       </Text>
       <View style={{ height: 88 }}>

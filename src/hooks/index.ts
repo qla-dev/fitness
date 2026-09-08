@@ -79,3 +79,4 @@ export {
   useSetFoodEntryMealImages,
   useClearFoodEntryMealImage,
 } from './useEntryImages';
+export { useProgramThumbnails } from './useProgramThumbnails';

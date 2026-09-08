@@ -394,6 +394,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           hourlyExercise={hourlyExercise}
           distanceUnit={preferences.default_distance_unit ?? 'km'}
           standGoal={summary.goals.stand_hours}
+          stepsGoal={summary.goals.steps}
         />
 
         {/* Goal-notification reconciliation is owned here (headless, always

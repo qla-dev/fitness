@@ -11,6 +11,9 @@ import {
 import { useCSSVariable } from 'uniwind';
 
 import Icon from './Icon';
+import SafeImage from './SafeImage';
+import { useProgramThumbnails } from '../hooks';
+import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import {
   EXERCISE_PROGRAMS,
   FEATURED_PROGRAM_IDS,
@@ -97,6 +100,46 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
     string,
   ];
 
+  // Covers are resolved for the whole catalogue rather than per shelf: the
+  // shelves overlap and the chips re-filter in place, so a per-view list
+  // would refetch the same programs as the user browses.
+  const covers = useProgramThumbnails(EXERCISE_PROGRAMS);
+  const { getImageSource } = useExerciseImageSource();
+
+  /**
+   * A program's cover, or its icon while the lookup is out (or if nothing
+   * in it has artwork). Same shape either way so the row never reflows.
+   */
+  const renderCover = (
+    program: ExerciseProgram,
+    size: number,
+    iconSize: number,
+    fallbackBackground: string
+  ) => {
+    const cover = covers[program.id];
+    const source = cover ? getImageSource(cover) : null;
+    const placeholder = (
+      <View
+        className="rounded-2xl items-center justify-center"
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: fallbackBackground,
+        }}
+      >
+        <Icon name={program.icon} size={iconSize} color="#FFFFFF" />
+      </View>
+    );
+    if (!source) return placeholder;
+    return (
+      <SafeImage
+        source={source}
+        style={{ width: size, height: size, borderRadius: 16 }}
+        fallback={placeholder}
+      />
+    );
+  };
+
   // A page spans the screen minus the gutters, so the next one peeks in.
   const pageWidth = Math.max(240, width - GUTTER * 2);
   const snapInterval = pageWidth + GUTTER / 2;
@@ -128,15 +171,8 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
         }}
         className="flex-row items-stretch py-3 pr-2"
       >
-        <View
-          className="rounded-2xl items-center justify-center mr-3"
-          style={{
-            width: 56,
-            height: 56,
-            backgroundColor: accents[program.accentVar],
-          }}
-        >
-          <Icon name={program.icon} size={26} color="#FFFFFF" />
+        <View className="mr-3">
+          {renderCover(program, 56, 26, accents[program.accentVar])}
         </View>
         <View className="flex-1 mr-2 justify-between">
           <View>
@@ -178,6 +214,35 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
       {!isLast && <View className="h-px bg-border-subtle ml-[68px]" />}
     </View>
   );
+
+  const featuredCover = (program: ExerciseProgram) => {
+    const cover = covers[program.id];
+    const source = cover ? getImageSource(cover) : null;
+    if (!source) return null;
+    return (
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        <SafeImage
+          source={source}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          fallback={null}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          }}
+        />
+      </View>
+    );
+  };
 
   const renderShelf = (
     key: string,
@@ -295,17 +360,12 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                   backgroundColor: accents[program.accentVar],
                 }}
               >
+                {/* The cover sits behind the copy, with the accent still
+                    painted underneath so a program with no artwork keeps
+                    exactly the card it had. The scrim is what keeps white
+                    text legible over an arbitrary photo. */}
+                {featuredCover(program)}
                 <View className="p-5" style={{ minHeight: 176 }}>
-                  <View
-                    className="rounded-2xl items-center justify-center mb-4"
-                    style={{
-                      width: 52,
-                      height: 52,
-                      backgroundColor: 'rgba(0,0,0,0.22)',
-                    }}
-                  >
-                    <Icon name={program.icon} size={26} color="#FFFFFF" />
-                  </View>
                   <Text className="text-white text-2xl font-bold">
                     {program.name}
                   </Text>

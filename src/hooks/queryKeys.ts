@@ -231,3 +231,14 @@ export const medicationEntriesQueryKey = (opts?: {
   toDate?: string;
   medicationId?: string;
 }) => ['medications', 'entries', opts ?? {}] as const;
+
+// --- Program store ---
+/**
+ * A store program's cover image. Keyed by provider too: the fallback lookup
+ * runs against whichever provider is active, so a different one can resolve a
+ * different picture.
+ */
+export const programThumbnailQueryKey = (
+  programId: string,
+  providerId: string | null
+) => ['programThumbnail', programId, providerId] as const;

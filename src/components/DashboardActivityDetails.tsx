@@ -13,6 +13,8 @@ interface DashboardActivityDetailsProps {
   distanceUnit: 'km' | 'miles';
   standHours?: number | null;
   standGoal?: number;
+  /** Daily step target; the tile drops the denominator when none is set. */
+  stepsGoal?: number;
   hourlyMove?: readonly (number | null)[];
   hourlyExercise?: readonly (number | null)[];
   hourlyStand?: readonly (number | null)[];
@@ -26,6 +28,7 @@ export default function DashboardActivityDetails({
   distanceUnit,
   standHours,
   standGoal,
+  stepsGoal,
   hourlyMove,
   hourlyExercise,
   hourlyStand,
@@ -64,6 +67,8 @@ export default function DashboardActivityDetails({
         hourlyValues={hourlyStand}
         binary
       />
+      {/* Both tiles read a missing value as 0 for the same reason the charts
+          above do: an unrecorded step count is zero steps, not unknown. */}
       <View className="flex-row gap-4">
         <View className="flex-1">
           <View className="flex-row items-center gap-2">
@@ -73,9 +78,12 @@ export default function DashboardActivityDetails({
             </DashboardCardTitle>
           </View>
           <Text className="text-text-primary text-3xl font-semibold mt-1">
-            {steps == null
-              ? '—'
-              : formatLocalizedNumber(steps, { maximumFractionDigits: 0 })}
+            {formatLocalizedNumber(steps ?? 0, { maximumFractionDigits: 0 })}
+            {stepsGoal && stepsGoal > 0
+              ? `/${formatLocalizedNumber(stepsGoal, {
+                  maximumFractionDigits: 0,
+                })}`
+              : ''}
           </Text>
         </View>
         <View className="flex-1">
@@ -86,9 +94,7 @@ export default function DashboardActivityDetails({
             </DashboardCardTitle>
           </View>
           <Text className="text-text-primary text-3xl font-semibold mt-1">
-            {distance == null
-              ? '—'
-              : formatLocalizedNumber(distance, { maximumFractionDigits: 2 })}
+            {formatLocalizedNumber(distance ?? 0, { maximumFractionDigits: 2 })}
           </Text>
           <Text className="text-text-muted text-sm">
             {distanceUnit === 'km'

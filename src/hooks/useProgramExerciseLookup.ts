@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import Toast from 'react-native-toast-message';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { fetchExercisesPage } from '../services/api/exerciseApi';
 import { searchExternalExercises } from '../services/api/externalExerciseSearchApi';
@@ -17,6 +18,61 @@ function bestMatch<T extends { name: string }>(
   return (
     items.find((item) => item.name.trim().toLowerCase() === target) ?? items[0]
   );
+}
+
+export interface ProgramLookupProvider {
+  id: string;
+  provider_type: string;
+}
+
+/**
+ * Keyed by name rather than by program, so the same movement resolves once
+ * however many programs prescribe it — and a cover resolved on a store shelf is
+ * already warm when the detail screen lists that exercise.
+ */
+export const programExerciseLookupQueryKey = (
+  providerId: string | null,
+  name: string
+) => ['programExerciseLookup', providerId, name.trim().toLowerCase()] as const;
+
+const PROGRAM_LOOKUP_STALE_MS = 5 * 60 * 1000;
+
+/**
+ * Resolves one program movement name to a real exercise: the user's library
+ * first, then the provider. Shared by the detail screen's row taps and by the
+ * store's cover lookups so both read one cache entry.
+ */
+export function fetchProgramExercise(
+  queryClient: QueryClient,
+  name: string,
+  provider: ProgramLookupProvider | null,
+  t: TFunction
+): Promise<Exercise | null> {
+  return queryClient.fetchQuery({
+    queryKey: programExerciseLookupQueryKey(provider?.id ?? null, name),
+    staleTime: PROGRAM_LOOKUP_STALE_MS,
+    retry: false,
+    queryFn: async (): Promise<Exercise | null> => {
+      const page = await fetchExercisesPage({
+        searchTerm: name,
+        page: 1,
+        pageSize: 10,
+      });
+      const saved = bestMatch(page.exercises, name);
+      if (saved) return saved;
+      if (provider) {
+        const online = await searchExternalExercises(
+          name,
+          provider.provider_type,
+          provider.id,
+          1
+        );
+        const match = bestMatch(online.items, name);
+        if (match) return exerciseFromExternalItem(match, t);
+      }
+      return null;
+    },
+  });
 }
 
 /**
@@ -38,36 +94,7 @@ export function useProgramExerciseLookup(enabled: boolean) {
   const inFlight = useRef(false);
 
   const lookup = useCallback(
-    (name: string) =>
-      queryClient.fetchQuery({
-        queryKey: [
-          'programExerciseLookup',
-          provider?.id ?? null,
-          name.trim().toLowerCase(),
-        ],
-        staleTime: 5 * 60 * 1000,
-        retry: false,
-        queryFn: async (): Promise<Exercise | null> => {
-          const page = await fetchExercisesPage({
-            searchTerm: name,
-            page: 1,
-            pageSize: 10,
-          });
-          const saved = bestMatch(page.exercises, name);
-          if (saved) return saved;
-          if (provider) {
-            const online = await searchExternalExercises(
-              name,
-              provider.provider_type,
-              provider.id,
-              1
-            );
-            const match = bestMatch(online.items, name);
-            if (match) return exerciseFromExternalItem(match, t);
-          }
-          return null;
-        },
-      }),
+    (name: string) => fetchProgramExercise(queryClient, name, provider, t),
     [provider, queryClient, t]
   );
 

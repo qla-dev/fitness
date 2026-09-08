@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
 import Icon from '../components/Icon';
+import ProgramCover from '../components/ProgramCover';
 import { formatLocalizedNumber } from '../localization';
 import ProgramExerciseRow from '../components/ProgramExerciseRow';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
@@ -165,11 +166,14 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
         }
       >
         <View className="flex-row items-stretch px-4 pt-4 pb-5">
-          <View
-            className="rounded-3xl items-center justify-center mr-4"
-            style={{ width: 96, height: 96, backgroundColor: accent }}
-          >
-            <Icon name={program.icon} size={44} color="#FFFFFF" />
+          <View className="mr-4">
+            <ProgramCover
+              program={program}
+              size={96}
+              iconSize={44}
+              accent={accent}
+              radius={24}
+            />
           </View>
           <View className="flex-1 justify-between">
             <View>

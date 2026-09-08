@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 
-import Icon from './Icon';
+import ProgramCover from './ProgramCover';
 import { useProgramAccents } from './ProgramStore';
 import { useExternalProviders } from '../hooks/useExternalProviders';
 import {
@@ -116,15 +116,13 @@ const ProgramPurchaseSheet: React.FC<ProgramPurchaseSheetProps> = ({
           </View>
 
           <View className="flex-row items-center mb-5">
-            <View
-              className="rounded-2xl items-center justify-center mr-3"
-              style={{
-                width: 64,
-                height: 64,
-                backgroundColor: accents[program.accentVar],
-              }}
-            >
-              <Icon name={program.icon} size={30} color="#FFFFFF" />
+            <View className="mr-3">
+              <ProgramCover
+                program={program}
+                size={64}
+                iconSize={30}
+                accent={accents[program.accentVar]}
+              />
             </View>
             <View className="flex-1">
               <Text
