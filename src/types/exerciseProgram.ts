@@ -61,6 +61,8 @@ export interface ExerciseProgram {
   minutesPerSession: number;
   rating: number;
   ratingCount: number;
+  /** Display price only; installing a program does not charge the user. */
+  priceEur: number;
   /** CSS variable name supplying the card accent. */
   accentVar: string;
   icon: IconName;

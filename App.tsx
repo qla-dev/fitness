@@ -118,6 +118,7 @@ import { toastConfig } from './src/components/ui/toastConfig';
 import { TabsLayout } from './src/components/TabsLayout';
 import { createIOSSmallNativeHeaderOptions } from './src/utils/nativeHeaderItems';
 import { useHeaderActionColors } from './src/hooks/useHeaderActionColors';
+import { fireBackNavigationHaptic } from './src/utils/backNavigationHaptic';
 import ActiveWorkoutBar, {
   navigationRef as rootNavigationRef,
   notifyActiveWorkoutBarStackTransition,
@@ -171,6 +172,7 @@ function AppContent() {
   useAppStartup({ shouldYieldObserverSync });
   const {
     rememberActiveTab,
+    getActiveDiaryDate,
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
@@ -316,22 +318,28 @@ function AppContent() {
               </ActiveWorkoutTransitionScreenLayout>
             )
             : undefined}
-          screenListeners={usesLiquidGlassNavigation
-            ? {
-              transitionStart: (event) => {
-                notifyActiveWorkoutBarStackTransition('start', Boolean(event.data?.closing), event.target);
-              },
-              transitionEnd: (event) => {
-                const closing = Boolean(event.data?.closing);
-                if (!closing) notifyActiveWorkoutBarSwipeProgress(0);
-                notifyActiveWorkoutBarStackTransition('end', closing, event.target);
-              },
-              gestureCancel: (event) => {
-                notifyActiveWorkoutBarSwipeProgress(0);
-                notifyActiveWorkoutBarStackTransition('end', false, event.target);
-              },
-            }
-            : undefined}
+          screenListeners={({ navigation: screenNavigation }) => ({
+            transitionStart: (event) => {
+              const closing = Boolean(event.data?.closing);
+              // A push marks its outgoing screen closing too, so the helper
+              // reads the navigator state to tell a pop from a push.
+              if (closing)
+                fireBackNavigationHaptic(screenNavigation.getState(), event.target);
+              if (!usesLiquidGlassNavigation) return;
+              notifyActiveWorkoutBarStackTransition('start', closing, event.target);
+            },
+            transitionEnd: (event) => {
+              if (!usesLiquidGlassNavigation) return;
+              const closing = Boolean(event.data?.closing);
+              if (!closing) notifyActiveWorkoutBarSwipeProgress(0);
+              notifyActiveWorkoutBarStackTransition('end', closing, event.target);
+            },
+            gestureCancel: (event) => {
+              if (!usesLiquidGlassNavigation) return;
+              notifyActiveWorkoutBarSwipeProgress(0);
+              notifyActiveWorkoutBarStackTransition('end', false, event.target);
+            },
+          })}
           screenOptions={{
             headerShown: false,
             animation: 'default',
@@ -836,7 +844,7 @@ function AppContent() {
             })}
           />
         </Stack.Navigator>
-        <AddSheet ref={addSheetRef} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAddMeasurements={handleAddMeasurements} onAddProgressPhotos={handleAddProgressPhotos} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
+        <AddSheet ref={addSheetRef} getHydrationDate={getActiveDiaryDate} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAddMeasurements={handleAddMeasurements} onAddProgressPhotos={handleAddProgressPhotos} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
         <ReauthModal
           visible={showReauthModal}
           expiredConfigId={expiredConfigId}

@@ -371,6 +371,10 @@
     "nextSet": "Next Set"
   },
   "addSheet": {
+    "title": "Log into journey",
+    "hydration": "Hydration",
+    "aiMealScan": "AI meal scan",
+    "hydrationLoadFailed": "Could not load hydration. Please try again.",
     "food": "Food",
     "exercise": "Exercise",
     "measurements": "Measurements",
@@ -5052,6 +5056,8 @@
     "schedule": "The sessions",
     "scheduleSubtitle": "Repeat this week for the length of the program.",
     "sessionMeta": "{{focus}} · {{minutes}} min",
+    "sessionHeading": "Week {{number}} - {{name}}",
+    "startFor": "Start for {{price}}",
     "setsReps": "{{sets}} × {{reps}}",
     "nutrition": "Nutrition",
     "nutritionCalories": "Calories",

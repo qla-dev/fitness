@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
 import Icon from '../components/Icon';
+import { formatLocalizedNumber } from '../localization';
+import ProgramExerciseRow from '../components/ProgramExerciseRow';
+import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import StatusView from '../components/StatusView';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useProgramAccents } from '../components/ProgramStore';
@@ -49,8 +46,15 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   ]) as [string, string];
 
   const program = getProgramById(route.params.programId);
-  const { resolve, resolvingName } = useProgramExerciseLookup(Boolean(program));
+  const { resolve, resolvingName, lookup } = useProgramExerciseLookup(
+    Boolean(program)
+  );
+  const { getImageSource } = useExerciseImageSource();
+  const [scrollOffset, setScrollOffset] = useState(0);
   const [purchasing, setPurchasing] = useState(false);
+  const [expandedSessions, setExpandedSessions] = useState<
+    Record<string, boolean>
+  >({});
 
   // A program stores movement names; the real exercise is looked up on tap so
   // the user lands on the same detail screen the library and search open.
@@ -91,16 +95,21 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   }
 
   const accent = accents[program.accentVar];
-  const stats: { label: string; value: string; caption: string }[] = [
+  const stats: {
+    label: string;
+    value: string;
+    caption?: string;
+    stars?: boolean;
+  }[] = [
     {
-      label: t('programs.stats.rating', { defaultValue: 'RATING' }),
-      value: program.rating.toFixed(1),
-      caption: t('programs.stats.ratingCount', {
+      label: t('programs.stats.ratingCount', {
         count: program.ratingCount,
         defaultValue: '{{count}} ratings',
         defaultValue_one: '{{count}} rating',
         defaultValue_other: '{{count}} ratings',
       }),
+      value: program.rating.toFixed(1),
+      stars: true,
     },
     {
       label: t('programs.stats.level', { defaultValue: 'LEVEL' }),
@@ -146,6 +155,8 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
     >
       {header}
       <ScrollView
+        onScroll={(event) => setScrollOffset(event.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={100}
         contentContainerStyle={{
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
@@ -153,28 +164,39 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
           usesNativeHeader ? 'automatic' : 'never'
         }
       >
-        <View className="flex-row items-center px-4 pt-4 pb-5">
+        <View className="flex-row items-stretch px-4 pt-4 pb-5">
           <View
             className="rounded-3xl items-center justify-center mr-4"
             style={{ width: 96, height: 96, backgroundColor: accent }}
           >
             <Icon name={program.icon} size={44} color="#FFFFFF" />
           </View>
-          <View className="flex-1">
-            <Text className="text-text-primary text-2xl font-bold">
-              {program.name}
-            </Text>
-            <Text className="text-text-secondary text-sm mt-1">
-              {program.coach}
-            </Text>
+          <View className="flex-1 justify-between">
+            <View>
+              <Text
+                className="text-text-primary text-2xl font-bold"
+                style={{ lineHeight: 26, marginTop: -3 }}
+              >
+                {program.name}
+              </Text>
+              <Text className="text-text-secondary text-sm mt-0.5">
+                {program.coach}
+              </Text>
+            </View>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => setPurchasing(true)}
-              className="px-5 py-2 rounded-full mt-3 self-start"
+              className="px-3 py-1 rounded-full self-start"
               style={{ backgroundColor: accentPrimary }}
             >
               <Text className="text-accent-text text-base font-bold">
-                {t('programs.start', { defaultValue: 'Start' })}
+                {t('programs.startFor', {
+                  defaultValue: 'Start for {{price}}',
+                  price: formatLocalizedNumber(program.priceEur, {
+                    style: 'currency',
+                    currency: 'EUR',
+                  }),
+                })}
               </Text>
             </TouchableOpacity>
           </View>
@@ -183,24 +205,39 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
           className="border-y border-border-subtle py-3"
         >
           {stats.map((stat, index) => (
             <View
               key={stat.label}
-              className={`px-6 ${index > 0 ? 'border-l border-border-subtle' : ''}`}
+              className={`items-center justify-center px-6 ${index > 0 ? 'border-l border-border-subtle' : ''}`}
               style={{ minWidth: 108 }}
             >
-              <Text className="text-[11px] font-semibold text-text-secondary tracking-wider">
+              <Text className="text-center text-[11px] font-semibold text-text-secondary tracking-wider">
                 {stat.label}
               </Text>
-              <Text className="text-text-primary text-lg font-bold mt-1">
+              <Text className="text-center text-text-primary text-lg font-bold mt-1">
                 {stat.value}
               </Text>
-              <Text className="text-text-secondary text-xs mt-0.5">
-                {stat.caption}
-              </Text>
+              {stat.stars ? (
+                <View
+                  className="flex-row items-center justify-center mt-0.5"
+                  aria-hidden
+                >
+                  {Array.from({ length: 5 }, (_, starIndex) => (
+                    <Icon
+                      key={starIndex}
+                      name="star"
+                      size={14}
+                      color={textSecondary}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text className="text-center text-text-secondary text-xs mt-0.5">
+                  {stat.caption}
+                </Text>
+              )}
             </View>
           ))}
         </ScrollView>
@@ -234,75 +271,69 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
               defaultValue: 'Repeat this week for the length of the program.',
             })}
           </Text>
-          {program.sessions.map((session) => (
-            <View
-              key={session.day}
-              className="bg-surface rounded-2xl overflow-hidden mb-3"
-            >
-              <View className="px-4 pt-4 pb-3 flex-row items-center">
-                <View
-                  className="rounded-xl items-center justify-center mr-3"
-                  style={{ width: 38, height: 38, backgroundColor: accent }}
-                >
-                  <Text className="text-white text-base font-bold">
-                    {session.day}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-text-primary text-base font-semibold">
-                    {session.name}
-                  </Text>
-                  <Text className="text-text-secondary text-xs mt-0.5">
-                    {t('programs.sessionMeta', {
-                      defaultValue: '{{focus}} · {{minutes}} min',
-                      focus: session.focus,
-                      minutes: session.minutes,
-                    })}
-                  </Text>
-                </View>
-              </View>
-              {session.exercises.map((exercise) => (
+          {program.sessions.map((session, index) => {
+            const sessionKey = `${program.id}:${session.day}`;
+            const expanded = expandedSessions[sessionKey] ?? index === 0;
+            return (
+              <View key={session.day} className="mb-3">
                 <TouchableOpacity
-                  key={exercise.name}
+                  className="py-3 pr-2 flex-row items-center"
                   accessibilityRole="button"
+                  accessibilityLabel={session.name}
+                  accessibilityState={{ expanded }}
                   activeOpacity={0.7}
-                  disabled={resolvingName !== null}
-                  onPress={() => void openExercise(exercise.name)}
-                  className="px-4 py-2.5 border-t border-border-subtle"
+                  onPress={() =>
+                    setExpandedSessions((current) => ({
+                      ...current,
+                      [sessionKey]: !(current[sessionKey] ?? index === 0),
+                    }))
+                  }
                 >
-                  <View className="flex-row items-center">
-                    <Text
-                      className="text-text-primary text-sm flex-1 mr-2"
-                      numberOfLines={1}
-                    >
-                      {exercise.name}
-                    </Text>
-                    <Text className="text-text-secondary text-sm mr-2">
-                      {t('programs.setsReps', {
-                        defaultValue: '{{sets}} × {{reps}}',
-                        sets: exercise.sets,
-                        reps: exercise.reps,
+                  <View className="flex-1">
+                    <Text className="text-text-primary text-base font-semibold">
+                      {t('programs.sessionHeading', {
+                        defaultValue: 'Week {{number}} - {{name}}',
+                        number: index + 1,
+                        name: session.name,
                       })}
                     </Text>
-                    {resolvingName === exercise.name ? (
-                      <ActivityIndicator size="small" color={textSecondary} />
-                    ) : (
-                      <Icon
-                        name="chevron-forward"
-                        size={14}
-                        color={textSecondary}
-                      />
-                    )}
-                  </View>
-                  {exercise.note ? (
-                    <Text className="text-text-secondary text-xs mt-1">
-                      {exercise.note}
+                    <Text className="text-text-secondary text-sm mt-0.5">
+                      {t('programs.sessionMeta', {
+                        defaultValue: '{{focus}} · {{minutes}} min',
+                        focus: session.focus,
+                        minutes: session.minutes,
+                      })}
                     </Text>
-                  ) : null}
+                  </View>
+                  <View
+                    style={{
+                      transform: [{ rotate: expanded ? '-90deg' : '90deg' }],
+                    }}
+                  >
+                    <Icon
+                      name="chevron-forward"
+                      size={14}
+                      color={textSecondary}
+                    />
+                  </View>
                 </TouchableOpacity>
-              ))}
-            </View>
-          ))}
+                {expanded &&
+                  session.exercises.map((exercise) => (
+                    <ProgramExerciseRow
+                      key={exercise.name}
+                      exercise={exercise}
+                      scrollOffset={scrollOffset}
+                      lookup={lookup}
+                      getImageSource={getImageSource}
+                      disabled={resolvingName !== null}
+                      busy={resolvingName === exercise.name}
+                      onPress={() => void openExercise(exercise.name)}
+                      color={textSecondary}
+                    />
+                  ))}
+              </View>
+            );
+          })}
         </View>
 
         <View className="px-4 pt-3">

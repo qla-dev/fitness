@@ -374,6 +374,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
   }, []);
 
   return {
+    getActiveDiaryDate,
     rememberActiveTab,
     getLastActiveTab,
     handleAddFood,

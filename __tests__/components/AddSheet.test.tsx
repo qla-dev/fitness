@@ -1,6 +1,15 @@
 import React from 'react';
+import { Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import AddSheet, { type AddSheetRef } from '../../src/components/AddSheet';
+
+jest.mock('../../src/components/HydrationSheet', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return ({ date }: { date: string }) =>
+    React.createElement(Text, null, `Hydration sheet ${date}`);
+});
 
 const mockBottomSheetControls = {
   openCount: 0,
@@ -26,10 +35,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
       ({ children, onDismiss, onAnimate }: any, ref) => {
         // Test mock stashes the latest handlers for assertions; writing to the
         // module-scoped controls during the mock's render is intentional.
-        /* eslint-disable react-hooks/immutability */
         mockBottomSheetControls.onDismiss = onDismiss;
         mockBottomSheetControls.onAnimate = onAnimate;
-        /* eslint-enable react-hooks/immutability */
 
         React.useImperativeHandle(ref, () => ({
           present: mockBottomSheetControls.present,
@@ -65,11 +72,37 @@ function renderAddSheet(
     onAskSparky: jest.fn(),
     ...overrides,
   };
-  const utils = render(<AddSheet ref={ref} {...props} />);
+  const utils = render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 0, bottom: 0, left: 0, right: 0 },
+      }}
+    >
+      <AddSheet ref={ref} {...props} />
+    </SafeAreaProvider>
+  );
   return { ref, props, ...utils };
 }
 
 describe('AddSheet', () => {
+  const originalPlatform = Platform.OS;
+  it('shows the header and keeps AI meal scan inactive', () => {
+    const screen = renderAddSheet();
+    expect(screen.getByText('Log into journey')).toBeTruthy();
+    fireEvent.press(screen.getByText('AI meal scan'));
+    expect(mockBottomSheetControls.dismiss).not.toHaveBeenCalled();
+    expect(screen.getByText('Hydration')).toBeTruthy();
+    expect(screen.queryByText('Live sets & reps')).toBeNull();
+  });
+
+  it('opens hydration for the selected date after the Add sheet dismisses', () => {
+    const screen = renderAddSheet({ getHydrationDate: () => '2026-09-08' });
+    fireEvent.press(screen.getByText('Hydration'));
+    expect(screen.queryByText('Hydration sheet 2026-09-08')).toBeNull();
+    act(() => mockBottomSheetControls.onDismiss?.());
+    expect(screen.getByText('Hydration sheet 2026-09-08')).toBeTruthy();
+  });
   let requestAnimationFrameSpy: jest.SpyInstance<
     number,
     [FrameRequestCallback]
@@ -77,6 +110,11 @@ describe('AddSheet', () => {
   let cancelAnimationFrameSpy: jest.SpyInstance<void, [number]>;
 
   beforeEach(() => {
+    // These controls mock the Gorhom presentation used by Android.
+    Object.defineProperty(Platform, 'OS', {
+      value: 'android',
+      configurable: true,
+    });
     jest.clearAllMocks();
     mockBottomSheetControls.openCount = 0;
     mockBottomSheetControls.isPresentBlocked = false;
@@ -94,6 +132,10 @@ describe('AddSheet', () => {
   });
 
   afterEach(() => {
+    Object.defineProperty(Platform, 'OS', {
+      value: originalPlatform,
+      configurable: true,
+    });
     requestAnimationFrameSpy.mockRestore();
     cancelAnimationFrameSpy.mockRestore();
   });

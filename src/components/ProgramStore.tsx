@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { fireSelectionHaptic } from '../services/haptics';
 import { useTranslation } from 'react-i18next';
 import {
   ScrollView,
@@ -121,8 +122,11 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
       <TouchableOpacity
         accessibilityRole="button"
         activeOpacity={0.7}
-        onPress={() => onSelectProgram(program)}
-        className="flex-row items-center py-3 pr-2"
+        onPress={() => {
+          fireSelectionHaptic();
+          onSelectProgram(program);
+        }}
+        className="flex-row items-stretch py-3 pr-2"
       >
         <View
           className="rounded-2xl items-center justify-center mr-3"
@@ -134,23 +138,23 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
         >
           <Icon name={program.icon} size={26} color="#FFFFFF" />
         </View>
-        <View className="flex-1 mr-2">
-          <Text
-            className="text-base font-semibold text-text-primary"
-            numberOfLines={1}
-          >
-            {program.name}
-          </Text>
-          <Text
-            className="text-sm text-text-secondary mt-0.5"
-            numberOfLines={1}
-          >
-            {meta(program)}
-          </Text>
-          <Text
-            className="text-xs text-text-secondary mt-0.5"
-            numberOfLines={1}
-          >
+        <View className="flex-1 mr-2 justify-between">
+          <View>
+            <Text
+              className="text-base font-semibold text-text-primary"
+              style={{ lineHeight: 18, marginTop: -2 }}
+              numberOfLines={1}
+            >
+              {program.name}
+            </Text>
+            <Text
+              className="text-sm text-text-secondary mt-0.5"
+              numberOfLines={1}
+            >
+              {meta(program)}
+            </Text>
+          </View>
+          <Text className="text-xs text-text-secondary" numberOfLines={1}>
             {getProgramLevelLabel(t, program.level)}
           </Text>
         </View>
@@ -161,7 +165,10 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
           defaultValue: 'Start {{name}}',
           name: program.name,
         })}
-        onPress={() => onStartProgram(program)}
+        onPress={() => {
+          fireSelectionHaptic();
+          onStartProgram(program);
+        }}
         className="absolute right-2 top-5 px-4 py-1.5 rounded-full bg-raised"
       >
         <Text className="text-accent-primary text-sm font-bold">
@@ -277,7 +284,10 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                 key={program.id}
                 accessibilityRole="button"
                 activeOpacity={0.85}
-                onPress={() => onSelectProgram(program)}
+                onPress={() => {
+                  fireSelectionHaptic();
+                  onSelectProgram(program);
+                }}
                 className="rounded-2xl overflow-hidden"
                 style={{
                   width: pageWidth,
@@ -309,7 +319,10 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                         defaultValue: 'Start {{name}}',
                         name: program.name,
                       })}
-                      onPress={() => onStartProgram(program)}
+                      onPress={() => {
+                        fireSelectionHaptic();
+                        onStartProgram(program);
+                      }}
                       className="px-4 py-1.5 rounded-full bg-white/25"
                     >
                       <Text className="text-white text-sm font-bold">

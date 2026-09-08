@@ -196,21 +196,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
 
-          {isLocalDataMode() ? (
-            // Local mode has no server to configure, so the row is replaced by
-            // a plain note saying where the data actually lives.
-            <View className="px-4 mb-4">
-              <Text className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                {t('localData.title', { defaultValue: 'On-device storage' })}
-              </Text>
-              <Text className="text-xs text-text-secondary mt-0.5">
-                {t('localData.description', {
-                  defaultValue:
-                    'Your data is saved on this device. No backend is connected.',
-                })}
-              </Text>
-            </View>
-          ) : (
+          {!isLocalDataMode() && (
             <SettingsRow
               icon="server"
               title={t('settings.rows.server', { defaultValue: 'Server' })}

@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import ExerciseProgramScreen from '../../src/screens/ExerciseProgramScreen';
+import ProgramExerciseRow from '../../src/components/ProgramExerciseRow';
+import SafeImage from '../../src/components/SafeImage';
 import {
   EXERCISE_PROGRAMS,
   getProgramById,
@@ -17,6 +19,12 @@ jest.mock('../../src/services/api/exerciseApi', () => ({
 
 jest.mock('../../src/hooks/useExternalProviders', () => ({
   useExternalProviders: () => ({ providers: [], isLoading: false }),
+}));
+
+jest.mock('../../src/hooks/useExerciseImageSource', () => ({
+  useExerciseImageSource: () => ({
+    getImageSource: (uri: string) => ({ uri }),
+  }),
 }));
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
@@ -88,6 +96,33 @@ describe('the program catalogue', () => {
 describe('ExerciseProgramScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
+  it('opens only the first session by default and toggles session exercises', () => {
+    const program = getProgramById('glutes-for-days')!;
+    const screen = renderProgram(program.id);
+    const rows = screen.UNSAFE_getAllByType(ProgramExerciseRow);
+    expect(rows).toHaveLength(program.sessions[0].exercises.length);
+    for (const row of rows) {
+      const thumbnail = row.findByType(SafeImage);
+      expect(thumbnail.props.source).toBeNull();
+      expect(thumbnail.props.fallback).toBeTruthy();
+    }
+    expect(fetchExercisesPage).not.toHaveBeenCalled();
+    fireEvent.press(
+      screen.getByRole('button', { name: program.sessions[0].name })
+    );
+    expect(screen.UNSAFE_queryAllByType(ProgramExerciseRow)).toHaveLength(0);
+    fireEvent.press(
+      screen.getByRole('button', { name: program.sessions[1].name })
+    );
+    expect(screen.UNSAFE_getAllByType(ProgramExerciseRow)).toHaveLength(
+      program.sessions[1].exercises.length
+    );
+    expect(
+      screen.getByRole('button', { name: program.sessions[1].name }).props
+        .accessibilityState.expanded
+    ).toBe(true);
+  });
+
   it('renders the program, its sessions and its nutrition', () => {
     const program = getProgramById('glutes-for-days');
     expect(program).toBeDefined();
@@ -99,8 +134,8 @@ describe('ExerciseProgramScreen', () => {
     expect(screen.getByText(program!.coach)).toBeTruthy();
     expect(screen.getByText(program!.summary)).toBeTruthy();
     // Every session heading and the nutrition block are on the page.
-    for (const session of program!.sessions) {
-      expect(screen.getByText(session.name)).toBeTruthy();
+    for (const [index, session] of program!.sessions.entries()) {
+      expect(screen.getByText(`Week ${index + 1} - ${session.name}`)).toBeTruthy();
     }
     expect(screen.getByText('Nutrition')).toBeTruthy();
     expect(screen.getByText(program!.nutrition.calories)).toBeTruthy();

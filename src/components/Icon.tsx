@@ -9,6 +9,7 @@ import { Platform, StyleProp, ViewStyle } from 'react-native';
  * - ion: Ionicon name (Android)
  */
 const ICON_MAP = {
+  hydration: { sf: 'drop.fill', ion: 'water' },
   // Navigation
   'chevron-down': { sf: 'chevron.down', ion: 'chevron-down' },
   'chevron-up': { sf: 'chevron.up', ion: 'chevron-up' },

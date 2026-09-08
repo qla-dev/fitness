@@ -31,6 +31,8 @@ import { AnnouncementModal } from './AnnouncementModal';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useTranslation } from 'react-i18next';
+import { fireSelectionHaptic } from '../services/haptics';
+import { fireBackNavigationHaptic } from '../utils/backNavigationHaptic';
 
 export const NON_ADD_TABS = [
   'Dashboard',
@@ -75,6 +77,21 @@ const SafeDashboard = withErrorBoundary(DashboardScreen, 'Dashboard');
 const SafeDiary = withErrorBoundary(DiaryScreen, 'Diary');
 const SafeLibrary = withErrorBoundary(LibraryScreen, 'Library');
 const SafeExercises = withErrorBoundary(ExercisesLibraryScreen, 'Exercises');
+
+// Popping a tab-local screen gives the same selection haptic the root stack
+// gives, fired at the start of the pop animation. The iOS native header back
+// button is drawn by the OS and has no JS press handler, so the transition is
+// the earliest press-time signal available.
+const popScreenListeners = ({
+  navigation,
+}: {
+  navigation: { getState: () => { routes: readonly { key: string }[] } };
+}) => ({
+  transitionStart: (event: { data?: { closing?: boolean }; target?: string }) => {
+    if (event.data?.closing)
+      fireBackNavigationHaptic(navigation.getState(), event.target);
+  },
+});
 
 // Native iOS Tab Navigator (iOS 26+ Liquid Glass)
 const NativeTab = createNativeBottomTabNavigator<TabParamList>();
@@ -141,7 +158,7 @@ function DashboardStackScreen() {
 
   return (
     <View className="flex-1">
-      <DashboardStack.Navigator screenOptions={screenOptions}>
+      <DashboardStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
         <DashboardStack.Screen
           name="DashboardRoot"
           component={SafeDashboard as React.ComponentType}
@@ -167,7 +184,7 @@ function DiaryStackScreen() {
 
   return (
     <View className="flex-1">
-      <DiaryStack.Navigator screenOptions={screenOptions}>
+      <DiaryStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
         <DiaryStack.Screen
           name="DiaryRoot"
           component={SafeDiary as React.ComponentType}
@@ -193,7 +210,7 @@ function LibraryStackScreen() {
 
   return (
     <View className="flex-1">
-      <LibraryStack.Navigator screenOptions={screenOptions}>
+      <LibraryStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
         <LibraryStack.Screen
           name="LibraryRoot"
           component={SafeLibrary as React.ComponentType}
@@ -225,7 +242,7 @@ function ExercisesStackScreen() {
 
   return (
     <View className="flex-1">
-      <ExercisesStack.Navigator screenOptions={screenOptions}>
+      <ExercisesStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
         <ExercisesStack.Screen
           name="ExercisesRoot"
           component={SafeExercises as React.ComponentType}
@@ -268,6 +285,7 @@ export function NativeTabsLayout({
         tabBarActiveTintColor={activeTintColor}
         tabBarInactiveTintColor={inactiveTintColor}
         screenListeners={{
+          tabPress: () => fireSelectionHaptic(),
           state: (event) => {
             const state = event.data?.state;
             if (!state?.routes) return;

@@ -3,6 +3,8 @@ import {
   View,
   Text,
   Pressable,
+  Platform,
+  StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -51,7 +53,18 @@ export const SettingsRowGroup: React.FC<SettingsRowGroupProps> = ({
             <React.Fragment key={i}>
               {child}
               {i < items.length - 1 && (
-                <View className="h-px bg-border-subtle" />
+                <View
+                  className="bg-border-subtle"
+                  style={{
+                    height:
+                      Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
+                    marginStart:
+                      React.isValidElement<SettingsRowProps>(child) &&
+                      child.props.icon
+                        ? 68
+                        : 16,
+                  }}
+                />
               )}
             </React.Fragment>
           ))}

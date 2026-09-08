@@ -7,13 +7,14 @@ import React, {
   useState,
 } from 'react';
 import { View, Text, Pressable, LayoutAnimation } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
 
 import Icon, { type IconName } from './Icon';
+import HydrationSheet from './HydrationSheet';
+import CustomModal, { type CustomModalRef } from './CustomModal';
+import { getTodayDate } from '../utils/dateUtils';
 import Button from './ui/Button';
-import { useSheetBackdrop } from './ui/sheetChrome';
 
 export interface AddSheetRef {
   present: (options?: { initialMenu?: 'exercise' }) => void;
@@ -23,6 +24,7 @@ export interface AddSheetRef {
 export const addSheetRef = React.createRef<AddSheetRef>();
 
 interface AddSheetProps {
+  getHydrationDate?: () => string | undefined;
   onAddFood: () => void;
   onStartWorkout: () => void;
   onAddActivity: () => void;
@@ -40,6 +42,7 @@ interface AddSheetProps {
 }
 
 interface ActionCard {
+  opensExerciseMenu?: boolean;
   label: string;
   icon: IconName;
   onPress?: () => void;
@@ -49,6 +52,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
   (
     {
       onAddFood,
+      getHydrationDate,
       onStartWorkout,
       onAddActivity,
       onLogWorkout,
@@ -66,7 +70,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
     ref
   ) => {
     const { t } = useTranslation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const bottomSheetRef = useRef<CustomModalRef>(null);
     const isDismissingRef = useRef(false);
     const isOpenRef = useRef(false);
     const isPresentingRef = useRef(false);
@@ -75,15 +79,14 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
     const pendingInitialMenuRef = useRef<'exercise' | null>(null);
     const presentFrameRef = useRef<number | null>(null);
     const [showExerciseMenu, setShowExerciseMenu] = useState(false);
+    const [hydrationDate, setHydrationDate] = useState<string | null>(null);
+    const pendingHydrationDate = useRef<string | null>(null);
 
-    const [surfaceBg, textMuted, accentPrimary, raisedBg, textSecondary] =
-      useCSSVariable([
-        '--color-surface',
-        '--color-text-muted',
-        '--color-accent-primary',
-        '--color-raised',
-        '--color-text-secondary',
-      ]) as [string, string, string, string, string];
+    const [accentPrimary, raisedBg, textSecondary] = useCSSVariable([
+      '--color-accent-primary',
+      '--color-raised',
+      '--color-text-secondary',
+    ]) as [string, string, string];
 
     const clearScheduledPresent = useCallback(() => {
       if (presentFrameRef.current != null) {
@@ -143,8 +146,6 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       };
     }, [clearScheduledPresent]);
 
-    const renderBackdrop = useSheetBackdrop();
-
     const handleAction = useCallback(
       (action?: () => void) => {
         pendingPresentRef.current = false;
@@ -160,6 +161,11 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
     );
 
     const handleDismiss = useCallback(() => {
+      if (pendingHydrationDate.current) {
+        setHydrationDate(pendingHydrationDate.current);
+        pendingHydrationDate.current = null;
+        onDismissWithoutAction?.();
+      }
       isDismissingRef.current = false;
       isOpenRef.current = false;
       if (pendingPresentRef.current) {
@@ -209,6 +215,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       {
         label: t('addSheet.exercise', { defaultValue: 'Exercise' }),
         icon: 'exercise-weights',
+        opensExerciseMenu: true,
       },
       {
         label: t('addSheet.measurements', { defaultValue: 'Measurements' }),
@@ -219,6 +226,17 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         label: t('addSheet.scanFood', { defaultValue: 'Scan Food' }),
         icon: 'scan',
         onPress: onBarcodeScan,
+      },
+      {
+        label: t('addSheet.hydration', { defaultValue: 'Hydration' }),
+        icon: 'hydration',
+        onPress: () => {
+          pendingHydrationDate.current = getHydrationDate?.() ?? getTodayDate();
+        },
+      },
+      {
+        label: t('addSheet.aiMealScan', { defaultValue: 'AI meal scan' }),
+        icon: 'sparkles',
       },
     ];
 
@@ -231,7 +249,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         onPress={() => {
           if (card.onPress) {
             handleAction(card.onPress);
-          } else {
+          } else if (card.opensExerciseMenu) {
             LayoutAnimation.configureNext(
               LayoutAnimation.Presets.easeInEaseOut
             );
@@ -298,105 +316,132 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       </Button>
     );
 
-    return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
-        onAnimate={handleAnimate}
-        onDismiss={handleDismiss}
-      >
-        <BottomSheetView className="pb-safe-or-5 px-2.5">
-          {showExerciseMenu ? (
-            <>
-              <Pressable
-                className="flex-row items-center mb-3 px-1.5"
-                accessibilityRole="button"
-                accessibilityLabel={t('common.back', { defaultValue: 'Back' })}
-                onPress={() => {
-                  LayoutAnimation.configureNext(
-                    LayoutAnimation.Presets.easeInEaseOut
-                  );
-                  setShowExerciseMenu(false);
-                }}
+    const content = (
+      <View className="px-2.5">
+        {showExerciseMenu ? (
+          <>
+            <Pressable
+              className="flex-row items-center mb-3 px-1.5"
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back', {
+                defaultValue: 'Back',
+              })}
+              onPress={() => {
+                LayoutAnimation.configureNext(
+                  LayoutAnimation.Presets.easeInEaseOut
+                );
+                setShowExerciseMenu(false);
+              }}
+            >
+              <Icon name="chevron-back" size={20} color={accentPrimary} />
+              <Text
+                className="text-sm font-medium ml-1"
+                style={{ color: accentPrimary }}
               >
-                <Icon name="chevron-back" size={20} color={accentPrimary} />
-                <Text
-                  className="text-sm font-medium ml-1"
-                  style={{ color: accentPrimary }}
-                >
-                  {t('common.back', { defaultValue: 'Back' })}
-                </Text>
-              </Pressable>
-              <View className="flex-row">
-                {renderExerciseOption(
-                  t('addSheet.workout', { defaultValue: 'Workout' }),
-                  t('addSheet.liveSets', { defaultValue: 'Live sets & reps' }),
-                  'exercise-weights',
-                  onStartWorkout
-                )}
-                {renderExerciseOption(
-                  t('addSheet.activity', { defaultValue: 'Activity' }),
-                  t('addSheet.durationDistance', {
-                    defaultValue: 'Duration & distance',
-                  }),
-                  'exercise-running-filled',
-                  onAddActivity
-                )}
-                {renderExerciseOption(
-                  t('addSheet.logWorkout', { defaultValue: 'Log Workout' }),
-                  t('addSheet.pastSets', { defaultValue: 'Past sets & reps' }),
-                  'pencil',
-                  onLogWorkout
-                )}
-              </View>
-            </>
-          ) : (
-            <>
-              <View className="flex-row mb-3">
-                {renderCard(cards[0])}
-                {renderCard(cards[1])}
-              </View>
-              <View className="flex-row">
-                {renderCard(cards[2])}
-                {renderCard(cards[3])}
-              </View>
-              {!isLocalDataMode() &&
-                renderSecondaryRow(
-                  t('addSheet.progressPhotos', {
-                    defaultValue: 'Progress Photos',
-                  }),
-                  'camera',
-                  onAddProgressPhotos
-                )}
-              {!isLocalDataMode() && showCycleCard && onOpenCycle
-                ? renderSecondaryRow(
-                    cycleLabel ??
-                      t('addSheet.wellness', { defaultValue: 'Wellness' }),
-                    cycleIcon ?? 'wellness-filled',
-                    onOpenCycle
-                  )
-                : null}
-              {!isLocalDataMode() &&
-                renderSecondaryRow(
-                  t('addSheet.askSparky', { defaultValue: 'Ask Sparky' }),
-                  'sparkles',
-                  onAskSparky
-                )}
-              {!isLocalDataMode() &&
-                renderSecondaryRow(
-                  t('addSheet.syncHealth', {
-                    defaultValue: 'Sync Health Data',
-                  }),
-                  'sync',
-                  onSyncHealthData
-                )}
-            </>
-          )}
-        </BottomSheetView>
-      </BottomSheetModal>
+                {t('common.back', { defaultValue: 'Back' })}
+              </Text>
+            </Pressable>
+            <View className="flex-row">
+              {renderExerciseOption(
+                t('addSheet.workout', { defaultValue: 'Workout' }),
+                t('addSheet.liveSets', {
+                  defaultValue: 'Live sets & reps',
+                }),
+                'exercise-weights',
+                onStartWorkout
+              )}
+              {renderExerciseOption(
+                t('addSheet.activity', { defaultValue: 'Activity' }),
+                t('addSheet.durationDistance', {
+                  defaultValue: 'Duration & distance',
+                }),
+                'exercise-running-filled',
+                onAddActivity
+              )}
+              {renderExerciseOption(
+                t('addSheet.logWorkout', { defaultValue: 'Log Workout' }),
+                t('addSheet.pastSets', {
+                  defaultValue: 'Past sets & reps',
+                }),
+                'pencil',
+                onLogWorkout
+              )}
+            </View>
+          </>
+        ) : (
+          <>
+            <View className="flex-row mb-3">
+              {renderCard(cards[0])}
+              {renderCard(cards[1])}
+            </View>
+            <View className="flex-row">
+              {renderCard(cards[2])}
+              {renderCard(cards[3])}
+            </View>
+            <View className="flex-row mt-3">
+              {renderCard(cards[4])}
+              {renderCard(cards[5])}
+            </View>
+            {!isLocalDataMode() &&
+              renderSecondaryRow(
+                t('addSheet.progressPhotos', {
+                  defaultValue: 'Progress Photos',
+                }),
+                'camera',
+                onAddProgressPhotos
+              )}
+            {!isLocalDataMode() && showCycleCard && onOpenCycle
+              ? renderSecondaryRow(
+                  cycleLabel ??
+                    t('addSheet.wellness', { defaultValue: 'Wellness' }),
+                  cycleIcon ?? 'wellness-filled',
+                  onOpenCycle
+                )
+              : null}
+            {!isLocalDataMode() &&
+              renderSecondaryRow(
+                t('addSheet.askSparky', { defaultValue: 'Ask Sparky' }),
+                'sparkles',
+                onAskSparky
+              )}
+            {!isLocalDataMode() &&
+              renderSecondaryRow(
+                t('addSheet.syncHealth', {
+                  defaultValue: 'Sync Health Data',
+                }),
+                'sync',
+                onSyncHealthData
+              )}
+          </>
+        )}
+      </View>
+    );
+
+    return (
+      <>
+        <CustomModal
+          ref={bottomSheetRef}
+          title={t('addSheet.title', { defaultValue: 'Log into journey' })}
+          onAnimate={handleAnimate}
+          onDismiss={handleDismiss}
+          onClose={() => {
+            pendingPresentRef.current = false;
+            pendingInitialMenuRef.current = null;
+            isPresentingRef.current = false;
+            isDismissingRef.current = true;
+            clearScheduledPresent();
+            bottomSheetRef.current?.dismiss();
+          }}
+        >
+          {content}
+        </CustomModal>
+        {hydrationDate && (
+          <HydrationSheet
+            date={hydrationDate}
+            onClose={() => setHydrationDate(null)}
+          />
+        )}
+      </>
     );
   }
 );

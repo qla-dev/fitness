@@ -11,6 +11,7 @@ import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon, { type IconName } from './Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 
 export const TAB_BAR_HEIGHT = 56;
 
@@ -53,6 +54,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
         const isAddButton = route.name === 'Add';
 
         const onPress = () => {
+          fireSelectionHaptic();
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,

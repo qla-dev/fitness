@@ -59,12 +59,6 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
   const setCycleCardVisible = useAppPreferencesStore(
     (s) => s.setCycleCardVisible
   );
-  const hydrationCardVisible = useAppPreferencesStore(
-    (s) => s.hydrationCardVisible
-  );
-  const setHydrationCardVisible = useAppPreferencesStore(
-    (s) => s.setHydrationCardVisible
-  );
   const askSparkyVisible = useAppPreferencesStore((s) => s.askSparkyVisible);
   const setAskSparkyVisible = useAppPreferencesStore(
     (s) => s.setAskSparkyVisible
@@ -250,23 +244,6 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
                 })}
                 value={askSparkyVisible}
                 onValueChange={setAskSparkyVisible}
-              />
-            }
-          />
-          <SettingsRow
-            title={t('dashboardSettings.hydration', {
-              defaultValue: 'Hydration',
-            })}
-            subtitle={t('dashboardSettings.hydrationSubtitle', {
-              defaultValue: 'Show the hydration card on the Dashboard',
-            })}
-            rightAccessory={
-              <Switch
-                accessibilityLabel={t('dashboardSettings.hydration', {
-                  defaultValue: 'Hydration',
-                })}
-                value={hydrationCardVisible}
-                onValueChange={setHydrationCardVisible}
               />
             }
           />

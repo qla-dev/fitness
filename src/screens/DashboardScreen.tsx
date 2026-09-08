@@ -40,7 +40,6 @@ import DashboardActivityCard from '../components/DashboardActivityCard';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
 import FastingCard from '../components/FastingCard';
 import FastingGoalReconciler from '../components/FastingGoalReconciler';
-import HydrationGauge from '../components/HydrationGauge';
 import Icon from '../components/Icon';
 import MedicationsCard from '../components/MedicationsCard';
 import ProgressPhotosCard from '../components/ProgressPhotosCard';
@@ -57,7 +56,6 @@ import {
   useNutrientDisplayPreferences,
   usePreferences,
   useServerConnection,
-  useWaterIntakeMutation,
   useWidgetSync,
 } from '../hooks';
 import { useCheckInPhotoDates } from '../hooks/useCheckInPhotos';
@@ -213,19 +211,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     date: selectedDate,
     enabled: isConnected,
   });
-  const {
-    increment: incrementWater,
-    decrement: decrementWater,
-    unit: waterUnit,
-    servingVolume,
-    isContainersLoaded,
-    containers: waterContainers,
-    activeContainer: activeWaterContainer,
-    selectContainer: selectWaterContainer,
-  } = useWaterIntakeMutation({
-    date: selectedDate,
-    enabled: isConnected,
-  });
 
   const healthTrendOrder = useAppPreferencesStore((s) => s.healthTrendOrder);
   const hiddenHealthTrends = useAppPreferencesStore(
@@ -287,9 +272,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     (s) => s.fastingCardVisible
   );
   const cycleCardVisible = useAppPreferencesStore((s) => s.cycleCardVisible);
-  const hydrationCardVisible = useAppPreferencesStore(
-    (s) => s.hydrationCardVisible
-  );
   const askSparkyVisible = useAppPreferencesStore((s) => s.askSparkyVisible);
   const medicationsCardVisible = useAppPreferencesStore(
     (s) => s.medicationsCardVisible
@@ -618,23 +600,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           </>
         )}
 
-        {/* Hydration card visibility is a local app setting toggled from
-            Dashboard Settings. */}
-        {dashboardMode !== 'trends' && hydrationCardVisible && (
-          <HydrationGauge
-            consumed={summary.waterConsumed}
-            goal={summary.waterGoal}
-            unit={waterUnit || preferences?.water_display_unit || 'ml'}
-            containerVolume={servingVolume}
-            onIncrement={isContainersLoaded ? incrementWater : undefined}
-            onDecrement={isContainersLoaded ? decrementWater : undefined}
-            disableDecrement={summary.waterConsumed <= 0}
-            containers={waterContainers}
-            activeContainerId={activeWaterContainer?.id}
-            onSelectContainer={selectWaterContainer}
-          />
-        )}
-
         {dashboardMode !== 'trends' && (
           <DashboardActivityDetails
             summary={summary}
@@ -675,7 +640,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     return (
       <>
         <GestureDetector gesture={swipeGesture}>
-          {renderedContent}
+          <View collapsable={false} className="flex-1">
+            {renderedContent}
+          </View>
         </GestureDetector>
         <CalendarSheet
           ref={calendarRef}
@@ -698,7 +665,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         />
       ) : null}
       <GestureDetector gesture={swipeGesture}>
-        {renderedContent}
+        <View collapsable={false} className="flex-1">
+          {renderedContent}
+        </View>
       </GestureDetector>
       <CalendarSheet
         ref={calendarRef}

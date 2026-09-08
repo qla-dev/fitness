@@ -34,6 +34,7 @@ import {
   createNativeHeaderMenuButtonItem,
   createNativeHeaderTextButtonItem,
 } from '../utils/nativeHeaderItems';
+import { fireSelectionHaptic } from '../services/haptics';
 
 /**
  * Canonical English fallback label for every form/create/edit save action. The
@@ -198,6 +199,11 @@ function resolvePress(
   goBack: () => void
 ): () => void {
   if (item.kind === 'back') return item.onPress ?? goBack;
+  if (item.kind === 'dismiss')
+    return () => {
+      fireSelectionHaptic();
+      item.onPress();
+    };
   return item.onPress;
 }
 
