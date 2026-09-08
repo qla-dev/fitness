@@ -93,22 +93,24 @@ export default function TrendsScreen({ navigation }: Props) {
       setRefreshing(false);
     }
   };
-  return (
-    <View className="flex-1 bg-background">
-      {!usesNativeTabs && (
-        <TabHeader
-          title={t('navigation.trends', { defaultValue: 'Trends' })}
-          onProfilePress={() => navigation.navigate('Profile')}
-        />
-      )}
-      {isLoading ? (
+  // Diary/Dashboard pattern: the content is built once, then rendered
+  // either bare (native tabs supply the header) or under `TabHeader`. Keeping
+  // the scroll view a direct, full-height child of the screen root is what lets
+  // the iOS large title collapse into the header on scroll.
+  const renderContent = () => {
+    if (isLoading) {
+      return (
         <StatusView
           loading
           title={t('trends.loading', {
             defaultValue: 'Loading trends...',
           })}
         />
-      ) : !isConnected ? (
+      );
+    }
+
+    if (!isConnected) {
+      return (
         <StatusView
           icon="cloud-offline"
           title={t('dashboard.noServerConfigured', {
@@ -119,48 +121,71 @@ export default function TrendsScreen({ navigation }: Props) {
             onPress: () => navigation.navigate('Profile'),
           }}
         />
-      ) : (
-        <ScrollView
-          ref={scrollRef}
-          className="flex-1 bg-background"
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 16 + bottomPadding,
-          }}
-          showsVerticalScrollIndicator={false}
-          contentInsetAdjustmentBehavior={
-            usesNativeTabs ? 'automatic' : 'never'
-          }
-          automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
-              tintColor={accent}
-            />
-          }
-        >
-          {visibleTrends.length > 0 && (
-            <SegmentedControl<HealthTrendDateRange>
-              segments={[
-                { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
-                { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
-                { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
-              ]}
-              activeKey={range}
-              onSelect={setRange}
-            />
-          )}
-          <DashboardTrendCards
-            steps={trends.steps}
-            weight={weightSeries}
-            sleep={trends.sleep}
-            range={range}
-            weightUnit={weightUnit}
-            visibleTrends={visibleTrends}
+      );
+    }
+
+    return (
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1 bg-background"
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 16 + bottomPadding,
+        }}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={accent}
           />
-        </ScrollView>
-      )}
+        }
+      >
+        {visibleTrends.length > 0 && (
+          <SegmentedControl<HealthTrendDateRange>
+            segments={[
+              { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
+              { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
+              { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
+            ]}
+            activeKey={range}
+            onSelect={setRange}
+          />
+        )}
+        <DashboardTrendCards
+          steps={trends.steps}
+          weight={weightSeries}
+          sleep={trends.sleep}
+          range={range}
+          weightUnit={weightUnit}
+          visibleTrends={visibleTrends}
+        />
+      </ScrollView>
+    );
+  };
+
+  const renderedContent = renderContent();
+
+  if (usesNativeTabs) {
+    return (
+      <View collapsable={false} className="flex-1 bg-background">
+        {renderedContent}
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-background">
+      <TabHeader
+        title={t('navigation.trends', { defaultValue: 'Trends' })}
+        onProfilePress={() => navigation.navigate('Profile')}
+      />
+      {renderedContent}
     </View>
   );
 }
