@@ -159,7 +159,7 @@ export default function DashboardTrendCards({
       <Text className="text-text-muted text-base p-4">
         {t('charts.allTrendsHidden', {
           defaultValue:
-            'All graphs are hidden. Choose which to show in Dashboard Settings.',
+            'All graphs are hidden. Choose which to show in Activities Settings.',
         })}
       </Text>
     );

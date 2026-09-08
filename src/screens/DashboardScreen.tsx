@@ -28,22 +28,21 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
+import { addSheetRef } from '../components/AddSheet';
 import CalendarSheet, {
   type CalendarSheetRef,
 } from '../components/CalendarSheet';
-import DashboardNutrientCard from '../components/DashboardNutrientCard';
 import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
+import ExerciseSummary from '../components/ExerciseSummary';
 import FastingCard from '../components/FastingCard';
 import FastingGoalReconciler from '../components/FastingGoalReconciler';
 import Icon from '../components/Icon';
 import MedicationsCard from '../components/MedicationsCard';
 import ProgressPhotosCard from '../components/ProgressPhotosCard';
-import SegmentedControl from '../components/SegmentedControl';
 import StatusView from '../components/StatusView';
-import { NUTRIENT_META, getNutrientLabel } from '../constants/nutrients';
 import {
   fastingRootQueryKey,
   medicationsRootQueryKey,
@@ -56,18 +55,20 @@ import {
   useWidgetSync,
 } from '../hooks';
 import { useCheckInPhotoDates } from '../hooks/useCheckInPhotos';
+import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
+import { useActiveWorkoutStore } from '../stores/activeWorkoutStore';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { formatDateLabel } from '../utils/dateUtils';
+import { buildHourlyExerciseMinutes } from '../utils/hourlyActivity';
 import {
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
 } from '../utils/nativeHeaderDatePicker';
-import { getNetCarbsValue } from '../utils/nutrientUtils';
 
 type DashboardScreenProps = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Dashboard'>,
@@ -194,29 +195,31 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     enabled: isConnected,
   });
 
-  const { customNutrients, refetch: refetchCustomNutrients } =
-    useCustomNutrients({ enabled: isConnected });
-  const { summaryNutrients, refetch: refetchNutrientPrefs } =
-    useNutrientDisplayPreferences({ enabled: isConnected });
+  // Units and exercise thumbnails for the logged-workout card at the foot of
+  // the screen; the same values the Diary used to resolve for it.
+  const weightUnit = (preferences?.default_weight_unit as 'kg' | 'lbs') ?? 'kg';
+  const distanceUnit =
+    (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km';
+  const { getImageSource } = useExerciseImageSource();
+  // The Exercise chart's 24 bars. Move and Stand have no hourly source in
+  // the app, so they keep showing the unavailable note rather than a
+  // fabricated series.
+  const hourlyExercise = useMemo(
+    () => buildHourlyExerciseMinutes(summary?.exerciseEntries),
+    [summary?.exerciseEntries]
+  );
+
+  const { refetch: refetchCustomNutrients } = useCustomNutrients({
+    enabled: isConnected,
+  });
+  const { refetch: refetchNutrientPrefs } = useNutrientDisplayPreferences({
+    enabled: isConnected,
+  });
 
   useWidgetSync(summary);
 
-  // CSS variable macro colors are theme-aware (lower saturation than hardcoded hex)
-  const [proteinColor, carbsColor, fatColor, fiberColor, caloriesColor] =
-    useCSSVariable([
-      '--color-macro-protein',
-      '--color-macro-carbs',
-      '--color-macro-fat',
-      '--color-macro-fiber',
-      '--color-calories',
-    ]) as [string, string, string, string, string];
-
   const accentColor = useCSSVariable('--color-accent-primary') as string;
 
-  const savedDashboardMode = useAppPreferencesStore((s) => s.dashboardMode);
-  const dashboardMode =
-    savedDashboardMode === 'trends' ? 'activity' : savedDashboardMode;
-  const setDashboardMode = useAppPreferencesStore((s) => s.setDashboardMode);
   const [refreshing, setRefreshing] = useState(false);
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
   const fastingCardVisible = useAppPreferencesStore(
@@ -273,7 +276,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           {!usesNativeTabs && (
             <View className="px-4 pb-5" style={{ paddingTop: insets.top + 16 }}>
               <Text className="text-2xl font-bold text-text-primary">
-                {t('navigation.dashboard', { defaultValue: 'Dashboard' })}
+                {t('navigation.dashboard', { defaultValue: 'Activities' })}
               </Text>
             </View>
           )}
@@ -344,83 +347,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       return null;
     }
 
-    const { eaten, burned, remaining, goal } = summary.calorieBalance;
-    const showNetCarbs = preferences.show_net_carbs === true;
-
-    const CORE_MACROS = new Set(['protein', 'carbs', 'fat', 'dietary_fiber']);
-    const customNutrientNames = new Set(customNutrients.map((cn) => cn.name));
-    const dashboardNutrients = summaryNutrients.filter(
-      (key) => CORE_MACROS.has(key) || customNutrientNames.has(key)
-    );
-
-    const nutrientMetrics = dashboardNutrients.map((nutrientKey) => {
-      // Resolve display label and unit.
-      const meta = NUTRIENT_META[nutrientKey];
-      const customDef = !meta
-        ? customNutrients.find((cn) => cn.name === nutrientKey)
-        : undefined;
-      const label = meta
-        ? getNutrientLabel(t, nutrientKey)
-        : (customDef?.name ?? nutrientKey);
-      const unit = meta?.unit ?? customDef?.unit ?? 'g';
-
-      // Use theme-aware CSS variable colors for the 4 core macros;
-      // custom nutrients fall back to the app accent color.
-      let color: string;
-      if (nutrientKey === 'protein') color = proteinColor;
-      else if (nutrientKey === 'carbs') color = carbsColor;
-      else if (nutrientKey === 'fat') color = fatColor;
-      else if (nutrientKey === 'dietary_fiber') color = fiberColor;
-      else color = accentColor;
-
-      // Resolve consumed value.
-      let consumed: number;
-      if (nutrientKey === 'carbs' && showNetCarbs) {
-        consumed = getNetCarbsValue(
-          summary.carbs.consumed,
-          summary.fiber.consumed
-        );
-      } else if (nutrientKey === 'protein') {
-        consumed = summary.protein.consumed;
-      } else if (nutrientKey === 'carbs') {
-        consumed = summary.carbs.consumed;
-      } else if (nutrientKey === 'fat') {
-        consumed = summary.fat.consumed;
-      } else if (nutrientKey === 'dietary_fiber') {
-        consumed = summary.fiber.consumed;
-      } else {
-        consumed = summary.customNutrientTotals[nutrientKey] ?? 0;
-      }
-
-      // Resolve goal. Core macros use their tracked goals; custom
-      // nutrients use their per-nutrient goal when one is set. When a
-      // custom nutrient has no goal, `goal` stays undefined and
-      // Rings omit the goal denominator.
-      let goal: number | undefined;
-      if (nutrientKey === 'protein') goal = summary.protein.goal || undefined;
-      else if (nutrientKey === 'carbs') goal = summary.carbs.goal || undefined;
-      else if (nutrientKey === 'fat') goal = summary.fat.goal || undefined;
-      else if (nutrientKey === 'dietary_fiber')
-        goal = summary.fiber.goal || undefined;
-      else goal = summary.customNutrientGoals[nutrientKey] || undefined;
-
-      const displayLabel =
-        nutrientKey === 'carbs' && showNetCarbs
-          ? t('nutrients.netCarbs', {
-              defaultValue: 'Net Carbs',
-            })
-          : label;
-
-      return {
-        key: nutrientKey,
-        label: displayLabel,
-        consumed,
-        goal,
-        color,
-        unit,
-      };
-    });
-
     return (
       <ScrollView
         ref={scrollViewRef}
@@ -442,91 +368,30 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           />
         }
       >
-        <View className="mb-3">
-          <SegmentedControl<'activity' | 'nutrients'>
-            segments={[
-              {
-                key: 'activity',
-                label: t('dashboard.activity', { defaultValue: 'Activity' }),
-              },
-              {
-                key: 'nutrients',
-                label: t('dashboard.nutrients', { defaultValue: 'Nutrients' }),
-              },
-            ]}
-            activeKey={dashboardMode}
-            onSelect={setDashboardMode}
-          />
-        </View>
-        {dashboardMode === 'activity' ? (
-          <DashboardActivityCard
-            summary={summary}
-            steps={measurements?.steps}
-          />
-        ) : (
-          <>
-            <DashboardNutrientCard
-              metrics={[
-                {
-                  key: 'calories',
-                  label: t('dashboard.consumed', { defaultValue: 'Consumed' }),
-                  consumed: eaten,
-                  goal,
-                  progress: summary.calorieBalance.progress / 100,
-                  color: caloriesColor,
-                  unit: t('dashboard.activityKcal', { defaultValue: 'kcal' }),
-                },
-                ...nutrientMetrics,
-              ]}
-              remaining={remaining}
-              burned={burned}
-              onDetails={() =>
-                navigation.navigate('DailyNutritionDetails', {
-                  date: summary.date,
-                })
-              }
-            />
-            {/* Tap-to-open launcher for the Sparky chat. Styled like an input to
-            invite, but it pushes the full chat screen rather than capturing text
-            here — the Dashboard's scroll + date-fling gestures make a live input
-            on this screen more trouble than it's worth. The composer autofocuses
-            on arrival so the affordance is honored immediately. Visibility is a
-            local app setting toggled from Dashboard Settings. */}
-            {!isLocalDataMode() && askSparkyVisible && (
-              <Pressable
-                onPress={() => navigation.navigate('Chat')}
-                className="flex-row items-center bg-surface rounded-2xl px-4 py-3 mb-3"
-              >
-                <Icon name="sparkles" size={18} color={accentColor} />
-                <Text className="text-text-muted text-base ml-3">
-                  {t('dashboard.askSparky', { defaultValue: 'Ask Sparky…' })}
-                </Text>
-              </Pressable>
-            )}
+        <DashboardActivityCard summary={summary} steps={measurements?.steps} />
 
-            {summary.foodEntries.length === 0 && (
-              <Pressable
-                className="bg-surface rounded-2xl p-4 mb-3"
-                onPress={() =>
-                  navigation.navigate('FoodSearch', { date: selectedDate })
-                }
-              >
-                <Text className="text-md font-bold text-text-primary mb-4">
-                  {t('dashboard.food', { defaultValue: 'Food' })}
-                </Text>
-                <Text className="text-text-muted text-sm text-center mb-4">
-                  {t('dashboard.tapToAddFood', {
-                    defaultValue: 'Tap to add food',
-                  })}
-                </Text>
-              </Pressable>
-            )}
-          </>
+        {/* Tap-to-open launcher for the Sparky chat. Styled like an input to
+            invite, but it pushes the full chat screen rather than capturing text
+            here — the screen's scroll + date-fling gestures make a live input
+            here more trouble than it is worth. The composer autofocuses on
+            arrival so the affordance is honored immediately. Visibility is a
+            local app setting toggled from Activities Settings. */}
+        {!isLocalDataMode() && askSparkyVisible && (
+          <Pressable
+            onPress={() => navigation.navigate('Chat')}
+            className="flex-row items-center bg-surface rounded-2xl px-4 py-3 mb-3"
+          >
+            <Icon name="sparkles" size={18} color={accentColor} />
+            <Text className="text-text-muted text-base ml-3">
+              {t('dashboard.askSparky', { defaultValue: 'Ask Sparky…' })}
+            </Text>
+          </Pressable>
         )}
 
         <DashboardActivityDetails
           summary={summary}
           steps={measurements?.steps}
+          hourlyExercise={hourlyExercise}
           distanceUnit={preferences.default_distance_unit ?? 'km'}
           standGoal={summary.goals.stand_hours}
         />
@@ -552,6 +417,34 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         {!isLocalDataMode() && progressPhotosCardVisible && (
           <ProgressPhotosCard navigation={navigation} date={selectedDate} />
         )}
+
+        {/* The day's logged workouts and activities, last on the screen.
+            This is the same card the Diary used to carry, with the same
+            rows, swipe-to-delete and tap targets — exercise is an activity,
+            so it is logged here rather than on the Nutrition tab. */}
+        <ExerciseSummary
+          exerciseEntries={summary.exerciseEntries}
+          entryDate={selectedDate}
+          getImageSource={getImageSource}
+          weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
+          onAddExercise={() =>
+            addSheetRef.current?.present({ initialMenu: 'exercise' })
+          }
+          onPressWorkout={(session) => {
+            if (session.type === 'preset') {
+              // The live workout's surface is the active screen; detail is
+              // for reviewing past or planned sessions.
+              if (useActiveWorkoutStore.getState().sessionId === session.id) {
+                navigation.navigate('ActiveWorkout');
+                return;
+              }
+              navigation.navigate('WorkoutDetail', { session });
+            } else {
+              navigation.navigate('ActivityDetail', { session });
+            }
+          }}
+        />
       </ScrollView>
     );
   };
@@ -580,7 +473,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     <View className="flex-1 bg-background">
       {!isConnectionLoading && isConnected ? (
         <TabHeader
-          title={t('navigation.dashboard', { defaultValue: 'Dashboard' })}
+          title={t('navigation.dashboard', { defaultValue: 'Activities' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
           onProfilePress={() => navigation.navigate('Profile')}

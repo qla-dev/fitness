@@ -161,7 +161,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
           <Text className="text-text-secondary text-sm">
             {t('diarySettings.customNutrientsDescription', {
               defaultValue:
-                'Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Diary.',
+                'Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Nutrition tab.',
             })}
           </Text>
         </View>
@@ -189,7 +189,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
   };
 
   const header = useScreenHeader({
-    title: t('diarySettings.title', { defaultValue: 'Diary Settings' }),
+    title: t('diarySettings.title', { defaultValue: 'Nutrition Settings' }),
     left: { kind: 'back' },
   });
 
@@ -212,7 +212,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
         <SettingsRowGroup>
           <SettingsRow
             title={t('diarySettings.summary', {
-              defaultValue: 'Diary Summary',
+              defaultValue: 'Nutrition Summary',
             })}
             subtitle={t('diarySettings.summarySubtitle', {
               defaultValue: 'Show calories and macronutrients',
@@ -220,7 +220,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
             rightAccessory={
               <Switch
                 accessibilityLabel={t('diarySettings.summary', {
-                  defaultValue: 'Diary Summary',
+                  defaultValue: 'Nutrition Summary',
                 })}
                 value={diarySummaryVisible}
                 onValueChange={setDiarySummaryVisible}

@@ -677,9 +677,10 @@ describe('DiaryScreen sleep cards', () => {
 
     expect(queryByTestId('empty-day')).toBeNull();
     expect(getByTestId('wake-up-card')).toBeTruthy();
-    // The food and exercise sections still render, empty, as the day's scaffolding.
+    // The food section still renders, empty, as the day's scaffolding.
     expect(getByTestId('food-summary')).toBeTruthy();
-    expect(getByTestId('exercise-summary')).toBeTruthy();
+    // Exercise moved to the Activities tab, so this screen never renders it.
+    expect(queryByTestId('exercise-summary')).toBeNull();
   });
 
   test('a nap alone is enough to keep the day non-empty', () => {
@@ -696,7 +697,7 @@ describe('DiaryScreen sleep cards', () => {
   });
 
   test('shows the rest of the diary while the sleep query is still in flight', () => {
-    // Summary already resolved, sleep still in flight. The food and exercise that already
+    // Summary already resolved, sleep still in flight. The food that already
     // arrived must not sit behind "Loading diary..." waiting on `/api/sleep`.
     configureSleep({ wakeUp: null, naps: [], bedTime: null, isLoading: true });
 
@@ -704,7 +705,6 @@ describe('DiaryScreen sleep cards', () => {
 
     expect(queryByTestId('status-view')).toBeNull();
     expect(getByTestId('food-summary')).toBeTruthy();
-    expect(getByTestId('exercise-summary')).toBeTruthy();
   });
 
   test('holds the empty-day illustration until the sleep query settles', () => {
@@ -756,7 +756,6 @@ describe('DiaryScreen sleep cards', () => {
     const order = [
       'wake-up-card',
       'food-summary',
-      'exercise-summary',
       'naps-card',
       'bed-time-card',
       'measurements-summary',

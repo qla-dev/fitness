@@ -61,22 +61,22 @@ describe('DiarySettingsScreen', () => {
     useAppPreferencesStore.setState({ diarySummaryVisible: false });
   });
 
-  test('renders the Diary Summary row with a Switch reflecting the stored preference', () => {
+  test('renders the Nutrition Summary row with a Switch reflecting the stored preference', () => {
     const { getByText, getByLabelText } = renderScreen();
 
-    expect(getByText('Diary Summary')).toBeTruthy();
-    expect(getByLabelText('Diary Summary').props.value).toBe(false);
+    expect(getByText('Nutrition Summary')).toBeTruthy();
+    expect(getByLabelText('Nutrition Summary').props.value).toBe(false);
 
     useAppPreferencesStore.setState({ diarySummaryVisible: true });
-    expect(renderScreen().getByLabelText('Diary Summary').props.value).toBe(
+    expect(renderScreen().getByLabelText('Nutrition Summary').props.value).toBe(
       true
     );
   });
 
-  test('toggling the Diary Summary switch writes the new value to the store', () => {
+  test('toggling the Nutrition Summary switch writes the new value to the store', () => {
     const { getByLabelText } = renderScreen();
 
-    fireEvent(getByLabelText('Diary Summary'), 'valueChange', true);
+    fireEvent(getByLabelText('Nutrition Summary'), 'valueChange', true);
 
     expect(useAppPreferencesStore.getState().diarySummaryVisible).toBe(true);
   });
@@ -84,7 +84,7 @@ describe('DiarySettingsScreen', () => {
   test('the Switch carries an accessibilityLabel equal to its row title', () => {
     const { getByText, getByLabelText } = renderScreen();
 
-    expect(getByText('Diary Summary')).toBeTruthy();
-    expect(getByLabelText('Diary Summary')).toBeTruthy();
+    expect(getByText('Nutrition Summary')).toBeTruthy();
+    expect(getByLabelText('Nutrition Summary')).toBeTruthy();
   });
 });

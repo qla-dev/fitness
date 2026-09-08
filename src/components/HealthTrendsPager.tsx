@@ -142,7 +142,7 @@ const HealthTrendsPager: React.FC<HealthTrendsPagerProps> = ({
         <Text className="text-text-muted text-sm text-center">
           {t('charts.allTrendsHidden', {
             defaultValue:
-              'All graphs are hidden. Choose which to show in Dashboard Settings.',
+              'All graphs are hidden. Choose which to show in Activities Settings.',
           })}
         </Text>
       </View>

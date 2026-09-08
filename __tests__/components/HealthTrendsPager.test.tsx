@@ -346,7 +346,7 @@ describe('HealthTrendsPager', () => {
 
     expect(
       screen.getByText(
-        'All graphs are hidden. Choose which to show in Dashboard Settings.'
+        'All graphs are hidden. Choose which to show in Activities Settings.'
       )
     ).toBeTruthy();
     expect(screen.queryByTestId('pager-view')).toBeNull();

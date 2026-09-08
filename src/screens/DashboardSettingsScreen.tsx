@@ -180,7 +180,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
           <Text className="text-text-secondary text-sm">
             {t('dashboardSettings.customNutrientsDescription', {
               defaultValue:
-                'Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Dashboard.',
+                'Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Activities tab.',
             })}
           </Text>
         </View>
@@ -208,7 +208,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
   };
 
   const header = useScreenHeader({
-    title: t('dashboardSettings.title', { defaultValue: 'Dashboard Settings' }),
+    title: t('dashboardSettings.title', { defaultValue: 'Activities Settings' }),
     left: { kind: 'back' },
   });
 
@@ -235,7 +235,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
             })}
             subtitle={t('dashboardSettings.askSparkySubtitle', {
               defaultValue:
-                'Show the Ask Sparky chat launcher on the Dashboard',
+                'Show the Ask Sparky chat launcher on the Activities tab',
             })}
             rightAccessory={
               <Switch
@@ -250,7 +250,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
           <SettingsRow
             title={t('dashboardSettings.fasting', { defaultValue: 'Fasting' })}
             subtitle={t('dashboardSettings.fastingSubtitle', {
-              defaultValue: 'Show the fasting card on the Dashboard',
+              defaultValue: 'Show the fasting card on the Activities tab',
             })}
             rightAccessory={
               <Switch
@@ -267,7 +267,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
               defaultValue: 'Cycle & Pregnancy',
             })}
             subtitle={t('dashboardSettings.cyclePregnancySubtitle', {
-              defaultValue: 'Show the wellness card on the Dashboard',
+              defaultValue: 'Show the wellness card on the Activities tab',
             })}
             rightAccessory={
               <Switch
@@ -284,7 +284,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
               defaultValue: 'Medications',
             })}
             subtitle={t('dashboardSettings.medicationsSubtitle', {
-              defaultValue: 'Show the medications card on the Dashboard',
+              defaultValue: 'Show the medications card on the Activities tab',
             })}
             rightAccessory={
               <Switch
@@ -301,7 +301,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
               defaultValue: 'Progress Photos',
             })}
             subtitle={t('dashboardSettings.progressPhotosSubtitle', {
-              defaultValue: 'Show the progress photos card on the Dashboard',
+              defaultValue: 'Show the progress photos card on the Activities tab',
             })}
             rightAccessory={
               <Switch
@@ -319,7 +319,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
             })}
             subtitle={t('dashboardSettings.healthTrendsSubtitle', {
               defaultValue:
-                'Choose which graphs show on the Dashboard and their order',
+                'Choose which graphs show on the Activities tab and their order',
             })}
             subtitleNumberOfLines={2}
             onPress={() => navigation.navigate('HealthTrendsSettings')}

@@ -21,7 +21,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import { addSheetRef } from '../components/AddSheet';
 import CalendarSheet, {
   type CalendarSheetRef,
 } from '../components/CalendarSheet';
@@ -29,7 +28,6 @@ import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import EmptyDayIllustration from '../components/EmptyDayIllustration';
-import ExerciseSummary from '../components/ExerciseSummary';
 import FoodSummary from '../components/FoodSummary';
 import MeasurementsSummary from '../components/MeasurementsSummary';
 import ServingAdjustSheet, {
@@ -51,13 +49,11 @@ import {
   useCheckInPhotosByDate,
 } from '../hooks/useCheckInPhotos';
 import { useCustomMeasurementsByDate } from '../hooks/useCustomMeasurements';
-import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useMeasurements } from '../hooks/useMeasurements';
 import { usePreferences } from '../hooks/usePreferences';
 import { useSleepDay } from '../hooks/useSleepDay';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
-import { useActiveWorkoutStore } from '../stores/activeWorkoutStore';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
 import type { FoodEntry } from '../types/foodEntries';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
@@ -239,14 +235,10 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   );
 
   const { preferences } = usePreferences();
-  const weightUnit = (preferences?.default_weight_unit as 'kg' | 'lbs') ?? 'kg';
-  const distanceUnit =
-    (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km';
   const weightMode = preferences?.default_weight_unit ?? 'kg';
   const bodyUnit: 'cm' | 'inches' =
     preferences?.default_measurement_unit === 'inches' ? 'inches' : 'cm';
   const heightMode = preferences?.default_measurement_unit ?? 'cm';
-  const { getImageSource } = useExerciseImageSource();
 
   const { summary, isLoading, isError, refetch } = useDailySummary({
     date: selectedDate,
@@ -342,8 +334,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
       !isSleepLoading &&
       wakeUp === null &&
       summary?.foodEntries.length === 0 &&
-      !hasSupplementNutrition(summary?.supplementTotals) && //A logged supplement is something the user recorded for this day, so the day is not empty even with no food, exercise or measurement.
-      summary?.exerciseEntries.length === 0 &&
+      // A logged supplement is something the user recorded for this day, so
+      // the day is not empty even with no food or measurement. Exercise is
+      // deliberately not part of this any more: it lives on the Activities
+      // tab, so a day with only a workout reads as empty on this screen.
+      !hasSupplementNutrition(summary?.supplementTotals) &&
       !hasAnyMeasurement &&
       // A progress photo is something the user recorded for this day, so it
       // defeats the empty state exactly as a logged supplement does. Gated on
@@ -489,31 +484,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
               }
               onPressMealType={openMealTypeDetail}
             />
-            <ExerciseSummary
-              exerciseEntries={summary.exerciseEntries}
-              entryDate={selectedDate}
-              getImageSource={getImageSource}
-              weightUnit={weightUnit}
-              distanceUnit={distanceUnit}
-              onAddExercise={() =>
-                addSheetRef.current?.present({ initialMenu: 'exercise' })
-              }
-              onPressWorkout={(session) => {
-                if (session.type === 'preset') {
-                  // The live workout's surface is the active screen; detail is
-                  // for reviewing past or planned sessions.
-                  if (
-                    useActiveWorkoutStore.getState().sessionId === session.id
-                  ) {
-                    navigation.navigate('ActiveWorkout');
-                    return;
-                  }
-                  navigation.navigate('WorkoutDetail', { session });
-                } else {
-                  navigation.navigate('ActivityDetail', { session });
-                }
-              }}
-            />
             <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
             <BedTimeCard
               entry={bedTime}
@@ -575,7 +545,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     <>
       {!isConnectionLoading && isConnected ? (
         <TabHeader
-          title={t('diary.title', { defaultValue: 'Diary' })}
+          title={t('diary.title', { defaultValue: 'Nutrition' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
           onProfilePress={() => navigation.navigate('Profile')}
@@ -593,7 +563,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         !isConnectionLoading && (
           <View className="px-4 pb-5" style={{ paddingTop: insets.top + 16 }}>
             <Text className="text-2xl font-bold text-text-primary">
-              {t('diary.title', { defaultValue: 'Diary' })}
+              {t('diary.title', { defaultValue: 'Nutrition' })}
             </Text>
           </View>
         )

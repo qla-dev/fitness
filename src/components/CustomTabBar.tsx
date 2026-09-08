@@ -16,10 +16,10 @@ import { fireSelectionHaptic } from '../services/haptics';
 export const TAB_BAR_HEIGHT = 56;
 
 const TAB_ICONS: Record<string, IconName> = {
-  Dashboard: 'tab-dashboard',
-  Diary: 'book',
+  Dashboard: 'exercise-weights',
+  Diary: 'food',
   Trends: 'chart-bar',
-  Exercises: 'exercise-weights',
+  Exercises: 'tab-dashboard',
 };
 
 const CustomTabBar: React.FC<BottomTabBarProps> = ({

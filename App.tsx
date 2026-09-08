@@ -739,7 +739,7 @@ function AppContent() {
           <Stack.Screen
             name="DashboardSettings"
             component={SafeDashboardSettings}
-            options={createStackScreenOptions(t('screens.dashboardSettings', { defaultValue: 'Dashboard Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.dashboardSettings', { defaultValue: 'Activities Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="HealthTrendsSettings"
@@ -749,7 +749,7 @@ function AppContent() {
           <Stack.Screen
             name="DiarySettings"
             component={SafeDiarySettings}
-            options={createStackScreenOptions(t('screens.diarySettings', { defaultValue: 'Diary Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.diarySettings', { defaultValue: 'Nutrition Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutSettings"

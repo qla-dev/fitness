@@ -334,7 +334,7 @@ const HealthTrendsSettingsScreen: React.FC<
         <Text className="text-text-secondary text-sm mb-4">
           {t('healthTrendsSettings.description', {
             defaultValue:
-              'Drag a graph by its handle to reorder it. Drop it below the Hidden line to take it off the Dashboard.',
+              'Drag a graph by its handle to reorder it. Drop it below the Hidden line to take it off the Activities tab.',
           })}
         </Text>
 

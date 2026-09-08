@@ -300,7 +300,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <SettingsRow
                   icon="dashboard-settings"
                   title={t('settings.rows.dashboard', {
-                    defaultValue: 'Dashboard',
+                    defaultValue: 'Activities',
                   })}
                   subtitle={t('profile.dashboardSubtitle', {
                     defaultValue: 'Cards, nutrients, and health trends',
@@ -312,7 +312,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               {isConnected && (
                 <SettingsRow
                   icon="diary-settings"
-                  title={t('settings.rows.diary', { defaultValue: 'Diary' })}
+                  title={t('settings.rows.diary', { defaultValue: 'Nutrition' })}
                   subtitle={t('profile.diarySubtitle', {
                     defaultValue: 'Meal types and diary layout',
                   })}

@@ -163,7 +163,7 @@ function DashboardStackScreen() {
           name="DashboardRoot"
           component={SafeDashboard as React.ComponentType}
           options={{
-            title: t('navigation.dashboard', { defaultValue: 'Dashboard' }),
+            title: t('navigation.dashboard', { defaultValue: 'Activities' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
@@ -189,7 +189,7 @@ function DiaryStackScreen() {
           name="DiaryRoot"
           component={SafeDiary as React.ComponentType}
           options={{
-            title: t('navigation.diary', { defaultValue: 'Diary' }),
+            title: t('navigation.diary', { defaultValue: 'Nutrition' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
@@ -299,19 +299,21 @@ export function NativeTabsLayout({
           component={DashboardStackScreen}
           options={{
             tabBarLabel: t('navigation.dashboard', {
-              defaultValue: 'Dashboard',
+              defaultValue: 'Activities',
             }),
             tabBarIcon: () =>
-              ({ sfSymbol: 'square.grid.2x2.fill' }) as unknown as AppleIcon,
+              ({
+                sfSymbol: 'figure.strengthtraining.traditional',
+              }) as unknown as AppleIcon,
           }}
         />
         <NativeTab.Screen
           name="Diary"
           component={DiaryStackScreen}
           options={{
-            tabBarLabel: t('navigation.diary', { defaultValue: 'Diary' }),
+            tabBarLabel: t('navigation.diary', { defaultValue: 'Nutrition' }),
             tabBarIcon: () =>
-              ({ sfSymbol: 'book.fill' }) as unknown as AppleIcon,
+              ({ sfSymbol: 'fork.knife' }) as unknown as AppleIcon,
           }}
         />
         <NativeTab.Screen
@@ -346,9 +348,7 @@ export function NativeTabsLayout({
           options={{
             tabBarLabel: t('programs.storeTab', { defaultValue: 'Store' }),
             tabBarIcon: () =>
-              ({
-                sfSymbol: 'figure.strengthtraining.traditional',
-              }) as unknown as AppleIcon,
+              ({ sfSymbol: 'square.grid.2x2.fill' }) as unknown as AppleIcon,
           }}
         />
       </NativeTab.Navigator>
@@ -392,9 +392,9 @@ export function FallbackTabsLayout({
         name="Dashboard"
         component={SafeDashboard}
         options={{
-          tabBarLabel: t('navigation.dashboard', { defaultValue: 'Dashboard' }),
+          tabBarLabel: t('navigation.dashboard', { defaultValue: 'Activities' }),
           tabBarAccessibilityLabel: t('navigation.dashboard', {
-            defaultValue: 'Dashboard',
+            defaultValue: 'Activities',
           }),
         }}
       />
@@ -402,9 +402,9 @@ export function FallbackTabsLayout({
         name="Diary"
         component={SafeDiary}
         options={{
-          tabBarLabel: t('navigation.diary', { defaultValue: 'Diary' }),
+          tabBarLabel: t('navigation.diary', { defaultValue: 'Nutrition' }),
           tabBarAccessibilityLabel: t('navigation.diary', {
-            defaultValue: 'Diary',
+            defaultValue: 'Nutrition',
           }),
         }}
       />
