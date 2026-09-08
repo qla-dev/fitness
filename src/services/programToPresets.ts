@@ -5,6 +5,11 @@ import {
 } from './api/externalExerciseSearchApi';
 import { createWorkoutPreset } from './api/workoutPresetsApi';
 import { addLog } from './LogService';
+import {
+  createProgramAccess,
+  programAccessScope,
+  saveProgramAccess,
+} from './programAccess';
 import type {
   ExerciseProgram,
   ProgramExercise,
@@ -139,6 +144,8 @@ export async function installProgramAsPresets(
   provider: ProgramProvider | null,
   onProgress?: (progress: ProgramInstallProgress) => void
 ): Promise<ProgramInstallResult> {
+  const scope = await programAccessScope();
+  const access = createProgramAccess(program.id, program.weeks);
   const total = program.sessions.reduce(
     (sum, session) => sum + session.exercises.length,
     0
@@ -184,11 +191,12 @@ export async function installProgramAsPresets(
 
     if (payloadExercises.length === 0) continue;
 
-    await createWorkoutPreset({
+    const preset = await createWorkoutPreset({
       name: presetName(program, session),
       description: `${program.tagline} — ${session.focus}`,
       exercises: payloadExercises,
     });
+    await saveProgramAccess(scope, preset.id, access);
     presetsCreated += 1;
     exercisesAdded += payloadExercises.length;
   }

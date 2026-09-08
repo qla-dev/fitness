@@ -246,7 +246,7 @@ const MealsLibraryScreen: React.FC<MealsLibraryScreenProps> = ({
   };
 
   const header = useScreenHeader({
-    title: t('mealLibrary.title', { defaultValue: 'Meals' }),
+    title: t('profile.library.myMeals', { defaultValue: 'My Meals' }),
     left: { kind: 'back' },
     right: ownershipFilterHeaderMenu({
       noun: t('mealLibrary.noun', { defaultValue: 'meals' }),

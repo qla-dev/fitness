@@ -27,7 +27,6 @@ interface FoodLibraryRowProps {
 const FoodLibraryRow: React.FC<FoodLibraryRowProps> = ({
   food,
   onPress,
-  showDivider = false,
   isFavorite = false,
 }) => {
   const { t } = useTranslation();
@@ -49,9 +48,7 @@ const FoodLibraryRow: React.FC<FoodLibraryRowProps> = ({
   // a Pressable within a Pressable leaves both live, so a tap on the photo can
   // open the detail screen instead of the viewer. Mirrors the exercise rows.
   return (
-    <View
-      className={`flex-row items-center ${showDivider ? 'border-b border-border-subtle' : ''}`}
-    >
+    <View className="flex-row items-center">
       <View className="pl-4 py-3">
         <FoodThumbnail
           image={primaryImageOf(food)}
@@ -63,7 +60,7 @@ const FoodLibraryRow: React.FC<FoodLibraryRowProps> = ({
       <Pressable
         onPress={onPress}
         disabled={!onPress}
-        className="flex-1 pr-4 py-3"
+        className="flex-1 pl-3 pr-4 py-3"
         style={({ pressed }) => (pressed && onPress ? { opacity: 0.7 } : null)}
       >
         <View className="flex-row justify-between items-center">

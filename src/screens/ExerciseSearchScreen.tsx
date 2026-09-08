@@ -255,7 +255,8 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
   // because it duplicates the labeled ⓘ action.
   const renderExerciseRow = useCallback(
     ({ item }: { item: Exercise }) => {
-      const image = item.images?.[0] ?? null;
+      const image =
+        item.images?.find((image) => image.trim().length > 0) ?? null;
       const fallbackIcon =
         (item.category && CATEGORY_ICON_MAP[item.category]) ||
         'exercise-weights';
@@ -265,7 +266,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
         profile?.id
       );
       return (
-        <View className="flex-row items-center border-b border-border-subtle">
+        <View className="flex-row items-center">
           <TouchableOpacity
             className="pl-4 py-3"
             activeOpacity={0.7}
@@ -599,12 +600,12 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
   }: {
     item: ExternalExerciseItem;
   }) => {
-    const image = item.images?.[0] ?? null;
+    const image = item.images?.find((image) => image.trim().length > 0) ?? null;
     const fallbackIcon =
       (item.category && CATEGORY_ICON_MAP[item.category]) || 'exercise-weights';
     const isImportInFlight = importingExerciseId !== null;
     return (
-      <View className="flex-row items-center border-b border-border-subtle">
+      <View className="flex-row items-center">
         <TouchableOpacity
           className="pl-4 py-3"
           activeOpacity={0.7}

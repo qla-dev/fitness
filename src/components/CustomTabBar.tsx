@@ -18,7 +18,7 @@ export const TAB_BAR_HEIGHT = 56;
 const TAB_ICONS: Record<string, IconName> = {
   Dashboard: 'tab-dashboard',
   Diary: 'book',
-  Library: 'tab-library',
+  Trends: 'chart-bar',
   Exercises: 'exercise-weights',
 };
 

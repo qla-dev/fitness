@@ -185,7 +185,9 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   const renderPresetRow = useCallback(
     ({ item }: { item: WorkoutPreset }) => {
       const firstExercise = item.exercises[0];
-      const image = firstExercise?.image_url ?? null;
+      const image =
+        item.exercises.find((exercise) => exercise.image_url?.trim())
+          ?.image_url ?? null;
       const fallbackIcon =
         (firstExercise?.category &&
           CATEGORY_ICON_MAP[firstExercise.category]) ||
@@ -196,7 +198,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
         profile?.id
       );
       return (
-        <View className="flex-row items-center border-b border-border-subtle">
+        <View className="flex-row items-center">
           <TouchableOpacity
             className="pl-4 py-3"
             activeOpacity={0.7}
@@ -422,7 +424,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       {header}
 
       {/* Search bar */}
-      <View className="px-4 py-2 border-b border-border-subtle">
+      <View className="px-4 py-2">
         <View
           className="flex-row items-center bg-raised rounded-lg px-3 py-2.5"
           style={{
@@ -461,7 +463,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       </View>
 
       <TouchableOpacity
-        className="flex-row items-center px-4 py-3 border-b border-border-subtle"
+        className="flex-row items-center px-4 py-3"
         activeOpacity={0.7}
         onPress={handleStartEmpty}
         disabled={isStarting}

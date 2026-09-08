@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import Icon, { type IconName } from './Icon';
 
 interface NutrientPillProps {
   label: string;
   consumed: number;
   goal?: number;
   unit?: string;
+  icon?: IconName;
+  color?: string;
 }
 
 const NutrientPill: React.FC<NutrientPillProps> = ({
@@ -13,9 +16,14 @@ const NutrientPill: React.FC<NutrientPillProps> = ({
   consumed,
   goal,
   unit = 'g',
+  icon,
+  color,
 }) => {
   return (
-    <View className="w-[23%] bg-border rounded-xl px-0.5 py-2 items-center">
+    <View className="w-[23%] bg-border dark:bg-surface rounded-xl px-0.5 py-2 items-center">
+      {icon && (
+        <Icon name={icon} size={18} color={color} style={{ marginBottom: 4 }} />
+      )}
       <Text className="text-xs text-text-primary mb-1" numberOfLines={1}>
         {label}
       </Text>

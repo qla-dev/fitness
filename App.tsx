@@ -74,6 +74,7 @@ import {
   SafeProfile,
   SafeProfileEdit,
   SafeProfileGoals,
+  SafeMyLogs,
   SafeProfileTheme,
   SafeProfilePremium,
   SafeCalorieSettings,
@@ -275,10 +276,12 @@ function AppContent() {
         Tabs: {
           screens: {
             Dashboard: '',
+            Trends: 'trends',
           },
         },
         FoodScan: 'scan',
         FoodSearch: 'search',
+        MyLogs: 'my-logs',
         // Tapping the workout Live Activity opens its associated URL.
         ActiveWorkout: 'active-workout',
       },
@@ -395,6 +398,11 @@ function AppContent() {
             name="FoodsLibrary"
             component={SafeFoodsLibrary}
             options={createStackScreenOptions(t('screens.foods', { defaultValue: 'Foods' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="MyLogs"
+            component={SafeMyLogs}
+            options={createStackScreenOptions(t('profile.library.myLogs', { defaultValue: 'My Logs' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealsLibrary"

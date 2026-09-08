@@ -20,10 +20,10 @@ describe('MyLibrarySection', () => {
   beforeEach(() => mockNavigate.mockClear());
 
   it.each([
-    ['Foods', 'FoodsLibrary'],
-    ['Meals', 'MealsLibrary'],
-    ['Exercises', 'ExercisesLibrary'],
-    ['Workout programs', 'WorkoutPresetsLibrary'],
+    ['My Food', 'FoodsLibrary'],
+    ['My Meals', 'MealsLibrary'],
+    ['My Logs', 'MyLogs'],
+    ['My Programs', 'WorkoutPresetsLibrary'],
     ['Meal plans', 'MealPlans'],
     ['Medications', 'MedicationsList'],
   ])('opens the saved %s list', (label, destination) => {

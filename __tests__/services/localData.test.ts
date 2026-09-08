@@ -148,6 +148,30 @@ test('concurrent hydration writes are not lost and measurement nulls are preserv
   ).toEqual([expect.objectContaining({ weight: 80, waist: null })]);
 });
 
+test('existing programs resolve current exercise images on list, search and detail reads', async () => {
+  const exercise = await request('/api/exercises', 'POST', {
+    name: 'Squat',
+    category: 'strength',
+  });
+  const preset = await request('/api/workout-presets', 'POST', {
+    name: 'Legs',
+    exercises: [{ exercise_id: exercise.id, sets: [] }],
+  });
+  await request(`/api/exercises/${exercise.id}`, 'PUT', {
+    images: ['https://example.com/squat.jpg'],
+  });
+  const list = await request('/api/workout-presets');
+  const search = await request<LocalRecord[]>(
+    '/api/workout-presets/search?searchTerm=Legs'
+  );
+  const detail = await request(`/api/workout-presets/${preset.id}`);
+  for (const row of [(list.presets as LocalRecord[])[0], search[0], detail]) {
+    expect((row.exercises as LocalRecord[])[0].image_url).toBe(
+      'https://example.com/squat.jpg'
+    );
+  }
+});
+
 test('workouts and programs match shared backend schemas and preserve set IDs', async () => {
   const exercise = await request('/api/exercises', 'POST', {
     name: 'Squat',

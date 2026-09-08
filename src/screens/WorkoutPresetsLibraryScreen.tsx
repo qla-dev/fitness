@@ -12,6 +12,10 @@ import { useCSSVariable } from 'uniwind';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
 import StatusView from '../components/StatusView';
+import SafeImage from '../components/SafeImage';
+import ProgramCountdown from '../components/ProgramCountdown';
+import Icon from '../components/Icon';
+import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import {
   useServerConnection,
@@ -38,6 +42,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
   WorkoutPresetsLibraryScreenProps
 > = ({ navigation }) => {
   const { t } = useTranslation();
+  const { getImageSource } = useExerciseImageSource();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
@@ -135,38 +140,50 @@ const WorkoutPresetsLibraryScreen: React.FC<
     );
   };
 
-  const renderRow = ({
-    item,
-    index,
-  }: {
-    item: WorkoutPreset;
-    index: number;
-  }) => {
+  const renderRow = ({ item }: { item: WorkoutPreset }) => {
+    const image = item.exercises?.find((exercise) =>
+      exercise.image_url?.trim()
+    )?.image_url;
     const exerciseCount = item.exercises?.length ?? 0;
     const status = deriveShareStatus(item.user_id, item.is_public, profile?.id);
     return (
       <TouchableOpacity
-        className={`px-4 py-3 ${index < filteredPresets.length - 1 ? 'border-b border-border-subtle' : ''}`}
+        className="px-4 py-3 flex-row items-center gap-3"
         activeOpacity={0.7}
         onPress={() => handlePresetPress(item)}
       >
-        <View className="flex-row items-center gap-1.5">
-          <Text
-            className="text-text-primary text-base font-medium flex-shrink"
-            numberOfLines={1}
-          >
-            {item.name}
+        <SafeImage
+          source={image ? getImageSource(image) : null}
+          style={{ width: 44, height: 44, borderRadius: 8 }}
+          fallback={
+            <View
+              className="bg-raised items-center justify-center"
+              style={{ width: 44, height: 44, borderRadius: 8 }}
+            >
+              <Icon name="exercise-weights" size={22} color={textSecondary} />
+            </View>
+          }
+        />
+        <View className="flex-1">
+          <View className="flex-row items-center gap-1.5">
+            <Text
+              className="text-text-primary text-base font-medium flex-shrink"
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+            <ShareStatusBadge status={status} />
+          </View>
+          <Text className="text-sm mt-0.5" style={{ color: textSecondary }}>
+            {t('presetLibrary.exerciseCount', {
+              defaultValue: '{{count}} exercises',
+              defaultValue_one: '{{count}} exercise',
+              defaultValue_other: '{{count}} exercises',
+              count: exerciseCount,
+            })}
           </Text>
-          <ShareStatusBadge status={status} />
         </View>
-        <Text className="text-sm mt-0.5" style={{ color: textSecondary }}>
-          {t('presetLibrary.exerciseCount', {
-            defaultValue: '{{count}} exercises',
-            defaultValue_one: '{{count}} exercise',
-            defaultValue_other: '{{count}} exercises',
-            count: exerciseCount,
-          })}
-        </Text>
+        <ProgramCountdown presetId={item.id} />
       </TouchableOpacity>
     );
   };
@@ -267,7 +284,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
   };
 
   const header = useScreenHeader({
-    title: t('presetLibrary.title', { defaultValue: 'Workout programs' }),
+    title: t('profile.library.workout', { defaultValue: 'My Programs' }),
     left: { kind: 'back' },
     right: ownershipFilterHeaderMenu({
       noun: t('presetLibrary.noun', { defaultValue: 'workout programs' }),

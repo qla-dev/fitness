@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkoutPresetsLibraryScreen from '../../src/screens/WorkoutPresetsLibraryScreen';
+import SafeImage from '../../src/components/SafeImage';
 import { useServerConnection, useWorkoutPresetsLibrary } from '../../src/hooks';
 import type { WorkoutPreset } from '../../src/types/workoutPresets';
 import {
@@ -19,6 +20,12 @@ jest.mock('../../src/hooks', () => ({
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
+}));
+
+jest.mock('../../src/hooks/useExerciseImageSource', () => ({
+  useExerciseImageSource: () => ({
+    getImageSource: (uri: string) => ({ uri, headers: {} }),
+  }),
 }));
 
 const mockUseServerConnection = useServerConnection as jest.MockedFunction<
@@ -115,6 +122,19 @@ describe('WorkoutPresetsLibraryScreen', () => {
       refetch: jest.fn(),
     });
     mockUseWorkoutPresetsLibrary.mockReturnValue(buildHookReturn());
+  });
+
+  it('uses the first available exercise thumbnail when the first exercise has none', () => {
+    const preset = createPreset('p-1', 'Push Day', 3);
+    preset.exercises[1].image_url = 'https://example.com/bench.jpg';
+    preset.exercises[2].image_url = 'https://example.com/press.jpg';
+    mockUseWorkoutPresetsLibrary.mockReturnValue(
+      buildHookReturn({ presets: [preset] })
+    );
+    const screen = renderScreen();
+    expect(screen.UNSAFE_getByType(SafeImage).props.source.uri).toBe(
+      'https://example.com/bench.jpg'
+    );
   });
 
   it('lists programs from the hook with their exercise counts', async () => {

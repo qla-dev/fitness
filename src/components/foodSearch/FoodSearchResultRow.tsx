@@ -46,7 +46,7 @@ const OnlineResultRow: React.FC<OnlineResultRowProps> = ({
   const image = externalFoodImage(item);
   // Sibling thumbnail, not nested in the row's pressable — see FoodResultRow.
   return (
-    <View className="flex-row items-center border-b border-border-subtle">
+    <View className="flex-row items-center">
       <View className="pl-4 py-2">
         <FoodThumbnail
           image={image}
@@ -145,7 +145,7 @@ const ShowAllProviderRow: React.FC<ShowAllProviderRowProps> = ({
   const { t } = useTranslation();
   return (
     <TouchableOpacity
-      className="px-4 py-3 border-b border-border-subtle"
+      className="px-4 py-3"
       activeOpacity={0.7}
       onPress={() => onSelectProvider(provider.id)}
     >
@@ -176,7 +176,7 @@ const ShowAllLocalRow: React.FC<ShowAllLocalRowProps> = ({
   const { t } = useTranslation();
   return (
     <TouchableOpacity
-      className="px-4 py-3 border-b border-border-subtle"
+      className="px-4 py-3"
       activeOpacity={0.7}
       onPress={() => onShowAll(section)}
     >

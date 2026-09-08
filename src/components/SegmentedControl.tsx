@@ -17,13 +17,13 @@ const SegmentedControl = <T extends string>({
   onSelect,
 }: SegmentedControlProps<T>) => (
   <View>
-    <View className="flex-row bg-raised p-1 rounded-lg">
+    <View className="flex-row bg-raised dark:bg-surface p-1 rounded-lg">
       {segments.map((segment) => (
         <TouchableOpacity
           key={segment.key}
           onPress={() => onSelect(segment.key)}
           className={`flex-1 py-2 rounded-md items-center ${
-            activeKey === segment.key ? 'bg-surface' : ''
+            activeKey === segment.key ? 'bg-surface dark:bg-background' : ''
           }`}
           activeOpacity={0.7}
           accessibilityRole="tab"

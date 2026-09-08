@@ -10,8 +10,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
-import type { CompositeScreenProps } from '@react-navigation/native';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
@@ -37,12 +35,15 @@ import type { Exercise } from '../types/exercise';
 import { foodItemToFoodInfo } from '../types/foodInfo';
 import type { FoodItem } from '../types/foods';
 import type { Meal } from '../types/meals';
-import type { RootStackParamList, TabParamList } from '../types/navigation';
+import type { RootStackParamList } from '../types/navigation';
 
-type LibraryScreenProps = CompositeScreenProps<
-  BottomTabScreenProps<TabParamList, 'Library'>,
-  NativeStackScreenProps<RootStackParamList>
->;
+type LibraryScreenProps = {
+  navigation: Pick<
+    NativeStackScreenProps<RootStackParamList>['navigation'],
+    'navigate'
+  >;
+  route?: unknown;
+};
 
 const RECENT_LIMIT = 4;
 
@@ -51,17 +52,35 @@ type RecentItem =
   | { type: 'food'; data: FoodItem }
   | { type: 'exercise'; data: Exercise };
 
-const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
+type SharedLibraryProps = (
+  LibraryScreenProps | NativeStackScreenProps<RootStackParamList, 'MyLogs'>
+) & {
+  logsHeader?: React.ReactNode;
+  logsNativeHeader?: boolean;
+};
+const LibraryScreen: React.FC<SharedLibraryProps> = ({
+  navigation: screenNavigation,
+  logsHeader,
+  logsNativeHeader,
+}) => {
+  const navigation: Pick<
+    NativeStackScreenProps<RootStackParamList>['navigation'],
+    'navigate'
+  > = screenNavigation;
+  const isLogs = logsNativeHeader !== undefined;
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
-  const usesNativeTabs = useNativeIOSTabsActive();
+  const activeWorkoutBarPadding = useActiveWorkoutBarPadding(
+    isLogs ? 'stack' : undefined
+  );
+  const nativeTabs = useNativeIOSTabsActive();
+  const usesNativeTabs = isLogs ? logsNativeHeader : nativeTabs;
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
 
   // The tab has no date, so it never went through the shared date-picker
   // helper; it still needs the profile button every tab header carries.
   useLayoutEffect(() => {
-    if (!usesNativeTabs) return;
+    if (!usesNativeTabs || isLogs) return;
     setNativeTabHeaderActions(
       // On the native path this screen sits in the tab-local native stack,
       // whose header options the bottom-tab navigation type does not describe.
@@ -74,7 +93,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
       ],
       nativeHeaderActionColor
     );
-  }, [navigation, nativeHeaderActionColor, t, usesNativeTabs]);
+  }, [navigation, nativeHeaderActionColor, t, usesNativeTabs, isLogs]);
   const accentColor = useCSSVariable('--color-accent-primary') as string;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
@@ -164,6 +183,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
         className="flex-1 bg-background"
         style={usesNativeTabs ? undefined : { paddingTop: insets.top }}
       >
+        {isLogs && logsHeader}
         <StatusView
           icon="cloud-offline"
           iconTone="muted"
@@ -203,12 +223,14 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
     );
   }
 
-  // One list rather than six hand-written rows: the optional rows (meal plans,
-  // medications) mean the last row is not always the same one, and only a
-  // computed index can keep the divider off whichever row ends the card.
+  // Library and My Logs share the same recent entries and refresh behavior.
   return (
-    <View className="flex-1 bg-background">
-      {!usesNativeTabs && (
+    <View
+      className="flex-1 bg-background"
+      style={isLogs && !usesNativeTabs ? { paddingTop: insets.top } : undefined}
+    >
+      {isLogs && logsHeader}
+      {!isLogs && !usesNativeTabs && (
         <TabHeader
           title={t('screens.library.title', { defaultValue: 'Library' })}
           onProfilePress={() => navigation.navigate('Profile')}

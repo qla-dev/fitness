@@ -42,7 +42,7 @@ const FoodResultRow: React.FC<FoodResultRowProps> = ({
   // nesting leaves the inner one live while the parent is disabled. Matches
   // FoodLibraryRow.
   return (
-    <View className="flex-row items-center border-b border-border-subtle">
+    <View className="flex-row items-center">
       <View className="pl-4 py-2">
         <FoodThumbnail
           image={primaryImageOf(item)}

@@ -42,6 +42,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const [showHeaderTitle, setShowHeaderTitle] = useState(false);
 
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
 
@@ -171,7 +172,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const header = useScreenHeader({
     title: t('profile.title', { defaultValue: 'Profile' }),
+    nativeTitle: showHeaderTitle
+      ? t('profile.title', { defaultValue: 'Profile' })
+      : '',
     left: { kind: 'back' },
+    borderless: true,
+    nativeOptions: {
+      headerLargeTitleEnabled: false,
+      headerLargeTitleShadowVisible: false,
+      headerTransparent: true,
+      headerShadowVisible: false,
+    },
   });
 
   return (
@@ -188,6 +199,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           paddingBottom: 16 + activeWorkoutBarPadding,
         }}
         scrollEventThrottle={16}
+        onScroll={({ nativeEvent }) => {
+          const offset =
+            nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
+          setShowHeaderTitle(offset > 16);
+        }}
         contentInsetAdjustmentBehavior={
           usesNativeHeader ? 'automatic' : 'never'
         }

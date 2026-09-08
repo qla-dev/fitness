@@ -78,7 +78,7 @@ describe('DiaryCalorieMacroSummary', () => {
     expect(toJSON()).toBeNull();
   });
 
-  it('renders only the calorie row when collapsed (default)', () => {
+  it('keeps macros visible even when the legacy collapsed preference is saved', () => {
     useAppPreferencesStore.setState({
       diarySummaryVisible: true,
       diarySummaryExpanded: false,
@@ -97,7 +97,7 @@ describe('DiaryCalorieMacroSummary', () => {
     expect(getByText(/500 \/ 2,000 kcal/)).toBeTruthy();
     expect(getByText(/1,500/)).toBeTruthy();
     expect(getByText(/remaining/)).toBeTruthy();
-    expect(queryByText('Protein')).toBeNull();
+    expect(queryByText('Protein')).toBeTruthy();
   });
 
   it('reveals the macro pill grid when diarySummaryExpanded is true', () => {

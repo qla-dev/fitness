@@ -1,5 +1,3 @@
-import DashboardTrendCards from '../components/DashboardTrendCards';
-import DashboardCardTitle from '../components/DashboardCardTitle';
 import { isLocalDataMode } from '../services/dataMode';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -43,7 +41,7 @@ import FastingGoalReconciler from '../components/FastingGoalReconciler';
 import Icon from '../components/Icon';
 import MedicationsCard from '../components/MedicationsCard';
 import ProgressPhotosCard from '../components/ProgressPhotosCard';
-import SegmentedControl, { type Segment } from '../components/SegmentedControl';
+import SegmentedControl from '../components/SegmentedControl';
 import StatusView from '../components/StatusView';
 import { NUTRIENT_META, getNutrientLabel } from '../constants/nutrients';
 import {
@@ -51,7 +49,6 @@ import {
   medicationsRootQueryKey,
   useCustomNutrients,
   useDailySummary,
-  useHealthTrends,
   useMeasurements,
   useNutrientDisplayPreferences,
   usePreferences,
@@ -63,11 +60,6 @@ import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
-import type { HealthTrendDateRange } from '../types/healthTrends';
-import {
-  resolveHealthTrendOrder,
-  selectVisibleHealthTrends,
-} from '../utils/healthTrendPreferences';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { formatDateLabel } from '../utils/dateUtils';
 import {
@@ -76,15 +68,6 @@ import {
   type NativeHeaderDatePickerNavigation,
 } from '../utils/nativeHeaderDatePicker';
 import { getNetCarbsValue } from '../utils/nutrientUtils';
-import { weightFromKg } from '../utils/unitConversions';
-
-const RANGE_SEGMENTS = (
-  t: (key: string, options: { defaultValue: string }) => string
-): Segment<HealthTrendDateRange>[] => [
-  { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
-  { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
-  { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
-];
 
 type DashboardScreenProps = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Dashboard'>,
@@ -103,7 +86,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const goToNextDay = useDiaryDateStore((s) => s.goToNextDay);
   const goToToday = useDiaryDateStore((s) => s.goToToday);
   const syncTodayRollover = useDiaryDateStore((s) => s.syncTodayRollover);
-  const [trendsRange, setTrendsRange] = useState<HealthTrendDateRange>('7d');
   const scrollViewRef = useRef<ScrollView>(null);
   const calendarRef = useRef<CalendarSheetRef>(null);
 
@@ -212,45 +194,12 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     enabled: isConnected,
   });
 
-  const healthTrendOrder = useAppPreferencesStore((s) => s.healthTrendOrder);
-  const hiddenHealthTrends = useAppPreferencesStore(
-    (s) => s.hiddenHealthTrends
-  );
-  const visibleTrends = useMemo(
-    () =>
-      selectVisibleHealthTrends(
-        resolveHealthTrendOrder(healthTrendOrder),
-        hiddenHealthTrends
-      ),
-    [healthTrendOrder, hiddenHealthTrends]
-  );
-
-  const { refetch: refetchTrends, ...trends } = useHealthTrends({
-    range: trendsRange,
-    enabled: isConnected,
-    activeTrends: visibleTrends,
-  });
-
   const { customNutrients, refetch: refetchCustomNutrients } =
     useCustomNutrients({ enabled: isConnected });
   const { summaryNutrients, refetch: refetchNutrientPrefs } =
     useNutrientDisplayPreferences({ enabled: isConnected });
 
   useWidgetSync(summary);
-
-  // The chart is a single-axis line graph; if the user picked stones+lbs, plot lbs.
-  const weightUnit: 'kg' | 'lbs' =
-    (preferences?.default_weight_unit ?? 'kg') === 'kg' ? 'kg' : 'lbs';
-  const weightSeries = useMemo(() => {
-    if (weightUnit === 'kg') return trends.weight;
-    return {
-      ...trends.weight,
-      data: trends.weight.data.map((p) => ({
-        ...p,
-        weight: weightFromKg(p.weight, weightUnit),
-      })),
-    };
-  }, [trends.weight, weightUnit]);
 
   // CSS variable macro colors are theme-aware (lower saturation than hardcoded hex)
   const [proteinColor, carbsColor, fatColor, fiberColor, caloriesColor] =
@@ -264,7 +213,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
 
   const accentColor = useCSSVariable('--color-accent-primary') as string;
 
-  const dashboardMode = useAppPreferencesStore((s) => s.dashboardMode);
+  const savedDashboardMode = useAppPreferencesStore((s) => s.dashboardMode);
+  const dashboardMode =
+    savedDashboardMode === 'trends' ? 'activity' : savedDashboardMode;
   const setDashboardMode = useAppPreferencesStore((s) => s.setDashboardMode);
   const [refreshing, setRefreshing] = useState(false);
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
@@ -296,7 +247,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       refetch(),
       refetchPreferences(),
       refetchMeasurements(),
-      refetchTrends(),
       refetchCustomNutrients(),
       refetchNutrientPrefs(),
       // FastingCard owns its own queries; nudge them on pull-to-refresh.
@@ -309,7 +259,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     refetch,
     refetchPreferences,
     refetchMeasurements,
-    refetchTrends,
     refetchCustomNutrients,
     refetchNutrientPrefs,
     queryClient,
@@ -494,7 +443,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         }
       >
         <View className="mb-3">
-          <SegmentedControl<'activity' | 'nutrients' | 'trends'>
+          <SegmentedControl<'activity' | 'nutrients'>
             segments={[
               {
                 key: 'activity',
@@ -504,37 +453,12 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
                 key: 'nutrients',
                 label: t('dashboard.nutrients', { defaultValue: 'Nutrients' }),
               },
-              {
-                key: 'trends',
-                label: t('dashboard.trends', { defaultValue: 'Trends' }),
-              },
             ]}
             activeKey={dashboardMode}
             onSelect={setDashboardMode}
           />
         </View>
-        {dashboardMode === 'trends' ? (
-          <>
-            <DashboardCardTitle className="mb-2">
-              {t('dashboard.trends', { defaultValue: 'Trends' })}
-            </DashboardCardTitle>
-            {visibleTrends.length > 0 && (
-              <SegmentedControl
-                segments={RANGE_SEGMENTS(t)}
-                activeKey={trendsRange}
-                onSelect={setTrendsRange}
-              />
-            )}
-            <DashboardTrendCards
-              steps={trends.steps}
-              weight={weightSeries}
-              sleep={trends.sleep}
-              range={trendsRange}
-              weightUnit={weightUnit}
-              visibleTrends={visibleTrends}
-            />
-          </>
-        ) : dashboardMode === 'activity' ? (
+        {dashboardMode === 'activity' ? (
           <DashboardActivityCard
             summary={summary}
             steps={measurements?.steps}
@@ -600,14 +524,12 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           </>
         )}
 
-        {dashboardMode !== 'trends' && (
-          <DashboardActivityDetails
-            summary={summary}
-            steps={measurements?.steps}
-            distanceUnit={preferences.default_distance_unit ?? 'km'}
-            standGoal={summary.goals.stand_hours}
-          />
-        )}
+        <DashboardActivityDetails
+          summary={summary}
+          steps={measurements?.steps}
+          distanceUnit={preferences.default_distance_unit ?? 'km'}
+          standGoal={summary.goals.stand_hours}
+        />
 
         {/* Goal-notification reconciliation is owned here (headless, always
             mounted) so it survives the card being hidden. Fasting is "now"-based,

@@ -34,7 +34,7 @@ export type TabParamList = {
   Dashboard: undefined;
   Diary: { selectedDate?: string } | undefined;
   Add: undefined;
-  Library: undefined;
+  Trends: undefined;
   Exercises: undefined;
 };
 
@@ -46,6 +46,7 @@ export type RootStackParamList = {
    * it is now pushed from the profile button every tab header carries.
    */
   Profile: undefined;
+  MyLogs: undefined;
   FamilyMembers: undefined;
   FamilyDiary: { familyUser: FamilyDiaryUser };
   FamilyMealDetail: {

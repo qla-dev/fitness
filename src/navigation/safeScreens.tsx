@@ -37,6 +37,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ExerciseProgramScreen from '../screens/ExerciseProgramScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileGoalsScreen from '../screens/ProfileGoalsScreen';
+import MyLogsScreen from '../screens/MyLogsScreen';
 import ProfileThemeScreen from '../screens/ProfileThemeScreen';
 import ProfilePremiumScreen from '../screens/ProfilePremiumScreen';
 import CalorieSettingsScreen from '../screens/CalorieSettingsScreen';
@@ -123,6 +124,7 @@ export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'Exe
 export const SafeProfile = withErrorBoundary(SettingsScreen, 'Profile', { canGoBack: true });
 export const SafeProfileEdit = withErrorBoundary(ProfileEditScreen, 'ProfileEdit', { canGoBack: true });
 export const SafeProfileGoals = withErrorBoundary(ProfileGoalsScreen, 'ProfileGoals', { canGoBack: true });
+export const SafeMyLogs = withErrorBoundary(MyLogsScreen, 'MyLogs', { canGoBack: true });
 export const SafeProfileTheme = withErrorBoundary(ProfileThemeScreen, 'ProfileTheme', { canGoBack: true });
 export const SafeProfilePremium = withErrorBoundary(ProfilePremiumScreen, 'ProfilePremium', { canGoBack: true });
 export const SafeCalorieSettings = withErrorBoundary(CalorieSettingsScreen, 'CalorieSettings', { canGoBack: true });

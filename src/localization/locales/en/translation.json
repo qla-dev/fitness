@@ -137,7 +137,8 @@
     "diary": "Diary",
     "dashboard": "Dashboard",
     "add": "Add",
-    "mealTypes": "Meal Types"
+    "mealTypes": "Meal Types",
+    "trends": "Trends"
   },
   "familyDiary": {
     "title": "Family Diaries",
@@ -5013,7 +5014,14 @@
       "itemCount_other": "{{formattedCount}} items",
       "createFood": "Create food",
       "createExercise": "Create exercise",
-      "createProgram": "Create program"
+      "createProgram": "Create program",
+      "workout": "My Programs",
+      "daysLeft_one": "{{formattedCount}} day left",
+      "daysLeft_other": "{{formattedCount}} days left",
+      "expired": "Expired",
+      "myFood": "My Food",
+      "myMeals": "My Meals",
+      "myLogs": "My Logs"
     },
     "personal": "Personal",
     "preferences": "Preferences",
@@ -5139,5 +5147,8 @@
       "added_one": "{{count}} workout added to Programs",
       "added_other": "{{count}} workouts added to Programs"
     }
+  },
+  "trends": {
+    "loading": "Loading trends..."
   }
 }

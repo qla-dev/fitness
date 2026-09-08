@@ -9,6 +9,9 @@ import {
 } from '../../src/services/api/externalExerciseSearchApi';
 import { createWorkoutPreset } from '../../src/services/api/workoutPresetsApi';
 import type { ExerciseProgram } from '../../src/types/exerciseProgram';
+jest.mock('../../src/services/dataMode', () => ({
+  isLocalDataMode: () => true,
+}));
 
 jest.mock('../../src/services/api/exerciseApi', () => ({
   fetchExercisesPage: jest.fn(),
@@ -84,18 +87,19 @@ describe('installProgramAsPresets', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('creates one preset per session and skips movements nothing matches', async () => {
-    mockFetchPage.mockImplementation(({ searchTerm }: { searchTerm: string }) =>
-      searchTerm === 'Barbell Hip Thrust'
-        ? Promise.resolve({
-            exercises: [{ id: 'ex-1', name: 'Barbell Hip Thrust' }],
-            pagination: {
-              page: 1,
-              pageSize: 10,
-              totalCount: 1,
-              hasMore: false,
-            },
-          })
-        : Promise.resolve(emptyPage)
+    mockFetchPage.mockImplementation(
+      ({ searchTerm }: { searchTerm: string }) =>
+        searchTerm === 'Barbell Hip Thrust'
+          ? Promise.resolve({
+              exercises: [{ id: 'ex-1', name: 'Barbell Hip Thrust' }],
+              pagination: {
+                page: 1,
+                pageSize: 10,
+                totalCount: 1,
+                hasMore: false,
+              },
+            })
+          : Promise.resolve(emptyPage)
     );
     mockSearchExternal.mockResolvedValue({ items: [] });
     mockCreate.mockResolvedValue({ id: 1 });

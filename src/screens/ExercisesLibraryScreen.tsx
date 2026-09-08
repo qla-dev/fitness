@@ -293,14 +293,14 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     </View>
   );
 
-  const renderOnlineRow = (item: ExternalExerciseItem, isLast: boolean) => {
-    const image = item.images?.[0] ?? null;
+  const renderOnlineRow = (item: ExternalExerciseItem) => {
+    const image = item.images?.find((image) => image.trim().length > 0) ?? null;
     const fallbackIcon =
       (item.category && CATEGORY_ICON_MAP[item.category]) || 'exercise-weights';
     const isImporting = importingId !== null;
     return (
       <TouchableOpacity
-        className={`px-4 py-3 ${isLast ? '' : 'border-b border-border-subtle'}`}
+        className="px-4 py-3"
         activeOpacity={0.7}
         disabled={isImporting}
         accessibilityLabel={t('exerciseLibrary.addOnline', {
@@ -345,18 +345,18 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     );
   };
 
-  const renderRow = ({ item, isLast }: { item: Exercise; isLast: boolean }) => {
+  const renderRow = ({ item }: { item: Exercise; isLast: boolean }) => {
     const status = deriveShareStatus(
       item.userId,
       item.sharedWithPublic,
       profile?.id
     );
-    const image = item.images?.[0] ?? null;
+    const image = item.images?.find((image) => image.trim().length > 0) ?? null;
     const fallbackIcon =
       (item.category && CATEGORY_ICON_MAP[item.category]) || 'exercise-weights';
     return (
       <TouchableOpacity
-        className={`px-4 py-3 ${isLast ? '' : 'border-b border-border-subtle'}`}
+        className="px-4 py-3"
         activeOpacity={0.7}
         onPress={() => handleExercisePress(item)}
       >
@@ -457,8 +457,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         keyExtractor={(row) => row.key}
         renderItem={({ item: row }) => {
           if (row.kind === 'section') return renderSection(row.title);
-          if (row.kind === 'online')
-            return renderOnlineRow(row.item, row.isLast);
+          if (row.kind === 'online') return renderOnlineRow(row.item);
           return renderRow({ item: row.exercise, isLast: row.isLast });
         }}
         ListHeaderComponent={

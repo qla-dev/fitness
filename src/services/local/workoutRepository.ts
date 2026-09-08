@@ -15,6 +15,24 @@ import {
 } from './database';
 import type { LocalRequest, LocalResult } from './request';
 
+function presetWithImages(db: LocalDatabase, row: LocalRecord) {
+  return workoutPresetResponseSchema.parse({
+    ...row,
+    exercises: asRecords(row.exercises).map((entry) => {
+      const exercise = table(db, 'exercises').find(
+        (candidate) => String(candidate.id) === String(entry.exercise_id)
+      );
+      const image = Array.isArray(exercise?.images)
+        ? exercise.images.find(
+            (value): value is string =>
+              typeof value === 'string' && value.trim().length > 0
+          )
+        : undefined;
+      return { ...entry, image_url: image ?? entry.image_url ?? null };
+    }),
+  });
+}
+
 function sets(db: LocalDatabase, value: unknown) {
   return asRecords(value).map((set, index) => ({
     set_number: index + 1,
@@ -265,14 +283,12 @@ export function workoutRepository(
   if (parts[2] === 'workout-presets') {
     if (method === 'GET') {
       const rows = search(table(db, 'presets')).map((row) =>
-        workoutPresetResponseSchema.parse(row)
+        presetWithImages(db, row)
       );
       if (id === 'search') return { value: rows };
       if (id)
         return {
-          value: workoutPresetResponseSchema.parse(
-            findRecord(db, 'presets', id)
-          ),
+          value: presetWithImages(db, findRecord(db, 'presets', id)),
         };
       return {
         value: {
@@ -315,7 +331,7 @@ export function workoutRepository(
       },
       method === 'PUT' ? id : undefined
     );
-    return { value: workoutPresetResponseSchema.parse(row) };
+    return { value: presetWithImages(db, row) };
   }
   return undefined;
 }

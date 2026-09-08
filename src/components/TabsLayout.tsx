@@ -11,7 +11,7 @@ import {
 } from '../utils/nativeHeaderItems';
 import DashboardScreen from '../screens/DashboardScreen';
 import DiaryScreen from '../screens/DiaryScreen';
-import LibraryScreen from '../screens/LibraryScreen';
+import TrendsScreen from '../screens/TrendsScreen';
 import ExercisesLibraryScreen from '../screens/ExercisesLibraryScreen';
 import type { TabParamList } from '../types/navigation';
 import {
@@ -37,7 +37,7 @@ import { fireBackNavigationHaptic } from '../utils/backNavigationHaptic';
 export const NON_ADD_TABS = [
   'Dashboard',
   'Diary',
-  'Library',
+  'Trends',
   'Exercises',
 ] as const;
 export type NonAddTabName = (typeof NON_ADD_TABS)[number];
@@ -75,7 +75,7 @@ const AddRedirectScreen = ({
 // Tab screens — no Go Back (tab bar provides navigation)
 const SafeDashboard = withErrorBoundary(DashboardScreen, 'Dashboard');
 const SafeDiary = withErrorBoundary(DiaryScreen, 'Diary');
-const SafeLibrary = withErrorBoundary(LibraryScreen, 'Library');
+const SafeTrends = withErrorBoundary(TrendsScreen, 'Trends');
 const SafeExercises = withErrorBoundary(ExercisesLibraryScreen, 'Exercises');
 
 // Popping a tab-local screen gives the same selection haptic the root stack
@@ -105,12 +105,12 @@ type DashboardStackParamList = {
 type DiaryStackParamList = {
   DiaryRoot: { selectedDate?: string } | undefined;
 };
-type LibraryStackParamList = { LibraryRoot: undefined };
+type TrendsStackParamList = { TrendsRoot: undefined };
 type ExercisesStackParamList = { ExercisesRoot: undefined };
 
 const DashboardStack = createNativeStackNavigator<DashboardStackParamList>();
 const DiaryStack = createNativeStackNavigator<DiaryStackParamList>();
-const LibraryStack = createNativeStackNavigator<LibraryStackParamList>();
+const TrendsStack = createNativeStackNavigator<TrendsStackParamList>();
 const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
 
 const NativeTabsOverlayContext = React.createContext<ReturnType<
@@ -199,7 +199,7 @@ function DiaryStackScreen() {
   );
 }
 
-function LibraryStackScreen() {
+function TrendsStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
   const textPrimary = useCSSVariable('--color-text-primary') as string;
@@ -210,16 +210,16 @@ function LibraryStackScreen() {
 
   return (
     <View className="flex-1">
-      <LibraryStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
-        <LibraryStack.Screen
-          name="LibraryRoot"
-          component={SafeLibrary as React.ComponentType}
+      <TrendsStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
+        <TrendsStack.Screen
+          name="TrendsRoot"
+          component={SafeTrends as React.ComponentType}
           options={{
-            title: t('navigation.library', { defaultValue: 'Library' }),
+            title: t('navigation.trends', { defaultValue: 'Trends' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
-      </LibraryStack.Navigator>
+      </TrendsStack.Navigator>
       <NativeTabsBannerOverlay />
     </View>
   );
@@ -332,12 +332,12 @@ export function NativeTabsLayout({
           {() => <AddRedirectScreen getLastActiveTab={getLastActiveTab} />}
         </NativeTab.Screen>
         <NativeTab.Screen
-          name="Library"
-          component={LibraryStackScreen}
+          name="Trends"
+          component={TrendsStackScreen}
           options={{
-            tabBarLabel: t('navigation.library', { defaultValue: 'Library' }),
+            tabBarLabel: t('navigation.trends', { defaultValue: 'Trends' }),
             tabBarIcon: () =>
-              ({ sfSymbol: 'books.vertical.fill' }) as unknown as AppleIcon,
+              ({ sfSymbol: 'chart.xyaxis.line' }) as unknown as AppleIcon,
           }}
         />
         <NativeTab.Screen
@@ -426,12 +426,12 @@ export function FallbackTabsLayout({
         {() => <AddRedirectScreen getLastActiveTab={getLastActiveTab} />}
       </FallbackTab.Screen>
       <FallbackTab.Screen
-        name="Library"
-        component={SafeLibrary}
+        name="Trends"
+        component={SafeTrends}
         options={{
-          tabBarLabel: t('navigation.library', { defaultValue: 'Library' }),
-          tabBarAccessibilityLabel: t('navigation.library', {
-            defaultValue: 'Library',
+          tabBarLabel: t('navigation.trends', { defaultValue: 'Trends' }),
+          tabBarAccessibilityLabel: t('navigation.trends', {
+            defaultValue: 'Trends',
           }),
         }}
       />

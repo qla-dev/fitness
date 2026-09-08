@@ -32,7 +32,6 @@ interface MealLibraryRowProps {
 const MealLibraryRow: React.FC<MealLibraryRowProps> = ({
   meal,
   onPress,
-  showDivider = false,
   showBadge = false,
   isFavorite = false,
 }) => {
@@ -54,9 +53,7 @@ const MealLibraryRow: React.FC<MealLibraryRowProps> = ({
 
   // Sibling, not nested — see FoodLibraryRow for why.
   return (
-    <View
-      className={`flex-row items-center ${showDivider ? 'border-b border-border-subtle' : ''}`}
-    >
+    <View className="flex-row items-center">
       <View className="pl-4 py-3">
         <FoodThumbnail
           image={primaryImageOf(meal)}
@@ -69,7 +66,7 @@ const MealLibraryRow: React.FC<MealLibraryRowProps> = ({
       <Pressable
         onPress={onPress}
         disabled={!onPress}
-        className="flex-1 pr-4 py-3"
+        className="flex-1 pl-3 pr-4 py-3"
         style={({ pressed }) => (pressed && onPress ? { opacity: 0.7 } : null)}
       >
         <View className="flex-row justify-between items-center">

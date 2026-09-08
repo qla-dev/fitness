@@ -5,7 +5,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 
 import { useMeals, useMedications } from '../hooks';
-import { fetchExercisesCount } from '../services/api/exerciseApi';
 import { fetchFoodsPage } from '../services/api/foodsApi';
 import { fetchWorkoutPresetsPage } from '../services/api/workoutPresetsApi';
 import { isLocalDataMode } from '../services/dataMode';
@@ -37,12 +36,6 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
       fetchFoodsPage({ page: 1, itemsPerPage: 1 }).then(
         (r) => r.pagination.totalCount
       ),
-    enabled,
-    staleTime: 1000 * 60 * 5,
-  });
-  const { data: exercisesCount } = useQuery({
-    queryKey: ['exercises', 'count'] as const,
-    queryFn: fetchExercisesCount,
     enabled,
     staleTime: 1000 * 60 * 5,
   });
@@ -80,29 +73,31 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
       <View className="flex-row flex-wrap justify-between">
         <CreateTile
           icon="food"
-          title={t('screens.library.foods', { defaultValue: 'Foods' })}
+          title={t('profile.library.myFood', { defaultValue: 'My Food' })}
           subtitle={countLabel(foodsCount)}
           onPress={() => navigation.navigate('FoodsLibrary')}
           className="w-[48%] mb-3"
         />
         <CreateTile
           icon="meal"
-          title={t('screens.library.meals', { defaultValue: 'Meals' })}
+          title={t('profile.library.myMeals', { defaultValue: 'My Meals' })}
           subtitle={countLabel(meals.length)}
           onPress={() => navigation.navigate('MealsLibrary')}
           className="w-[48%] mb-3"
         />
         <CreateTile
-          icon="exercise-weights"
-          title={t('screens.library.exercises', { defaultValue: 'Exercises' })}
-          subtitle={countLabel(exercisesCount)}
-          onPress={() => navigation.navigate('ExercisesLibrary')}
+          icon="history"
+          title={t('profile.library.myLogs', { defaultValue: 'My Logs' })}
+          subtitle={t('screens.library.recentlyLogged', {
+            defaultValue: 'Recently Logged',
+          })}
+          onPress={() => navigation.navigate('MyLogs')}
           className="w-[48%] mb-3"
         />
         <CreateTile
-          icon="bookmark-filled"
-          title={t('screens.library.workoutPresets', {
-            defaultValue: 'Workout programs',
+          icon="exercise-weights"
+          title={t('profile.library.workout', {
+            defaultValue: 'My Programs',
           })}
           subtitle={countLabel(presetsCount)}
           onPress={() => navigation.navigate('WorkoutPresetsLibrary')}
