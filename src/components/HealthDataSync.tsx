@@ -177,7 +177,7 @@ const HealthDataSync: React.FC<HealthDataSyncProps> = ({
   };
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-3 text-text-primary">
         {t('healthSync.title', { defaultValue: 'Health Data to Sync' })}
       </Text>

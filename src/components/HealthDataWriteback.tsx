@@ -106,7 +106,7 @@ const HealthDataWriteback: React.FC<HealthDataWritebackProps> = ({
   };
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-1 text-text-primary">
         {t('healthSync.writeTitle', {
           defaultValue: 'Write to {{store}}',

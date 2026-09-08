@@ -183,10 +183,7 @@ const Hypnogram: React.FC<HypnogramProps> = ({ stages, zone }) => {
 
   if (stages.length === 0) {
     return (
-      <View
-        testID="hypnogram-empty"
-        className="bg-surface rounded-xl p-4 mb-3 shadow-sm"
-      >
+      <View testID="hypnogram-empty" className="bg-surface rounded-xl p-4 mb-3">
         <Text className="text-base font-semibold text-text-primary mb-2">
           {t('sleep.hypnogram', { defaultValue: 'Sleep Stages' })}
         </Text>
@@ -202,10 +199,7 @@ const Hypnogram: React.FC<HypnogramProps> = ({ stages, zone }) => {
   const window = getHypnogramWindow(stages);
 
   return (
-    <View
-      testID="hypnogram"
-      className="bg-surface rounded-xl p-4 mb-3 shadow-sm"
-    >
+    <View testID="hypnogram" className="bg-surface rounded-xl p-4 mb-3">
       <Text className="text-base font-semibold text-text-primary mb-2">
         {t('sleep.hypnogram', { defaultValue: 'Sleep Stages' })}
       </Text>

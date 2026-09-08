@@ -76,8 +76,16 @@ const WeekdaySheet = forwardRef<WeekdaySheetRef, WeekdaySheetProps>(
             return (
               <TouchableOpacity
                 key={label}
-                className="flex-row items-center justify-between px-4 py-3.5 border-b border-border-subtle"
-                style={{ borderBottomWidth: StyleSheet.hairlineWidth }}
+                className={`flex-row items-center justify-between px-4 py-3.5 ${
+                  day < weekdayLabels.length - 1
+                    ? 'border-b border-border-subtle'
+                    : ''
+                }`}
+                style={
+                  day < weekdayLabels.length - 1
+                    ? { borderBottomWidth: StyleSheet.hairlineWidth }
+                    : undefined
+                }
                 onPress={() => toggle(day)}
                 activeOpacity={0.7}
                 accessibilityRole="button"

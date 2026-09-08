@@ -745,7 +745,7 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
         }
       >
         {/* Sync Range */}
-        <View className="bg-surface rounded-xl p-4 py-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 py-3 mb-4">
           <View className="flex-row items-center justify-between">
             <Text className="text-base font-semibold text-text-primary">
               {t('syncScreen.range.title', { defaultValue: 'Sync Range' })}

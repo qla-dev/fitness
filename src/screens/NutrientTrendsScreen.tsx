@@ -146,7 +146,7 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
         />
 
         {/* Statistics Summary Card */}
-        <View className="bg-surface rounded-xl p-4 mt-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 mt-4">
           <Text className="text-text-primary text-base font-bold mb-3">
             {t('nutrientTrends.labels.summary', {
               defaultValue: 'Summary Statistics',
@@ -169,7 +169,11 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
             </Text>
           </View>
 
-          <View className="flex-row justify-between py-2 border-b border-border-subtle">
+          <View
+            className={`flex-row justify-between py-2 ${
+              goal && goal > 0 ? 'border-b border-border-subtle' : ''
+            }`}
+          >
             <Text className="text-text-secondary text-sm">
               {t('nutrientTrends.labels.highestDay', {
                 defaultValue: 'Highest Intake Day',

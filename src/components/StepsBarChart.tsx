@@ -141,7 +141,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 my-2">
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {t('charts.steps.title', { defaultValue: 'Steps' })}
       </Text>

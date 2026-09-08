@@ -186,7 +186,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
         </SettingsRowGroup>
 
         {/* {t('foodSettings.netCarbs.title', { defaultValue: 'Show Net Carbs' })} */}
-        <View className="bg-surface rounded-xl p-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-3 mb-4">
           <View className="flex-row justify-between items-center">
             <Text className="text-base font-semibold text-text-primary flex-shrink">
               {t('foodSettings.netCarbs.title', {
@@ -207,7 +207,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
         </View>
 
         {/* Default Online Search Provider */}
-        <View className="bg-surface rounded-xl p-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-3 mb-4">
           <View className="flex-row items-center justify-between">
             <Text className="text-base font-semibold text-text-primary">
               {t('foodSettings.foodSource.title', {
@@ -235,7 +235,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
         </View>
 
         {/* Auto-Scale OpenFoodFacts */}
-        <View className="bg-surface rounded-xl p-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-3 mb-4">
           <View className="flex-row justify-between items-center">
             <Text className="text-base font-semibold text-text-primary flex-shrink">
               {t('foodSettings.openFacts.title', {
@@ -253,7 +253,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
         </View>
 
         {/* {t('foodSettings.barcode.title', { defaultValue: 'Barcode Scanning' })} */}
-        <View className="bg-surface rounded-xl p-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-3 mb-4">
           <Text className="text-base font-semibold text-text-primary mb-3">
             {t('foodSettings.barcode.title', {
               defaultValue: 'Barcode Scanning',

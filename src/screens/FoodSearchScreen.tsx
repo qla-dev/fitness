@@ -522,6 +522,15 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
         }),
       ],
       unstable_headerRightItems: () => [
+        createNativeHeaderIconButtonItem({
+          sfSymbol: 'plus',
+          identifier: 'food-search-create',
+          tintColor: headerActionColor,
+          accessibilityLabel: t('profile.library.createFood', {
+            defaultValue: 'Create food',
+          }),
+          onPress: openCreateFood,
+        }),
         createNativeHeaderMenuButtonItem({
           // Bare glyph: Liquid Glass draws its own circular button background,
           // so ellipsis.circle would double up the ring.
@@ -546,6 +555,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
   }, [
     accentColor,
     headerActionColor,
+    openCreateFood,
     isOwnershipFiltered,
     localizedFilterLabels,
     nativeMenuItems,
@@ -1125,6 +1135,17 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
         )}
       </View>
 
+      {!usesNativeHeader && (
+        <Button
+          variant="header"
+          onPress={openCreateFood}
+          accessibilityLabel={t('profile.library.createFood', {
+            defaultValue: 'Create food',
+          })}
+        >
+          <Icon name="add" size={24} color={headerActionColor} />
+        </Button>
+      )}
       {!usesNativeHeader && (
         <View ref={addButtonRef} collapsable={false}>
           <Button

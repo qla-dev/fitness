@@ -40,7 +40,7 @@ const EmptyDayIllustration: React.FC = () => {
   ]) as [string, string, string, string];
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-2 shadow-sm items-center">
+    <View className="bg-surface rounded-xl p-4 mb-2 items-center">
       <SvgXml
         xml={buildSvg(main, subtle, medium, accent)}
         width="80%"

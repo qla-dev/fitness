@@ -52,7 +52,7 @@ const EmptyState: React.FC<{ onAddFood?: () => void }> = ({ onAddFood }) => {
       accessibilityLabel={t('foodSummary.tapToAddFood', {
         defaultValue: 'Tap to add food',
       })}
-      className="bg-surface rounded-xl p-4 mb-2 shadow-sm items-center py-6"
+      className="bg-surface rounded-xl p-4 mb-2 items-center py-6"
     >
       <Text className="text-text-muted text-base">
         {t('foodSummary.tapToAddFood', { defaultValue: 'Tap to add food' })}
@@ -112,7 +112,7 @@ const MealSection: React.FC<MealSectionProps> = ({
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 overflow-hidden shadow-sm">
+    <View className="bg-surface rounded-xl p-4 overflow-hidden">
       {onPressMealType ? (
         <Pressable
           onPress={() =>

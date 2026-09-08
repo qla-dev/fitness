@@ -56,7 +56,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
           usesNativeHeader ? 'automatic' : 'never'
         }
       >
-        <View className="bg-surface rounded-xl p-5 mb-4 items-center shadow-sm">
+        <View className="bg-surface rounded-xl p-5 mb-4 items-center">
           <Image
             source={require('../../assets/images/logo.png')}
             className="w-20 h-20 mb-4"
@@ -74,7 +74,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
           </Text>
         </View>
 
-        <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 mb-4">
           <Text className="text-base font-semibold text-text-primary mb-2">
             {t('about.descriptionTitle', { defaultValue: 'About this app' })}
           </Text>
@@ -86,7 +86,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
           </Text>
         </View>
 
-        <View className="bg-surface rounded-xl mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl mb-4">
           <TouchableOpacity
             className="p-4 flex-row items-center justify-between border-b border-border-subtle"
             onPress={() => openUrl(PROJECT_URL)}

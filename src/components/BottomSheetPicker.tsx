@@ -149,13 +149,17 @@ function BottomSheetPicker<T extends string | number>({
 
   const renderBackdrop = useSheetBackdrop();
 
-  const renderOption = (item: PickerOption<T>) => {
+  const renderOption = (item: PickerOption<T>, isLast: boolean) => {
     const isSelected = item.value === value;
     return (
       <TouchableOpacity
         key={String(item.value)}
-        className="flex-row items-center justify-between px-4 py-3.5 border-b border-border-subtle"
-        style={{ borderBottomWidth: StyleSheet.hairlineWidth }}
+        className={`flex-row items-center justify-between px-4 py-3.5 ${
+          isLast ? '' : 'border-b border-border-subtle'
+        }`}
+        style={
+          isLast ? undefined : { borderBottomWidth: StyleSheet.hairlineWidth }
+        }
         onPress={() => handleSelect(item)}
         activeOpacity={0.7}
         accessibilityRole="radio"
@@ -194,7 +198,16 @@ function BottomSheetPicker<T extends string | number>({
     normalizedSections.map((section, index) => (
       <React.Fragment key={`section-${section.title ?? 'default'}-${index}`}>
         {renderSectionHeader(section, index)}
-        {section.options.map(renderOption)}
+        {/* Only the very last option drops its divider: within the list a
+            divider still separates a section's last option from the next
+            section's header. */}
+        {section.options.map((option, optionIndex) =>
+          renderOption(
+            option,
+            index === normalizedSections.length - 1 &&
+              optionIndex === section.options.length - 1
+          )
+        )}
       </React.Fragment>
     ));
 

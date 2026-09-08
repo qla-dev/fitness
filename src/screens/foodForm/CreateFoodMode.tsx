@@ -575,7 +575,7 @@ export function CreateFoodMode({
         onCustomNutrientsChange={setCustomNutrientValues}
       >
         {isLogEntryMode ? (
-          <View className="gap-4 bg-surface rounded-xl p-4 shadow-sm">
+          <View className="gap-4 bg-surface rounded-xl p-4">
             <View className="flex-row items-start">
               {/* Date */}
               <TouchableOpacity

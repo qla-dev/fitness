@@ -75,7 +75,7 @@ const FertilityCard: React.FC<FertilityCardProps> = ({ date }) => {
 
   if (isLoading && !predictionData) {
     return (
-      <View className="bg-surface rounded-xl p-6 items-center shadow-sm border-0">
+      <View className="bg-surface rounded-xl p-6 items-center border-0">
         <ActivityIndicator color={accentColor} />
       </View>
     );
@@ -91,7 +91,7 @@ const FertilityCard: React.FC<FertilityCardProps> = ({ date }) => {
   }
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm border-0 gap-3">
+    <View className="bg-surface rounded-xl p-4 border-0 gap-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-text-secondary text-sm font-semibold">
           {t('fertility.title', { defaultValue: 'Fertility' })}

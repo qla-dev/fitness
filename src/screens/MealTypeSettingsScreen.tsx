@@ -1137,7 +1137,7 @@ const MealTypeSettingsScreen: React.FC<MealTypeSettingsScreenProps> = () => {
           }
         >
           {unifiedRows.length > 0 ? (
-            <View className="bg-surface rounded-xl mx-4 overflow-hidden shadow-sm">
+            <View className="bg-surface rounded-xl mx-4 overflow-hidden">
               {unifiedRows.map((row, index) =>
                 row.isSystem ? (
                   <SystemMealTypeRow

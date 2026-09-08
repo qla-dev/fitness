@@ -68,10 +68,7 @@ const SleepBiometrics: React.FC<SleepBiometricsProps> = ({ entry }) => {
   if (rows.length === 0) return null;
 
   return (
-    <View
-      testID="sleep-biometrics"
-      className="bg-surface rounded-xl p-4 mb-3 shadow-sm"
-    >
+    <View testID="sleep-biometrics" className="bg-surface rounded-xl p-4 mb-3">
       <Text className="text-base font-semibold text-text-primary mb-2">
         {t('sleep.biometrics', { defaultValue: 'Overnight Biometrics' })}
       </Text>

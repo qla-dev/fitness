@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import ProfileSummary from '../../src/components/ProfileSummary';
 
+jest.mock('../../src/components/MyLibrarySection', () => {
+  const { Text } = require('react-native');
+  return () => <Text>Saved collections</Text>;
+});
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),

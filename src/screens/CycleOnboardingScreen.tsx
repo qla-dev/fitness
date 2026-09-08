@@ -363,7 +363,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
                 <PregnancyDueDateForm form={dueDateForm} />
               </View>
             ) : mode === 'postpartum' || mode === 'menopause' ? (
-              <View className="bg-surface rounded-xl p-4 shadow-sm border border-border-subtle">
+              <View className="bg-surface rounded-xl p-4 border border-border-subtle">
                 <Text className="text-text-primary text-base font-semibold mb-2">
                   {t('cycleOnboarding.noConfiguration', {
                     defaultValue: 'No configuration needed',
@@ -483,7 +483,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
                 defaultValue: 'Disclaimer & Complete',
               })}
             </Text>
-            <View className="bg-surface border border-border-subtle rounded-xl p-4 shadow-sm">
+            <View className="bg-surface border border-border-subtle rounded-xl p-4">
               <View className="flex-row items-center gap-2 mb-2">
                 <Icon name="warning" size={18} color="#D97706" />
                 <Text className="text-text-primary font-bold">

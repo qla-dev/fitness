@@ -1115,7 +1115,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
           keyboardShouldPersistTaps="handled"
           bounces={false}
         >
-          <View className="w-full max-w-90 rounded-2xl p-6 bg-surface shadow-sm">
+          <View className="w-full max-w-90 rounded-2xl p-6 bg-surface">
             {/* Header */}
             <View className="items-center mb-5">
               <Text className="text-[22px] font-bold text-center text-text-primary">

@@ -124,7 +124,7 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
   };
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+    <View className="bg-surface rounded-xl p-4 gap-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-base font-bold text-text-secondary">
           {t('bumpPhotos.title', { defaultValue: 'Bump Photos' })}

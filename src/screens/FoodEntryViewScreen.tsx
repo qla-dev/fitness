@@ -1098,7 +1098,7 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
 
         <Animated.View
           layout={LinearTransition.duration(300)}
-          className="bg-surface rounded-xl p-4 shadow-sm"
+          className="bg-surface rounded-xl p-4"
         >
           <Pressable
             onPress={isEditing ? navigateToNutritionForm : undefined}

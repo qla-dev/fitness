@@ -1,4 +1,3 @@
-import { isLocalDataMode } from '../services/dataMode';
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,7 +9,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -23,26 +21,18 @@ import {
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
 } from '../utils/nativeHeaderDatePicker';
-import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import Button from '../components/ui/Button';
-import CreateTile from '../components/CreateTile';
 import FoodLibraryRow from '../components/FoodLibraryRow';
-import Icon from '../components/Icon';
 import MealLibraryRow from '../components/MealLibraryRow';
 import StatusView from '../components/StatusView';
 import TabHeader from '../components/TabHeader';
 import {
   useFavorites,
   useFoods,
-  useMeals,
-  useMedications,
   useRecentMeals,
   useServerConnection,
   useSuggestedExercises,
 } from '../hooks';
-import { fetchExercisesCount } from '../services/api/exerciseApi';
-import { fetchFoodsPage } from '../services/api/foodsApi';
-import { fetchWorkoutPresetsPage } from '../services/api/workoutPresetsApi';
 import type { Exercise } from '../types/exercise';
 import { foodItemToFoodInfo } from '../types/foodInfo';
 import type { FoodItem } from '../types/foods';
@@ -87,8 +77,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
   }, [navigation, nativeHeaderActionColor, t, usesNativeTabs]);
   const accentColor = useCSSVariable('--color-accent-primary') as string;
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { isNavigationLocked, runNavigationAction } =
-    useNavigationActionGuard(navigation);
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
   const { favoriteFoods, favoriteMeals } = useFavorites({
     enabled: isConnected,
@@ -113,43 +101,12 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
     isError: isRecentMealsError,
     refetch: refetchRecentMeals,
   } = useRecentMeals({ enabled: isConnected, limit: RECENT_LIMIT });
-  const { meals, refetch: refetchMeals } = useMeals({ enabled: isConnected });
-  const { data: medications, refetch: refetchMedications } = useMedications({
-    enabled: isConnected,
-  });
   const {
     recentExercises,
     isLoading: isRecentExercisesLoading,
     isError: isRecentExercisesError,
     refetch: refetchRecentExercises,
   } = useSuggestedExercises();
-  // Foods count uses the ['foods', ...] prefix so it is invalidated by the
-  // existing `foodsQueryKey` invalidations in useSaveFood / useDeleteFood.
-  const { data: foodsCount, refetch: refetchFoodsCount } = useQuery({
-    queryKey: ['foods', 'count'] as const,
-    queryFn: () =>
-      fetchFoodsPage({ page: 1, itemsPerPage: 1 }).then(
-        (r) => r.pagination.totalCount
-      ),
-    enabled: isConnected,
-    staleTime: 1000 * 60 * 5,
-  });
-  const { data: exercisesCount, refetch: refetchExercisesCount } = useQuery({
-    queryKey: ['exercises', 'count'] as const,
-    queryFn: fetchExercisesCount,
-    enabled: isConnected,
-    staleTime: 1000 * 60 * 5,
-  });
-  const { data: presetsCount, refetch: refetchPresetsCount } = useQuery({
-    queryKey: ['workoutPresets', 'count'] as const,
-    queryFn: () =>
-      fetchWorkoutPresetsPage({ page: 1, pageSize: 1 }).then(
-        (r) => r.pagination.totalCount
-      ),
-    enabled: isConnected,
-    staleTime: 1000 * 60 * 5,
-  });
-
   const onRefresh = useCallback(async () => {
     if (!isConnected) return;
     setIsRefreshing(true);
@@ -157,27 +114,12 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
       await Promise.all([
         refetchFoods(),
         refetchRecentMeals(),
-        refetchMeals(),
-        refetchFoodsCount(),
-        refetchExercisesCount(),
-        refetchPresetsCount(),
         refetchRecentExercises(),
-        refetchMedications(),
       ]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [
-    isConnected,
-    refetchFoods,
-    refetchRecentMeals,
-    refetchMeals,
-    refetchFoodsCount,
-    refetchExercisesCount,
-    refetchPresetsCount,
-    refetchRecentExercises,
-    refetchMedications,
-  ]);
+  }, [isConnected, refetchFoods, refetchRecentMeals, refetchRecentExercises]);
 
   const recentItems = useMemo<RecentItem[]>(() => {
     const items: RecentItem[] = [];
@@ -261,6 +203,9 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
     );
   }
 
+  // One list rather than six hand-written rows: the optional rows (meal plans,
+  // medications) mean the last row is not always the same one, and only a
+  // computed index can keep the divider off whichever row ends the card.
   return (
     <View className="flex-1 bg-background">
       {!usesNativeTabs && (
@@ -289,195 +234,13 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
       >
         <View className="mb-3">
           <Text className="text-lg font-semibold text-text-primary">
-            {t('screens.library.create', { defaultValue: 'Create' })}
-          </Text>
-        </View>
-
-        <View className="flex-row flex-wrap justify-between mb-6">
-          <CreateTile
-            icon="food"
-            title={t('screens.library.food', { defaultValue: 'Food' })}
-            subtitle={t('screens.library.manualEntry', {
-              defaultValue: 'Manual entry',
-            })}
-            disabled={isNavigationLocked}
-            onPress={() =>
-              runNavigationAction(() =>
-                navigation.navigate('FoodForm', {
-                  mode: 'create-food',
-                  pickerMode: 'library',
-                })
-              )
-            }
-            className="w-[48%] mb-3"
-          />
-          <CreateTile
-            icon="meal"
-            title={t('screens.library.meal', { defaultValue: 'Meal' })}
-            subtitle={t('screens.library.groupFoods', {
-              defaultValue: 'Group foods',
-            })}
-            disabled={isNavigationLocked}
-            onPress={() =>
-              runNavigationAction(() => navigation.navigate('MealAdd'))
-            }
-            className="w-[48%] mb-3"
-          />
-          <CreateTile
-            icon="exercise-weights"
-            title={t('screens.library.exercise', { defaultValue: 'Exercise' })}
-            subtitle={t('screens.library.manualEntry', {
-              defaultValue: 'Manual entry',
-            })}
-            disabled={isNavigationLocked}
-            onPress={() =>
-              runNavigationAction(() =>
-                navigation.navigate('ExerciseForm', { mode: 'create-exercise' })
-              )
-            }
-            className="w-[48%] mb-3"
-          />
-          <CreateTile
-            icon="bookmark-filled"
-            title={t('screens.library.workoutPreset', {
-              defaultValue: 'Workout program',
-            })}
-            subtitle={t('screens.library.exerciseRoutine', {
-              defaultValue: 'Exercise routine',
-            })}
-            disabled={isNavigationLocked}
-            onPress={() =>
-              runNavigationAction(() =>
-                navigation.navigate('WorkoutPresetForm', {
-                  mode: 'create-preset',
-                })
-              )
-            }
-            className="w-[48%] mb-3"
-          />
-        </View>
-
-        <View className="mb-3">
-          <Text className="text-lg font-semibold text-text-primary">
-            {t('screens.library.browse', { defaultValue: 'Browse' })}
-          </Text>
-        </View>
-
-        <View className="bg-surface rounded-xl mb-6 shadow-sm overflow-hidden">
-          <Pressable
-            className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-            onPress={() => navigation.navigate('FoodsLibrary')}
-            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-          >
-            <Text className="text-base font-semibold text-text-primary">
-              {t('screens.library.foods', { defaultValue: 'Foods' })}
-            </Text>
-            <View className="flex-row items-center">
-              <Text className="text-text-secondary text-base mr-2">
-                {foodsCount ?? '-'}
-              </Text>
-              <Icon name="chevron-forward" size={20} color="#999" />
-            </View>
-          </Pressable>
-
-          <Pressable
-            className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-            onPress={() => navigation.navigate('MealsLibrary')}
-            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-          >
-            <Text className="text-base font-semibold text-text-primary">
-              {t('screens.library.meals', { defaultValue: 'Meals' })}
-            </Text>
-            <View className="flex-row items-center">
-              <Text className="text-text-secondary text-base mr-2">
-                {meals.length}
-              </Text>
-              <Icon name="chevron-forward" size={20} color="#999" />
-            </View>
-          </Pressable>
-          {!isLocalDataMode() && (
-            <Pressable
-              className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-              onPress={() => navigation.navigate('MealPlans')}
-              style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-            >
-              <View className="flex-1 mr-3">
-                <Text className="text-base font-semibold text-text-primary">
-                  {t('screens.library.mealPlans', {
-                    defaultValue: 'Meal plans',
-                  })}
-                </Text>
-                <Text className="text-sm text-text-secondary mt-0.5">
-                  {t('screens.library.mealPlansSubtitle', {
-                    defaultValue: 'Repeat meals on selected days',
-                  })}
-                </Text>
-              </View>
-              <Icon name="chevron-forward" size={20} color="#999" />
-            </Pressable>
-          )}
-          <Pressable
-            className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-            onPress={() => navigation.navigate('ExercisesLibrary')}
-            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-          >
-            <Text className="text-base font-semibold text-text-primary">
-              {t('screens.library.exercises', { defaultValue: 'Exercises' })}
-            </Text>
-            <View className="flex-row items-center">
-              <Text className="text-text-secondary text-base mr-2">
-                {exercisesCount ?? '-'}
-              </Text>
-              <Icon name="chevron-forward" size={20} color="#999" />
-            </View>
-          </Pressable>
-          <Pressable
-            className="px-4 py-4 flex-row items-center justify-between border-b border-border-subtle"
-            onPress={() => navigation.navigate('WorkoutPresetsLibrary')}
-            style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-          >
-            <Text className="text-base font-semibold text-text-primary">
-              {t('screens.library.workoutPresets', {
-                defaultValue: 'Workout programs',
-              })}
-            </Text>
-            <View className="flex-row items-center">
-              <Text className="text-text-secondary text-base mr-2">
-                {presetsCount ?? '-'}
-              </Text>
-              <Icon name="chevron-forward" size={20} color="#999" />
-            </View>
-          </Pressable>
-          {!isLocalDataMode() && (
-            <Pressable
-              className="px-4 py-4 flex-row items-center justify-between"
-              onPress={() => navigation.navigate('MedicationsList')}
-              style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
-            >
-              <Text className="text-base font-semibold text-text-primary">
-                {t('screens.library.medications', {
-                  defaultValue: 'Medications',
-                })}
-              </Text>
-              <View className="flex-row items-center">
-                <Text className="text-text-secondary text-base mr-2">
-                  {medications?.length ?? '-'}
-                </Text>
-                <Icon name="chevron-forward" size={20} color="#999" />
-              </View>
-            </Pressable>
-          )}
-        </View>
-
-        <View className="mb-3">
-          <Text className="text-lg font-semibold text-text-primary">
             {t('screens.library.recentlyLogged', {
               defaultValue: 'Recently Logged',
             })}
           </Text>
         </View>
 
-        <View className="bg-surface rounded-xl overflow-hidden shadow-sm">
+        <View className="bg-surface rounded-xl overflow-hidden">
           {isRecentLoading ? (
             <View className="px-4 py-8 items-center">
               <ActivityIndicator size="small" color="#6B7280" />

@@ -718,7 +718,7 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
         {features.map((feature) => (
           <View
             key={feature.headline}
-            className="bg-surface rounded-xl mb-4 shadow-sm overflow-hidden"
+            className="bg-surface rounded-xl mb-4 overflow-hidden"
           >
             {feature.hero}
 

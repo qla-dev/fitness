@@ -649,7 +649,7 @@ export function AdjustNutritionMode({
         onCustomNutrientsChange={setCurrentCustomNutrients}
       >
         {canUpdateVariant && (
-          <View className="bg-surface rounded-xl p-4 shadow-sm">
+          <View className="bg-surface rounded-xl p-4">
             <View className="flex-row items-center justify-between">
               <Text className="text-text-secondary text-base">
                 {t('foodFormPersistence.saveNutritionFuture', {

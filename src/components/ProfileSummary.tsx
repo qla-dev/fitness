@@ -1,3 +1,4 @@
+import MyLibrarySection from './MyLibrarySection';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -158,6 +159,8 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           <Icon name="chevron-forward" size={18} color={textSecondary} />
         </Pressable>
       </View>
+
+      <MyLibrarySection enabled={enabled} />
 
       <SettingsRowGroup
         title={t('profile.personal', { defaultValue: 'Personal' })}

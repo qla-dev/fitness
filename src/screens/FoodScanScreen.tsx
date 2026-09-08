@@ -1252,7 +1252,7 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
             bounces={false}
           >
-            <View className="w-full max-w-90 rounded-2xl p-6 bg-surface shadow-sm gap-4">
+            <View className="w-full max-w-90 rounded-2xl p-6 bg-surface gap-4">
               <Text className="text-text-primary text-base font-semibold text-center">
                 {t('foodScan.manual.title', { defaultValue: 'Enter Barcode' })}
               </Text>

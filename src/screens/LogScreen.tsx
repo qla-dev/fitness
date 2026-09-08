@@ -363,7 +363,7 @@ const LogScreen: React.FC<LogScreenProps> = ({ navigation }) => {
         ListHeaderComponent={ListHeader}
         renderItem={({ item }: { item: LogEntry }) => (
           <TouchableOpacity
-            className="bg-surface rounded-xl p-4 mb-3 flex-row items-center w-full shadow-sm"
+            className="bg-surface rounded-xl p-4 mb-3 flex-row items-center w-full"
             onPress={() => handleCopyLogToClipboard(item)}
             activeOpacity={0.7}
           >

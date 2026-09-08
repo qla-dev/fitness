@@ -579,7 +579,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
         contentContainerClassName="px-4 pt-4 pb-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="bg-surface rounded-xl p-4 gap-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 gap-4">
           <FoodImagePicker
             items={pickerImages}
             onItemsChange={setPickerImages}
@@ -723,7 +723,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
           )}
         </View>
 
-        <View className="bg-surface rounded-xl p-4 gap-3 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 gap-3">
           <Text className="text-text-primary text-lg font-semibold">
             {t('mealBuilder.foodsInMeal', { defaultValue: 'Foods in Meal' })}
           </Text>

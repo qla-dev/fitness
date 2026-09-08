@@ -32,7 +32,7 @@ const OSDeniedWarningCard: React.FC<Props> = ({ onPress, actionLabel }) => {
           action: actionLabel,
         }
       )}
-      className="bg-surface rounded-xl p-4 mb-4 shadow-sm flex-row items-start"
+      className="bg-surface rounded-xl p-4 mb-4 flex-row items-start"
     >
       <Icon
         name="warning"

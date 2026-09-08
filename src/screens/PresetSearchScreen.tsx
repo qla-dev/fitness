@@ -105,22 +105,37 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       onPress: handleCancel,
       identifier: 'preset-search-cancel',
     },
-    right: ownershipFilterHeaderMenu({
-      noun: t('presetSearch.noun', { defaultValue: 'programs' }),
-      labels: {
-        all: t('ownership.all', { defaultValue: 'All' }),
-        mine: t('ownership.mine', { defaultValue: 'Mine' }),
-        family: t('ownership.family', { defaultValue: 'Family' }),
-        public: t('ownership.public', { defaultValue: 'Public' }),
-      },
-      showLabel: t('ownership.show', { defaultValue: 'Show' }),
-      filterAccessibilityLabel: t('ownership.filter', {
-        defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+    right: [
+      ownershipFilterHeaderMenu({
+        noun: t('presetSearch.noun', { defaultValue: 'programs' }),
+        labels: {
+          all: t('ownership.all', { defaultValue: 'All' }),
+          mine: t('ownership.mine', { defaultValue: 'Mine' }),
+          family: t('ownership.family', { defaultValue: 'Family' }),
+          public: t('ownership.public', { defaultValue: 'Public' }),
+        },
+        showLabel: t('ownership.show', { defaultValue: 'Show' }),
+        filterAccessibilityLabel: t('ownership.filter', {
+          defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+        }),
+        identifier: 'preset-search-filter',
+        filter: ownershipFilter,
+        onSelect: setOwnershipFilter,
       }),
-      identifier: 'preset-search-filter',
-      filter: ownershipFilter,
-      onSelect: setOwnershipFilter,
-    }),
+      {
+        kind: 'icon',
+        sfSymbol: 'plus',
+        ionicon: 'add',
+        accessibilityLabel: t('profile.library.createProgram', {
+          defaultValue: 'Create program',
+        }),
+        disabled: isNavigationLocked,
+        onPress: () =>
+          runNavigationAction(() =>
+            navigation.navigate('WorkoutPresetForm', { mode: 'create-preset' })
+          ),
+      },
+    ],
   });
 
   const handleSelectPreset = useCallback(

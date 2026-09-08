@@ -200,7 +200,7 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
             ) : (
               <>
                 {/* Cycle Ring Visualisation */}
-                <View className="items-center py-4 bg-surface rounded-xl shadow-sm border-0">
+                <View className="items-center py-4 bg-surface rounded-xl border-0">
                   <CycleRing
                     cycleDay={dayStats.cycleDay}
                     cycleLength={cycleStats.avgCycleLength}

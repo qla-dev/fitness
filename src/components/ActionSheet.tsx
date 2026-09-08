@@ -243,13 +243,21 @@ const ActionSheet = React.forwardRef<ActionSheetRef, ActionSheetProps>(
                   className="h-3 bg-background"
                 />
               )}
-              {section.map((item) => (
+              {section.map((item, itemIndex) => (
                 <Pressable
                   key={item.key}
                   testID={`action-sheet-item-${item.key}`}
                   onPress={() => handleItemPress(item)}
-                  className="flex-row items-center px-4 py-3.5 border-b border-border-subtle"
-                  style={{ borderBottomWidth: StyleSheet.hairlineWidth }}
+                  className={`flex-row items-center px-4 py-3.5 ${
+                    itemIndex < section.length - 1
+                      ? 'border-b border-border-subtle'
+                      : ''
+                  }`}
+                  style={
+                    itemIndex < section.length - 1
+                      ? { borderBottomWidth: StyleSheet.hairlineWidth }
+                      : undefined
+                  }
                   accessibilityRole="button"
                   accessibilityLabel={item.label}
                 >

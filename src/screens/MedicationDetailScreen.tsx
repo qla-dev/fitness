@@ -217,7 +217,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
             usesNativeHeader ? 'automatic' : 'never'
           }
         >
-          <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+          <View className="bg-surface rounded-xl p-4 mb-3">
             <Text className="text-2xl font-bold text-text-primary">
               {med.name}
             </Text>
@@ -248,7 +248,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
           </View>
 
           {med.is_active && (
-            <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+            <View className="bg-surface rounded-xl p-4 mb-3">
               <Text className="text-sm font-semibold text-text-secondary mb-1">
                 {formatDateLabel(selectedDate, t, dateLocale)}
               </Text>
@@ -329,7 +329,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
             </View>
           )}
 
-          <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+          <View className="bg-surface rounded-xl p-4 mb-3">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-sm font-semibold text-text-secondary">
                 {t('medications.detail.schedules', {
@@ -410,7 +410,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
           </View>
 
           {(med.prescriber || med.pharmacy || med.rx_number || med.notes) && (
-            <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+            <View className="bg-surface rounded-xl p-4 mb-3">
               <Text className="text-sm font-semibold text-text-secondary mb-1">
                 {t('medications.detail.details', { defaultValue: 'Details' })}
               </Text>

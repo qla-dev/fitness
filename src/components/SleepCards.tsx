@@ -85,7 +85,7 @@ const SleepCardShell: React.FC<SleepCardShellProps> = ({
   return (
     <Pressable
       testID={testID}
-      className="bg-surface rounded-xl p-4 mb-2 shadow-sm"
+      className="bg-surface rounded-xl p-4 mb-2"
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
@@ -214,10 +214,7 @@ export const NapsCard: React.FC<NapsCardProps> = ({
   });
 
   return (
-    <View
-      testID="naps-card"
-      className="bg-surface rounded-xl p-4 mb-2 shadow-sm"
-    >
+    <View testID="naps-card" className="bg-surface rounded-xl p-4 mb-2">
       <View className="flex-row items-center mb-2">
         <SleepCardIconTitle icon="sleep-nap" title={title} />
       </View>

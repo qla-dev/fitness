@@ -878,33 +878,52 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
       identifier: 'exercise-search-cancel',
     },
     // The filter only applies to the local library, so the Online tab drops it.
-    right:
-      activeTab === 'search'
-        ? ownershipFilterHeaderMenu({
-            noun: t('exerciseSearch.filter.noun', {
-              defaultValue: 'exercises',
-            }),
-            identifier: 'exercise-search-filter',
-            labels: {
-              all: t('exerciseSearch.filter.all', { defaultValue: 'All' }),
-              mine: t('exerciseSearch.filter.mine', { defaultValue: 'Mine' }),
-              family: t('exerciseSearch.filter.family', {
-                defaultValue: 'Family',
+    right: [
+      {
+        kind: 'icon',
+        sfSymbol: 'plus',
+        ionicon: 'add',
+        accessibilityLabel: t('profile.library.createExercise', {
+          defaultValue: 'Create exercise',
+        }),
+        disabled: isNavigationLocked,
+        onPress: () =>
+          runNavigationAction(() =>
+            navigation.navigate('ExerciseForm', { mode: 'create-exercise' })
+          ),
+      },
+      ...(activeTab === 'search'
+        ? [
+            ownershipFilterHeaderMenu({
+              noun: t('exerciseSearch.filter.noun', {
+                defaultValue: 'exercises',
               }),
-              public: t('exerciseSearch.filter.public', {
-                defaultValue: 'Public',
+              identifier: 'exercise-search-filter',
+              labels: {
+                all: t('exerciseSearch.filter.all', { defaultValue: 'All' }),
+                mine: t('exerciseSearch.filter.mine', { defaultValue: 'Mine' }),
+                family: t('exerciseSearch.filter.family', {
+                  defaultValue: 'Family',
+                }),
+                public: t('exerciseSearch.filter.public', {
+                  defaultValue: 'Public',
+                }),
+              },
+              showLabel: t('exerciseSearch.filter.show', {
+                defaultValue: 'Show',
               }),
-            },
-            showLabel: t('exerciseSearch.filter.show', {
-              defaultValue: 'Show',
+              filterAccessibilityLabel: t(
+                'exerciseSearch.filter.accessibility',
+                {
+                  defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+                }
+              ),
+              filter: ownershipFilter,
+              onSelect: setOwnershipFilter,
             }),
-            filterAccessibilityLabel: t('exerciseSearch.filter.accessibility', {
-              defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
-            }),
-            filter: ownershipFilter,
-            onSelect: setOwnershipFilter,
-          })
-        : undefined,
+          ]
+        : []),
+    ],
   });
 
   return (

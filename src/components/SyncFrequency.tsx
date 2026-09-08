@@ -14,7 +14,7 @@ const SyncFrequency: React.FC<SyncFrequencyProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-3 text-text-primary">
         {t('syncFrequency.title', { defaultValue: 'Background Sync' })}
       </Text>

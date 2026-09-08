@@ -11,7 +11,7 @@ interface SyncOnOpenProps {
 const SyncOnOpen: React.FC<SyncOnOpenProps> = ({ isEnabled, onToggle }) => {
   const { t } = useTranslation();
   return (
-    <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-3 text-text-primary">
         {t('syncOnOpen.title', { defaultValue: 'Sync on Open' })}
       </Text>

@@ -13,7 +13,7 @@ export const FastingStatCard: React.FC<FastingStatCardProps> = ({
   value,
   unit,
 }) => (
-  <View className="flex-1 bg-surface rounded-xl p-3 items-center border border-border-subtle shadow-sm">
+  <View className="flex-1 bg-surface rounded-xl p-3 items-center border border-border-subtle">
     <Text className="text-xs font-semibold uppercase text-text-muted tracking-wide">
       {label}
     </Text>

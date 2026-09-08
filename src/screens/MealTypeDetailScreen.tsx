@@ -224,7 +224,7 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
           calorieGoal={targetCalories > 0 ? targetCalories : undefined}
         />
 
-        <View className="bg-surface rounded-xl p-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4">
           <View className="flex-row items-center mb-3">
             <Text className="text-base font-bold text-text-secondary flex-1">
               {t('mealTypeDetail.labels.foods', { defaultValue: 'Foods' })}

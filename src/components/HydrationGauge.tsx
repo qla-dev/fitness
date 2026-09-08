@@ -140,7 +140,7 @@ const HydrationGauge: React.FC<HydrationGaugeProps> = ({
   const showChips = (containers?.length ?? 0) > 1;
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-3">
       <DashboardCardTitle className="mb-3">
         {t('dashboard.hydration', { defaultValue: 'Hydration' })}
       </DashboardCardTitle>

@@ -20,7 +20,7 @@ export function BarcodeField({
   const trimmed = value.trim();
   const isInvalid = trimmed !== '' && !BARCODE_REGEX.test(trimmed);
   return (
-    <View className="bg-surface rounded-xl p-4 gap-2 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 gap-2">
       <Text className="text-text-secondary text-sm font-medium">
         {t('barcode.title', { defaultValue: 'Barcode' })}
       </Text>

@@ -242,7 +242,7 @@ const ExerciseFormBody: React.FC<ExerciseFormBodyProps> = ({
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 gap-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 gap-4">
       <View className="gap-1.5">
         <Text className="text-text-secondary text-sm font-medium">
           {t('workout.nameRequired', { defaultValue: 'Name *' })}

@@ -435,7 +435,7 @@ const DevTools: React.FC = () => {
   };
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-3 text-text-primary">
         {t('devTools.title', { defaultValue: 'Dev Tools' })}
       </Text>

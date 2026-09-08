@@ -50,7 +50,12 @@ type ExercisesLibraryScreenProps = RootStackScreenProps<'ExercisesLibrary'>;
 type LibraryRow =
   | { kind: 'section'; key: string; title: string }
   | { kind: 'saved'; key: string; exercise: Exercise; isLast: boolean }
-  | { kind: 'online'; key: string; item: ExternalExerciseItem };
+  | {
+      kind: 'online';
+      key: string;
+      item: ExternalExerciseItem;
+      isLast: boolean;
+    };
 
 const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   navigation,
@@ -189,10 +194,11 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     );
     if (!isSearching) return savedRows;
 
-    const onlineRows: LibraryRow[] = newOnlineResults.map((item) => ({
+    const onlineRows: LibraryRow[] = newOnlineResults.map((item, index) => ({
       kind: 'online',
       key: `online-${item.source}-${item.id}`,
       item,
+      isLast: index === newOnlineResults.length - 1,
     }));
 
     return [
@@ -287,14 +293,14 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     </View>
   );
 
-  const renderOnlineRow = (item: ExternalExerciseItem) => {
+  const renderOnlineRow = (item: ExternalExerciseItem, isLast: boolean) => {
     const image = item.images?.[0] ?? null;
     const fallbackIcon =
       (item.category && CATEGORY_ICON_MAP[item.category]) || 'exercise-weights';
     const isImporting = importingId !== null;
     return (
       <TouchableOpacity
-        className="px-4 py-3 border-b border-border-subtle"
+        className={`px-4 py-3 ${isLast ? '' : 'border-b border-border-subtle'}`}
         activeOpacity={0.7}
         disabled={isImporting}
         accessibilityLabel={t('exerciseLibrary.addOnline', {
@@ -339,7 +345,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     );
   };
 
-  const renderRow = ({ item, index }: { item: Exercise; index: number }) => {
+  const renderRow = ({ item, isLast }: { item: Exercise; isLast: boolean }) => {
     const status = deriveShareStatus(
       item.userId,
       item.sharedWithPublic,
@@ -350,11 +356,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       (item.category && CATEGORY_ICON_MAP[item.category]) || 'exercise-weights';
     return (
       <TouchableOpacity
-        className={`px-4 py-3 ${
-          index < filteredExercises.length - 1
-            ? 'border-b border-border-subtle'
-            : ''
-        }`}
+        className={`px-4 py-3 ${isLast ? '' : 'border-b border-border-subtle'}`}
         activeOpacity={0.7}
         onPress={() => handleExercisePress(item)}
       >
@@ -453,10 +455,11 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       <FlatList
         data={rows}
         keyExtractor={(row) => row.key}
-        renderItem={({ item: row, index }) => {
+        renderItem={({ item: row }) => {
           if (row.kind === 'section') return renderSection(row.title);
-          if (row.kind === 'online') return renderOnlineRow(row.item);
-          return renderRow({ item: row.exercise, index });
+          if (row.kind === 'online')
+            return renderOnlineRow(row.item, row.isLast);
+          return renderRow({ item: row.exercise, isLast: row.isLast });
         }}
         ListHeaderComponent={
           searchText.trim().length > 0 ? null : (

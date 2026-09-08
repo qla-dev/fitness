@@ -55,7 +55,7 @@ const PregnancyOverviewView: React.FC<PregnancyOverviewViewProps> = ({
 
   if (!hasActive) {
     return (
-      <View className="bg-surface rounded-xl p-6 shadow-sm gap-4 items-center">
+      <View className="bg-surface rounded-xl p-6 gap-4 items-center">
         <Text className="text-text-primary text-base font-semibold">
           {t('pregnancy.prompt.title', {
             defaultValue: 'Set up your pregnancy',

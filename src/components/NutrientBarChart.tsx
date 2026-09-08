@@ -166,7 +166,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 my-2">
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {nutrientLabel} ({unit})
       </Text>

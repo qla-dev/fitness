@@ -104,7 +104,7 @@ const CycleInsightsView: React.FC = () => {
   return (
     <View className="gap-6">
       {/* 1. Stats Summary Card */}
-      <View className="bg-surface rounded-xl p-4 shadow-sm gap-4">
+      <View className="bg-surface rounded-xl p-4 gap-4">
         <Text className="text-text-secondary text-base font-semibold">
           {t('cycleInsights.cycleSummary', { defaultValue: 'Cycle Summary' })}
         </Text>
@@ -146,7 +146,7 @@ const CycleInsightsView: React.FC = () => {
 
       {/* 2. Predictions & Confidence */}
       {predictions && predictions.cycles.length > 0 && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm gap-4">
+        <View className="bg-surface rounded-xl p-4 gap-4">
           <Text className="text-text-secondary text-base font-semibold">
             {t('cycleInsights.nextPredictions', {
               defaultValue: 'Next Predictions',
@@ -174,7 +174,7 @@ const CycleInsightsView: React.FC = () => {
 
                 <View className="flex-row gap-2.5">
                   {/* {t('cycleInsights.nextPeriod', { defaultValue: 'Next Period' })} Tile */}
-                  <View className="flex-1 bg-surface rounded-xl p-3 flex-row items-center gap-2.5 shadow-sm">
+                  <View className="flex-1 bg-surface rounded-xl p-3 flex-row items-center gap-2.5">
                     <View className="w-8 h-8 items-center justify-center">
                       <CycleIcon id="flow-medium" size={32} />
                     </View>
@@ -192,7 +192,7 @@ const CycleInsightsView: React.FC = () => {
 
                   {/* {t('cycleInsights.estimatedOvulation', { defaultValue: 'Est. Ovulation' })} Tile */}
                   {c.ovulation && (
-                    <View className="flex-1 bg-surface rounded-xl p-3 flex-row items-center gap-2.5 shadow-sm">
+                    <View className="flex-1 bg-surface rounded-xl p-3 flex-row items-center gap-2.5">
                       <View className="w-8 h-8 items-center justify-center">
                         <CycleIcon id="ovulation" size={32} />
                       </View>
@@ -217,7 +217,7 @@ const CycleInsightsView: React.FC = () => {
 
       {/* 3. Anomalies/Alerts */}
       {anomalies.length > 0 && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+        <View className="bg-surface rounded-xl p-4 gap-3">
           <Text className="text-text-secondary text-base font-semibold">
             {t('cycleInsights.patternsToWatch', {
               defaultValue: 'Patterns to Watch',
@@ -258,7 +258,7 @@ const CycleInsightsView: React.FC = () => {
       </View>
 
       {/* 5. {t('cycleInsights.symptomForecast', { defaultValue: 'Symptom Forecast' })}ing */}
-      <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+      <View className="bg-surface rounded-xl p-4 gap-3">
         <Text className="text-text-secondary text-base font-semibold">
           {t('cycleInsights.symptomForecast', {
             defaultValue: 'Symptom Forecast',

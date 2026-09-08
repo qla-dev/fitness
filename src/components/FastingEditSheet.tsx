@@ -225,6 +225,8 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
       setOpenPicker((p) => (p === picker ? null : picker));
     };
 
+    // The 'end' row closes the pair, so it carries no divider — one under it
+    // would hang between the group and the action button below.
     const renderRow = (
       label: string,
       value: string,
@@ -233,7 +235,9 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
       <TouchableOpacity
         onPress={() => togglePicker(picker)}
         activeOpacity={0.7}
-        className="flex-row items-center justify-between py-3 border-b border-border-subtle"
+        className={`flex-row items-center justify-between py-3 ${
+          picker === 'end' ? '' : 'border-b border-border-subtle'
+        }`}
       >
         <Text className="text-base text-text-primary">{label}</Text>
         <View className="flex-row items-center">

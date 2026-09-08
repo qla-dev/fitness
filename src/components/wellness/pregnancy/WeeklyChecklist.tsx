@@ -162,7 +162,7 @@ const WeeklyChecklist: React.FC<WeeklyChecklistProps> = ({
   };
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm">
+    <View className="bg-surface rounded-xl p-4">
       <Text className="text-base font-bold text-text-secondary mb-1">
         {t('pregnancy.checklist.title', { defaultValue: "This Week's To-Do" })}
       </Text>

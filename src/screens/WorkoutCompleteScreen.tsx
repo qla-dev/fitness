@@ -320,7 +320,7 @@ function StatTile({
 }) {
   const textMuted = String(useCSSVariable('--color-text-muted'));
   return (
-    <View className="flex-1 bg-surface rounded-xl shadow-sm px-3.5 py-3">
+    <View className="flex-1 bg-surface rounded-xl px-3.5 py-3">
       <View className="flex-row items-center gap-1">
         <Icon name={icon} size={12} color={textMuted} />
         <Text
@@ -734,7 +734,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
           )}
 
           {summary.averageRpe != null && rpeTone != null && (
-            <View className="flex-row items-center bg-surface rounded-xl shadow-sm px-3.5 py-3 mt-2">
+            <View className="flex-row items-center bg-surface rounded-xl px-3.5 py-3 mt-2">
               <Text
                 className="text-xs font-semibold uppercase text-text-muted"
                 style={{ letterSpacing: 0.6 }}
@@ -776,7 +776,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
           )}
 
           {hasRecords && (
-            <View className="bg-surface rounded-xl shadow-sm mt-2 overflow-hidden">
+            <View className="bg-surface rounded-xl mt-2 overflow-hidden">
               <View className="flex-row items-center gap-2.5 px-3.5 pt-3 pb-2.5">
                 <View
                   className="w-8 h-8 rounded-lg items-center justify-center"
@@ -844,7 +844,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
           </Text>
         </View>
         <View className="border-t border-border-subtle">
-          {summary.exercises.map((row) => {
+          {summary.exercises.map((row, rowIndex) => {
             const entry = session.exercises.find((e) => e.id === row.entryId);
             const topText =
               row.topSet != null
@@ -861,7 +861,11 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
             return (
               <View
                 key={row.entryId}
-                className="flex-row items-center gap-3 px-4 py-3 border-b border-border-subtle"
+                className={`flex-row items-center gap-3 px-4 py-3 ${
+                  rowIndex < summary.exercises.length - 1
+                    ? 'border-b border-border-subtle'
+                    : ''
+                }`}
               >
                 {entry != null && (
                   <ExerciseThumb

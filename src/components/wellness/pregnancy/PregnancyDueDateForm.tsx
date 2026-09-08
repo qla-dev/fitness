@@ -204,7 +204,7 @@ const PregnancyDueDateForm: React.FC<PregnancyDueDateFormProps> = ({
         {children}
       </SettingsRowGroup>
 
-      <View className="bg-surface rounded-2xl p-4 mt-4 border border-border-subtle shadow-sm">
+      <View className="bg-surface rounded-2xl p-4 mt-4 border border-border-subtle">
         <Text className="text-text-secondary text-xs">
           {t('pregnancyDueDate.estimated', {
             defaultValue: 'Estimated due date',

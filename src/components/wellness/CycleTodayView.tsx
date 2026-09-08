@@ -351,7 +351,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
     <View className="gap-4">
       {/* Period / Flow Selector — Only for non-pregnant cycle tracking */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+        <View className="bg-surface rounded-xl p-4 border-0">
           <Text className="text-text-primary text-sm font-semibold mb-3">
             {t('cycleToday.menstrualFlow', { defaultValue: 'Menstrual Flow' })}
           </Text>
@@ -383,7 +383,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
       {/* Date & Weight — Only for pregnancy tracking */}
       {isPregnant && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm border-0 gap-4">
+        <View className="bg-surface rounded-xl p-4 border-0 gap-4">
           {onDatePress && <DateSelectRow date={date} onPress={onDatePress} />}
           <View>
             <Text className="text-text-primary text-sm font-semibold mb-2">
@@ -409,7 +409,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
       )}
 
       {/* Symptoms */}
-      <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+      <View className="bg-surface rounded-xl p-4 border-0">
         <CycleSymptomPicker
           selected={selectedSymptoms}
           onToggle={handleToggleSymptom}
@@ -419,7 +419,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
       {/* Cervical Mucus — Bottom Sheet Picker */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm border-0 gap-2">
+        <View className="bg-surface rounded-xl p-4 border-0 gap-2">
           <Text className="text-text-primary text-sm font-semibold">
             {t('cycleToday.cervicalMucus', { defaultValue: 'Cervical Mucus' })}
           </Text>
@@ -442,7 +442,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
       {/* TTC: Intercourse + Cervical Position */}
       {isTtc && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm border-0 gap-4">
+        <View className="bg-surface rounded-xl p-4 border-0 gap-4">
           <View>
             <Text className="text-text-primary text-sm font-semibold mb-3">
               {t('cycleToday.intercourse', { defaultValue: 'Intercourse' })}
@@ -534,7 +534,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
       {/* Basal Body Temperature — Only for non-pregnant cycle tracking */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+        <View className="bg-surface rounded-xl p-4 border-0">
           <Text className="text-text-primary text-sm font-semibold mb-2">
             {t('cycleToday.basalTemperature', {
               defaultValue: 'Basal Body Temperature',
@@ -558,7 +558,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
       )}
 
       {/* Notes */}
-      <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+      <View className="bg-surface rounded-xl p-4 border-0">
         <Text className="text-text-primary text-sm font-semibold mb-2">
           {t('cycleToday.notes', { defaultValue: 'Notes' })}
         </Text>

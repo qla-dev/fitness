@@ -73,7 +73,7 @@ const CycleHistoryList: React.FC = () => {
       </View>
 
       {showAddForm && (
-        <View className="bg-surface rounded-xl p-4 border-0 shadow-sm gap-3">
+        <View className="bg-surface rounded-xl p-4 border-0 gap-3">
           <Text className="text-text-primary font-semibold text-sm">
             {t('cycleHistory.logManual', { defaultValue: 'Log Manual Cycle' })}
           </Text>
@@ -140,13 +140,13 @@ const CycleHistoryList: React.FC = () => {
       )}
 
       {cycles.length === 0 ? (
-        <View className="bg-surface rounded-xl p-4 border-0 shadow-sm items-center">
+        <View className="bg-surface rounded-xl p-4 border-0 items-center">
           <Text className="text-text-secondary text-sm">
             {t('cycleHistory.empty', { defaultValue: 'No logged cycles yet.' })}
           </Text>
         </View>
       ) : (
-        <View className="bg-surface rounded-xl border-0 shadow-sm overflow-hidden">
+        <View className="bg-surface rounded-xl border-0 overflow-hidden">
           {cycles.map((c, idx) => (
             <SwipeableDeleteRow
               key={c.id || c.start_date}

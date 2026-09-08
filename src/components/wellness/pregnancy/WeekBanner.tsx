@@ -44,7 +44,7 @@ const WeekBanner: React.FC<WeekBannerProps> = ({ ga, dueDate, onEdit }) => {
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+    <View className="bg-surface rounded-xl p-4 gap-3">
       <View className="flex-row items-end justify-between">
         <View>
           <Text className="text-text-secondary text-base">

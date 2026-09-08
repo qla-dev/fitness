@@ -290,13 +290,19 @@ const DailyNutritionDetailsScreen: React.FC<
         : null,
   };
 
-  const renderNutrientRow = (item: {
-    key: string;
-    label: string;
-    unit: string;
-    consumed: number;
-    goal?: number;
-  }) => {
+  const renderNutrientRow = (
+    item: {
+      key: string;
+      label: string;
+      unit: string;
+      consumed: number;
+      goal?: number;
+    },
+    index: number,
+    items: { key: string }[]
+  ) => {
+    const rowBorder =
+      index < items.length - 1 ? ' border-b border-border-subtle' : '';
     if (item.key === 'glycemic_index') {
       const giValues = summary.foodEntries
         .map((e) => e.glycemic_index)
@@ -305,7 +311,7 @@ const DailyNutritionDetailsScreen: React.FC<
       const giDisplayValue = getGlycemicIndexLabel(t, giValue);
 
       return (
-        <View key={item.key} className="py-3 border-b border-border-subtle">
+        <View key={item.key} className={`py-3${rowBorder}`}>
           <View className="flex-row justify-between items-center">
             <Text className="text-text-secondary text-sm font-medium">
               {item.label}
@@ -360,7 +366,7 @@ const DailyNutritionDetailsScreen: React.FC<
             goal: item.goal,
           })
         }
-        className="py-3 border-b border-border-subtle"
+        className={`py-3${rowBorder}`}
       >
         <View className="flex-row justify-between items-center mb-1">
           <Text className="text-text-secondary text-sm font-medium">
@@ -430,7 +436,7 @@ const DailyNutritionDetailsScreen: React.FC<
 
         {/* Predefined Nutrients Section */}
         {displayGroups && displayGroups.standardItems.length > 0 && (
-          <View className="bg-surface rounded-xl p-4 mt-4 shadow-sm">
+          <View className="bg-surface rounded-xl p-4 mt-4">
             <Text className="text-text-primary text-base font-bold mb-2">
               {t('dailyNutritionDetails.nutrientBreakdown', {
                 defaultValue: 'Nutrient Breakdown',
@@ -442,7 +448,7 @@ const DailyNutritionDetailsScreen: React.FC<
 
         {/* Custom Nutrients Section */}
         {displayGroups && displayGroups.customItems.length > 0 && (
-          <View className="bg-surface rounded-xl p-4 mt-4 shadow-sm">
+          <View className="bg-surface rounded-xl p-4 mt-4">
             <Text className="text-text-primary text-base font-bold mb-2">
               {t('dailyNutritionDetails.customTracked', {
                 defaultValue: 'Custom Tracked Nutrients',

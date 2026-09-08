@@ -345,7 +345,7 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
                 defaultValue: 'Active Server',
               })}
             </Text>
-            <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+            <View className="bg-surface rounded-xl p-4 mb-4">
               <Pressable
                 onPress={() => showConfigMenu(activeConfig)}
                 accessibilityLabel={t('serverSettingsUi.optionsFor', {
@@ -429,7 +429,7 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
                 defaultValue: 'Other Servers',
               })}
             </Text>
-            <View className="bg-surface rounded-xl mb-4 shadow-sm">
+            <View className="bg-surface rounded-xl mb-4">
               {otherConfigs.map((cfg, i) => (
                 <TouchableOpacity
                   key={cfg.id}

@@ -384,7 +384,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
           showNetCarbs={showNetCarbs}
         />
 
-        <View className="bg-surface rounded-xl p-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4">
           <View className="flex-row items-center mb-3">
             <Text className="text-base font-bold text-text-secondary flex-1">
               {t('mealDetail.foodsInMeal', { defaultValue: 'Foods in Meal' })}
@@ -488,7 +488,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
         {/* After the ingredients: the nutrition and the food list are what this
             screen is opened to check. */}
         {meal.notes ? (
-          <View className="bg-surface rounded-xl p-4 shadow-sm">
+          <View className="bg-surface rounded-xl p-4">
             <Text className="text-text-secondary text-sm mb-2">
               {t('mealDetail.notes', { defaultValue: 'Notes' })}
             </Text>

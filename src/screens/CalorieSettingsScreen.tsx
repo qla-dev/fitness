@@ -483,7 +483,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
         }
       >
         {/* Mode */}
-        <View className="bg-surface rounded-xl p-3 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-3 mb-4">
           <View className="flex-row items-center justify-between">
             <Text className="text-base font-semibold text-text-primary">
               {t('calorieSettings.modeLabel', { defaultValue: 'Calorie Mode' })}
@@ -516,7 +516,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
 
         {/* Options */}
         <Animated.View
-          className="bg-surface rounded-xl p-4 mb-4 shadow-sm"
+          className="bg-surface rounded-xl p-4 mb-4"
           layout={optionsLayout}
         >
           {/* Percentage Input */}
@@ -644,7 +644,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
 
         {/* Goal Mode */}
         <Animated.View
-          className="bg-surface rounded-xl p-4 mb-4 shadow-sm"
+          className="bg-surface rounded-xl p-4 mb-4"
           layout={optionsLayout}
         >
           <View className="flex-row items-center justify-between">
@@ -704,7 +704,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
         </Animated.View>
 
         <Animated.View
-          className="bg-surface rounded-xl p-4 mb-4 shadow-sm"
+          className="bg-surface rounded-xl p-4 mb-4"
           layout={optionsLayout}
         >
           <View className="flex-row items-center justify-between">

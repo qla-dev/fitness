@@ -136,7 +136,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 my-2">
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {t('charts.weight.title', { defaultValue: 'Weight' })}
       </Text>

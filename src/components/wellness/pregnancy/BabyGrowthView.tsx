@@ -26,7 +26,7 @@ const BabyGrowthView: React.FC<BabyGrowthViewProps> = ({ week }) => {
 
   if (discreetMode) {
     return (
-      <View className="bg-surface rounded-xl p-4 shadow-sm gap-2">
+      <View className="bg-surface rounded-xl p-4 gap-2">
         <Text className="text-base font-bold text-text-secondary">
           {t('babyGrowth.weeklyMilestone', {
             defaultValue: 'Weekly Milestone',
@@ -46,7 +46,7 @@ const BabyGrowthView: React.FC<BabyGrowthViewProps> = ({ week }) => {
   // have no entry. Show an intentional placeholder instead of vanishing.
   if (!info) {
     return (
-      <View className="bg-surface rounded-xl p-4 shadow-sm gap-2">
+      <View className="bg-surface rounded-xl p-4 gap-2">
         <Text className="text-base font-bold text-text-secondary">
           {t('babyGrowth.title', { defaultValue: 'Baby this week' })}
         </Text>
@@ -61,7 +61,7 @@ const BabyGrowthView: React.FC<BabyGrowthViewProps> = ({ week }) => {
   }
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+    <View className="bg-surface rounded-xl p-4 gap-3">
       <Text className="text-base font-bold text-text-secondary">
         {t('babyGrowth.title', { defaultValue: 'Baby this week' })}
       </Text>

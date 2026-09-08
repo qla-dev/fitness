@@ -338,7 +338,7 @@ const HealthTrendsSettingsScreen: React.FC<
           })}
         </Text>
 
-        <View className="bg-surface rounded-xl overflow-hidden shadow-sm">
+        <View className="bg-surface rounded-xl overflow-hidden">
           {!hasShownTrends && (
             <Text
               testID="health-trend-empty-shown"

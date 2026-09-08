@@ -132,7 +132,7 @@ const SleepStagesBreakdown: React.FC<SleepStagesBreakdownProps> = ({
   return (
     <View
       testID="sleep-stages-breakdown"
-      className="bg-surface rounded-xl p-4 mb-3 shadow-sm"
+      className="bg-surface rounded-xl p-4 mb-3"
     >
       <Text className="text-base font-semibold text-text-primary mb-2">
         {t('sleep.stageBreakdown', { defaultValue: 'Stage Breakdown' })}

@@ -43,7 +43,7 @@ const CalorieRingCard: React.FC<CalorieRingCardProps> = ({
   const displayRemaining = Math.round(remainingCalories) || 0;
 
   return (
-    <View className="bg-surface rounded-xl p-4 mb-3 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 mb-3">
       <View className="flex-row items-center justify-center">
         <SideStat
           label={t('dashboard.consumed', { defaultValue: 'Consumed' })}

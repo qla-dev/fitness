@@ -172,7 +172,7 @@ const MealPlansScreen: React.FC<MealPlansScreenProps> = ({ navigation }) => {
   });
 
   const renderPlan = ({ item }: { item: MealPlanTemplate }) => (
-    <View className="bg-surface rounded-xl px-4 py-4 mb-3 shadow-sm">
+    <View className="bg-surface rounded-xl px-4 py-4 mb-3">
       <Pressable
         accessibilityRole="button"
         onPress={() => navigation.navigate('MealPlanForm', { template: item })}

@@ -707,7 +707,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Text>
         </Pressable>
         {learnMoreExpanded && (
-          <View className="mt-4 rounded-2xl bg-raised p-4 shadow-sm">
+          <View className="mt-4 rounded-2xl bg-raised p-4">
             <Text className="text-sm text-text-secondary leading-relaxed">
               {t('onboarding.learnMoreBody', {
                 defaultValue:

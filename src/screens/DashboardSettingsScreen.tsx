@@ -171,7 +171,7 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
 
     if (customNutrients.length === 0) {
       return (
-        <View className="bg-surface rounded-xl p-4 mb-4 shadow-sm">
+        <View className="bg-surface rounded-xl p-4 mb-4">
           <Text className="text-base font-semibold text-text-primary mb-2">
             {t('dashboardSettings.noCustomNutrients', {
               defaultValue: 'No custom nutrients',

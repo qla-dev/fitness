@@ -344,7 +344,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
         accessibilityLabel={t('progressPhotos.openPhotoA11y', {
           defaultValue: 'View this photo full screen',
         })}
-        className="flex-row items-center bg-surface rounded-xl p-3 mb-3 shadow-sm"
+        className="flex-row items-center bg-surface rounded-xl p-3 mb-3"
       >
         <SafeImage
           source={source}
@@ -444,7 +444,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
 
       {/* The day on show, with its own management. Its own card, and angle
           agnostic: the selector further down scopes the history, not this. */}
-      <View className="mx-4 mt-2 bg-surface rounded-xl p-3 shadow-sm">
+      <View className="mx-4 mt-2 bg-surface rounded-xl p-3">
         <View className="flex-row items-center justify-between mb-2">
           <TouchableOpacity
             onPress={() => calendarRef.current?.present()}
@@ -515,7 +515,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
               navigation.navigate('ProgressPhotoCompare', { angle })
             }
             disabled={!canCompare}
-            className="flex-1 flex-row items-center justify-center bg-surface rounded-lg py-2.5 shadow-sm"
+            className="flex-1 flex-row items-center justify-center bg-surface rounded-lg py-2.5"
             style={!canCompare ? { opacity: 0.4 } : undefined}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canCompare }}
@@ -534,7 +534,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
               navigation.navigate('ProgressPhotoTimelapse', { angle })
             }
             disabled={!canCompare}
-            className="flex-1 flex-row items-center justify-center bg-surface rounded-lg py-2.5 shadow-sm"
+            className="flex-1 flex-row items-center justify-center bg-surface rounded-lg py-2.5"
             style={!canCompare ? { opacity: 0.4 } : undefined}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canCompare }}

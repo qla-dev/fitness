@@ -75,7 +75,7 @@ const CorrelationCard: React.FC<CorrelationCardProps> = ({ c }) => {
   const max = Math.max(...c.byPhase.map((p) => p.mean), 1);
 
   return (
-    <View className="bg-surface rounded-xl p-4 border-0 shadow-sm gap-3 mb-3">
+    <View className="bg-surface rounded-xl p-4 border-0 gap-3 mb-3">
       <View className="flex-row items-center gap-1.5">
         <Icon name="measurements" size={18} color={accentColor} />
         <Text className="text-text-primary text-sm font-semibold">
@@ -185,7 +185,7 @@ const CorrelationCards: React.FC = () => {
       {flags.map((f) => (
         <View
           key={f.key}
-          className="flex-row items-start p-3 bg-surface rounded-xl border-none shadow-sm"
+          className="flex-row items-start p-3 bg-surface rounded-xl border-none"
         >
           <View className="mr-2 mt-0.5">
             <Icon name="warning" size={18} color={warningColor} />

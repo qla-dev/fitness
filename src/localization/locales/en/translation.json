@@ -5007,6 +5007,14 @@
   "profile": {
     "title": "Profile",
     "subtitle": "Your health, goals, and preferences",
+    "library": {
+      "title": "Library",
+      "itemCount_one": "{{formattedCount}} item",
+      "itemCount_other": "{{formattedCount}} items",
+      "createFood": "Create food",
+      "createExercise": "Create exercise",
+      "createProgram": "Create program"
+    },
     "personal": "Personal",
     "preferences": "Preferences",
     "goals": "Goals",

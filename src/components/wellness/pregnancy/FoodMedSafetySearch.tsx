@@ -43,7 +43,7 @@ const FoodMedSafetySearch: React.FC = () => {
   }, [debouncedQuery, category, t]);
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm gap-3">
+    <View className="bg-surface rounded-xl p-4 gap-3">
       <Text className="text-base font-bold text-text-secondary">
         {t('pregnancySafety.title', {
           defaultValue: 'Food & Medication Safety',

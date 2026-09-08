@@ -231,7 +231,7 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+    <View className="bg-surface rounded-xl p-4 border-0">
       {/* Month Header Navigation */}
       <View className="flex-row justify-between items-center mb-4">
         <TouchableOpacity

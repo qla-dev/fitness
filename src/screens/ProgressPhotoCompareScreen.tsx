@@ -270,7 +270,7 @@ const ProgressPhotoCompareScreen: React.FC<Props> = ({ navigation, route }) => {
             between it: a middle column would take ~64pt off photos that are
             the whole point of this screen. */}
         {(deltaKg != null || (spanDays != null && spanDays > 0)) && (
-          <View className="bg-surface rounded-xl px-4 py-3 mt-3 flex-row items-center justify-center gap-3 shadow-sm">
+          <View className="bg-surface rounded-xl px-4 py-3 mt-3 flex-row items-center justify-center gap-3">
             {deltaKg != null && (
               <Text
                 className="text-lg font-bold"

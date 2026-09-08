@@ -87,7 +87,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
         <View className="gap-3">
           {/* Date card; pregnancy mode shows the date inside its weight card instead */}
           {mode !== 'pregnant' && (
-            <View className="bg-surface rounded-xl p-4 shadow-sm border-0">
+            <View className="bg-surface rounded-xl p-4 border-0">
               <DateSelectRow
                 date={selectedDate}
                 onPress={() => calendarRef.current?.present()}

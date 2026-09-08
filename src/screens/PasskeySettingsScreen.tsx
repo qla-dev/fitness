@@ -310,7 +310,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
         }
       >
         {!isSessionAuth ? (
-          <View className="bg-surface rounded-xl p-6 items-center shadow-sm border border-border-subtle">
+          <View className="bg-surface rounded-xl p-6 items-center border border-border-subtle">
             <Icon name="lock-closed" size={48} color={textMuted} />
             <Text className="text-base text-text-primary text-center mt-4">
               {t('passkeySettings.sessionOnly', {
@@ -342,7 +342,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
                 <ActivityIndicator size="large" color={accentPrimary} />
               </View>
             ) : passkeys.length === 0 ? (
-              <View className="bg-surface rounded-xl p-6 items-center shadow-sm border border-border-subtle mb-6">
+              <View className="bg-surface rounded-xl p-6 items-center border border-border-subtle mb-6">
                 <View style={{ marginBottom: 12 }}>
                   <Icon name="fingerprint" size={40} color={textMuted} />
                 </View>
@@ -448,7 +448,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
             className="flex-1 justify-center items-center p-6"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           >
-            <View className="w-full max-w-90 rounded-2xl p-6 bg-surface shadow-sm border border-border-subtle">
+            <View className="w-full max-w-90 rounded-2xl p-6 bg-surface border border-border-subtle">
               <Text className="text-[20px] font-bold text-center text-text-primary mb-4">
                 {t('passkeySettings.registerTitle', {
                   defaultValue: 'Register Passkey',

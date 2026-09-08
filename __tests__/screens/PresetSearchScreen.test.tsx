@@ -135,9 +135,11 @@ function renderScreen(params?: RouteParams) {
  */
 function pressHeaderFilterOption(label: string) {
   const config = mockUseScreenHeader.mock.calls.at(-1)?.[0] as {
-    right?: { items?: { items?: { label: string; onPress: () => void }[] }[] };
+    right?: {
+      items?: { items?: { label: string; onPress: () => void }[] }[];
+    }[];
   };
-  const option = config?.right?.items?.[0]?.items?.find(
+  const option = config?.right?.[0]?.items?.[0]?.items?.find(
     (item) => item.label === label
   );
   if (!option) {
@@ -180,6 +182,19 @@ describe('PresetSearchScreen', () => {
       isNavigationLocked: false,
       runNavigationAction: (action: () => void) => action(),
     } as any);
+  });
+
+  it('opens program creation from the header plus action', () => {
+    renderScreen();
+    const config = mockUseScreenHeader.mock.calls.at(-1)?.[0];
+    const actions = Array.isArray(config?.right) ? config.right : [];
+    const create = actions.find((item) => item.kind === 'icon');
+    if (!create || create.kind !== 'icon')
+      throw new Error('Missing create action');
+    act(() => create.onPress());
+    expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetForm', {
+      mode: 'create-preset',
+    });
   });
 
   it('titles the header "Start Workout" and renders the pinned empty-workout row', () => {

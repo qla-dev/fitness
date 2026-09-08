@@ -352,7 +352,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2 shadow-sm">
+    <View className="bg-surface rounded-xl p-4 my-2">
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {t('charts.sleep.title', { defaultValue: 'Sleep' })}
       </Text>

@@ -29,7 +29,7 @@ const CreateTile: React.FC<CreateTileProps> = ({
       activeOpacity={0.7}
       accessibilityState={{ disabled }}
       style={disabled ? { opacity: 0.7 } : undefined}
-      className={`bg-surface rounded-xl px-3 py-3 flex-row items-center shadow-sm ${className}`}
+      className={`bg-surface rounded-xl px-3 py-3 flex-row items-center ${className}`}
     >
       <Icon name={icon} size={24} color={accentPrimary} />
       <View className="flex-1 ml-4">
