@@ -348,6 +348,17 @@ const androidService = require('../../src/services/healthConnectService.ts');
 - Widget string shows as a raw key: inspect `targets/widget/en.lproj/Localizable.strings`, the `fallbackWidgetString` map in `SharedHelpers.swift`, and the derived-key contract in `__tests__/config/helpers/widgetSwiftKeys.ts`.
 - Settings/diagnostics bug: inspect settings screens, `SettingsRow`, haptics/theme/sounds/notification services, diagnostics services, `DevTools`, and screen error boundaries.
 
+## Run And Ride Integration Reference
+
+- The reference app is cloned beside this project at `C:\Users\Public\Documents\elan` (relative path: `../elan`), from `https://github.com/Wifsimster/elan`. Initial reference commit: `edf3b71`. Consult this local source throughout the integration; read its `AGENTS.md` and referenced guidance when working in that repository.
+- The requested integration is live running and cycling in this app, with stopwatch, distance, speed/pace, maximum speed, elevation gain, GPS trace, estimated calories, Bluetooth heart-rate straps, and bike cadence/wheel-speed sensors with remembered devices and automatic reconnect.
+- Start with the reference's `src/app/velo.tsx` for session lifecycle; `src/hooks/use-gps-tracker.ts`, `src/lib/gps-task.ts`, and `src/lib/gps-filter.ts` for location recording and metrics; `src/lib/ble.ts`, `src/hooks/use-heart-rate.tsx`, and `src/hooks/use-cadence-speed.tsx` for sensors; and `src/lib/db.ts`, `src/lib/session-recovery.ts`, `src/lib/session-aggregate.ts`, and `src/lib/calories.ts` for persistence, recovery, and estimates.
+- Integrate into this project's `src/screens/RunOrRideScreen.tsx` and `src/components/RouteMap.tsx`. Save completed runs and rides as exercise sessions in the existing diary/history flow, with routes and sensor metrics accessible from activity details. Trace the exercise API, local repository, and shared schemas before choosing the persistence format.
+- Preserve the existing map, navigation, styling, localization, and strength-workout implementation. Reuse installed packages where appropriate; consult the actual `package.json` for current versions.
+- The reference implements cycling and strength, not running. Adapt activity-specific metrics and filtering for running, including pace and splits. Its wheel-speed display does not itself establish wheel-based recorded distance; implement explicit measurement-source selection and fallback.
+- Verify background GPS and Bluetooth recording on both iOS and Android. Do not assume the reference's Android-focused implementation covers iOS or that a foreground-only fallback meets the recording requirement. Session persistence must survive screen changes and support recovery after interruption.
+- Preserve applicable license notices for copied code. Test GPS filtering, pause/resume boundaries, sensor decoding and reconnect, interruption recovery, and saving without duplicate exercise entries. Follow this guide's native regeneration and validation requirements for configuration or dependency changes.
+
 ## Priority Rule
 
 - For work inside `SparkyFitnessMobile/`, this file is the package guide.

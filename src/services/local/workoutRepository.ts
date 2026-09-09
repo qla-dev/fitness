@@ -224,6 +224,34 @@ export function workoutRepository(
           .strip()
           .parse(findRecord(db, 'activities', id)),
       };
+    // Native recordings carry a stable marker across retries. The local
+    // transaction serializes lookup + insert, including after process death.
+    if (method === 'POST') {
+      const marker = asRecords(body.activity_details).find(
+        (detail) => detail.detail_type === 'fitness_recording_v1'
+      );
+      const recordingId =
+        marker &&
+        typeof marker.detail_data === 'object' &&
+        marker.detail_data !== null &&
+        'recordingId' in marker.detail_data
+          ? marker.detail_data.recordingId
+          : undefined;
+      if (typeof recordingId === 'string') {
+        const existing = table(db, 'activities').find((row) =>
+          asRecords(row.activity_details).some(
+            (detail) =>
+              detail.detail_type === 'fitness_recording_v1' &&
+              typeof detail.detail_data === 'object' &&
+              detail.detail_data !== null &&
+              'recordingId' in detail.detail_data &&
+              detail.detail_data.recordingId === recordingId
+          )
+        );
+        if (existing)
+          return { value: exerciseEntryResponseSchema.strip().parse(existing) };
+      }
+    }
     const previous = method === 'PUT' ? findRecord(db, 'activities', id) : {};
     const row = exerciseEntry(
       db,

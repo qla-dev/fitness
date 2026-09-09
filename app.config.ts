@@ -242,18 +242,16 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         // Bluetooth LE, for fitness sensors (heart-rate straps, cadence and
         // power meters).
         //
-        // Foreground only: `isBackgroundEnabled` would add the
-        // bluetooth-central background mode and the always-on scanning that
-        // comes with it, which the app has no use for while it is not on
-        // screen — the same posture expo-audio takes with background playback.
+        // Continue fitness-sensor notifications during a run/ride with the
+        // screen locked. Discovery remains explicitly user initiated.
         //
         // The iOS usage string is the English fallback; the localized copy
         // lives in `locales/*.json` alongside the camera and Health strings,
         // and wins wherever a translation exists.
         'react-native-ble-plx',
         {
-          isBackgroundEnabled: false,
-          modes: [],
+          isBackgroundEnabled: true,
+          modes: ['central'],
           bluetoothAlwaysPermission:
             'qla.fit uses Bluetooth to connect to fitness sensors such as heart-rate monitors.',
         },

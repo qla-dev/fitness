@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity } from 'react-native';
 import FadeView from '../components/FadeView';
 import EditableSetList from '../components/EditableSetList';
+import RecordingSummary from '../components/recording/RecordingSummary';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -715,6 +716,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* Stats grid */}
         {renderStatsGrid()}
+        {!isEditing && <RecordingSummary details={session.activity_details} />}
 
         {/* Sets section */}
         {isEditing ? (

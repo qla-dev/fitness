@@ -1,11 +1,14 @@
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import RouteMap from '../components/RouteMap';
+import RunRideRecorder from '../components/recording/RunRideRecorder';
+import type { RootStackScreenProps } from '../types/navigation';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 
-export default function RunOrRideScreen() {
+export default function RunOrRideScreen({
+  navigation,
+}: RootStackScreenProps<'RunOrRide'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -20,7 +23,7 @@ export default function RunOrRideScreen() {
           never boxed into a panel. It is absolutely positioned rather than a
           flex child for that reason. */}
       <View className="flex-1">
-        <RouteMap />
+        <RunRideRecorder navigation={navigation} />
       </View>
       <View
         className="absolute left-0 right-0 top-0"

@@ -348,6 +348,18 @@ export const createWorkout = async (
 };
 
 export interface CreateExerciseEntryPayload {
+  max_heart_rate?: number | null;
+  avg_speed_mps?: number | null;
+  max_speed_mps?: number | null;
+  avg_cadence?: number | null;
+  elevation_gain_meters?: number | null;
+  elapsed_time_seconds?: number | null;
+  activity_details?: {
+    id?: string;
+    provider_name: string;
+    detail_type: string;
+    detail_data: unknown;
+  }[];
   exercise_id: string;
   exercise_name?: string | null;
   duration_minutes: number;

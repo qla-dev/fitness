@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Platform,
-  View,
-  Text,
-  StyleSheet,
-  useColorScheme,
-} from 'react-native';
+import { Platform, View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -18,6 +12,8 @@ export interface RouteMapProps {
   zoom?: number;
   /** The path travelled so far, drawn as a single line. */
   route?: RouteCoordinate[];
+  /** Separate segments prevent drawing across pauses and GPS outages. */
+  segments?: RouteCoordinate[][];
   /**
    * Draw the blue dot and offer the recentre button. Requires an OS location
    * permission to have been granted — with none, both platforms simply render
@@ -44,6 +40,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
   center,
   zoom,
   route,
+  segments,
   showsUserLocation = false,
 }) => {
   const { t } = useTranslation();
@@ -56,8 +53,16 @@ const RouteMap: React.FC<RouteMapProps> = ({
   };
   // A single-point line renders nothing on either platform and a zero-length
   // one is rejected outright, so the layer only exists once there are two.
-  const polylines =
-    route && route.length > 1
+  const polylines = segments
+    ? segments
+        .filter((segment) => segment.length > 1)
+        .map((coordinates, index) => ({
+          id: `route-${index}`,
+          coordinates,
+          color: accent,
+          width: ROUTE_WIDTH,
+        }))
+    : route && route.length > 1
       ? [{ id: 'route', coordinates: route, color: accent, width: ROUTE_WIDTH }]
       : [];
 

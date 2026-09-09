@@ -24,6 +24,7 @@ import { initMedicationNotificationActions } from '../services/medicationNotific
 import { initWorkoutLiveActivity } from '../services/workoutLiveActivity';
 import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
 import { isLocalDataMode } from '../services/dataMode';
+import { initializeRecorder } from '../services/recording/recorder';
 
 interface AppStartupArgs {
   /**
@@ -71,6 +72,11 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     });
 
     initWorkoutNotificationActions();
+    void initializeRecorder().catch((error) => {
+      addLog('[App] Could not restore run/ride recording', 'ERROR', [
+        String(error),
+      ]);
+    });
     initMedicationNotificationActions();
 
     // iOS-only (no-op on Android): keeps the workout Live Activity in sync
