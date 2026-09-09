@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -11,7 +11,7 @@ export interface MealLogCardProps {
   /** The meal's display label. */
   label: string;
   /**
-   * Optional calorie readout shown as a pill beside the label (e.g.
+   * Optional calorie readout shown after the overflow button (e.g.
    * "320 / 500 Cal"). Omitted on a meal with nothing logged.
    */
   badge?: string;
@@ -45,6 +45,8 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
+  const separatorColor = useCSSVariable('--color-menu-separator') as string;
+  const hasItems = React.Children.toArray(children).length > 0;
 
   const header = (
     <>
@@ -55,21 +57,12 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
       >
         {label}
       </Text>
-      {badge ? (
-        <View className="bg-accent-primary/5 rounded-full px-2.5 py-0.5">
-          <Text className="text-xs text-accent-primary font-semibold">
-            {badge}
-          </Text>
-        </View>
-      ) : null}
     </>
   );
 
   return (
-    <View
-      className={`bg-surface rounded-xl px-4 pt-4 overflow-hidden ${children ? 'pb-2.5' : 'pb-4'}`}
-    >
-      <View className="flex-row gap-2 items-center">
+    <View className="bg-surface rounded-xl overflow-hidden">
+      <View className="flex-row gap-2 items-center p-4">
         {onOpen ? (
           <Pressable
             onPress={onOpen}
@@ -102,6 +95,13 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
             <Icon name="ellipsis-horizontal" size={18} color={accentPrimary} />
           </Pressable>
         ) : null}
+        {badge ? (
+          <View className="bg-accent-primary/5 rounded-full px-4 py-1.5">
+            <Text className="text-sm font-bold text-accent-primary">
+              {badge}
+            </Text>
+          </View>
+        ) : null}
         {onLog ? (
           <Pressable
             onPress={() => {
@@ -121,7 +121,15 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
           </Pressable>
         ) : null}
       </View>
-      {children ? <View className="mt-3">{children}</View> : null}
+      {hasItems && (
+        <View
+          style={{
+            height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
+            backgroundColor: separatorColor,
+          }}
+        />
+      )}
+      {children}
     </View>
   );
 };

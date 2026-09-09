@@ -11,6 +11,7 @@ import {
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
+import MenuItemIcon from './MenuItemIcon';
 
 const SettingsRowGroupContext = createContext<{ grouped: boolean }>({
   grouped: false,
@@ -106,27 +107,23 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   testID,
 }) => {
   const { grouped } = useContext(SettingsRowGroupContext);
-  const [textSecondary, raised] = useCSSVariable([
-    '--color-text-secondary',
-    '--color-raised',
-  ]) as [string, string];
+  const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
   const wrapperClass = grouped
     ? 'p-4 flex-row items-center'
     : 'bg-surface rounded-2xl p-4 mb-4 flex-row items-center';
 
   const tintColor = iconColor ?? textSecondary;
-  const tileBg = iconBackgroundColor ?? raised;
 
   const content = (
     <>
       {icon ? (
-        <View
-          className="w-10 h-10 rounded-lg items-center justify-center mr-3"
-          style={{ backgroundColor: tileBg }}
+        <MenuItemIcon
+          backgroundColor={iconBackgroundColor}
+          style={{ marginRight: 12 }}
         >
           <Icon name={icon} size={22} color={tintColor} weight="semibold" />
-        </View>
+        </MenuItemIcon>
       ) : null}
       <View className="flex-1 mr-2">
         <Text

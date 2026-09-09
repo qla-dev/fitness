@@ -25,6 +25,7 @@ import { useFoodImageSourceContext } from './FoodImageSourceProvider';
 import { diaryEntryImage, diaryEntryImages } from '../utils/foodImages';
 import { useOpenLightbox } from './LightboxProvider';
 import { fireSelectionHaptic } from '../services/haptics';
+import { useCSSVariable } from 'uniwind';
 
 interface SwipeableFoodRowProps {
   entry: FoodEntry;
@@ -42,6 +43,10 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
   showDivider = false,
 }) => {
   const { t } = useTranslation();
+  const [menuMuted, menuSeparator] = useCSSVariable([
+    '--color-menu-muted',
+    '--color-menu-separator',
+  ]) as [string, string];
   const { preferences } = usePreferences();
   const navigation = useNavigation();
   const swipeableRef = useRef<any>(null);
@@ -155,17 +160,27 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
       >
         <View
           className="py-1.5 flex-row items-center bg-surface"
-          style={compact ? { minHeight: 52 } : undefined}
+          style={
+            compact
+              ? {
+                  minHeight: 66,
+                  paddingHorizontal: 13,
+                  paddingVertical: 10,
+                  gap: 12,
+                }
+              : undefined
+          }
         >
           {/* Compact menu rows always keep their image or fallback icon slot. */}
           {entryImage || compact ? (
             <FoodThumbnail
               image={entryImage}
               getImageSource={getImageSource}
-              size={compact ? 40 : 56}
+              size={compact ? 39 : 56}
+              menuStyle={compact}
               variant={isMealComponent ? 'meal' : 'food'}
               showFallback={compact}
-              style={{ marginRight: compact ? 12 : 8 }}
+              style={{ marginRight: compact ? 0 : 8 }}
               onPress={
                 entryImage
                   ? () => openLightbox(diaryEntryImages(entry), 0, name)
@@ -174,7 +189,7 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
             />
           ) : null}
           <TouchableOpacity
-            className="flex-1 mr-2"
+            className={compact ? 'flex-1 min-w-0' : 'flex-1 mr-2'}
             activeOpacity={0.7}
             onPress={handlePress}
             onLongPress={handleLongPress}
@@ -182,22 +197,34 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
             accessibilityLabel={name}
           >
             <View
-              className={
-                compact ? 'gap-0.5' : 'flex-row flex-wrap items-baseline'
-              }
+              className={compact ? '' : 'flex-row flex-wrap items-baseline'}
             >
               <Text
                 className={
                   compact
-                    ? 'text-sm font-semibold text-text-primary'
+                    ? 'text-base font-normal text-text-primary'
                     : 'text-md text-text-primary'
                 }
                 numberOfLines={1}
+                style={
+                  compact ? { fontSize: 16, fontWeight: '400' } : undefined
+                }
               >
                 {name}
               </Text>
-              <View className="flex-row items-baseline">
-                <Text className="text-sm text-text-secondary" numberOfLines={1}>
+              <View
+                className="flex-row items-baseline"
+                style={compact ? { marginTop: 3 } : undefined}
+              >
+                <Text
+                  className="text-sm text-text-secondary"
+                  numberOfLines={1}
+                  style={
+                    compact
+                      ? { fontSize: 11, lineHeight: 15, color: menuMuted }
+                      : undefined
+                  }
+                >
                   {!compact && ' · '}
                   {entry.quantity} {entry.unit}
                 </Text>
@@ -205,6 +232,11 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
                   <Text
                     className="text-xs text-text-link ml-1.5"
                     numberOfLines={1}
+                    style={
+                      compact
+                        ? { fontSize: 11, lineHeight: 15, color: menuMuted }
+                        : undefined
+                    }
                   >
                     {timeLabel}
                   </Text>
@@ -212,7 +244,7 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
               </View>
             </View>
           </TouchableOpacity>
-          <View style={{ alignSelf: 'stretch', justifyContent: 'center' }}>
+          <View style={{ alignSelf: 'center', justifyContent: 'center' }}>
             {canQuickAdjust ? (
               <Button
                 variant="ghost"
@@ -222,10 +254,17 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
                 style={{ paddingVertical: 0, paddingHorizontal: 0 }}
                 textClassName="text-sm text-text-secondary font-medium"
               >
-                {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })} ▾`}
+                <Text
+                  style={{ fontSize: 14, fontWeight: '500', color: menuMuted }}
+                >
+                  {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}${compact ? '' : ' ▾'}`}
+                </Text>
               </Button>
             ) : (
-              <Text className="text-sm text-text-secondary font-medium mr-2">
+              <Text
+                className="text-sm text-text-secondary font-medium"
+                style={compact ? { color: menuMuted } : { marginRight: 8 }}
+              >
                 {Math.round(nutrition.calories)}{' '}
                 {t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}
               </Text>
@@ -238,7 +277,8 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
           className="bg-border-subtle"
           style={{
             height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
-            marginLeft: compact ? 52 : 0,
+            marginLeft: compact ? 64 : 0,
+            ...(compact ? { backgroundColor: menuSeparator } : {}),
           }}
         />
       )}

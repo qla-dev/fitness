@@ -4,6 +4,7 @@ import { View, Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import SafeImage from './SafeImage';
 import Icon from './Icon';
+import MenuItemIcon from './MenuItemIcon';
 import type { GetFoodImageSource } from '../hooks/useFoodImageSource';
 
 interface FoodThumbnailProps {
@@ -12,6 +13,7 @@ interface FoodThumbnailProps {
   /** From `useFoodImageSource()`; hoisted so one cache serves a whole list. */
   getImageSource: GetFoodImageSource;
   size?: number;
+  menuStyle?: boolean;
   /** Which placeholder glyph to show when there is no image. */
   variant?: 'food' | 'meal';
   /**
@@ -38,6 +40,7 @@ const FoodThumbnail: React.FC<FoodThumbnailProps> = ({
   image,
   getImageSource,
   size = 44,
+  menuStyle = false,
   variant = 'food',
   showFallback = true,
   onPress,
@@ -53,7 +56,7 @@ const FoodThumbnail: React.FC<FoodThumbnailProps> = ({
     return null;
   }
 
-  const box = { width: size, height: size, borderRadius: 8 };
+  const box = { width: size, height: size, borderRadius: menuStyle ? 12 : 8 };
 
   const Container = onPress ? Pressable : View;
 
@@ -80,13 +83,23 @@ const FoodThumbnail: React.FC<FoodThumbnailProps> = ({
         style={box}
         contentFit="cover"
         fallback={
-          <View className="bg-raised items-center justify-center" style={box}>
-            <Icon
-              name={variant === 'meal' ? 'meal' : 'food'}
-              size={Math.round(size / 2)}
-              color={textMuted}
-            />
-          </View>
+          menuStyle ? (
+            <MenuItemIcon size={size}>
+              <Icon
+                name={variant === 'meal' ? 'meal' : 'food'}
+                size={17}
+                color={textMuted}
+              />
+            </MenuItemIcon>
+          ) : (
+            <View className="bg-raised items-center justify-center" style={box}>
+              <Icon
+                name={variant === 'meal' ? 'meal' : 'food'}
+                size={menuStyle ? 17 : Math.round(size / 2)}
+                color={textMuted}
+              />
+            </View>
+          )
         }
       />
     </Container>

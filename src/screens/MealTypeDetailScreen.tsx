@@ -238,8 +238,8 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
           calorieGoal={targetCalories > 0 ? targetCalories : undefined}
         />
 
-        <View className="bg-surface rounded-xl p-4">
-          <View className="flex-row items-center mb-3">
+        <View className="bg-surface rounded-xl overflow-hidden">
+          <View className="flex-row items-center p-4">
             <Text className="text-base font-bold text-text-secondary flex-1">
               {t('mealTypeDetail.labels.foods', { defaultValue: 'Foods' })}
             </Text>
@@ -253,6 +253,8 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
           {entries.map((entry, index) => (
             <SwipeableFoodRow
               key={entry.id || index}
+              compact
+              showDivider={index < entries.length - 1}
               entry={entry}
               nutrition={calculateEntryNutrition(entry)}
               onAdjustServing={(foodEntry) =>
