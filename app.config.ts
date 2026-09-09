@@ -140,6 +140,10 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         : IOS_PROD_BUNDLE_IDENTIFIER,
       appleTeamId: isDev ? DEV_APPLE_TEAM_ID : PROD_APPLE_TEAM_ID,
       supportsTablet: false,
+      // Adds the Sign in with Apple capability/entitlement that
+      // expo-apple-authentication needs; without it the button throws at
+      // runtime on a real build.
+      usesAppleSignIn: true,
       infoPlist: {
         NSLocalNetworkUsageDescription:
           'qla.fit connects to self-hosted servers on your local network.',
@@ -194,6 +198,20 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
           enableBackgroundPlayback: false,
         },
       ],
+      [
+        // Native maps: Apple Maps on iOS, Google Maps on Android.
+        //
+        // Location permission is deliberately NOT requested here. Nothing in
+        // the app needs the device's position yet, and a health app that asks
+        // for location it never uses invites store-review questions. Flip
+        // `requestLocationPermission` on (with a usage string) when a feature
+        // actually shows the user where they are.
+        'expo-maps',
+        { requestLocationPermission: false },
+      ],
+      // Sign in with Apple. expo-auth-session needs no plugin of its own — it
+      // redirects through the app `scheme` already declared above.
+      'expo-apple-authentication',
       './plugins/withGlanceAndroidSupport',
       './plugins/withAppLanguage',
       './plugins/withCalorieWidget',
