@@ -3,6 +3,9 @@
     "NSCameraUsageDescription": "SparkyFitness potrzebuje dostępu do aparatu, aby skanować kody kreskowe i etykiety produktów.",
     "NSHealthShareUsageDescription": "SparkyFitness odczytuje dane zdrowotne, takie jak aktywność, treningi i pomiary ciała, aby wyświetlać je w aplikacji i synchronizować z Twoim samodzielnie hostowanym serwerem SparkyFitness.",
     "NSHealthUpdateUsageDescription": "SparkyFitness zapisuje rejestrowane w aplikacji wartości odżywcze i nawodnienie w Apple Health, aby zachować synchronizację.",
-    "NSLocalNetworkUsageDescription": "SparkyFitness łączy się z samodzielnie hostowanymi serwerami w Twojej sieci lokalnej."
+    "NSLocalNetworkUsageDescription": "SparkyFitness łączy się z samodzielnie hostowanymi serwerami w Twojej sieci lokalnej.",
+    "NSBluetoothAlwaysUsageDescription": "qla.fit używa Bluetooth do łączenia się z czujnikami fitness, takimi jak pulsometry.",
+    "NSLocationWhenInUseUsageDescription": "qla.fit używa Twojej lokalizacji, aby mapować i mierzyć Twoje biegi i przejażdżki.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "qla.fit używa Twojej lokalizacji, aby nagrywać trasę, gdy aplikacja działa w tle."
   }
 }

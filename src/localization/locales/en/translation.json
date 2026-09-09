@@ -1895,6 +1895,9 @@
     "met": "met",
     "goalSeparator": " / {{value}}"
   },
+  "routeMap": {
+    "unsupported": "Maps are only available on iOS and Android."
+  },
   "foodSummary": {
     "tapToAddFood": "Tap to add food",
     "caloriesShort": "kcal",

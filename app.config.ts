@@ -145,6 +145,10 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // runtime on a real build.
       usesAppleSignIn: true,
       infoPlist: {
+        // Keeps location updates flowing while a run/ride is recording and the
+        // app is backgrounded or the screen is locked. iOS stops delivering
+        // them entirely without this mode, so the route would simply stop.
+        UIBackgroundModes: ['location'],
         NSLocalNetworkUsageDescription:
           'qla.fit connects to self-hosted servers on your local network.',
         // Required by the food/meal photo picker and the label/barcode
@@ -212,6 +216,48 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // Sign in with Apple. expo-auth-session needs no plugin of its own — it
       // redirects through the app `scheme` already declared above.
       'expo-apple-authentication',
+      [
+        // GPS, for recording a run or ride.
+        //
+        // Android takes the foreground-service route, NOT
+        // ACCESS_BACKGROUND_LOCATION: recording starts from a button with the
+        // app on screen, and a foreground service then keeps it going with the
+        // screen off. That covers the feature while avoiding Play's
+        // background-location declaration (written justification plus a demo
+        // video, reviewed per submission).
+        //
+        // iOS permission strings are the English fallbacks; the localized copy
+        // lives in `locales/*.json` beside the camera and Health strings.
+        'expo-location',
+        {
+          isAndroidForegroundServiceEnabled: true,
+          isAndroidBackgroundLocationEnabled: false,
+          locationWhenInUsePermission:
+            'qla.fit uses your location to map and measure your runs and rides.',
+          locationAlwaysAndWhenInUsePermission:
+            'qla.fit uses your location to keep recording your route while the app is in the background.',
+        },
+      ],
+      [
+        // Bluetooth LE, for fitness sensors (heart-rate straps, cadence and
+        // power meters).
+        //
+        // Foreground only: `isBackgroundEnabled` would add the
+        // bluetooth-central background mode and the always-on scanning that
+        // comes with it, which the app has no use for while it is not on
+        // screen — the same posture expo-audio takes with background playback.
+        //
+        // The iOS usage string is the English fallback; the localized copy
+        // lives in `locales/*.json` alongside the camera and Health strings,
+        // and wins wherever a translation exists.
+        'react-native-ble-plx',
+        {
+          isBackgroundEnabled: false,
+          modes: [],
+          bluetoothAlwaysPermission:
+            'qla.fit uses Bluetooth to connect to fitness sensors such as heart-rate monitors.',
+        },
+      ],
       './plugins/withGlanceAndroidSupport',
       './plugins/withAppLanguage',
       './plugins/withCalorieWidget',
