@@ -54,6 +54,7 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   MeasurementsAdd: 'Root-stack measurement modal presented from the tab host.',
   ExerciseProgram: 'Root-stack program detail pushed from the Exercises store.',
   Cart: 'Root-stack cart route pushed from the Exercises store header.',
+  RunOrRide: 'Root-stack map placeholder opened from the Add sheet.',
   Profile:
     'Root-stack profile route reached from the profile button every tab header carries.',
   ProfileGoals: 'Root-stack profile route presented above the tab host.',

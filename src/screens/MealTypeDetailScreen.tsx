@@ -11,6 +11,8 @@ import CopyMealSheet, {
   type CopyMealSheetRef,
 } from '../components/CopyMealSheet';
 import SwipeableFoodRow from '../components/SwipeableFoodRow';
+import { EmptyState } from '../components/EmptyState';
+import Icon from '../components/Icon';
 import StatusView from '../components/StatusView';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useDailySummary, useServerConnection, useMealTypes } from '../hooks';
@@ -42,10 +44,12 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
   const { date, mealType, mealTypeId, mealLabel } = route.params;
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const [headerHeight, setHeaderHeight] = useState(0);
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const servingSheetRef = useRef<ServingAdjustSheetRef>(null);
   const copySheetRef = useRef<CopyMealSheetRef>(null);
   const accentColor = useCSSVariable('--color-accent-primary') as string;
+  const emptyIconColor = useCSSVariable('--color-text-muted') as string;
 
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
   const { summary, isLoading, isError, refetch } = useDailySummary({
@@ -174,20 +178,30 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
     }
 
     if (entries.length === 0) {
+      // The shared EmptyState, centred by this screen — the same block the
+      // rest of the app's empty screens use. It centres inside the VISIBLE
+      // area: the same bottom inset and floating active-workout-bar allowance
+      // the populated branch below applies, or the block centres in a box
+      // taller than the screen and sits low.
       return (
-        <StatusView
-          icon="food"
-          iconTone="muted"
-          iconSize={64}
-          title={t('mealTypeDetail.states.noFoods', {
-            defaultValue: 'No {{meal}} foods',
-            meal: label.toLowerCase(),
-          })}
-          subtitle={t('mealTypeDetail.states.noFoodsHint', {
-            defaultValue: '{{date}} has no foods logged for this meal.',
-            date: formatDateLabel(date, t, dateLocale),
-          })}
-        />
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ paddingBottom: insets.bottom + activeWorkoutBarPadding }}
+        >
+          <EmptyState
+            includeHeaderHeight={true}
+            headerHeight={headerHeight}
+            icon={<Icon name="food" size={32} color={emptyIconColor} />}
+            title={t('mealTypeDetail.states.noFoods', {
+              defaultValue: 'No {{meal}} foods',
+              meal: label.toLowerCase(),
+            })}
+            description={t('mealTypeDetail.states.noFoodsHint', {
+              defaultValue: '{{date}} has no foods logged for this meal.',
+              date: formatDateLabel(date, t, dateLocale),
+            })}
+          />
+        </View>
       );
     }
 
@@ -297,7 +311,13 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
       className="flex-1 bg-background"
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
-      {header}
+      {header && (
+        <View
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+        >
+          {header}
+        </View>
+      )}
 
       {renderContent()}
 

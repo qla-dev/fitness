@@ -720,18 +720,17 @@ describe('DiaryScreen sleep cards', () => {
     expect(getByTestId('food-summary')).toBeTruthy();
   });
 
-  test('holds the empty-day illustration until the sleep query settles', () => {
-    // Nothing else logged, so the day looks empty — but a night that is still loading
-    // could yet fill it. Showing the illustration now would flip to sleep cards a moment
-    // later; the sections stay up instead until sleep has actually answered.
+  test('keeps the day on screen whether or not the sleep query has settled', () => {
+    // The day used to collapse to an illustration once every query answered
+    // empty. It no longer does: the meal cards are the empty state, so they
+    // stay up before and after sleep resolves rather than being swapped out.
     configureSleep({ wakeUp: null, naps: [], bedTime: null, isLoading: true });
 
-    const { queryByTestId, rerender } = renderScreen();
+    const { queryByTestId, getByTestId, rerender } = renderScreen();
 
     expect(queryByTestId('empty-day')).toBeNull();
-    expect(queryByTestId('wake-up-card')).toBeNull();
+    expect(getByTestId('food-summary')).toBeTruthy();
 
-    // Sleep resolves with nothing: now the day really is empty.
     configureSleep({ wakeUp: null, naps: [], bedTime: null });
     rerender(
       <SafeAreaProvider initialMetrics={{ frame, insets }}>
@@ -739,7 +738,8 @@ describe('DiaryScreen sleep cards', () => {
       </SafeAreaProvider>
     );
 
-    expect(queryByTestId('empty-day')).toBeTruthy();
+    expect(queryByTestId('empty-day')).toBeNull();
+    expect(getByTestId('food-summary')).toBeTruthy();
   });
 
   test('a bed time alone is enough to keep the day non-empty', () => {
@@ -832,8 +832,9 @@ describe('DiaryScreen sleep cards', () => {
     expect(queryByTestId('wake-up-card')).toBeNull();
     expect(queryByTestId('naps-card')).toBeNull();
     expect(queryByTestId('bed-time-card')).toBeNull();
-    // The pre-existing empty-day behaviour is untouched.
-    expect(getByTestId('empty-day')).toBeTruthy();
+    // The day no longer collapses to an illustration: the meal cards stand.
+    expect(queryByTestId('empty-day')).toBeNull();
+    expect(getByTestId('food-summary')).toBeTruthy();
   });
 
   test('hides the cards entirely on a 403 rather than showing empty states', () => {
@@ -849,7 +850,8 @@ describe('DiaryScreen sleep cards', () => {
     expect(queryByTestId('wake-up-card')).toBeNull();
     expect(queryByTestId('bed-time-card')).toBeNull();
     // The rest of the Diary is unaffected.
-    expect(getByTestId('empty-day')).toBeTruthy();
+    expect(queryByTestId('empty-day')).toBeNull();
+    expect(getByTestId('food-summary')).toBeTruthy();
   });
 
   test('pull-to-refresh refetches the sleep query alongside the others', async () => {

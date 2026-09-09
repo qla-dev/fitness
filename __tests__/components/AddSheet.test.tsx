@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import AddSheet, { type AddSheetRef } from '../../src/components/AddSheet';
+import * as dataMode from '../../src/services/dataMode';
 
 jest.mock('../../src/components/HydrationSheet', () => {
   const React = require('react');
@@ -69,6 +70,7 @@ function renderAddSheet(
     onBarcodeScan: jest.fn(),
     onAddMeasurements: jest.fn(),
     onAddProgressPhotos: jest.fn(),
+    onRunOrRide: jest.fn(),
     onAskSparky: jest.fn(),
     ...overrides,
   };
@@ -179,21 +181,36 @@ describe('AddSheet', () => {
     expect(getByText('Measurements')).toBeTruthy();
   });
 
-  it('invokes onAddProgressPhotos when the Progress Photos row is pressed', () => {
-    const onAddProgressPhotos = jest.fn();
-    const onDismissWithoutAction = jest.fn();
-    const { ref, getByText } = renderAddSheet({
-      onAddProgressPhotos,
-      onDismissWithoutAction,
-    });
-
-    act(() => ref.current?.present());
-    fireEvent.press(getByText('Progress Photos'));
-    act(() => mockBottomSheetControls.onDismiss?.());
-
-    expect(onAddProgressPhotos).toHaveBeenCalledTimes(1);
-    expect(onDismissWithoutAction).not.toHaveBeenCalled();
+  it('opens Run or Ride from its tile', () => {
+    const onRunOrRide = jest.fn();
+    const { getByText } = renderAddSheet({ onRunOrRide });
+    fireEvent.press(getByText('Run or Ride'));
+    expect(onRunOrRide).toHaveBeenCalledTimes(1);
+    expect(mockBottomSheetControls.dismiss).toHaveBeenCalled();
   });
+
+  it.each([false, true])(
+    'opens Progress Photos with local mode %s',
+    (localMode) => {
+      const modeSpy = jest
+        .spyOn(dataMode, 'isLocalDataMode')
+        .mockReturnValue(localMode);
+      const onAddProgressPhotos = jest.fn();
+      const onDismissWithoutAction = jest.fn();
+      const { ref, getByText } = renderAddSheet({
+        onAddProgressPhotos,
+        onDismissWithoutAction,
+      });
+
+      act(() => ref.current?.present());
+      fireEvent.press(getByText('Progress Photos'));
+      act(() => mockBottomSheetControls.onDismiss?.());
+
+      expect(onAddProgressPhotos).toHaveBeenCalledTimes(1);
+      expect(onDismissWithoutAction).not.toHaveBeenCalled();
+      modeSpy.mockRestore();
+    }
+  );
 
   it('invokes onSyncHealthData when the secondary Sync Health Data row is pressed', () => {
     const onSyncHealthData = jest.fn();

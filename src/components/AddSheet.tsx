@@ -33,6 +33,7 @@ interface AddSheetProps {
   onBarcodeScan: () => void;
   onAddMeasurements: () => void;
   onAddProgressPhotos: () => void;
+  onRunOrRide: () => void;
   onAskSparky: () => void;
   onOpenCycle?: () => void;
   showCycleCard?: boolean;
@@ -45,6 +46,7 @@ interface ActionCard {
   opensExerciseMenu?: boolean;
   label: string;
   icon: IconName;
+  iconSize?: number;
   onPress?: () => void;
 }
 
@@ -60,6 +62,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       onBarcodeScan,
       onAddMeasurements,
       onAddProgressPhotos,
+      onRunOrRide,
       onAskSparky,
       onOpenCycle,
       showCycleCard,
@@ -218,25 +221,39 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         opensExerciseMenu: true,
       },
       {
-        label: t('addSheet.measurements', { defaultValue: 'Measurements' }),
-        icon: 'measurements',
-        onPress: onAddMeasurements,
-      },
-      {
         label: t('addSheet.scanFood', { defaultValue: 'Scan Food' }),
         icon: 'scan',
         onPress: onBarcodeScan,
       },
       {
+        label: t('addSheet.aiMealScan', { defaultValue: 'AI meal scan' }),
+        icon: 'sparkles',
+      },
+      {
+        label: t('addSheet.runOrRide', { defaultValue: 'Run or Ride' }),
+        icon: 'exercise-cycling',
+        iconSize: 36,
+        onPress: onRunOrRide,
+      },
+      {
         label: t('addSheet.hydration', { defaultValue: 'Hydration' }),
         icon: 'hydration',
+        iconSize: 28,
         onPress: () => {
           pendingHydrationDate.current = getHydrationDate?.() ?? getTodayDate();
         },
       },
       {
-        label: t('addSheet.aiMealScan', { defaultValue: 'AI meal scan' }),
-        icon: 'sparkles',
+        label: t('addSheet.measurements', { defaultValue: 'Measurements' }),
+        icon: 'measurements',
+        onPress: onAddMeasurements,
+      },
+      {
+        label: t('addSheet.progressPhotos', {
+          defaultValue: 'Progress Photos',
+        }),
+        icon: 'camera-filled',
+        onPress: onAddProgressPhotos,
       },
     ];
 
@@ -257,7 +274,13 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
           }
         }}
       >
-        <Icon name={card.icon} size={32} color={accentPrimary} />
+        <View className="h-9 items-center justify-center">
+          <Icon
+            name={card.icon}
+            size={card.iconSize ?? 32}
+            color={accentPrimary}
+          />
+        </View>
         <Text className="text-text-primary text-sm font-medium mt-2">
           {card.label}
         </Text>
@@ -382,14 +405,10 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
               {renderCard(cards[4])}
               {renderCard(cards[5])}
             </View>
-            {!isLocalDataMode() &&
-              renderSecondaryRow(
-                t('addSheet.progressPhotos', {
-                  defaultValue: 'Progress Photos',
-                }),
-                'camera',
-                onAddProgressPhotos
-              )}
+            <View className="flex-row mt-3">
+              {renderCard(cards[6])}
+              {renderCard(cards[7])}
+            </View>
             {!isLocalDataMode() && showCycleCard && onOpenCycle
               ? renderSecondaryRow(
                   cycleLabel ??

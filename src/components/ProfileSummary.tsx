@@ -10,6 +10,7 @@ import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { isLocalDataMode } from '../services/dataMode';
 import { useThemePreference } from '../services/themeService';
+import { fireSelectionHaptic } from '../services/haptics';
 import SettingsRow, { SettingsRowGroup } from './SettingsRow';
 import Icon from './Icon';
 import type { RootStackParamList } from '../types/navigation';
@@ -52,7 +53,10 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
     System: t('settings.theme.system', { defaultValue: 'System' }),
   }[theme];
 
-  const openPremium = () => navigation.navigate('ProfilePremium');
+  const openPremium = () => {
+    fireSelectionHaptic();
+    navigation.navigate('ProfilePremium');
+  };
 
   return (
     <>
@@ -60,7 +64,10 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
         <Pressable
           accessibilityRole={editable ? 'button' : undefined}
           disabled={!editable}
-          onPress={() => navigation.navigate('ProfileEdit', { field: 'name' })}
+          onPress={() => {
+            fireSelectionHaptic();
+            navigation.navigate('ProfileEdit', { field: 'name' });
+          }}
           className="flex-row items-center px-4"
           style={{ minHeight: 96, gap: 14 }}
         >
@@ -92,7 +99,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
             </Text>
           </View>
           {editable && (
-            <Icon name="chevron-forward" size={18} color={textSecondary} />
+            <Icon name="chevron-forward" size={12} color={textSecondary} />
           )}
         </Pressable>
 
@@ -129,7 +136,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
               })}
             </Text>
           </View>
-          <Icon name="chevron-forward" size={18} color={textSecondary} />
+          <Icon name="chevron-forward" size={12} color={textSecondary} />
         </Pressable>
 
         <View className="h-px bg-border-subtle" style={{ marginLeft: 84 }} />
@@ -156,7 +163,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
               })}
             </Text>
           </View>
-          <Icon name="chevron-forward" size={18} color={textSecondary} />
+          <Icon name="chevron-forward" size={12} color={textSecondary} />
         </Pressable>
       </View>
 

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 
 const SettingsRowGroupContext = createContext<{ grouped: boolean }>({
   grouped: false,
@@ -150,7 +151,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       {rightAccessory !== undefined ? (
         rightAccessory
       ) : onPress ? (
-        <Icon name="chevron-forward" size={20} color={textSecondary} />
+        <Icon name="chevron-forward" size={12} color={textSecondary} />
       ) : null}
     </>
   );
@@ -170,7 +171,10 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   return (
     <Pressable
       className={wrapperClass}
-      onPress={onPress}
+      onPress={() => {
+        fireSelectionHaptic();
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={accessibilityHint}

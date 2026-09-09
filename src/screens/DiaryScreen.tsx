@@ -27,7 +27,6 @@ import CalendarSheet, {
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
-import EmptyDayIllustration from '../components/EmptyDayIllustration';
 import FoodSummary from '../components/FoodSummary';
 import MeasurementsSummary from '../components/MeasurementsSummary';
 import ServingAdjustSheet, {
@@ -35,7 +34,6 @@ import ServingAdjustSheet, {
 } from '../components/ServingAdjustSheet';
 import { BedTimeCard, NapsCard, WakeUpCard } from '../components/SleepCards';
 import StatusView from '../components/StatusView';
-import Button from '../components/ui/Button';
 import {
   useCustomNutrients,
   useDailySummary,
@@ -122,8 +120,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // Owned here rather than inside CheckInPhotosSummary: the empty-day predicate
   // below needs the same answer, and one subscription keeps refetch-on-focus
   // from firing twice for one query.
-  const { photos: dayPhotos, isLoading: isPhotosLoading } =
-    useCheckInPhotosByDate(selectedDate);
+  const { photos: dayPhotos } = useCheckInPhotosByDate(selectedDate);
   const openCalendar = useCallback(() => {
     setCalendarOpened(true);
     calendarRef.current?.present();
@@ -169,7 +166,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             : []),
           createNativeCartAction(
             () => navigation.navigate('Cart'),
-            t('cart.title', { defaultValue: 'Cart' })
+            t('cart.title', { defaultValue: 'Grocery List' })
           ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
@@ -264,7 +261,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     wakeUp,
     naps,
     bedTime,
-    isLoading: isSleepLoading,
     refetch: refetchSleep,
   } = useSleepDay(selectedDate, { enabled: isConnected });
 
@@ -275,25 +271,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     0,
     4
   );
-  const hasAnyMeasurement = useMemo(() => {
-    // Only MANUAL custom entries make the Measurements section meaningful — a
-    // user with pages of health-synced custom entries should not see the
-    // section flash on their behalf.
-    const manualCustom =
-      customMeasurements?.filter((e) => isManualSource(e.source)) ?? [];
-    if (manualCustom.length > 0) return true;
-    if (!measurements) return false;
-    return (
-      measurements.weight != null ||
-      measurements.body_fat_percentage != null ||
-      measurements.height != null ||
-      measurements.neck != null ||
-      measurements.waist != null ||
-      measurements.hips != null ||
-      measurements.steps != null
-    );
-  }, [measurements, customMeasurements]);
-
   // Manual-only custom entries for the Diary tiles: health-synced entries are
   // filtered here (before presentation) so MeasurementsSummary never receives
   // them; the component itself re-filters defensively too.
@@ -333,37 +310,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   ]);
 
   const isRefreshing = refreshing;
-
-  const isDayEmpty = useMemo(() => {
-    return (
-      !isSleepLoading &&
-      wakeUp === null &&
-      summary?.foodEntries.length === 0 &&
-      // A logged supplement is something the user recorded for this day, so
-      // the day is not empty even with no food or measurement. Exercise is
-      // deliberately not part of this any more: it lives on the Activities
-      // tab, so a day with only a workout reads as empty on this screen.
-      !hasSupplementNutrition(summary?.supplementTotals) &&
-      !hasAnyMeasurement &&
-      // A progress photo is something the user recorded for this day, so it
-      // defeats the empty state exactly as a logged supplement does. Gated on
-      // the load like sleep above: ungated, a day with photos flashes the empty
-      // illustration until they arrive.
-      !isPhotosLoading &&
-      dayPhotos.length === 0 &&
-      naps.length === 0 &&
-      bedTime === null
-    );
-  }, [
-    isSleepLoading,
-    wakeUp,
-    summary,
-    hasAnyMeasurement,
-    isPhotosLoading,
-    dayPhotos,
-    naps,
-    bedTime,
-  ]);
 
   const renderContent = () => {
     if (!isConnectionLoading && !isConnected) {
@@ -456,66 +402,61 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             customNutrients={customNutrients}
           />
         )}
-        {isDayEmpty ? (
-          <>
-            <EmptyDayIllustration />
-            <Button
-              variant="primary"
-              className="px-6 mt-4 self-center"
-              onPress={() =>
-                navigation.navigate('FoodSearch', { date: selectedDate })
-              }
-            >
-              {t('diary.addFood', { defaultValue: 'Add Food' })}
-            </Button>
-          </>
-        ) : (
-          <>
-            <WakeUpCard
-              entry={wakeUp}
-              day={selectedDate}
-              navigation={navigation}
-            />
-            <FoodSummary
-              foodEntries={summary.foodEntries}
-              mealTypes={mealTypes}
-              goals={summary.goals}
-              calorieGoal={summary.calorieGoal}
-              onAddFood={() =>
-                navigation.navigate('FoodSearch', { date: selectedDate })
-              }
-              onAdjustServing={(entry) =>
-                servingSheetRef.current?.present(entry)
-              }
-              onPressMealType={openMealTypeDetail}
-            />
-            <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
-            <BedTimeCard
-              entry={bedTime}
-              day={selectedDate}
-              navigation={navigation}
-            />
-            <MeasurementsSummary
-              measurements={measurements}
-              customMeasurements={manualCustomMeasurements}
-              weightMode={weightMode}
-              bodyUnit={bodyUnit}
-              heightMode={heightMode}
-              onPress={() =>
-                navigation.navigate('MeasurementsAdd', { date: selectedDate })
-              }
-            />
-            {/* Below the measurements: both are the same check-in, keyed on
-                (user_id, entry_date) server-side. */}
-            <CheckInPhotosSummary
-              date={selectedDate}
-              photos={dayPhotos}
-              onPress={() =>
-                navigation.navigate('ProgressPhotos', { date: selectedDate })
-              }
-            />
-          </>
-        )}
+        {/* The day always renders in full. It used to collapse to an
+            illustration and one Add Food button once every query settled
+            empty, which hid the per-meal cards — the very things that offer a
+            place to log on an untouched day. */}
+          <WakeUpCard
+            entry={wakeUp}
+            day={selectedDate}
+            navigation={navigation}
+          />
+          <FoodSummary
+            foodEntries={summary.foodEntries}
+            mealTypes={mealTypes}
+            goals={summary.goals}
+            calorieGoal={summary.calorieGoal}
+            onAddFood={() =>
+              navigation.navigate('FoodSearch', { date: selectedDate })
+            }
+            onAdjustServing={(entry) =>
+              servingSheetRef.current?.present(entry)
+            }
+            onPressMealType={openMealTypeDetail}
+            onLogFood={(mealTypeId) =>
+              navigation.navigate('FoodSearch', {
+                date: selectedDate,
+                // A historical group has no live meal type to log into, so
+                // the search opens on the day with no meal preselected.
+                mealTypeId: mealTypeId ?? undefined,
+              })
+            }
+          />
+          <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
+          <BedTimeCard
+            entry={bedTime}
+            day={selectedDate}
+            navigation={navigation}
+          />
+          <MeasurementsSummary
+            measurements={measurements}
+            customMeasurements={manualCustomMeasurements}
+            weightMode={weightMode}
+            bodyUnit={bodyUnit}
+            heightMode={heightMode}
+            onPress={() =>
+              navigation.navigate('MeasurementsAdd', { date: selectedDate })
+            }
+          />
+          {/* Below the measurements: both are the same check-in, keyed on
+              (user_id, entry_date) server-side. */}
+          <CheckInPhotosSummary
+            date={selectedDate}
+            photos={dayPhotos}
+            onPress={() =>
+              navigation.navigate('ProgressPhotos', { date: selectedDate })
+            }
+          />
       </ScrollView>
     );
   };

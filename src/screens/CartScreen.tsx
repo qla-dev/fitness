@@ -1,19 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCSSVariable } from 'uniwind';
 
-import StatusView from '../components/StatusView';
+import { EmptyState } from '../components/EmptyState';
+import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
+import Icon from '../components/Icon';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import type { RootStackScreenProps } from '../types/navigation';
 
 type CartScreenProps = RootStackScreenProps<'Cart'>;
-
-/** Keeps the block clear of the bottom edge before it is centred. */
-const EMPTY_STATE_BOTTOM_PADDING = 50;
-/** Upward nudge so the centred block does not read as sitting too low. */
-const EMPTY_STATE_OPTICAL_OFFSET = -36;
 
 /**
  * The store cart, reached from the cart button in the Exercises store header.
@@ -23,10 +21,13 @@ const EMPTY_STATE_OPTICAL_OFFSET = -36;
 const CartScreen: React.FC<CartScreenProps> = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const iconColor = useCSSVariable('--color-text-muted') as string;
 
   const header = useScreenHeader({
-    title: t('cart.title', { defaultValue: 'Cart' }),
+    title: t('cart.title', { defaultValue: 'Grocery List' }),
     left: { kind: 'back' },
   });
 
@@ -35,26 +36,24 @@ const CartScreen: React.FC<CartScreenProps> = () => {
       className="flex-1 bg-background"
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
-      {header}
-      {/* Optically centred rather than mathematically centred: a block sitting
-          on the true centre line reads low, so the empty state is padded off
-          the bottom edge and nudged up — the same treatment the empty states
-          in putni-nalozi get. The inner block stays plain StatusView. */}
+      {header && (
+        <View
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+        >
+          {header}
+        </View>
+      )}
       <View
-        className="flex-1"
-        style={{
-          justifyContent: 'center',
-          paddingBottom: insets.bottom + EMPTY_STATE_BOTTOM_PADDING,
-          transform: [{ translateY: EMPTY_STATE_OPTICAL_OFFSET }],
-        }}
+        className="flex-1 justify-center items-center px-6"
+        style={{ paddingBottom: insets.bottom + activeWorkoutBarPadding }}
       >
-        <StatusView
-          icon="cart"
-          iconTone="muted"
-          iconSize={64}
-          title={t('cart.empty', { defaultValue: 'Your cart is empty' })}
-          subtitle={t('cart.emptySubtitle', {
-            defaultValue: 'Programs you add from the store will show up here.',
+        <EmptyState
+          includeHeaderHeight={true}
+          headerHeight={headerHeight}
+          icon={<Icon name="cart" size={32} color={iconColor} />}
+          title={t('cart.empty', { defaultValue: 'Your grocery list is empty' })}
+          description={t('cart.emptySubtitle', {
+            defaultValue: 'Items you add to your grocery list will show up here.',
           })}
         />
       </View>

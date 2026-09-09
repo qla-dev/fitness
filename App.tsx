@@ -72,6 +72,7 @@ import {
   SafeChat,
   SafeExerciseProgram,
   SafeCart,
+  SafeRunOrRide,
   SafeProfile,
   SafeProfileEdit,
   SafeProfileGoals,
@@ -183,6 +184,7 @@ function AppContent() {
     handleAddActivity,
     handleAddMeasurements,
     handleAddProgressPhotos,
+    handleRunOrRide,
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,
@@ -698,9 +700,14 @@ function AppContent() {
             options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
+            name="RunOrRide"
+            component={SafeRunOrRide}
+            options={createStackScreenOptions(t('addSheet.runOrRide', { defaultValue: 'Run or Ride' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
             name="Cart"
             component={SafeCart}
-            options={createStackScreenOptions(t('screens.cart', { defaultValue: 'Cart' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.cart', { defaultValue: 'Grocery List' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Profile"
@@ -858,7 +865,7 @@ function AppContent() {
             })}
           />
         </Stack.Navigator>
-        <AddSheet ref={addSheetRef} getHydrationDate={getActiveDiaryDate} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAddMeasurements={handleAddMeasurements} onAddProgressPhotos={handleAddProgressPhotos} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
+        <AddSheet ref={addSheetRef} getHydrationDate={getActiveDiaryDate} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAddMeasurements={handleAddMeasurements} onAddProgressPhotos={handleAddProgressPhotos} onRunOrRide={handleRunOrRide} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
         <ReauthModal
           visible={showReauthModal}
           expiredConfigId={expiredConfigId}

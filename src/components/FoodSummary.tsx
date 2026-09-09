@@ -1,12 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable } from 'react-native';
-import { useCSSVariable } from 'uniwind';
 import type { FoodEntry } from '../types/foodEntries';
 import type { DailyGoals } from '../types/goals';
 import type { MealType } from '../types/mealTypes';
-import Icon from './Icon';
 import { MEAL_CONFIG } from '../constants/meals';
+import MealLogCard from './MealLogCard';
 import SwipeableFoodRow from './SwipeableFoodRow';
 import {
   calculateEntryNutrition,
@@ -29,6 +28,8 @@ interface FoodSummaryProps {
     mealTypeName: string,
     entries: FoodEntry[]
   ) => void;
+  /** Adds food straight to one meal, from that meal's own Log button. */
+  onLogFood?: (mealTypeId: string | null, mealTypeName: string) => void;
 }
 
 interface MealSectionProps {
@@ -41,6 +42,7 @@ interface MealSectionProps {
     mealTypeName: string,
     entries: FoodEntry[]
   ) => void;
+  onLogFood?: (mealTypeId: string | null, mealTypeName: string) => void;
 }
 
 const EmptyState: React.FC<{ onAddFood?: () => void }> = ({ onAddFood }) => {
@@ -67,9 +69,9 @@ const MealSection: React.FC<MealSectionProps> = ({
   calorieGoal,
   onAdjustServing,
   onPressMealType,
+  onLogFood,
 }) => {
   const { t } = useTranslation();
-  const accentPrimary = useCSSVariable('--color-accent-primary') as string;
 
   const label = getMealGroupLabel(group, t);
   // Single canonical MEAL_CONFIG lookup (read once, reuse both fields). A
@@ -90,60 +92,44 @@ const MealSection: React.FC<MealSectionProps> = ({
     return Math.round((calorieGoal * percentage) / 100);
   }, [group.isSystem, group.name, goals, calorieGoal]);
 
-  const headerContent = (
-    <>
-      <Icon name={icon} size={18} color={accentPrimary} />
-      <Text className="text-base font-bold text-text-secondary flex-1">
-        {label}
-      </Text>
-      {(totalCalories > 0 || targetCalories > 0) && (
-        <View className="bg-accent-primary/5 rounded-full px-2.5 py-0.5">
-          <Text className="text-xs text-accent-primary font-semibold">
-            {totalCalories}
-            {targetCalories > 0 ? ` / ${targetCalories}` : ''}{' '}
-            {t('foodSummary.caloriesUnit', { defaultValue: 'Cal' })}
-          </Text>
-        </View>
-      )}
-      {onPressMealType && (
-        <Icon name="chevron-forward" size={14} color={accentPrimary} />
-      )}
-    </>
-  );
+  const badge =
+    totalCalories > 0 || targetCalories > 0
+      ? `${totalCalories}${targetCalories > 0 ? ` / ${targetCalories}` : ''} ${t(
+          'foodSummary.caloriesUnit',
+          { defaultValue: 'Cal' }
+        )}`
+      : undefined;
 
   return (
-    <View className="bg-surface rounded-xl p-4 overflow-hidden">
-      {onPressMealType ? (
-        <Pressable
-          onPress={() =>
-            onPressMealType(group.mealTypeId, group.name, group.entries)
-          }
-          className="flex-row gap-2 mb-3 items-center"
-          accessibilityRole="button"
-          accessibilityLabel={t('foodSummary.nutritionBreakdown', {
-            defaultValue: '{{label}} nutrition breakdown',
-            label,
-          })}
-        >
-          {headerContent}
-        </Pressable>
-      ) : (
-        <View className="flex-row gap-2 mb-3 items-center">
-          {headerContent}
-        </View>
-      )}
-      {group.entries.map((entry, index) => {
-        const nutrition = calculateEntryNutrition(entry);
-        return (
-          <SwipeableFoodRow
-            key={entry.id || index}
-            entry={entry}
-            nutrition={nutrition}
-            onAdjustServing={onAdjustServing}
-          />
-        );
-      })}
-    </View>
+    <MealLogCard
+      icon={icon}
+      label={label}
+      badge={badge}
+      onOpen={
+        onPressMealType
+          ? () => onPressMealType(group.mealTypeId, group.name, group.entries)
+          : undefined
+      }
+      onLog={
+        onLogFood ? () => onLogFood(group.mealTypeId, group.name) : undefined
+      }
+    >
+      {group.entries.length > 0
+        ? group.entries.map((entry, index) => {
+            const nutrition = calculateEntryNutrition(entry);
+            return (
+              <SwipeableFoodRow
+                key={entry.id || index}
+                compact
+                showDivider={index < group.entries.length - 1}
+                entry={entry}
+                nutrition={nutrition}
+                onAdjustServing={onAdjustServing}
+              />
+            );
+          })
+        : null}
+    </MealLogCard>
   );
 };
 
@@ -155,15 +141,16 @@ const FoodSummary: React.FC<FoodSummaryProps> = ({
   onAddFood,
   onAdjustServing,
   onPressMealType,
+  onLogFood,
 }) => {
-  if (foodEntries.length === 0) {
-    return <EmptyState onAddFood={onAddFood} />;
-  }
+  // Every visible meal keeps its card whether or not anything is logged, so an
+  // untouched day still offers Breakfast/Lunch/Dinner/Snacks to log into.
+  const groups = groupFoodEntriesByMealType(foodEntries, mealTypes, {
+    includeEmpty: true,
+  });
 
-  // groupFoodEntriesByMealType only creates groups that have entries, so the
-  // previous visibleGroups re-filter was redundant.
-  const groups = groupFoodEntriesByMealType(foodEntries, mealTypes);
-
+  // Only reachable before the meal types land (or for an account with none):
+  // with any meal type at all there is a card to log into.
   if (groups.length === 0) {
     return <EmptyState onAddFood={onAddFood} />;
   }
@@ -182,6 +169,7 @@ const FoodSummary: React.FC<FoodSummaryProps> = ({
           calorieGoal={calorieGoal}
           onAdjustServing={onAdjustServing}
           onPressMealType={onPressMealType}
+          onLogFood={onLogFood}
         />
       ))}
     </View>

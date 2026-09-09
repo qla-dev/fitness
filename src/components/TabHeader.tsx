@@ -241,7 +241,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
           <TouchableOpacity
             onPress={withHaptic(onCartPress)}
             accessibilityRole="button"
-            accessibilityLabel={t('cart.title', { defaultValue: 'Cart' })}
+            accessibilityLabel={t('cart.title', { defaultValue: 'Grocery List' })}
             className="items-center justify-center"
             style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >

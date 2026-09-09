@@ -78,7 +78,7 @@ export default function TrendsScreen({ navigation }: Props) {
       [
         createNativeCartAction(
           () => navigation.navigate('Cart'),
-          t('cart.title', { defaultValue: 'Cart' })
+          t('cart.title', { defaultValue: 'Grocery List' })
         ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),
@@ -108,7 +108,7 @@ export default function TrendsScreen({ navigation }: Props) {
         <StatusView
           loading
           title={t('trends.loading', {
-            defaultValue: 'Loading trends...',
+            defaultValue: 'Loading goals...',
           })}
         />
       );
@@ -187,7 +187,7 @@ export default function TrendsScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-background">
       <TabHeader
-        title={t('navigation.trends', { defaultValue: 'Trends' })}
+        title={t('navigation.trends', { defaultValue: 'Goals' })}
         onCartPress={() => navigation.navigate('Cart')}
         onProfilePress={() => navigation.navigate('Profile')}
       />

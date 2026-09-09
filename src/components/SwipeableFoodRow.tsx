@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, View, Text, TouchableOpacity } from 'react-native';
+import {
+  Alert,
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  StyleSheet,
+} from 'react-native';
 import Button from './ui/Button';
 import { useNavigation } from '@react-navigation/native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -17,17 +24,22 @@ import FoodThumbnail from './FoodThumbnail';
 import { useFoodImageSourceContext } from './FoodImageSourceProvider';
 import { diaryEntryImage, diaryEntryImages } from '../utils/foodImages';
 import { useOpenLightbox } from './LightboxProvider';
+import { fireSelectionHaptic } from '../services/haptics';
 
 interface SwipeableFoodRowProps {
   entry: FoodEntry;
   nutrition: EntryNutrition;
   onAdjustServing?: (entry: FoodEntry) => void;
+  compact?: boolean;
+  showDivider?: boolean;
 }
 
 const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
   entry,
   nutrition,
   onAdjustServing,
+  compact = false,
+  showDivider = false,
 }) => {
   const { t } = useTranslation();
   const { preferences } = usePreferences();
@@ -99,6 +111,7 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
   const timeLabel = formatTimeLabel(entry.entry_time, preferences?.time_format);
 
   const handlePress = () => {
+    if (compact) fireSelectionHaptic();
     if (isMealComponent && entry.food_entry_meal_id) {
       navigation.navigate('EditLoggedMeal', {
         foodEntryMealId: entry.food_entry_meal_id,
@@ -140,18 +153,24 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
         overshootRight={false}
         rightThreshold={40}
       >
-        <View className="py-1.5 flex-row items-center bg-surface">
-          {/* Diary rows are deliberately dense, so this slot collapses to
-              nothing when an entry has no photo — a photo-free day keeps the
-              exact layout it had before images existed. */}
-          {entryImage ? (
+        <View
+          className="py-1.5 flex-row items-center bg-surface"
+          style={compact ? { minHeight: 52 } : undefined}
+        >
+          {/* Compact menu rows always keep their image or fallback icon slot. */}
+          {entryImage || compact ? (
             <FoodThumbnail
               image={entryImage}
               getImageSource={getImageSource}
-              size={56}
-              showFallback={false}
-              style={{ marginRight: 8 }}
-              onPress={() => openLightbox(diaryEntryImages(entry), 0, name)}
+              size={compact ? 40 : 56}
+              variant={isMealComponent ? 'meal' : 'food'}
+              showFallback={compact}
+              style={{ marginRight: compact ? 12 : 8 }}
+              onPress={
+                entryImage
+                  ? () => openLightbox(diaryEntryImages(entry), 0, name)
+                  : undefined
+              }
             />
           ) : null}
           <TouchableOpacity
@@ -159,43 +178,70 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
             activeOpacity={0.7}
             onPress={handlePress}
             onLongPress={handleLongPress}
+            accessibilityRole="button"
+            accessibilityLabel={name}
           >
-            <View className="flex-row flex-wrap items-baseline">
-              <Text className="text-md text-text-primary" numberOfLines={1}>
+            <View
+              className={
+                compact ? 'gap-0.5' : 'flex-row flex-wrap items-baseline'
+              }
+            >
+              <Text
+                className={
+                  compact
+                    ? 'text-sm font-semibold text-text-primary'
+                    : 'text-md text-text-primary'
+                }
+                numberOfLines={1}
+              >
                 {name}
               </Text>
-              <Text className="text-sm text-text-secondary" numberOfLines={1}>
-                {' · '}
-                {entry.quantity} {entry.unit}
-              </Text>
-              {timeLabel && (
-                <Text
-                  className="text-xs text-text-link ml-1.5"
-                  numberOfLines={1}
-                >
-                  {timeLabel}
+              <View className="flex-row items-baseline">
+                <Text className="text-sm text-text-secondary" numberOfLines={1}>
+                  {!compact && ' · '}
+                  {entry.quantity} {entry.unit}
                 </Text>
-              )}
+                {timeLabel && (
+                  <Text
+                    className="text-xs text-text-link ml-1.5"
+                    numberOfLines={1}
+                  >
+                    {timeLabel}
+                  </Text>
+                )}
+              </View>
             </View>
           </TouchableOpacity>
-          {canQuickAdjust ? (
-            <Button
-              variant="ghost"
-              onPress={() => onAdjustServing!(entry)}
-              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              className="py-0 px-0"
-              textClassName="text-sm text-text-secondary font-medium"
-            >
-              {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })} ▾`}
-            </Button>
-          ) : (
-            <Text className="text-sm text-text-secondary font-medium mr-2">
-              {Math.round(nutrition.calories)}{' '}
-              {t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}
-            </Text>
-          )}
+          <View style={{ alignSelf: 'stretch', justifyContent: 'center' }}>
+            {canQuickAdjust ? (
+              <Button
+                variant="ghost"
+                onPress={() => onAdjustServing!(entry)}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                className="py-0 px-0"
+                style={{ paddingVertical: 0, paddingHorizontal: 0 }}
+                textClassName="text-sm text-text-secondary font-medium"
+              >
+                {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })} ▾`}
+              </Button>
+            ) : (
+              <Text className="text-sm text-text-secondary font-medium mr-2">
+                {Math.round(nutrition.calories)}{' '}
+                {t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}
+              </Text>
+            )}
+          </View>
         </View>
       </ReanimatedSwipeable>
+      {showDivider && (
+        <View
+          className="bg-border-subtle"
+          style={{
+            height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
+            marginLeft: compact ? 52 : 0,
+          }}
+        />
+      )}
     </Animated.View>
   );
 };

@@ -138,7 +138,7 @@
     "dashboard": "Activities",
     "add": "Add",
     "mealTypes": "Meal Types",
-    "trends": "Trends"
+    "trends": "Goals"
   },
   "familyDiary": {
     "title": "Family Diaries",
@@ -375,6 +375,7 @@
     "title": "Log into journey",
     "hydration": "Hydration",
     "aiMealScan": "AI meal scan",
+    "runOrRide": "Run or Ride",
     "hydrationLoadFailed": "Could not load hydration. Please try again.",
     "food": "Food",
     "exercise": "Exercise",
@@ -438,7 +439,7 @@
     "passkeys": "Passkeys",
     "about": "About",
     "whatsNew": "What's New",
-    "cart": "Cart",
+    "cart": "Grocery List",
     "cyclePregnancy": "Cycle & Pregnancy",
     "cycleSetup": "Cycle Setup",
     "wellnessHub": "Wellness Hub",
@@ -1897,7 +1898,10 @@
     "tapToAddFood": "Tap to add food",
     "caloriesShort": "kcal",
     "caloriesUnit": "Cal",
-    "nutritionBreakdown": "{{label}} nutrition breakdown"
+    "nutritionBreakdown": "{{label}} nutrition breakdown",
+    "log": "Log",
+    "logMeal": "Log food to {{label}}",
+    "mealOptions": "More options for {{label}}"
   },
   "exerciseSummary": {
     "tapToAdd": "Tap to add exercise",
@@ -5150,11 +5154,11 @@
     }
   },
   "trends": {
-    "loading": "Loading trends..."
+    "loading": "Loading goals..."
   },
   "cart": {
-    "title": "Cart",
-    "empty": "Your cart is empty",
-    "emptySubtitle": "Programs you add from the store will show up here."
+    "title": "Grocery List",
+    "empty": "Your grocery list is empty",
+    "emptySubtitle": "Items you add to your grocery list will show up here."
   }
 }

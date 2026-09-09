@@ -73,6 +73,8 @@ const entry = (
   meal_type: string
 ): FoodEntry => ({ id, meal_type_id, meal_type }) as FoodEntry;
 
+const customBreakfastOnly = mealTypes.filter((mt) => mt.id === 'custom-b');
+
 describe('FoodSummary', () => {
   it('renders custom meal types as their own sections (not merged into Other)', () => {
     const view = render(
@@ -102,8 +104,9 @@ describe('FoodSummary', () => {
       />
     );
 
-    // breakfast (0), Pre-Workout (0), lunch (1), Post-Workout (5) — but only
-    // sections with entries render; stable sort keeps breakfast before lunch.
+    // Every visible meal type gets a card now, empty ones included, so this
+    // only pins the ORDER of the canonical system labels and the custom type
+    // among them: breakfast (0), lunch (1), Post-Workout (5).
     const texts = view
       .getAllByText(/Breakfast|Lunch|Post-Workout/)
       .map((n) => n.props.children);
@@ -144,7 +147,7 @@ describe('FoodSummary', () => {
     const view = render(
       <FoodSummary
         foodEntries={[entry('1', 'custom-b', 'breakfast')]}
-        mealTypes={mealTypes}
+        mealTypes={customBreakfastOnly}
       />
     );
 
@@ -152,11 +155,25 @@ describe('FoodSummary', () => {
     expect(view.queryByText('Breakfast')).toBeNull();
   });
 
-  it('uses the neutral icon for a custom category named breakfast', () => {
+  it('keeps the two apart when both a system and a custom breakfast exist', () => {
     const view = render(
       <FoodSummary
         foodEntries={[entry('1', 'custom-b', 'breakfast')]}
         mealTypes={mealTypes}
+      />
+    );
+
+    // Every visible meal type now has a card, so the system Breakfast shows up
+    // empty beside the custom one — each under its own label.
+    expect(view.getByText('breakfast')).toBeTruthy();
+    expect(view.getByText('Breakfast')).toBeTruthy();
+  });
+
+  it('uses the neutral icon for a custom category named breakfast', () => {
+    const view = render(
+      <FoodSummary
+        foodEntries={[entry('1', 'custom-b', 'breakfast')]}
+        mealTypes={customBreakfastOnly}
       />
     );
 
@@ -185,7 +202,7 @@ describe('FoodSummary', () => {
     const { queryByText } = render(
       <FoodSummary
         foodEntries={[entry('e2', 'custom-b', 'breakfast')]}
-        mealTypes={mealTypes}
+        mealTypes={customBreakfastOnly}
         goals={goals}
         calorieGoal={2000}
       />
@@ -209,7 +226,10 @@ describe('FoodSummary', () => {
             meal_type: 'my deleted custom',
           } as FoodEntry,
         ]}
-        mealTypes={mealTypes}
+        // No meal types, so the historical group is the only card on screen:
+        // the system Breakfast card does carry a 500 target and would match
+        // the query below, hiding what this test is actually about.
+        mealTypes={[]}
         goals={goals}
         calorieGoal={2000}
       />

@@ -36,8 +36,7 @@ const THUMB = { width: 44, height: 58, borderRadius: 8 };
  * Carries no weight or delta: the measurements summary directly above already
  * shows them for the same day.
  *
- * A day with no photos gets the same prompt food and exercise get rather than
- * rendering nothing, so the row is a way in and not just a readout.
+ * Days without photos render nothing; adding photos lives in AddSheet.
  */
 const CheckInPhotosSummary: React.FC<CheckInPhotosSummaryProps> = ({
   date,
@@ -58,20 +57,7 @@ const CheckInPhotosSummary: React.FC<CheckInPhotosSummaryProps> = ({
   for (const photo of photos) byType.set(photo.photo_type, photo);
 
   if (byType.size === 0) {
-    return (
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={t('progressPhotos.addDayA11y', {
-          defaultValue: 'Add progress photos for this day',
-        })}
-        className="bg-surface rounded-xl p-4 mb-2 items-center py-6"
-      >
-        <Text className="text-text-muted text-base">
-          {t('progressPhotos.tapToAdd', { defaultValue: 'Tap to add photos' })}
-        </Text>
-      </Pressable>
-    );
+    return null;
   }
 
   const angleLabel = (type: PhotoType): string => {

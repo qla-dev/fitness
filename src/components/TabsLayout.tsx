@@ -215,7 +215,7 @@ function TrendsStackScreen() {
           name="TrendsRoot"
           component={SafeTrends as React.ComponentType}
           options={{
-            title: t('navigation.trends', { defaultValue: 'Trends' }),
+            title: t('navigation.trends', { defaultValue: 'Goals' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
@@ -337,7 +337,7 @@ export function NativeTabsLayout({
           name="Trends"
           component={TrendsStackScreen}
           options={{
-            tabBarLabel: t('navigation.trends', { defaultValue: 'Trends' }),
+            tabBarLabel: t('navigation.trends', { defaultValue: 'Goals' }),
             tabBarIcon: () =>
               ({ sfSymbol: 'chart.xyaxis.line' }) as unknown as AppleIcon,
           }}
@@ -429,9 +429,9 @@ export function FallbackTabsLayout({
         name="Trends"
         component={SafeTrends}
         options={{
-          tabBarLabel: t('navigation.trends', { defaultValue: 'Trends' }),
+          tabBarLabel: t('navigation.trends', { defaultValue: 'Goals' }),
           tabBarAccessibilityLabel: t('navigation.trends', {
-            defaultValue: 'Trends',
+            defaultValue: 'Goals',
           }),
         }}
       />

@@ -51,22 +51,12 @@ describe('CheckInPhotosSummary', () => {
     } as unknown as ReturnType<typeof useCheckInPhotoSource>);
   });
 
-  it('prompts on a day with no photos rather than rendering nothing', () => {
-    // Same affordance food and exercise get: a blank space gives no way in.
+  it('renders nothing on a day with no photos', () => {
     setPhotos([]);
 
-    const { getByText } = renderSummary();
+    const { toJSON } = renderSummary();
 
-    expect(getByText('Tap to add photos')).toBeTruthy();
-  });
-
-  it('opens that day from the prompt', () => {
-    setPhotos([]);
-
-    const { getByText } = renderSummary();
-    fireEvent.press(getByText('Tap to add photos'));
-
-    expect(onPress).toHaveBeenCalled();
+    expect(toJSON()).toBeNull();
   });
 
   it('shows every angle so a gap in the day is visible', () => {

@@ -90,7 +90,7 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       [
         createNativeCartAction(
           () => navigation.navigate('Cart'),
-          t('cart.title', { defaultValue: 'Cart' })
+          t('cart.title', { defaultValue: 'Grocery List' })
         ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),

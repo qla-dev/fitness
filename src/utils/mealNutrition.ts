@@ -86,9 +86,20 @@ export function getFoodEntryMealTypeLabel(
   return getHistoricalMealTypeLabel(entry.meal_type, t);
 }
 
+export interface GroupFoodEntriesOptions {
+  /**
+   * Emit a group for every visible meal type, including the ones with nothing
+   * logged. The diary uses this so each meal keeps its own card (and its own
+   * Log button) on an untouched day; callers that only care about what was
+   * actually eaten leave it off and still get entry-bearing groups only.
+   */
+  includeEmpty?: boolean;
+}
+
 export function groupFoodEntriesByMealType(
   entries: FoodEntry[],
-  mealTypes: MealType[]
+  mealTypes: MealType[],
+  options: GroupFoodEntriesOptions = {}
 ): MealGroup[] {
   const typeMap = new Map<string, MealType>();
   for (const mt of mealTypes) {
@@ -152,15 +163,14 @@ export function groupFoodEntriesByMealType(
   const result: MealGroup[] = [];
   for (const mt of mealTypes) {
     const group = groupMap.get(mt.id);
-    if (group) {
-      result.push({
-        mealTypeId: mt.id,
-        name: mt.name,
-        sortOrder: mt.sort_order ?? 999,
-        entries: group.entries,
-        isSystem: mt.user_id === null,
-      });
-    }
+    if (!group && !options.includeEmpty) continue;
+    result.push({
+      mealTypeId: mt.id,
+      name: mt.name,
+      sortOrder: mt.sort_order ?? 999,
+      entries: group?.entries ?? [],
+      isSystem: mt.user_id === null,
+    });
   }
 
   if (fallbackGroups.size > 0) {

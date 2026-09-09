@@ -310,6 +310,10 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('Chat');
   }, [navigateFromSheet]);
 
+  const handleRunOrRide = useCallback(() => {
+    navigateFromSheet('RunOrRide');
+  }, [navigateFromSheet]);
+
   const handleOpenCycle = useCallback(() => {
     navigateFromSheet('CycleLogModal');
   }, [navigateFromSheet]);
@@ -384,6 +388,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     handleAddActivity,
     handleAddMeasurements,
     handleAddProgressPhotos,
+    handleRunOrRide,
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,
