@@ -71,6 +71,7 @@ import {
   SafeProgressPhotoTimelapse,
   SafeChat,
   SafeExerciseProgram,
+  SafeCart,
   SafeProfile,
   SafeProfileEdit,
   SafeProfileGoals,
@@ -695,6 +696,11 @@ function AppContent() {
             name="ExerciseProgram"
             component={SafeExerciseProgram}
             options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="Cart"
+            component={SafeCart}
+            options={createStackScreenOptions(t('screens.cart', { defaultValue: 'Cart' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Profile"

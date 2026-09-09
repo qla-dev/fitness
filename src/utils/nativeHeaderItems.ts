@@ -124,6 +124,7 @@ export function createNativeHeaderIconButtonItem({
   identifier,
   accessibilityLabel,
   disabled = false,
+  separated = false,
 }: {
   sfSymbol: string;
   onPress: () => void;
@@ -131,6 +132,15 @@ export function createNativeHeaderIconButtonItem({
   identifier: string;
   accessibilityLabel: string;
   disabled?: boolean;
+  /**
+   * iOS 26 draws neighbouring bar items inside ONE shared Liquid Glass
+   * capsule, so two icons side by side read as a single joined control.
+   * `separated` opts the item out of that SHARING only — it still gets a
+   * glass background, just its own, so a row of buttons reads as distinct
+   * buttons. (Do not reach for `hidesSharedBackground` here: that removes the
+   * background altogether and leaves a bare glyph with no capsule at all.)
+   */
+  separated?: boolean;
 }): NativeStackHeaderItem {
   return {
     type: 'button',
@@ -140,7 +150,7 @@ export function createNativeHeaderIconButtonItem({
     tintColor,
     accessibilityLabel,
     identifier,
-    sharesBackground: true,
+    sharesBackground: !separated,
     disabled,
   };
 }

@@ -64,6 +64,7 @@ import {
   getMealTypeDisplayLabel,
 } from '../utils/mealNutrition';
 import {
+  createNativeCartAction,
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
@@ -153,8 +154,8 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         dateLabel: `${formatDateLabel(selectedDate, t, dateLocale)} ▾`,
         t,
         locale: dateLocale,
-        // Family diaries first, then the profile button, so profile stays in
-        // the corner position it occupies on every other tab.
+        // Family diaries first, then the cart, then the profile button, so
+        // profile stays in the corner position it occupies on every other tab.
         trailingActions: [
           ...(hasFamilyDiaries
             ? [
@@ -166,6 +167,10 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
                 },
               ]
             : []),
+          createNativeCartAction(
+            () => navigation.navigate('Cart'),
+            t('cart.title', { defaultValue: 'Cart' })
+          ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
             t('profile.title', { defaultValue: 'Profile' })

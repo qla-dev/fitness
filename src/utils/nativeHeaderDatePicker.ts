@@ -56,6 +56,7 @@ export function setNativeHeaderDatePickerOptions(
                 tintColor: options.tintColor,
                 accessibilityLabel: action.accessibilityLabel,
                 identifier: action.identifier,
+                separated: true,
               })
             )
         : undefined,
@@ -110,9 +111,29 @@ export function setNativeTabHeaderActions(
           tintColor,
           accessibilityLabel: action.accessibilityLabel,
           identifier: action.identifier,
+          // Each tab-header button gets its own Liquid Glass capsule; iOS 26
+          // would otherwise merge the cart and profile into one joined pill.
+          separated: true,
         })
       ),
   });
+}
+
+/**
+ * The store cart, shared by every tab's native header. It sits immediately
+ * before the profile button, so profile keeps the corner position it holds on
+ * every tab.
+ */
+export function createNativeCartAction(
+  onPress: () => void,
+  accessibilityLabel: string
+): NativeHeaderAction {
+  return {
+    sfSymbol: 'cart',
+    onPress,
+    accessibilityLabel,
+    identifier: 'tab-header-cart',
+  };
 }
 
 /** The profile button shared by every tab's native header. */

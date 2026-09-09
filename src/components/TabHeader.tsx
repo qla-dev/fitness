@@ -7,7 +7,15 @@ import Icon from './Icon';
 import type { IconName } from './Icon';
 import { formatDateLabel } from '../utils/dateUtils';
 
-/** Fixed width for the outer slots so the centered title stays centered. */
+/** Tap target for each header button, and the gap that keeps them apart. */
+const BUTTON_SIZE = 44;
+const BUTTON_GAP = 4;
+
+/**
+ * Base width for the outer slots, so the centered title stays centered. Both
+ * sides use the same width; a header carrying more buttons than this fits
+ * grows both slots together rather than shifting the title off centre.
+ */
 const SLOT_WIDTH = 96;
 
 export interface TabHeaderAction {
@@ -33,8 +41,14 @@ interface TabHeaderProps {
    */
   onPreviousDay?: () => void;
   onNextDay?: () => void;
-  /** Extra action placed left of the profile button (e.g. family diaries). */
+  /** Extra action placed left of the cart button (e.g. family diaries). */
   action?: TabHeaderAction;
+  /**
+   * Opens the store cart. Sits immediately left of the profile button, so
+   * profile keeps the corner position it holds on every tab. Omitted by
+   * headers that are not a tab root, the same way the profile button is.
+   */
+  onCartPress?: () => void;
   /**
    * Opens the profile screen. Passed in rather than resolved from navigation
    * context so the bar stays a plain presentational component; headers that
@@ -65,6 +79,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
   onPreviousDay,
   onNextDay,
   action,
+  onCartPress,
   onProfilePress,
   skipTopInset,
   dateControls,
@@ -74,6 +89,15 @@ const TabHeader: React.FC<TabHeaderProps> = ({
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
   const insets = useSafeAreaInsets();
+  // Both slots share one width so the title stays centred, and it only grows
+  // past the base when a header actually carries more buttons than that fits
+  // (the family-diary bar: action + cart + profile).
+  const buttonCount =
+    (action ? 1 : 0) + (onCartPress ? 1 : 0) + (onProfilePress ? 1 : 0);
+  const slotWidth = Math.max(
+    SLOT_WIDTH,
+    buttonCount * BUTTON_SIZE + Math.max(buttonCount - 1, 0) * BUTTON_GAP
+  );
   const [secondaryTextColor, primaryTextColor] = useCSSVariable([
     '--color-text-secondary',
     '--color-text-primary',
@@ -103,7 +127,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
     >
       <View
         className="flex-row items-center"
-        style={{ minWidth: SLOT_WIDTH, minHeight: 44 }}
+        style={{ minWidth: slotWidth, minHeight: 44 }}
       >
         {onPreviousDay && (
           <TouchableOpacity
@@ -182,9 +206,11 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         </Text>
       </View>
 
+      {/* Buttons are spaced apart rather than flush, so a row of icons reads
+          as separate controls instead of one joined block. */}
       <View
         className="flex-row items-center justify-end"
-        style={{ width: SLOT_WIDTH, minHeight: 44 }}
+        style={{ width: slotWidth, minHeight: 44, gap: BUTTON_GAP }}
       >
         {action ? (
           <TouchableOpacity
@@ -192,18 +218,29 @@ const TabHeader: React.FC<TabHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={action.accessibilityLabel}
             className="items-center justify-center"
-            style={{ width: 44, height: 44 }}
+            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
             <Icon name={action.icon} size={22} color={primaryTextColor} />
           </TouchableOpacity>
         ) : null}
+        {onCartPress && (
+          <TouchableOpacity
+            onPress={onCartPress}
+            accessibilityRole="button"
+            accessibilityLabel={t('cart.title', { defaultValue: 'Cart' })}
+            className="items-center justify-center"
+            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
+          >
+            <Icon name="cart" size={22} color={primaryTextColor} />
+          </TouchableOpacity>
+        )}
         {onProfilePress && (
           <TouchableOpacity
             onPress={onProfilePress}
             accessibilityRole="button"
             accessibilityLabel={t('profile.title', { defaultValue: 'Profile' })}
             className="items-center justify-center"
-            style={{ width: 44, height: 44 }}
+            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
             <Icon name="profile" size={24} color={primaryTextColor} />
           </TouchableOpacity>

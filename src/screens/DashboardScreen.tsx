@@ -65,6 +65,7 @@ import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { formatDateLabel } from '../utils/dateUtils';
 import { buildHourlyExerciseMinutes } from '../utils/hourlyActivity';
 import {
+  createNativeCartAction,
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
@@ -137,7 +138,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         dateLabel: `${formatDateLabel(selectedDate, t, dateLocale)} ▾`,
         t,
         locale: dateLocale,
+        // Cart first, then profile, so profile stays in the corner
+        // position it occupies on every tab.
         trailingActions: [
+          createNativeCartAction(
+            () => navigation.navigate('Cart'),
+            t('cart.title', { defaultValue: 'Cart' })
+          ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
             t('profile.title', { defaultValue: 'Profile' })
@@ -477,6 +484,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           title={t('navigation.dashboard', { defaultValue: 'Activities' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
+          onCartPress={() => navigation.navigate('Cart')}
           onProfilePress={() => navigation.navigate('Profile')}
         />
       ) : null}

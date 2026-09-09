@@ -1,7 +1,9 @@
 import {
+  createNativeCartAction,
   createNativeHeaderDatePickerItems,
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
+  setNativeTabHeaderActions,
 } from '../../src/utils/nativeHeaderDatePicker';
 import type { TFunction } from 'i18next';
 
@@ -111,5 +113,60 @@ describe('nativeHeaderDatePicker', () => {
     setNativeHeaderDatePickerOptions({ setOptions }, options);
 
     expect(configuredOptions.unstable_headerRightItems).toBeUndefined();
+  });
+});
+
+describe('tab header trailing actions', () => {
+  const t = ((key: string, values?: { defaultValue?: string }) =>
+    values?.defaultValue ?? key) as TFunction;
+
+  it('puts the cart before the profile button so profile keeps the corner', () => {
+    const setOptions = jest.fn();
+    const onCart = jest.fn();
+
+    setNativeHeaderDatePickerOptions({ setOptions }, {
+      selectedDate: '2025-01-15',
+      onDatePress: jest.fn(),
+      tintColor: '#0A84FF',
+      accessibilityLabel: 'Choose diary date',
+      t,
+      locale: 'en-US',
+      trailingActions: [
+        createNativeCartAction(onCart, 'Cart'),
+        createNativeProfileAction(jest.fn(), 'Profile'),
+      ],
+    });
+
+    const items = setOptions.mock.calls[0][0].unstable_headerRightItems();
+    expect(items.map((item: { identifier: string }) => item.identifier)).toEqual(
+      ['tab-header-cart', 'tab-header-profile']
+    );
+
+    items[0].onPress();
+    expect(onCart).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Two adjacent items that share a background merge into one iOS 26 glass
+   * capsule, which reads as a single joined control. Each tab-header button
+   * keeps its own capsule instead.
+   */
+  it('gives every trailing button its own glass capsule', () => {
+    const setOptions = jest.fn();
+
+    setNativeTabHeaderActions(
+      { setOptions },
+      [
+        createNativeCartAction(jest.fn(), 'Cart'),
+        createNativeProfileAction(jest.fn(), 'Profile'),
+      ],
+      '#0A84FF'
+    );
+
+    const items = setOptions.mock.calls[0][0].unstable_headerRightItems();
+    for (const item of items) {
+      expect(item.sharesBackground).toBe(false);
+      expect(item.hidesSharedBackground).toBeUndefined();
+    }
   });
 });

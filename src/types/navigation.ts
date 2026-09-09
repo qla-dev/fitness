@@ -76,6 +76,8 @@ export type RootStackParamList = {
   ExercisesLibrary: undefined;
   /** A training program's product page, opened from the Exercises store. */
   ExerciseProgram: { programId: string };
+  /** The store cart, opened from the cart button in the Exercises store header. */
+  Cart: undefined;
   WorkoutPresetsLibrary: undefined;
   WorkoutPresetDetail: { preset: WorkoutPreset; updatedPreset?: WorkoutPreset };
   WorkoutPresetForm:

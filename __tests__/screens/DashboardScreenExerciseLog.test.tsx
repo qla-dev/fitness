@@ -97,6 +97,15 @@ jest.mock('../../src/services/dataMode', () => ({
 
 jest.mock('../../src/utils/nativeHeaderDatePicker', () => ({
   setNativeHeaderDatePickerOptions: jest.fn(),
+  createNativeCartAction: (
+    onPress: () => void,
+    accessibilityLabel: string
+  ) => ({
+    sfSymbol: 'cart',
+    onPress,
+    accessibilityLabel,
+    identifier: 'tab-header-cart',
+  }),
   createNativeProfileAction: (
     onPress: () => void,
     accessibilityLabel: string

@@ -15,6 +15,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import {
+  createNativeCartAction,
   createNativeProfileAction,
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
@@ -78,7 +79,8 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
 
   // The tab has no date, so it never went through the shared date-picker
-  // helper; it still needs the profile button every tab header carries.
+  // helper; it still needs the cart and profile buttons every tab header
+  // carries.
   useLayoutEffect(() => {
     if (!usesNativeTabs || isLogs) return;
     setNativeTabHeaderActions(
@@ -86,6 +88,10 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       // whose header options the bottom-tab navigation type does not describe.
       navigation as unknown as NativeTabHeaderNavigation,
       [
+        createNativeCartAction(
+          () => navigation.navigate('Cart'),
+          t('cart.title', { defaultValue: 'Cart' })
+        ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),
           t('profile.title', { defaultValue: 'Profile' })
@@ -233,6 +239,7 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       {!isLogs && !usesNativeTabs && (
         <TabHeader
           title={t('screens.library.title', { defaultValue: 'Library' })}
+          onCartPress={() => navigation.navigate('Cart')}
           onProfilePress={() => navigation.navigate('Profile')}
         />
       )}

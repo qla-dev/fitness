@@ -59,6 +59,7 @@ type LibraryRow =
 
 const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   navigation,
+  route,
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -534,49 +535,66 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     );
   };
 
-  // The screen is both a tab root and a Library drill-in. Only the pushed
-  // copy has somewhere to go back to, and only the tab root carries the
-  // profile button every tab header shows.
-  const isTabRoot = !navigation.canGoBack();
+  // The screen is both a tab root and a Library drill-in, and only the tab
+  // root carries the store chrome. Decided by the route name, NOT by
+  // `navigation.canGoBack()`: a tab navigator's router answers GO_BACK once
+  // its history holds a second entry, so arriving on the store from any other
+  // tab made canGoBack() true here too and collapsed the store header into the
+  // drill-in one.
+  const isTabRoot = (route.name as string) !== 'ExercisesLibrary';
+  const filterItem = ownershipFilterHeaderMenu({
+    noun: t('exerciseLibrary.noun', { defaultValue: 'exercises' }),
+    labels: {
+      all: t('ownership.all', { defaultValue: 'All' }),
+      mine: t('ownership.mine', { defaultValue: 'Mine' }),
+      family: t('ownership.family', { defaultValue: 'Family' }),
+      public: t('ownership.public', { defaultValue: 'Public' }),
+    },
+    showLabel: t('ownership.show', { defaultValue: 'Show' }),
+    filterAccessibilityLabel: t('ownership.filter', {
+      defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
+    }),
+    identifier: 'exercises-library-filter',
+    filter: ownershipFilter,
+    onSelect: setOwnershipFilter,
+  });
   const header = useScreenHeader({
     // The tab root is the program store; the Library drill-in is still the
     // exercise library.
     title: isTabRoot
       ? t('programs.storeTab', { defaultValue: 'Store' })
       : t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
-    left: isTabRoot ? null : { kind: 'back' },
-    right: [
-      ...(isTabRoot
-        ? [
-            {
-              kind: 'icon' as const,
-              sfSymbol: 'person.crop.circle',
-              ionicon: 'person-circle-outline',
-              accessibilityLabel: t('profile.title', {
-                defaultValue: 'Profile',
-              }),
-              identifier: 'exercises-library-profile',
-              onPress: () => navigation.navigate('Profile'),
-            },
-          ]
-        : []),
-      ownershipFilterHeaderMenu({
-        noun: t('exerciseLibrary.noun', { defaultValue: 'exercises' }),
-        labels: {
-          all: t('ownership.all', { defaultValue: 'All' }),
-          mine: t('ownership.mine', { defaultValue: 'Mine' }),
-          family: t('ownership.family', { defaultValue: 'Family' }),
-          public: t('ownership.public', { defaultValue: 'Public' }),
-        },
-        showLabel: t('ownership.show', { defaultValue: 'Show' }),
-        filterAccessibilityLabel: t('ownership.filter', {
-          defaultValue: 'Filter {{noun}}, filtered to {{filter}}',
-        }),
-        identifier: 'exercises-library-filter',
-        filter: ownershipFilter,
-        onSelect: setOwnershipFilter,
-      }),
-    ],
+    // The store keeps the cart and profile pair every tab header carries in
+    // the right corner, so the filter moves to the leading slot the back
+    // button would otherwise occupy. The drill-in still needs that slot for
+    // back, so there the filter stays on the right.
+    left: isTabRoot ? filterItem : { kind: 'back' },
+    right: isTabRoot
+      ? [
+          {
+            kind: 'icon' as const,
+            sfSymbol: 'cart',
+            ionicon: 'cart-outline',
+            accessibilityLabel: t('cart.title', { defaultValue: 'Cart' }),
+            identifier: 'exercises-library-cart',
+            onPress: () => navigation.navigate('Cart'),
+            // Own glass capsule each, or iOS 26 merges the pair into one
+            // joined control.
+            separated: true,
+          },
+          {
+            kind: 'icon' as const,
+            sfSymbol: 'person.crop.circle',
+            ionicon: 'person-circle-outline',
+            accessibilityLabel: t('profile.title', {
+              defaultValue: 'Profile',
+            }),
+            identifier: 'exercises-library-profile',
+            onPress: () => navigation.navigate('Profile'),
+            separated: true,
+          },
+        ]
+      : [filterItem],
   });
 
   return (

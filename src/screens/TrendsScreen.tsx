@@ -21,6 +21,7 @@ import {
 } from '../utils/healthTrendPreferences';
 import { weightFromKg } from '../utils/unitConversions';
 import {
+  createNativeCartAction,
   createNativeProfileAction,
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
@@ -75,6 +76,10 @@ export default function TrendsScreen({ navigation }: Props) {
     setNativeTabHeaderActions(
       navigation as unknown as NativeTabHeaderNavigation,
       [
+        createNativeCartAction(
+          () => navigation.navigate('Cart'),
+          t('cart.title', { defaultValue: 'Cart' })
+        ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),
           t('profile.title', { defaultValue: 'Profile' })
@@ -183,6 +188,7 @@ export default function TrendsScreen({ navigation }: Props) {
     <View className="flex-1 bg-background">
       <TabHeader
         title={t('navigation.trends', { defaultValue: 'Trends' })}
+        onCartPress={() => navigation.navigate('Cart')}
         onProfilePress={() => navigation.navigate('Profile')}
       />
       {renderedContent}

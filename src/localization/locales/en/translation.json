@@ -438,6 +438,7 @@
     "passkeys": "Passkeys",
     "about": "About",
     "whatsNew": "What's New",
+    "cart": "Cart",
     "cyclePregnancy": "Cycle & Pregnancy",
     "cycleSetup": "Cycle Setup",
     "wellnessHub": "Wellness Hub",
@@ -5150,5 +5151,10 @@
   },
   "trends": {
     "loading": "Loading trends..."
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "emptySubtitle": "Programs you add from the store will show up here."
   }
 }

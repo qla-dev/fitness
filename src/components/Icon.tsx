@@ -10,6 +10,7 @@ import { Platform, StyleProp, ViewStyle } from 'react-native';
  */
 const ICON_MAP = {
   hydration: { sf: 'drop.fill', ion: 'water' },
+  cart: { sf: 'cart', ion: 'cart-outline' },
   // Navigation
   'chevron-down': { sf: 'chevron.down', ion: 'chevron-down' },
   'chevron-up': { sf: 'chevron.up', ion: 'chevron-up' },

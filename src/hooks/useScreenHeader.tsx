@@ -121,6 +121,13 @@ export type HeaderItem =
       useIoniconOnIOS?: boolean;
       accessibilityLabel: string;
       identifier?: string;
+      /**
+       * Give this button its own iOS 26 Liquid Glass capsule instead of the
+       * one it would otherwise share with the item next to it. Set it on every
+       * icon in a slot that holds more than one, or they render as a single
+       * joined control.
+       */
+      separated?: boolean;
     }
   | {
       // Sugar for `text` + role:'primary' + weight 600. When `label` is
@@ -550,6 +557,7 @@ function buildNativeItem(
         accessibilityLabel: item.accessibilityLabel,
         onPress: press,
         disabled: itemIsDisabled(item),
+        separated: item.separated,
       });
     case 'text':
     case 'primary': {
@@ -734,6 +742,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
       label: resolveItemLabel(item, t),
       busyLabel: resolveItemBusyLabel(item, t),
       sfSymbol: item.kind === 'icon' ? item.sfSymbol : undefined,
+      separated: item.kind === 'icon' ? !!item.separated : undefined,
       role: 'role' in item ? item.role : undefined,
       disabled: itemIsDisabled(item),
       busy: itemIsBusy(item),
