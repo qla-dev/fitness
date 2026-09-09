@@ -18,6 +18,9 @@ jest.mock('../../src/hooks', () => ({
   useExercisesLibrary: jest.fn(),
   useServerConnection: jest.fn(),
   useProfile: jest.fn(() => ({ profile: undefined, isLoading: false })),
+  // The store shelves resolve program covers through the API; this suite is
+  // about the library list, so every program keeps its icon.
+  useProgramThumbnails: jest.fn(() => ({})),
 }));
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({

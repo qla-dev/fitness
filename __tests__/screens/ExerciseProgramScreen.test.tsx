@@ -106,7 +106,14 @@ describe('ExerciseProgramScreen', () => {
       expect(thumbnail.props.source).toBeNull();
       expect(thumbnail.props.fallback).toBeTruthy();
     }
-    expect(fetchExercisesPage).not.toHaveBeenCalled();
+    // The rows stay unresolved until they are tapped. The one lookup that does
+    // run on mount is the program's cover, which reads the first movement.
+    expect(fetchExercisesPage).toHaveBeenCalledTimes(1);
+    expect(fetchExercisesPage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        searchTerm: program.sessions[0].exercises[0].name,
+      })
+    );
     fireEvent.press(
       screen.getByRole('button', { name: program.sessions[0].name })
     );
