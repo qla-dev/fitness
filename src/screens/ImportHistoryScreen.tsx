@@ -395,7 +395,7 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
             <Text className="text-text-primary text-base">
               {t('importHistory.idle.description', {
                 defaultValue:
-                  'Import all of your past {{source}} data into SparkyFitness with a one-time backfill of every enabled metric, from your earliest recorded data up to today.',
+                  'Import all of your past {{source}} data into qla.fit with a one-time backfill of every enabled metric, from your earliest recorded data up to today.',
                 source: healthSourceName,
               })}
             </Text>

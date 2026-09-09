@@ -1055,7 +1055,7 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
             <Text className="text-text-secondary text-sm">
               {t('foodScan.photo.setupHelp', {
                 defaultValue:
-                  'Open SparkyFitness in a browser and visit Settings → AI to add an AI provider, then return here.',
+                  'Open qla.fit in a browser and visit Settings → AI to add an AI provider, then return here.',
               })}
             </Text>
             <View className="gap-2 mt-2">

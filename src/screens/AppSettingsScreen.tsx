@@ -186,7 +186,7 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
             title={t('settings.language.title', 'Language')}
             subtitle={t(
               'languageSettings.subtitle',
-              'Use your device language or choose a language for SparkyFitness.'
+              'Use your device language or choose a language for qla.fit.'
             )}
             subtitleNumberOfLines={0}
             rightAccessory={

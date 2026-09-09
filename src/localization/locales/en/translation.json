@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "qla.fit",
     "save": "Save",
     "saving": "Saving…",
     "back": "Back",
@@ -126,7 +127,7 @@
     }
   },
   "languageSettings": {
-    "subtitle": "Use your device language or choose a language for SparkyFitness."
+    "subtitle": "Use your device language or choose a language for qla.fit."
   },
   "navigation": {
     "settings": "Settings",
@@ -218,7 +219,7 @@
     },
     "exactAlarm": {
       "title": "On-time alerts",
-      "message": "Android delays scheduled alerts unless SparkyFitness is allowed to set exact alarms. Enable \"Alarms & reminders\" so rest timers and medication reminders ring on time.",
+      "message": "Android delays scheduled alerts unless qla.fit is allowed to set exact alarms. Enable \"Alarms & reminders\" so rest timers and medication reminders ring on time.",
       "notNow": "Not Now",
       "openSettings": "Open Settings"
     },
@@ -372,7 +373,7 @@
     "nextSet": "Next Set"
   },
   "addSheet": {
-    "title": "Log into journey",
+    "title": "Log data into",
     "hydration": "Hydration",
     "aiMealScan": "AI meal scan",
     "runOrRide": "Run or Ride",
@@ -562,19 +563,19 @@
     "healthConnect": "Health Connect",
     "appleSummary": "Reads selected data from Apple Health and syncs it to your self-hosted server.",
     "connectSummary": "Reads selected data from Health Connect and syncs it to your self-hosted server.",
-    "appleDetail": "SparkyFitness reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted SparkyFitness server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → SparkyFitnessMobile",
-    "connectDetail": "SparkyFitness reads the health data you select below using Health Connect. If sync is enabled, data is synchronized only between your device and your self-hosted SparkyFitness server (manual or background).",
+    "appleDetail": "qla.fit reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → SparkyFitnessMobile",
+    "connectDetail": "qla.fit reads the health data you select below using Health Connect. If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).",
     "title": "Health Data to Sync",
     "notMedicalAdvice": "Not medical advice.",
     "consultProfessional": "Consult a healthcare professional for medical advice, diagnosis, or treatment.",
     "enableAll": "Enable All Health Metrics",
     "batteryNote": "Enabling many health metrics may increase battery usage. Each enabled metric allows the app to wake in the background when new data is available.",
     "writeTitle": "Write to {{store}}",
-    "writeSummary": "Syncs the data you log in SparkyFitness out to {{store}}, keeping the two in sync.",
+    "writeSummary": "Syncs the data you log in qla.fit out to {{store}}, keeping the two in sync.",
     "removeFrom": "Remove from {{store}}",
     "allTime": "All time",
     "pickDateRange": "Pick a date range…",
-    "removeData": "Remove SparkyFitness data from {{store}}",
+    "removeData": "Remove qla.fit data from {{store}}",
     "source": "Source:",
     "syncMetricLabel": "Sync {{metric}}",
     "syncMetricHint": "Toggles synchronization for this health metric.",
@@ -599,7 +600,7 @@
     "sso": "SSO",
     "passkey": "Passkey",
     "connect": "Connect",
-    "connectTitle": "Connect to SparkyFitness",
+    "connectTitle": "Connect to qla.fit",
     "signInWithPasskey": "Sign in with Passkey",
     "orSignInWith": "Or sign in with",
     "noMethods": "No standard sign-in methods are currently enabled on this server. Please use an API Key or contact an administrator.",
@@ -663,8 +664,8 @@
   },
   "onboarding": {
     "subtitle": "Your self-hosted fitness tracker",
-    "learnMoreTitle": "Learn more about SparkyFitness",
-    "learnMoreBody": "SparkyFitness helps you track your food, workouts, and health data in one place.",
+    "learnMoreTitle": "Learn more about qla.fit",
+    "learnMoreBody": "qla.fit helps you track your food, workouts, and health data in one place.",
     "learnMorePrivacy": "It runs on your own server so your data stays private.",
     "errors": {
       "validFrontendUrl": "Enter a valid Frontend URL",
@@ -766,12 +767,12 @@
     },
     "removal": {
       "removed": "Removed",
-      "deleted": "Deleted SparkyFitness data from {{store}}.",
+      "deleted": "Deleted qla.fit data from {{store}}.",
       "partial": "Partially removed",
       "partialMessage": "Some records couldn't be deleted from {{store}}.",
       "errorMessage": "Could not remove data from {{store}}.",
       "confirmTitle": "Remove all {{store}} data",
-      "confirmMessage": "Delete every nutrition and hydration record SparkyFitness wrote to {{store}}, and turn writeback off? Your SparkyFitness diary and records from other apps are not affected."
+      "confirmMessage": "Delete every nutrition and hydration record qla.fit wrote to {{store}}, and turn writeback off? Your qla.fit diary and records from other apps are not affected."
     },
     "range": {
       "title": "Sync Range",
@@ -909,7 +910,7 @@
   "dashboardSettings": {
     "updateFailed": "Failed to update setting.",
     "noCustomNutrients": "No custom nutrients",
-    "customNutrientsDescription": "Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Activities tab.",
+    "customNutrientsDescription": "Custom nutrients are created in the qla.fit web app. Once you add some, they will appear here so you can choose which show on your Activities tab.",
     "title": "Activities Settings",
     "askSparky": "Ask Sparky",
     "askSparkySubtitle": "Show the Ask Sparky chat launcher on the Activities tab",
@@ -931,7 +932,7 @@
     "updateFailed": "Failed to update setting.",
     "limitReached": "Limit reached",
     "noCustomNutrients": "No custom nutrients",
-    "customNutrientsDescription": "Custom nutrients are created in the SparkyFitness web app. Once you add some, they will appear here so you can choose which show on your Nutrition tab.",
+    "customNutrientsDescription": "Custom nutrients are created in the qla.fit web app. Once you add some, they will appear here so you can choose which show on your Nutrition tab.",
     "title": "Nutrition Settings",
     "summary": "Nutrition Summary",
     "summarySubtitle": "Show calories and macronutrients",
@@ -943,7 +944,7 @@
     "title": "About",
     "version": "Version {{version}} ({{build}})",
     "descriptionTitle": "About this app",
-    "description": "SparkyFitness is an open-source nutrition, exercise, and health-data tracker that syncs to your own server. This app is the mobile companion for logging meals, workouts, and measurements on the go.",
+    "description": "qla.fit is an open-source nutrition, exercise, and health-data tracker that syncs to your own server. This app is the mobile companion for logging meals, workouts, and measurements on the go.",
     "github": "Project on GitHub",
     "documentation": "Documentation",
     "privacyPolicy": "Privacy Policy",
@@ -959,7 +960,7 @@
   "notificationSettings": {
     "title": "Notifications",
     "allow": "Allow Notifications",
-    "allowSubtitle": "Master switch for all alerts from SparkyFitness.",
+    "allowSubtitle": "Master switch for all alerts from qla.fit.",
     "alerts": "Alerts",
     "restTimer": "Rest Timer",
     "restTimerSubtitle": "Alert when a rest period ends, even in the background.",
@@ -975,7 +976,7 @@
     "enableNotifications": "Enable Notifications",
     "openSettings": "Open Settings",
     "permissionTitle": "Grant permissions",
-    "permissionBody": "SparkyFitness alerts (rest timers, fasting goals, medication reminders) won't fire.",
+    "permissionBody": "qla.fit alerts (rest timers, fasting goals, medication reminders) won't fire.",
     "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}."
   },
   "workoutSettings": {
@@ -2112,7 +2113,7 @@
     "photo": {
       "frameMeal": "Frame the whole meal",
       "notSetUp": "AI photo estimates aren't set up",
-      "setupHelp": "Open SparkyFitness in a browser and visit Settings → AI to add an AI provider, then return here.",
+      "setupHelp": "Open qla.fit in a browser and visit Settings → AI to add an AI provider, then return here.",
       "logManually": "Log manually"
     },
     "barcode": {
@@ -2653,7 +2654,7 @@
       "widget": {
         "eyebrow": "HOME SCREEN WIDGET",
         "headline": "Calories on your home screen",
-        "body": "See where your day stands at a glance. Add SparkyFitness from your home screen's widget gallery."
+        "body": "See where your day stands at a glance. Add qla.fit from your home screen's widget gallery."
       },
       "photo": {
         "eyebrow": "AI PHOTO SCAN",
@@ -2687,7 +2688,7 @@
     "conditions": "Conditions",
     "disclaimerTitle": "Disclaimer & Complete",
     "medicalDisclaimer": "Medical Disclaimer",
-    "disclaimerBody": "The SparkyFitness Wellness and Reproductive Health Tracker is designed to help you track predictions, symptoms, and physiological parameters. It is NOT intended to be used as a contraceptive method or as a diagnostic/treatment tool.",
+    "disclaimerBody": "The qla.fit Wellness and Reproductive Health Tracker is designed to help you track predictions, symptoms, and physiological parameters. It is NOT intended to be used as a contraceptive method or as a diagnostic/treatment tool.",
     "consultProfessional": "Always consult with a qualified medical professional for health concerns.",
     "acceptInitialize": "Accept & Initialize Profile",
     "mode": {
@@ -2736,7 +2737,7 @@
       "serverChanged": "The active server changed during the import, so it stopped. Start again to import into the current server.",
       "alreadyRunning": "Another sync is running right now. Wait a moment for it to finish, then start the import.",
       "title": "Import your health history",
-      "description": "Import all of your past {{source}} data into SparkyFitness with a one-time backfill of every enabled metric, from your earliest recorded data up to today.",
+      "description": "Import all of your past {{source}} data into qla.fit with a one-time backfill of every enabled metric, from your earliest recorded data up to today.",
       "source": "Source",
       "dataTypes": "Data types enabled",
       "timing": "Takes a few minutes. You can pause any time and pick up where you left off."
@@ -4957,7 +4958,7 @@
     "chooseLibrary": "Choose from Library",
     "remove": "Remove Photo",
     "cameraPermission": "Camera permission is required",
-    "cameraPermissionHint": "Enable camera access for SparkyFitness in Settings.",
+    "cameraPermissionHint": "Enable camera access for qla.fit in Settings.",
     "compare": "Compare",
     "compareTitle": "Compare",
     "before": "Before",

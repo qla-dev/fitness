@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import AddSheet, { type AddSheetRef } from '../../src/components/AddSheet';
 import * as dataMode from '../../src/services/dataMode';
+jest.mock('expo-font', () => ({ useFonts: () => [true, null] }));
 
 jest.mock('../../src/components/HydrationSheet', () => {
   const React = require('react');
@@ -91,7 +92,10 @@ describe('AddSheet', () => {
   const originalPlatform = Platform.OS;
   it('shows the header and keeps AI meal scan inactive', () => {
     const screen = renderAddSheet();
-    expect(screen.getByText('Log into journey')).toBeTruthy();
+    // The title mixes faces: the lead-in stays in the UI font while the
+    // wordmark carries the brand face and the accent on ".fit", so the two
+    // halves are separate Text nodes.
+    expect(screen.getByText('Log data into qla.fit')).toBeTruthy();
     fireEvent.press(screen.getByText('AI meal scan'));
     expect(mockBottomSheetControls.dismiss).not.toHaveBeenCalled();
     expect(screen.getByText('Hydration')).toBeTruthy();

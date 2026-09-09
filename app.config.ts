@@ -7,7 +7,7 @@ const {
   DEV_BUNDLE_IDENTIFIER,
 } = require('./app.identifiers.js');
 
-const APP_NAME = 'SparkyFitness';
+const APP_NAME = 'qla.fit';
 const APP_SLUG = 'fitness';
 const ANDROID_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
 const IOS_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
@@ -142,15 +142,15 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       supportsTablet: false,
       infoPlist: {
         NSLocalNetworkUsageDescription:
-          'SparkyFitness connects to self-hosted servers on your local network.',
+          'qla.fit connects to self-hosted servers on your local network.',
         // Required by the food/meal photo picker and the label/barcode
         // scanner. iOS terminates the app on first use without these, and App
         // Review rejects a binary that requests either without a purpose
         // string.
         NSCameraUsageDescription:
-          'SparkyFitness uses the camera to photograph foods and meals, and to scan barcodes and nutrition labels.',
+          'qla.fit uses the camera to photograph foods and meals, and to scan barcodes and nutrition labels.',
         NSPhotoLibraryUsageDescription:
-          'SparkyFitness lets you choose photos from your library for your foods, meals, and diary entries.',
+          'qla.fit lets you choose photos from your library for your foods, meals, and diary entries.',
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: false,
         },
@@ -165,14 +165,20 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       entitlements: {
         'com.apple.security.application-groups': [getIosAppGroup()],
       },
-      icon: './assets/icons/appicon.icon',
+      // The flat artwork, not the layered Icon Composer bundle: this icon is a
+      // single composed square (its own blue background baked in), which is the
+      // opposite of what a .icon document's transparent layers expect.
+      icon: './assets/icons/appicon.png',
     },
     android: {
       package: isDev ? DEV_PACKAGE : PROD_PACKAGE,
       permissions: androidPermissions,
       adaptiveIcon: {
+        // The launcher mask crops the outer third, so the foreground holds the
+        // artwork scaled into the safe zone and the background is the
+        // artwork's own blue — sampled from it, so the two meet seamlessly.
         foregroundImage: './assets/icons/adaptiveicon.png',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#028FFE',
       },
     },
     plugins: [

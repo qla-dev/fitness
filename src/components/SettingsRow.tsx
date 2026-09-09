@@ -3,8 +3,6 @@ import {
   View,
   Text,
   Pressable,
-  Platform,
-  StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -12,6 +10,7 @@ import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
 import MenuItemIcon from './MenuItemIcon';
+import MenuItem, { MenuItemDivider } from './MenuItem';
 
 const SettingsRowGroupContext = createContext<{ grouped: boolean }>({
   grouped: false,
@@ -55,17 +54,13 @@ export const SettingsRowGroup: React.FC<SettingsRowGroupProps> = ({
             <React.Fragment key={i}>
               {child}
               {i < items.length - 1 && (
-                <View
-                  className="bg-border-subtle"
-                  style={{
-                    height:
-                      Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
-                    marginStart:
-                      React.isValidElement<SettingsRowProps>(child) &&
-                      child.props.icon
-                        ? 68
-                        : 16,
-                  }}
+                <MenuItemDivider
+                  inset={
+                    React.isValidElement<SettingsRowProps>(child) &&
+                    child.props.icon
+                      ? 64
+                      : 13
+                  }
                 />
               )}
             </React.Fragment>
@@ -109,23 +104,28 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   const { grouped } = useContext(SettingsRowGroupContext);
   const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
-  const wrapperClass = grouped
-    ? 'p-4 flex-row items-center'
-    : 'bg-surface rounded-2xl p-4 mb-4 flex-row items-center';
+  const wrapperClass = grouped ? '' : 'bg-surface rounded-2xl mb-4';
 
   const tintColor = iconColor ?? textSecondary;
 
   const content = (
-    <>
-      {icon ? (
-        <MenuItemIcon
-          backgroundColor={iconBackgroundColor}
-          style={{ marginRight: 12 }}
-        >
-          <Icon name={icon} size={22} color={tintColor} weight="semibold" />
-        </MenuItemIcon>
-      ) : null}
-      <View className="flex-1 mr-2">
+    <MenuItem
+      leading={
+        icon ? (
+          <MenuItemIcon backgroundColor={iconBackgroundColor}>
+            <Icon name={icon} size={22} color={tintColor} weight="semibold" />
+          </MenuItemIcon>
+        ) : null
+      }
+      trailing={
+        rightAccessory !== undefined ? (
+          rightAccessory
+        ) : onPress ? (
+          <Icon name="chevron-forward" size={12} color={textSecondary} />
+        ) : null
+      }
+    >
+      <View className="min-w-0">
         <Text
           className="text-base font-semibold text-text-primary"
           numberOfLines={1}
@@ -145,12 +145,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
           <View className="mt-0.5">{subtitle}</View>
         ) : null}
       </View>
-      {rightAccessory !== undefined ? (
-        rightAccessory
-      ) : onPress ? (
-        <Icon name="chevron-forward" size={12} color={textSecondary} />
-      ) : null}
-    </>
+    </MenuItem>
   );
 
   if (!onPress) {

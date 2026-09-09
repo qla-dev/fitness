@@ -1,13 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, Platform } from 'react-native';
 import Button from './ui/Button';
 import { useNavigation } from '@react-navigation/native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -26,6 +19,8 @@ import { diaryEntryImage, diaryEntryImages } from '../utils/foodImages';
 import { useOpenLightbox } from './LightboxProvider';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useCSSVariable } from 'uniwind';
+import FoodRowMenu from './FoodRowMenu';
+import MenuItem, { MenuItemDivider } from './MenuItem';
 
 interface SwipeableFoodRowProps {
   entry: FoodEntry;
@@ -43,10 +38,8 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
   showDivider = false,
 }) => {
   const { t } = useTranslation();
-  const [menuMuted, menuSeparator] = useCSSVariable([
-    '--color-menu-muted',
-    '--color-menu-separator',
-  ]) as [string, string];
+  const [rowWidth, setRowWidth] = useState<number>();
+  const menuMuted = useCSSVariable('--color-menu-muted') as string;
   const { preferences } = usePreferences();
   const navigation = useNavigation();
   const swipeableRef = useRef<any>(null);
@@ -150,138 +143,168 @@ const SwipeableFoodRow: React.FC<SwipeableFoodRowProps> = ({
     Alert.alert(name, undefined, buttons);
   };
 
+  const leading =
+    entryImage || compact ? (
+      <FoodThumbnail
+        image={entryImage}
+        getImageSource={getImageSource}
+        size={compact ? 39 : 56}
+        menuStyle={compact}
+        variant={isMealComponent ? 'meal' : 'food'}
+        showFallback={compact}
+        style={{ marginRight: compact ? 0 : 8 }}
+        onPress={
+          entryImage
+            ? () => openLightbox(diaryEntryImages(entry), 0, name)
+            : undefined
+        }
+      />
+    ) : null;
+  const content = (
+    <TouchableOpacity
+      className={compact ? '' : 'flex-1 mr-2'}
+      activeOpacity={0.7}
+      onPress={handlePress}
+      onLongPress={
+        compact && Platform.OS === 'ios' ? undefined : handleLongPress
+      }
+      accessibilityRole="button"
+      accessibilityLabel={name}
+    >
+      <View className={compact ? '' : 'flex-row flex-wrap items-baseline'}>
+        <Text
+          className={
+            compact
+              ? 'text-base font-normal text-text-primary'
+              : 'text-md text-text-primary'
+          }
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={compact ? { fontSize: 16, fontWeight: '400' } : undefined}
+        >
+          {name}
+        </Text>
+        <View
+          className="flex-row items-baseline"
+          style={compact ? { marginTop: 3 } : undefined}
+        >
+          <Text
+            className="text-sm text-text-secondary"
+            numberOfLines={1}
+            style={
+              compact
+                ? {
+                    fontSize: 11,
+                    lineHeight: 15,
+                    color: menuMuted,
+                    flexShrink: 1,
+                    minWidth: 0,
+                  }
+                : undefined
+            }
+          >
+            {!compact && ' · '}
+            {entry.quantity} {entry.unit}
+          </Text>
+          {timeLabel && (
+            <Text
+              className="text-xs text-text-link ml-1.5"
+              numberOfLines={1}
+              style={
+                compact
+                  ? { fontSize: 11, lineHeight: 15, color: menuMuted }
+                  : undefined
+              }
+            >
+              {timeLabel}
+            </Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+  const trailing = canQuickAdjust ? (
+    <Button
+      variant="ghost"
+      onPress={() => onAdjustServing!(entry)}
+      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+      className="py-0 px-0"
+      style={{
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
+      }}
+      textClassName="text-sm text-text-secondary font-medium"
+    >
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: 14,
+          fontWeight: '500',
+          color: menuMuted,
+          textAlign: 'right',
+        }}
+      >
+        {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}${compact ? '' : ' ▾'}`}
+      </Text>
+    </Button>
+  ) : (
+    <Text
+      className="text-sm text-text-secondary font-medium"
+      numberOfLines={1}
+      style={
+        compact ? { color: menuMuted, textAlign: 'right' } : { marginRight: 8 }
+      }
+    >
+      {Math.round(nutrition.calories)}{' '}
+      {t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}
+    </Text>
+  );
+  const row = compact ? (
+    <View className="bg-surface">
+      <MenuItem width={rowWidth} leading={leading} trailing={trailing}>
+        {content}
+      </MenuItem>
+    </View>
+  ) : (
+    <View className="py-1.5 flex-row items-center bg-surface">
+      {leading}
+      {content}
+      {trailing}
+    </View>
+  );
+
   return (
-    <Animated.View style={animatedStyle} onLayout={handleLayout}>
+    <Animated.View
+      style={[{ alignSelf: 'stretch', width: '100%' }, animatedStyle]}
+      onLayout={(event) => {
+        handleLayout(event);
+        setRowWidth(event.nativeEvent.layout.width);
+      }}
+    >
       <ReanimatedSwipeable
         ref={swipeableRef}
         renderRightActions={renderRightActions}
         overshootRight={false}
         rightThreshold={40}
       >
-        <View
-          className="py-1.5 flex-row items-center bg-surface"
-          style={
-            compact
-              ? {
-                  minHeight: 66,
-                  paddingHorizontal: 13,
-                  paddingVertical: 10,
-                  gap: 12,
-                }
-              : undefined
-          }
-        >
-          {/* Compact menu rows always keep their image or fallback icon slot. */}
-          {entryImage || compact ? (
-            <FoodThumbnail
-              image={entryImage}
-              getImageSource={getImageSource}
-              size={compact ? 39 : 56}
-              menuStyle={compact}
-              variant={isMealComponent ? 'meal' : 'food'}
-              showFallback={compact}
-              style={{ marginRight: compact ? 0 : 8 }}
-              onPress={
-                entryImage
-                  ? () => openLightbox(diaryEntryImages(entry), 0, name)
-                  : undefined
-              }
-            />
-          ) : null}
-          <TouchableOpacity
-            className={compact ? 'flex-1 min-w-0' : 'flex-1 mr-2'}
-            activeOpacity={0.7}
-            onPress={handlePress}
-            onLongPress={handleLongPress}
-            accessibilityRole="button"
-            accessibilityLabel={name}
+        {compact ? (
+          <FoodRowMenu
+            width={rowWidth}
+            title={name}
+            onDelete={confirmAndDelete}
+            onAdjustServing={
+              canQuickAdjust ? () => onAdjustServing!(entry) : undefined
+            }
           >
-            <View
-              className={compact ? '' : 'flex-row flex-wrap items-baseline'}
-            >
-              <Text
-                className={
-                  compact
-                    ? 'text-base font-normal text-text-primary'
-                    : 'text-md text-text-primary'
-                }
-                numberOfLines={1}
-                style={
-                  compact ? { fontSize: 16, fontWeight: '400' } : undefined
-                }
-              >
-                {name}
-              </Text>
-              <View
-                className="flex-row items-baseline"
-                style={compact ? { marginTop: 3 } : undefined}
-              >
-                <Text
-                  className="text-sm text-text-secondary"
-                  numberOfLines={1}
-                  style={
-                    compact
-                      ? { fontSize: 11, lineHeight: 15, color: menuMuted }
-                      : undefined
-                  }
-                >
-                  {!compact && ' · '}
-                  {entry.quantity} {entry.unit}
-                </Text>
-                {timeLabel && (
-                  <Text
-                    className="text-xs text-text-link ml-1.5"
-                    numberOfLines={1}
-                    style={
-                      compact
-                        ? { fontSize: 11, lineHeight: 15, color: menuMuted }
-                        : undefined
-                    }
-                  >
-                    {timeLabel}
-                  </Text>
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
-          <View style={{ alignSelf: 'center', justifyContent: 'center' }}>
-            {canQuickAdjust ? (
-              <Button
-                variant="ghost"
-                onPress={() => onAdjustServing!(entry)}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                className="py-0 px-0"
-                style={{ paddingVertical: 0, paddingHorizontal: 0 }}
-                textClassName="text-sm text-text-secondary font-medium"
-              >
-                <Text
-                  style={{ fontSize: 14, fontWeight: '500', color: menuMuted }}
-                >
-                  {`${Math.round(nutrition.calories)} ${t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}${compact ? '' : ' ▾'}`}
-                </Text>
-              </Button>
-            ) : (
-              <Text
-                className="text-sm text-text-secondary font-medium"
-                style={compact ? { color: menuMuted } : { marginRight: 8 }}
-              >
-                {Math.round(nutrition.calories)}{' '}
-                {t('foodRow.caloriesUnit', { defaultValue: 'Cal' })}
-              </Text>
-            )}
-          </View>
-        </View>
+            {row}
+          </FoodRowMenu>
+        ) : (
+          row
+        )}
       </ReanimatedSwipeable>
-      {showDivider && (
-        <View
-          className="bg-border-subtle"
-          style={{
-            height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
-            marginLeft: compact ? 64 : 0,
-            ...(compact ? { backgroundColor: menuSeparator } : {}),
-          }}
-        />
-      )}
+      {showDivider && <MenuItemDivider inset={compact ? 64 : 0} />}
     </Animated.View>
   );
 };

@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
+import { MENU_ITEM_RIGHT_INSET } from './menuItemLayout';
+import { MenuItemDivider } from './MenuItem';
 
 export interface MealLogCardProps {
   /** Leading glyph — the meal's icon. */
@@ -45,7 +47,6 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
-  const separatorColor = useCSSVariable('--color-menu-separator') as string;
   const hasItems = React.Children.toArray(children).length > 0;
 
   const header = (
@@ -62,7 +63,10 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
 
   return (
     <View className="bg-surface rounded-xl overflow-hidden">
-      <View className="flex-row gap-2 items-center p-4">
+      <View
+        className="flex-row gap-2 items-center p-4"
+        style={{ paddingRight: MENU_ITEM_RIGHT_INSET }}
+      >
         {onOpen ? (
           <Pressable
             onPress={onOpen}
@@ -121,14 +125,7 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
           </Pressable>
         ) : null}
       </View>
-      {hasItems && (
-        <View
-          style={{
-            height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
-            backgroundColor: separatorColor,
-          }}
-        />
-      )}
+      {hasItems && <MenuItemDivider inset={0} />}
       {children}
     </View>
   );

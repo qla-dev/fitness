@@ -118,7 +118,7 @@ const NotificationSettingsScreen: React.FC<
             defaultValue: 'Allow Notifications',
           })}
           subtitle={t('notificationSettings.allowSubtitle', {
-            defaultValue: 'Master switch for all alerts from SparkyFitness.',
+            defaultValue: 'Master switch for all alerts from qla.fit.',
           })}
           subtitleNumberOfLines={0}
           rightAccessory={

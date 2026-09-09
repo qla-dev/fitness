@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import Icon, { type IconName } from './Icon';
 import HydrationSheet from './HydrationSheet';
+import AppWordmark from './AppWordmark';
 import CustomModal, { type CustomModalRef } from './CustomModal';
 import { getTodayDate } from '../utils/dateUtils';
 import Button from './ui/Button';
@@ -440,7 +441,14 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       <>
         <CustomModal
           ref={bottomSheetRef}
-          title={t('addSheet.title', { defaultValue: 'Log into journey' })}
+          // Only the name is branded: the lead-in stays in the normal UI
+          // face, and the wordmark carries its own face and accent.
+          title={
+            <>
+              {t('addSheet.title', { defaultValue: 'Log data into' })}{' '}
+              <AppWordmark />
+            </>
+          }
           onAnimate={handleAnimate}
           onDismiss={handleDismiss}
           onClose={() => {

@@ -37,6 +37,9 @@ jest.mock('expo-asset', () => ({
 jest.mock('expo-font', () => ({
   loadAsync: jest.fn(),
   isLoaded: jest.fn(() => true),
+  // Report the face as loaded: components that gate a brand font on this
+  // (AppWordmark) then render their real styling under test.
+  useFonts: jest.fn(() => [true, null]),
 }));
 
 // Mock @expo/vector-icons

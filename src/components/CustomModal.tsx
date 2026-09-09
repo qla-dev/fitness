@@ -1,5 +1,11 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import {
+  Pressable,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+} from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -13,7 +19,9 @@ export interface CustomModalRef {
 }
 
 interface Props {
-  title: string;
+  /** Plain text, or a node when the title mixes faces (e.g. the wordmark). */
+  title: React.ReactNode;
+  titleStyle?: StyleProp<TextStyle>;
   children: React.ReactNode;
   onDismiss?: () => void;
   onAnimate?: (fromIndex: number, toIndex: number) => void;
@@ -22,7 +30,7 @@ interface Props {
 
 /** Edge-attached, content-sized sheet with native-inspired header chrome. */
 const CustomModal = forwardRef<CustomModalRef, Props>(
-  ({ title, children, onDismiss, onAnimate, onClose }, ref) => {
+  ({ title, titleStyle, children, onDismiss, onAnimate, onClose }, ref) => {
     const sheet = useRef<BottomSheetModal>(null);
     const { t } = useTranslation();
     const backdrop = useSheetBackdrop();
@@ -90,6 +98,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
             <Text
               className="flex-1 text-center text-lg font-semibold text-text-primary"
               accessibilityRole="header"
+              style={titleStyle}
             >
               {title}
             </Text>

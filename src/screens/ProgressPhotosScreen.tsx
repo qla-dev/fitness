@@ -236,7 +236,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
               }),
               text2: t('progressPhotos.cameraPermissionHint', {
                 defaultValue:
-                  'Enable camera access for SparkyFitness in Settings.',
+                  'Enable camera access for qla.fit in Settings.',
               }),
             });
             return;

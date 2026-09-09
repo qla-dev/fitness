@@ -21,7 +21,7 @@ export const APP_NAME_SUFFIX = '.fit';
 
 const AppWordmark: React.FC<{ style?: StyleProp<TextStyle> }> = ({ style }) => {
   const [brandFontLoaded] = useFonts({
-    FacebookSansBold: require('../../assets/fonts/FacebookSansBold.ttf'),
+    FacebookSansBold: require('../../assets/brand/FacebookSansBold.ttf'),
   });
   const accent = useCSSVariable('--color-accent-primary') as string;
 

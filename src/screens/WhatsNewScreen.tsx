@@ -666,7 +666,7 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
       }),
       body: t('whatsNewPage.features.widget.body', {
         defaultValue:
-          "See where your day stands at a glance. Add SparkyFitness from your home screen's widget gallery.",
+          "See where your day stands at a glance. Add qla.fit from your home screen's widget gallery.",
       }),
       hero: <WidgetMockup />,
     },

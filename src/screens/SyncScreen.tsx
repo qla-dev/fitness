@@ -525,7 +525,7 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
           type: 'success',
           text1: t('syncScreen.removal.removed', { defaultValue: 'Removed' }),
           text2: t('syncScreen.removal.deleted', {
-            defaultValue: 'Deleted SparkyFitness data from {{store}}.',
+            defaultValue: 'Deleted qla.fit data from {{store}}.',
             store: writebackStoreName,
           }),
         });
@@ -568,7 +568,7 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
       }),
       t('syncScreen.removal.confirmMessage', {
         defaultValue:
-          'Delete every nutrition and hydration record SparkyFitness wrote to {{store}}, and turn writeback off? Your SparkyFitness diary and records from other apps are not affected.',
+          'Delete every nutrition and hydration record qla.fit wrote to {{store}}, and turn writeback off? Your qla.fit diary and records from other apps are not affected.',
         store: writebackStoreName,
       }),
       [

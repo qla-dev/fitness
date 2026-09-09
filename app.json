@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SparkyFitnessMobile",
+    "name": "qla.fit",
     "slug": "fitness",
     "scheme": "sparkyfitnessmobile",
     "orientation": "portrait",
@@ -10,8 +10,8 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "SparkyFitness reads Health data (such as activity, workouts, and body measurements) to display it in the app and sync it to your self-hosted SparkyFitness server.",
-          "NSHealthUpdateUsageDescription": "SparkyFitness writes the nutrition and hydration you log in the app to Apple Health, keeping the two in sync.",
+          "NSHealthShareUsageDescription": "qla.fit reads Health data (such as activity, workouts, and body measurements) to display it in the app and sync it to your self-hosted qla.fit server.",
+          "NSHealthUpdateUsageDescription": "qla.fit writes the nutrition and hydration you log in the app to Apple Health, keeping the two in sync.",
           "background": true
         }
       ],
@@ -35,7 +35,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "SparkyFitness needs access to your camera to scan food barcodes and labels.",
+          "cameraPermission": "qla.fit needs access to your camera to scan food barcodes and labels.",
           "recordAudioAndroid": false
         }
       ],

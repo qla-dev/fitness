@@ -1,4 +1,5 @@
 import React from 'react';
+import AppWordmark from '../components/AppWordmark';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -63,7 +64,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
             resizeMode="contain"
           />
           <Text className="text-xl font-bold text-text-primary mb-1">
-            SparkyFitness
+            <AppWordmark />
           </Text>
           <Text className="text-text-secondary text-sm">
             {t('about.version', {
@@ -81,7 +82,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
           <Text className="text-text-secondary text-sm leading-5">
             {t('about.description', {
               defaultValue:
-                'SparkyFitness is an open-source nutrition, exercise, and health-data tracker that syncs to your own server. This app is the mobile companion for logging meals, workouts, and measurements on the go.',
+                'qla.fit is an open-source nutrition, exercise, and health-data tracker that syncs to your own server. This app is the mobile companion for logging meals, workouts, and measurements on the go.',
             })}
           </Text>
         </View>

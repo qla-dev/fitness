@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import AppWordmark from '../components/AppWordmark';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -610,7 +611,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           resizeMode="contain"
         />
         <Text className="text-3xl font-bold text-text-primary">
-          SparkyFitness
+          <AppWordmark />
         </Text>
         <Text className="text-base text-text-secondary mt-1">
           {t('onboarding.subtitle', {
@@ -702,7 +703,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           />
           <Text className="text-sm ml-1" style={{ color: accentPrimary }}>
             {t('onboarding.learnMoreTitle', {
-              defaultValue: 'Learn more about SparkyFitness',
+              defaultValue: 'Learn more about qla.fit',
             })}
           </Text>
         </Pressable>
@@ -711,7 +712,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             <Text className="text-sm text-text-secondary leading-relaxed">
               {t('onboarding.learnMoreBody', {
                 defaultValue:
-                  'SparkyFitness helps you track your food, workouts, and health data in one place.',
+                  'qla.fit helps you track your food, workouts, and health data in one place.',
               })}
             </Text>
             <Text className="mt-2 text-sm text-text-secondary leading-relaxed">
@@ -767,7 +768,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         <View className="items-center mb-5">
           <Text className="text-2xl font-bold text-text-primary">
             {t('auth.connectTitle', {
-              defaultValue: 'Connect to SparkyFitness',
+              defaultValue: 'Connect to qla.fit',
             })}
           </Text>
           <Text
