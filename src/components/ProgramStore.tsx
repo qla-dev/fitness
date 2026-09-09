@@ -57,6 +57,12 @@ const ACCENT_VARS = [
 /** A shelf page holds at most this many rows before it pages sideways. */
 export const SHELF_PAGE_SIZE = 4;
 const GUTTER = 16;
+/**
+ * Inner padding of a featured card. The Start row is pinned to the bottom with
+ * this same value, so its distance from the bottom edge matches the copy's
+ * distance from the left edge.
+ */
+const FEATURED_CARD_PADDING = 20;
 
 export function useProgramAccents(): Record<string, string> {
   const values = useCSSVariable([...ACCENT_VARS]) as string[];
@@ -365,14 +371,28 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                     exactly the card it had. The scrim is what keeps white
                     text legible over an arbitrary photo. */}
                 {featuredCover(program)}
-                <View className="p-5" style={{ minHeight: 176 }}>
+                <View
+                  style={{ padding: FEATURED_CARD_PADDING, minHeight: 176 }}
+                >
                   <Text className="text-white text-2xl font-bold">
                     {program.name}
                   </Text>
                   <Text className="text-white text-base mt-1 opacity-90">
                     {program.tagline}
                   </Text>
-                  <View className="flex-row items-center mt-4">
+                  {/* Pinned to the bottom rather than flowing under the
+                      tagline, so every card's Start row sits on the same line
+                      however long its copy runs. Inset by the card's own
+                      padding, so the gap below it matches the gap to its left. */}
+                  <View
+                    className="flex-row items-center"
+                    style={{
+                      position: 'absolute',
+                      left: FEATURED_CARD_PADDING,
+                      right: FEATURED_CARD_PADDING,
+                      bottom: FEATURED_CARD_PADDING,
+                    }}
+                  >
                     <TouchableOpacity
                       accessibilityRole="button"
                       accessibilityLabel={t('programs.startProgram', {

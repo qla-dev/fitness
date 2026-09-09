@@ -564,6 +564,10 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     title: isTabRoot
       ? t('programs.storeTab', { defaultValue: 'Store' })
       : t('exerciseLibrary.title', { defaultValue: 'Exercises' }),
+    // The search bar sits immediately below on the custom path, so a hairline
+    // here would draw a line between the bar and the field rather than
+    // between two sections.
+    borderless: true,
     // The store keeps the cart and profile pair every tab header carries in
     // the right corner, so the filter moves to the leading slot the back
     // button would otherwise occupy. The drill-in still needs that slot for

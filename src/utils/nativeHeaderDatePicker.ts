@@ -1,6 +1,19 @@
 import type { NativeStackHeaderItem } from '@react-navigation/native-stack';
 import { formatDateLabel } from './dateUtils';
 import { createNativeHeaderIconButtonItem } from './nativeHeaderItems';
+import { fireSelectionHaptic } from '../services/haptics';
+
+/**
+ * The native header items are OS-drawn buttons, so nothing fires feedback for
+ * them unless the handler does. Wrapping here keeps them level with the
+ * fallback `TabHeader`, whose buttons buzz on press.
+ */
+function withHaptic(onPress: () => void): () => void {
+  return () => {
+    fireSelectionHaptic();
+    onPress();
+  };
+}
 
 /**
  * The iOS-native half of the shared tab header. It mirrors `TabHeader` on the
@@ -52,7 +65,7 @@ export function setNativeHeaderDatePickerOptions(
             trailingActions.map((action) =>
               createNativeHeaderIconButtonItem({
                 sfSymbol: action.sfSymbol,
-                onPress: action.onPress,
+                onPress: withHaptic(action.onPress),
                 tintColor: options.tintColor,
                 accessibilityLabel: action.accessibilityLabel,
                 identifier: action.identifier,
@@ -76,7 +89,7 @@ export function createNativeHeaderDatePickerItems({
     {
       type: 'button',
       label: dateLabel ?? `${formatDateLabel(selectedDate, t, locale)} ▾`,
-      onPress: onDatePress,
+      onPress: withHaptic(onDatePress),
       tintColor,
       labelStyle: { fontSize: 15, fontWeight: '600', color: tintColor },
       accessibilityLabel,
@@ -107,7 +120,7 @@ export function setNativeTabHeaderActions(
       actions.map((action) =>
         createNativeHeaderIconButtonItem({
           sfSymbol: action.sfSymbol,
-          onPress: action.onPress,
+          onPress: withHaptic(action.onPress),
           tintColor,
           accessibilityLabel: action.accessibilityLabel,
           identifier: action.identifier,

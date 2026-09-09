@@ -6,6 +6,7 @@ import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import type { IconName } from './Icon';
 import { formatDateLabel } from '../utils/dateUtils';
+import { fireSelectionHaptic } from '../services/haptics';
 
 /** Tap target for each header button, and the gap that keeps them apart. */
 const BUTTON_SIZE = 44;
@@ -89,6 +90,19 @@ const TabHeader: React.FC<TabHeaderProps> = ({
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
   const insets = useSafeAreaInsets();
+  /**
+   * Every button in this bar answers a press with the selection haptic, the
+   * same as the buttons `useScreenHeader` renders on the screens that own
+   * their header. Wrapped here rather than at each call site so a new button
+   * cannot be added silently.
+   */
+  const withHaptic = (onPress?: () => void) =>
+    onPress
+      ? () => {
+          fireSelectionHaptic();
+          onPress();
+        }
+      : undefined;
   // Both slots share one width so the title stays centred, and it only grows
   // past the base when a header actually carries more buttons than that fits
   // (the family-diary bar: action + cart + profile).
@@ -131,7 +145,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
       >
         {onPreviousDay && (
           <TouchableOpacity
-            onPress={onPreviousDay}
+            onPress={withHaptic(onPreviousDay)}
             accessibilityRole="button"
             accessibilityLabel={
               dateControls?.previousDayLabel ??
@@ -151,7 +165,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         )}
         {dateLabel !== null && (
           <TouchableOpacity
-            onPress={onDatePress}
+            onPress={withHaptic(onDatePress)}
             accessibilityRole="button"
             accessibilityLabel={chooseDateLabel}
             accessibilityHint={chooseDateHint}
@@ -176,7 +190,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         )}
         {onNextDay && (
           <TouchableOpacity
-            onPress={onNextDay}
+            onPress={withHaptic(onNextDay)}
             accessibilityRole="button"
             accessibilityLabel={
               dateControls?.nextDayLabel ??
@@ -214,7 +228,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
       >
         {action ? (
           <TouchableOpacity
-            onPress={action.onPress}
+            onPress={withHaptic(action.onPress)}
             accessibilityRole="button"
             accessibilityLabel={action.accessibilityLabel}
             className="items-center justify-center"
@@ -225,7 +239,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         ) : null}
         {onCartPress && (
           <TouchableOpacity
-            onPress={onCartPress}
+            onPress={withHaptic(onCartPress)}
             accessibilityRole="button"
             accessibilityLabel={t('cart.title', { defaultValue: 'Cart' })}
             className="items-center justify-center"
@@ -236,7 +250,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         )}
         {onProfilePress && (
           <TouchableOpacity
-            onPress={onProfilePress}
+            onPress={withHaptic(onProfilePress)}
             accessibilityRole="button"
             accessibilityLabel={t('profile.title', { defaultValue: 'Profile' })}
             className="items-center justify-center"

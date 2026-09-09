@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform, View } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import { useScreenHeader } from '../../src/hooks/useScreenHeader';
 import { __resetAppPreferencesStoreForTests } from '../../src/stores/appPreferencesStore';
@@ -15,6 +15,12 @@ const mockNavigation = {
   goBack: jest.fn(),
   setOptions: jest.fn(),
 } as never;
+
+jest.mock('../../src/services/haptics', () => ({
+  fireSelectionHaptic: (...args: unknown[]) => mockFireSelectionHaptic(...args),
+}));
+
+const mockFireSelectionHaptic = jest.fn();
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: () => mockUsesNativeHeader,
@@ -322,5 +328,96 @@ describe('useScreenHeader accessibility label (native path)', () => {
     const item = nativeLeftItem();
     expect(item?.label).toBe('Save');
     expect(item?.accessibilityLabel).toBe('Save meal');
+  });
+});
+
+describe('useScreenHeader haptics', () => {
+  let osSpy: ReturnType<typeof jest.replaceProperty> | undefined;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    __resetAppPreferencesStoreForTests();
+    await initializeI18n('en');
+    await i18n.changeLanguage('en');
+  });
+
+  afterEach(() => {
+    if (osSpy) osSpy.restore();
+    osSpy = undefined;
+    mockUsesNativeHeader = false;
+  });
+
+  function pressCustomBarButton(name: string) {
+    const screen = renderResult;
+    fireEvent.press(screen.getByLabelText(name));
+  }
+
+  let renderResult: ReturnType<typeof render>;
+
+  it('fires the selection haptic on a custom-bar button press', () => {
+    mockUsesNativeHeader = false;
+    const onPress = jest.fn();
+    renderResult = render(
+      <TestScreen
+        right={[
+          {
+            kind: 'icon',
+            sfSymbol: 'cart',
+            ionicon: 'cart-outline',
+            accessibilityLabel: 'Cart',
+            onPress,
+          },
+        ]}
+      />
+    );
+
+    pressCustomBarButton('Cart');
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(mockFireSelectionHaptic).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires it on the native path too, so both paths feel the same', () => {
+    mockUsesNativeHeader = true;
+    osSpy = jest.replaceProperty(Platform, 'OS', 'ios');
+    const onPress = jest.fn();
+    render(
+      <TestScreen
+        right={[
+          {
+            kind: 'icon',
+            sfSymbol: 'cart',
+            ionicon: 'cart-outline',
+            accessibilityLabel: 'Cart',
+            onPress,
+          },
+        ]}
+      />
+    );
+
+    const calls = (mockNavigation as unknown as { setOptions: jest.Mock })
+      .setOptions.mock.calls;
+    const options = calls[calls.length - 1][0] as {
+      unstable_headerRightItems?: () => { onPress?: () => void }[];
+    };
+    options.unstable_headerRightItems?.()[0]?.onPress?.();
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(mockFireSelectionHaptic).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Back feedback hangs off the pop transition, because the iOS native back
+   * button is OS-drawn and has no JS press handler. Firing here as well would
+   * buzz twice for one press on the custom path.
+   */
+  it('leaves back to the pop-transition haptic rather than doubling up', () => {
+    mockUsesNativeHeader = false;
+    renderResult = render(<TestScreen right={[]} left={{ kind: 'back' }} />);
+
+    pressCustomBarButton('Back');
+
+    expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
+    expect(mockFireSelectionHaptic).not.toHaveBeenCalled();
   });
 });

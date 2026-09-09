@@ -71,6 +71,9 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
     nativeTitle:
       program?.name ?? t('programs.title', { defaultValue: 'Program' }),
     left: { kind: 'back' },
+    // The page opens on its cover art, so a hairline under the bar would draw
+    // a line across the artwork rather than separating two panels.
+    borderless: true,
   });
 
   if (!program) {

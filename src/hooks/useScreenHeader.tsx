@@ -201,17 +201,25 @@ function itemPlacement(item: HeaderItem): HeaderPlacement {
   return 'placement' in item ? (item.placement ?? 'both') : 'both';
 }
 
+/**
+ * Every header button answers a press with the selection haptic, so a bar of
+ * icons feels the same as the rest of the app on both paths.
+ *
+ * `back` is the exception: the iOS native back button is drawn by the OS and
+ * exposes no JS press handler, so back feedback hangs off the pop transition
+ * instead (`fireBackNavigationHaptic`). Firing here as well would buzz twice
+ * for one press on the custom path, where both would run.
+ */
 function resolvePress(
   item: Exclude<HeaderItem, MenuHeaderItem>,
   goBack: () => void
 ): () => void {
   if (item.kind === 'back') return item.onPress ?? goBack;
-  if (item.kind === 'dismiss')
-    return () => {
-      fireSelectionHaptic();
-      item.onPress();
-    };
-  return item.onPress;
+  const press = item.onPress;
+  return () => {
+    fireSelectionHaptic();
+    press();
+  };
 }
 
 function itemIsDisabled(item: HeaderItem): boolean {
@@ -656,10 +664,15 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   // A menu item's own press only exists on the custom path: measure the
   // trigger and open the AnchoredMenu under it. (Natively the system presents
   // the UIMenu itself; only the per-entry handlers fire from JS.)
-  const openAnchoredMenu = (id: string) => () =>
+  const openAnchoredMenu = (id: string) => () => {
+    // Opening the menu IS the button press, so it earns the same feedback the
+    // plain buttons give. The native path never reaches here — iOS presents
+    // that UIMenu itself and supplies its own feedback.
+    fireSelectionHaptic();
     measureAnchoredMenuTrigger(menuTriggerRefs.current[id] ?? null, (anchor) =>
       setOpenMenu({ id, anchor })
     );
+  };
   const registerHandlers = (
     item: HeaderItem,
     id: string,
