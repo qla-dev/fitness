@@ -109,8 +109,8 @@ describe('getDeviceLanguage', () => {
 });
 
 describe('SUPPORTED_LANGUAGES', () => {
-  it('includes en, pl and es', () => {
-    expect(SUPPORTED_LANGUAGES).toEqual(['en', 'pl', 'es']);
+  it('includes en, pl, es and bs', () => {
+    expect(SUPPORTED_LANGUAGES).toEqual(['en', 'pl', 'es', 'bs']);
   });
 });
 

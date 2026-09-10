@@ -1,0 +1,17 @@
+"widget.calorie.name" = "Kalorije";
+"widget.calorie.description" = "Današnji unos kalorija na prvi pogled.";
+"widget.macro.name" = "Makronutrijenti";
+"widget.macro.description" = "Današnji proteini, ugljikohidrati i masti na prvi pogled.";
+"widget.kcal_left" = "kcal preostalo";
+"widget.kcal" = "kcal";
+"widget.food" = "Hrana";
+"widget.burned" = "Potrošeno";
+"widget.goal" = "Cilj";
+"widget.protein" = "Proteini";
+"widget.carbs" = "Ugljikohidrati";
+"widget.fat" = "Masti";
+"widget.grams" = "%@ g";
+"widget.a11y.kcal_left" = "%@ kcal preostalo";
+"widget.a11y.kcal" = "%@ kcal";
+"widget.search_food" = "Pretraži hranu";
+"widget.scan_barcode" = "Skeniraj barkod";

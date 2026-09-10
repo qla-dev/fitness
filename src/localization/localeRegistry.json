@@ -19,6 +19,12 @@
       "intlLocale": "es-ES",
       "displayNameKey": "settings.language.spanish",
       "defaultDisplayName": "Español"
+    },
+    "bs": {
+      "languageCode": "bs",
+      "intlLocale": "bs-BA",
+      "displayNameKey": "settings.language.bosnian",
+      "defaultDisplayName": "Bosanski"
     }
   }
 }

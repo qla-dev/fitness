@@ -72,6 +72,7 @@
       "english": "English",
       "polish": "Polski",
       "spanish": "Español",
+      "bosnian": "Bosanski",
       "pickerHint": "Opens language selection menu",
       "changeFailed": "Couldn't change the language",
       "managedByIOS": "Managed by iOS",
