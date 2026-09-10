@@ -134,12 +134,18 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
     name: APP_NAME,
     slug: APP_SLUG,
     version: packageJson.version,
-    // OTA updates. The runtime version is a fingerprint of the native project
-    // rather than the app version: a JS-only change keeps the same fingerprint
-    // and ships over the air, while any native change (a new target, a
-    // permission, a patched module) produces a new one, so an update can never
-    // land on a build whose native side does not match it.
-    runtimeVersion: { policy: 'fingerprint' },
+    // OTA updates. Deliberately NOT the fingerprint policy: this project uses
+    // continuous native generation, so EAS runs prebuild on the worker and then
+    // hashes the ios/ it just generated as a "bareNativeDir" source, while a
+    // machine that never prebuilds has nothing there to hash. The two can never
+    // agree, and .fingerprintignore does not suppress that source. On top of
+    // that, project.pbxproj is not byte-stable across prebuilds
+    // (expo/expo#34195), so even matching both sides would still drift.
+    //
+    // appVersion trades that for one rule: bump `version` in package.json
+    // whenever a build ships native changes, or an old build will accept JS it
+    // cannot run.
+    runtimeVersion: { policy: 'appVersion' },
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
       // A cold start must not block on the network; a downloaded update is

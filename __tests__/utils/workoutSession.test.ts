@@ -296,28 +296,28 @@ describe('workoutSession', () => {
   });
 
   describe('getSourceLabel', () => {
-    it('returns Sparky for null source', () => {
-      expect(getSourceLabel(null)).toBe('Sparky');
+    it('returns qla.fit for null source', () => {
+      expect(getSourceLabel(null)).toBe('qla.fit');
     });
 
-    it('returns Sparky for undefined source', () => {
-      expect(getSourceLabel(undefined)).toBe('Sparky');
+    it('returns qla.fit for undefined source', () => {
+      expect(getSourceLabel(undefined)).toBe('qla.fit');
     });
 
-    it('returns Sparky for "manual" source', () => {
-      expect(getSourceLabel('manual')).toBe('Sparky');
+    it('returns qla.fit for "manual" source', () => {
+      expect(getSourceLabel('manual')).toBe('qla.fit');
     });
 
-    it('returns Sparky for "sparky" source', () => {
-      expect(getSourceLabel('sparky')).toBe('Sparky');
+    it('returns qla.fit for "sparky" source', () => {
+      expect(getSourceLabel('sparky')).toBe('qla.fit');
     });
 
-    it('returns Sparky for "Workout Plan" source', () => {
-      expect(getSourceLabel('Workout Plan')).toBe('Sparky');
+    it('returns qla.fit for "Workout Plan" source', () => {
+      expect(getSourceLabel('Workout Plan')).toBe('qla.fit');
     });
 
-    it('returns Sparky for a padded "WORKOUT PLAN" source', () => {
-      expect(getSourceLabel('  WORKOUT PLAN  ')).toBe('Sparky');
+    it('returns qla.fit for a padded "WORKOUT PLAN" source', () => {
+      expect(getSourceLabel('  WORKOUT PLAN  ')).toBe('qla.fit');
     });
 
     it('returns Apple Health for HealthKit source', () => {
