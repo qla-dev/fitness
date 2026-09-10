@@ -1,4 +1,4 @@
-package com.sparkyapps.sparkyfitness.language
+package com.qlafit.widget
 
 import android.view.View
 import com.facebook.react.ReactPackage
@@ -7,9 +7,9 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ReactShadowNode
 import com.facebook.react.uimanager.ViewManager
 
-class AppLanguagePackage : ReactPackage {
+class CalorieWidgetPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(AppLanguageModule(reactContext))
+        return listOf(CalorieWidgetModule(reactContext))
     }
 
     override fun createViewManagers(

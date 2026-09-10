@@ -19,8 +19,7 @@ const KOTLIN_ROOT = path.join(
   TARGETS_ROOT,
   'kotlin',
   'com',
-  'sparkyapps',
-  'sparkyfitness',
+  'qlafit',
   'widget'
 );
 const RES_ROOT = path.join(TARGETS_ROOT, 'res');
@@ -81,10 +80,10 @@ function extractStringResources(
 }
 
 const REQUIRED_KEYS = [
-  'sparky_calorie_widget_name',
-  'sparky_widget_description',
-  'sparky_macro_widget_name',
-  'sparky_macro_widget_description',
+  'qlafit_calorie_widget_name',
+  'qlafit_widget_description',
+  'qlafit_macro_widget_name',
+  'qlafit_macro_widget_description',
   'widget_kcal_left',
   'widget_kcal_left_empty',
   'widget_grams',
@@ -132,8 +131,8 @@ const KOTLIN_TEMPLATES = [
 ];
 
 const WIDGET_INFO_XMLS = [
-  'sparky_calorie_widget_info.xml',
-  'sparky_macro_widget_info.xml',
+  'qlafit_calorie_widget_info.xml',
+  'qlafit_macro_widget_info.xml',
 ];
 
 describe('Android widget localization contract', () => {
@@ -194,8 +193,8 @@ describe('Android widget localization contract', () => {
         const strings = new Map(
           readWidgetStringResources(locale).map((r) => [r.name, r.value])
         );
-        expect(strings.get('sparky_calorie_widget_name')).not.toBe(
-          strings.get('sparky_macro_widget_name')
+        expect(strings.get('qlafit_calorie_widget_name')).not.toBe(
+          strings.get('qlafit_macro_widget_name')
         );
       }
     });
@@ -432,11 +431,11 @@ describe('Android widget localization contract', () => {
 
     it('keeps the classic provider footprints (calorie 110x40 2x1, macro 110x110 2x2)', () => {
       const calorie = fs.readFileSync(
-        path.join(RES_ROOT, 'xml', 'sparky_calorie_widget_info.xml'),
+        path.join(RES_ROOT, 'xml', 'qlafit_calorie_widget_info.xml'),
         'utf8'
       );
       const macro = fs.readFileSync(
-        path.join(RES_ROOT, 'xml', 'sparky_macro_widget_info.xml'),
+        path.join(RES_ROOT, 'xml', 'qlafit_macro_widget_info.xml'),
         'utf8'
       );
 
@@ -767,24 +766,24 @@ describe('Android widget localization contract', () => {
   describe('widget picker metadata', () => {
     it('uses resource labels and descriptions in the receiver info XML', () => {
       const calorieInfo = fs.readFileSync(
-        path.join(RES_ROOT, 'xml', 'sparky_calorie_widget_info.xml'),
+        path.join(RES_ROOT, 'xml', 'qlafit_calorie_widget_info.xml'),
         'utf8'
       );
       const macroInfo = fs.readFileSync(
-        path.join(RES_ROOT, 'xml', 'sparky_macro_widget_info.xml'),
+        path.join(RES_ROOT, 'xml', 'qlafit_macro_widget_info.xml'),
         'utf8'
       );
 
-      expect(calorieInfo).toContain('@string/sparky_widget_description');
-      expect(macroInfo).toContain('@string/sparky_macro_widget_description');
+      expect(calorieInfo).toContain('@string/qlafit_widget_description');
+      expect(macroInfo).toContain('@string/qlafit_macro_widget_description');
     });
   });
 
   describe('preview layouts', () => {
     it('references localized strings instead of hardcoded English text', () => {
       for (const layout of [
-        'sparky_widget_initial_layout.xml',
-        'sparky_macro_widget_initial_layout.xml',
+        'qlafit_widget_initial_layout.xml',
+        'qlafit_macro_widget_initial_layout.xml',
       ]) {
         const src = fs.readFileSync(
           path.join(RES_ROOT, 'layout', layout),
@@ -807,7 +806,7 @@ describe('Android widget localization contract', () => {
 
     it('reuses localized labels for macros and grams samples', () => {
       const macroLayout = fs.readFileSync(
-        path.join(RES_ROOT, 'layout', 'sparky_macro_widget_initial_layout.xml'),
+        path.join(RES_ROOT, 'layout', 'qlafit_macro_widget_initial_layout.xml'),
         'utf8'
       );
       expect(macroLayout).toContain('@string/widget_protein');
@@ -818,7 +817,7 @@ describe('Android widget localization contract', () => {
 
     it('calorie preview mirrors the classic one-line heading', () => {
       const calorieLayout = fs.readFileSync(
-        path.join(RES_ROOT, 'layout', 'sparky_widget_initial_layout.xml'),
+        path.join(RES_ROOT, 'layout', 'qlafit_widget_initial_layout.xml'),
         'utf8'
       );
       // Classic one-line heading, not the two-line caption/value split.
@@ -834,7 +833,7 @@ describe('Android widget localization contract', () => {
 
     it('macro preview mirrors the classic one-line header and inline rows', () => {
       const macroLayout = fs.readFileSync(
-        path.join(RES_ROOT, 'layout', 'sparky_macro_widget_initial_layout.xml'),
+        path.join(RES_ROOT, 'layout', 'qlafit_macro_widget_initial_layout.xml'),
         'utf8'
       );
       // One-line kcal header (no caption/value split).

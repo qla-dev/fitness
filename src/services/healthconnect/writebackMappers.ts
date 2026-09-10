@@ -19,7 +19,7 @@ type MassUnit = 'grams' | 'milligrams' | 'micrograms';
 // I/O here so this stays unit-testable. The orchestrator (writeback.ts) supplies
 // `clientRecordVersion` (a timestamp) and performs the actual insert/delete.
 
-/** Prefix on every clientRecordId Sparky writes, so the read path can recognise
+/** Prefix on every clientRecordId qla.fit writes, so the read path can recognise
  *  and skip its own records (see the read transformers' dataOrigin guard, which
  *  is the canonical exclusion; this prefix is purely a write-side namespace). */
 export const SPARKY_CLIENT_RECORD_PREFIX = 'sparky-';
@@ -44,7 +44,7 @@ export const waterClientRecordId = (
   version: number
 ): string => `${SPARKY_CLIENT_RECORD_PREFIX}water-${entryDate}-${version}`;
 
-// factor (from HC_NUTRIENT_COLUMNS) → the HC Mass unit Sparky already stores that
+// factor (from HC_NUTRIENT_COLUMNS) → the HC Mass unit qla.fit already stores that
 // column in, so we write the value verbatim with no conversion (and never drift
 // from the read side, which multiplies grams by the same factor).
 const MASS_UNIT_BY_FACTOR: Record<number, MassUnit> = {
@@ -53,7 +53,7 @@ const MASS_UNIT_BY_FACTOR: Record<number, MassUnit> = {
   [G_TO_MCG]: 'micrograms',
 };
 
-// Sparky meal slug → Health Connect MealType int (inverse of the read side's
+// qla.fit meal slug → Health Connect MealType int (inverse of the read side's
 // mapHealthConnectMealType; HC: BREAKFAST=1, LUNCH=2, DINNER=3, SNACK=4).
 // Unknown/custom meal types fall back to snack (HC has no neutral bucket).
 const MEAL_TYPE_INT: Record<string, number> = {
@@ -114,7 +114,7 @@ const recordInterval = (
 };
 
 /**
- * Map one Sparky food entry to a Health Connect NutritionRecord.
+ * Map one qla.fit food entry to a Health Connect NutritionRecord.
  * Returns null when the entry can't be scaled (serving_size === 0) or its meal-time
  * anchor is still in the future (deferred to a later sync).
  */
@@ -151,7 +151,7 @@ export const foodEntryToNutritionRecord = (
     record.energy = { value: tidyNumber(calories), unit: 'kilocalories' };
   }
 
-  // Each nutrient is written in the unit Sparky stores it in (factor → HC unit),
+  // Each nutrient is written in the unit qla.fit stores it in (factor → HC unit),
   // so no conversion is needed. Zero/absent values are omitted, not written as 0.
   for (const { hcField, column, factor } of HC_NUTRIENT_COLUMNS) {
     const value = scaleConsumed(

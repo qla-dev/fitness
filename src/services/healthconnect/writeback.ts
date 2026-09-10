@@ -154,7 +154,7 @@ const writeNutritionForDate = async (
 ): Promise<void> => {
   const entries = await resolveCollapsedFoodEntries(date, summary.foodEntries);
 
-  // Only write entries that originated in Sparky. Entries with a `source` were
+  // Only write entries that originated in qla.fit. Entries with a `source` were
   // imported from a provider (e.g. Health Connect itself) — re-exporting them
   // would duplicate that provider's own data back into HC.
   const records = entries

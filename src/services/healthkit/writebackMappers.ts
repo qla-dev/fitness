@@ -31,7 +31,7 @@ export const DIETARY_ENERGY_IDENTIFIER =
 export const DIETARY_WATER_IDENTIFIER =
   'HKQuantityTypeIdentifierDietaryWater' as const;
 
-// factor (from HC_NUTRIENT_COLUMNS) → the unit Sparky already stores that column in.
+// factor (from HC_NUTRIENT_COLUMNS) → the unit qla.fit already stores that column in.
 // Sodium etc. are stored in mg, vitamin A in mcg, macros in grams; HealthKit accepts
 // those unit strings directly, so the read and write directions never drift.
 const UNIT_BY_FACTOR: Record<number, DietaryUnit> = {
@@ -40,7 +40,7 @@ const UNIT_BY_FACTOR: Record<number, DietaryUnit> = {
   [G_TO_MCG]: 'mcg',
 };
 
-// Sparky food column → HealthKit dietary quantity identifier. `trans_fat` is absent:
+// qla.fit food column → HealthKit dietary quantity identifier. `trans_fat` is absent:
 // @kingstinct/react-native-healthkit@13.3.1 exposes no trans-fat identifier, so we
 // drop that one column (Health Connect writes it; HealthKit can't).
 const DIETARY_IDENTIFIER_BY_COLUMN: Record<
@@ -64,7 +64,7 @@ const DIETARY_IDENTIFIER_BY_COLUMN: Record<
   vitamin_a: 'HKQuantityTypeIdentifierDietaryVitaminA',
 };
 
-// Sparky column → { HK identifier, HK unit }. Built from HC_NUTRIENT_COLUMNS so the
+// qla.fit column → { HK identifier, HK unit }. Built from HC_NUTRIENT_COLUMNS so the
 // unit is derived from the same factor the read side uses, and any column without an
 // HK identifier (trans_fat) is excluded.
 export const DIETARY_HK_MAP: Record<
@@ -84,7 +84,7 @@ export const DIETARY_HK_MAP: Record<
   >
 );
 
-// Every dietary quantity type Sparky writes — energy + the mapped nutrients. The
+// Every dietary quantity type qla.fit writes — energy + the mapped nutrients. The
 // permission request (index.ts) and the orchestrator's per-type authorization filter
 // both gate on this set.
 export const DIETARY_WRITE_IDENTIFIERS: QuantityTypeIdentifierWriteable[] = [
@@ -161,7 +161,7 @@ export interface WaterSampleDescriptor {
 }
 
 /**
- * Map one Sparky food entry to a HealthKit Food-correlation descriptor.
+ * Map one qla.fit food entry to a HealthKit Food-correlation descriptor.
  * Returns null when the entry can't be scaled (serving_size === 0), its meal-time
  * anchor is still in the future (deferred to a later sync), or it has no positive
  * nutrient values (a correlation needs at least one contained sample).
@@ -202,7 +202,7 @@ export const foodEntryToNutrientSamples = (
     scaleConsumed(entry.calories, entry.quantity, entry.serving_size)
   );
 
-  // Each nutrient is written in the unit Sparky stores it in (factor → HK unit), so no
+  // Each nutrient is written in the unit qla.fit stores it in (factor → HK unit), so no
   // conversion is needed — same value the read side would multiply grams into.
   for (const { column } of HC_NUTRIENT_COLUMNS) {
     const mapped = DIETARY_HK_MAP[column];

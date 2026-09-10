@@ -1,4 +1,4 @@
-package com.sparkyapps.sparkyfitness.language
+package com.qlafit.language
 
 import android.app.LocaleManager
 import android.content.Context

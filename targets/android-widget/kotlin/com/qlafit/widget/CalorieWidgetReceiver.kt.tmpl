@@ -1,4 +1,4 @@
-package com.sparkyapps.sparkyfitness.widget
+package com.qlafit.widget
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -81,7 +81,7 @@ class CalorieWidgetReceiver : GlanceAppWidgetReceiver() {
         const val PREFS_NAME = "SparkyCalorieWidget"
         const val PREFS_KEY_SNAPSHOT = "calorieSnapshot"
         const val ACTION_MIDNIGHT_REFRESH =
-            "com.sparkyapps.sparkyfitness.widget.ACTION_MIDNIGHT_REFRESH"
+            "com.qlafit.widget.ACTION_MIDNIGHT_REFRESH"
         private const val MIDNIGHT_BUFFER_MS = 1_000L
 
         fun scheduleMidnightRefresh(context: Context) {

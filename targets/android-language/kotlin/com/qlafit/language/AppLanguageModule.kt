@@ -1,4 +1,4 @@
-package com.sparkyapps.sparkyfitness.language
+package com.qlafit.language
 
 import android.os.Build
 import com.facebook.react.bridge.Promise

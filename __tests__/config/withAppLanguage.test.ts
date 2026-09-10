@@ -9,8 +9,8 @@ function mainApplicationFixture(): string {
 
 import android.app.Application
 import android.content.res.Configuration
-import com.sparkyapps.sparkyfitness.exactalarm.ExactAlarmPackage
-import com.sparkyapps.sparkyfitness.widget.CalorieWidgetPackage
+import com.qlafit.exactalarm.ExactAlarmPackage
+import com.qlafit.widget.CalorieWidgetPackage
 
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -74,7 +74,7 @@ describe('withAppLanguage plugin transforms', () => {
   it('throws when PackageList packages block is missing', () => {
     expect(() =>
       installAppLanguagePackage(
-        'package com.sparkyapps.sparkyfitness;\npublic class MainApplication {}\n'
+        'package com.qlafit;\npublic class MainApplication {}\n'
       )
     ).toThrow('Could not locate PackageList packages block');
   });

@@ -177,7 +177,7 @@ const saveFoodCorrelation = async (
   // parent correlation's, so correlation-only metadata never surfaces in the UI.
   const metadata: Record<string, string | number> = {
     HKFoodType: descriptor.name,
-    SparkyWritebackVersion: version,
+    QlaFitWritebackVersion: version,
   };
   const mealKey = descriptor.mealType?.toLowerCase();
   const mealLabel =
@@ -231,7 +231,7 @@ const saveWaterSample = async (
       descriptor.quantity,
       descriptor.start,
       descriptor.end,
-      { SparkyWritebackVersion: version }
+      { QlaFitWritebackVersion: version }
     );
     if (!result) {
       addLog(
@@ -260,7 +260,7 @@ const writeNutritionForDate = async (
     DIETARY_WRITE_IDENTIFIERS.filter((t) => isAuthorized(t))
   );
 
-  // Only write entries that originated in Sparky. Entries with a `source` were imported
+  // Only write entries that originated in qla.fit. Entries with a `source` were imported
   // from a provider — re-exporting them would duplicate that provider's own data.
   const descriptors = entries
     .filter((e) => !e.source)

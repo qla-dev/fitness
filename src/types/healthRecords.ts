@@ -258,15 +258,15 @@ export interface TransformedRecord extends RecordTimezoneMetadata {
   source_id?: string;
 }
 
-/** Sparky meal type slug derived from Health Connect MealType constant */
-export type SparkyMealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+/** qla.fit meal type slug derived from Health Connect MealType constant */
+export type DiaryMealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 
 /**
  * Nutrition entry output (one per Health Connect NutritionRecord).
  *
  * Maps an HC NutritionRecord (a single eaten item with a name, meal type and
  * nutrients) to a structure the server ingests as a food entry. Energy is in
- * kcal; nutrients are converted from HC's grams to each Sparky column's unit
+ * kcal; nutrients are converted from HC's grams to each qla.fit column's unit
  * (g for macros, mg/mcg for micros — see HC_NUTRIENT_COLUMNS).
  */
 export interface TransformedNutritionEntry extends RecordTimezoneMetadata {
@@ -277,7 +277,7 @@ export interface TransformedNutritionEntry extends RecordTimezoneMetadata {
   /** Instant the food was consumed; the server derives the day from this + offset. */
   timestamp: string;
   food_name: string;
-  meal_type: SparkyMealType;
+  meal_type: DiaryMealType;
   calories?: number;
   protein?: number;
   carbs?: number;

@@ -3,7 +3,7 @@ import { attachWorkoutTelemetry } from '../shared/workoutTelemetryPayload';
 import {
   TransformedExerciseSession,
   TransformedNutritionEntry,
-  SparkyMealType,
+  DiaryMealType,
   AggregatedSleepSession,
   RecordTimezoneMetadata,
   HEALTHKIT_SOURCE,
@@ -86,17 +86,17 @@ export const extractTimezoneMetadata = (
 };
 
 // ============================================================================
-// Dietary nutrient reverse mapping (HealthKit Food correlation → Sparky columns)
+// Dietary nutrient reverse mapping (HealthKit Food correlation → qla.fit columns)
 // ============================================================================
 
 // Read inverse of the writeback's DIETARY_HK_MAP. Reversing the same map the write
 // side builds guarantees read and write agree on every column's storage unit (they can
 // never drift). Energy maps to the `calories` column; each mapped nutrient maps to its
-// Sparky column in that column's storage unit (g for macros, mg/mcg for micros).
+// qla.fit column in that column's storage unit (g for macros, mg/mcg for micros).
 // `trans_fat` stays absent — it has no HealthKit identifier, consistent with writeback.
 interface NutrientColumn {
   column: string;
-  /** Unit Sparky stores this column in — 'kcal' for energy, else 'g' | 'mg' | 'mcg'. */
+  /** Unit qla.fit stores this column in — 'kcal' for energy, else 'g' | 'mg' | 'mcg'. */
   unit: string;
 }
 
@@ -148,9 +148,9 @@ export interface DietarySampleInput {
 }
 
 /**
- * Map one contained dietary quantity sample to its Sparky column + value, converting
+ * Map one contained dietary quantity sample to its qla.fit column + value, converting
  * from HealthKit's returned unit to the column's storage unit. Returns null when:
- *  - the quantity type isn't a column Sparky stores (water, trans fat, fiber subtypes…),
+ *  - the quantity type isn't a column qla.fit stores (water, trans fat, fiber subtypes…),
  *  - the value is non-positive (mirrors HC's "0/absent → unknown" omission), or
  *  - the returned unit is unrecognized — we warn and skip rather than guess a conversion.
  */
@@ -158,7 +158,7 @@ export const mapDietarySample = (
   sample: DietarySampleInput
 ): { column: string; value: number } | null => {
   const mapping = NUTRIENT_BY_IDENTIFIER[sample.quantityType];
-  if (!mapping) return null; // not a column Sparky stores
+  if (!mapping) return null; // not a column qla.fit stores
 
   const { quantity } = sample;
   if (quantity == null || isNaN(quantity) || quantity <= 0) return null; // omit non-positive
@@ -355,7 +355,7 @@ SIMPLE_VALUE_TYPES_START_TIME.forEach((type) => {
   VALUE_TRANSFORMERS[type] = createSimpleValueTransformer(true);
 });
 
-// Dietary nutrient reads share the simple-value shape but must drop the samples Sparky
+// Dietary nutrient reads share the simple-value shape but must drop the samples qla.fit
 // itself wrote: with nutrition writeback on, HealthKit returns our own nutrient samples
 // and re-importing them would duplicate diary nutrition (and compound every sync). Same
 // feedback-loop guard as Hydration. Mirrors Android's setOwnPackageName guard.
@@ -485,7 +485,7 @@ const ACTIVITY_MAP: Record<number, string> = {
 
 // Food correlations carry only an instant, not a meal label, so we infer the meal type
 // from the local time of day (fallback 'snacks'; the server also defaults to snacks).
-const mealTypeFromInstant = (date: Date): SparkyMealType => {
+const mealTypeFromInstant = (date: Date): DiaryMealType => {
   const hour = date.getHours();
   if (hour >= 4 && hour < 11) return 'breakfast';
   if (hour >= 11 && hour < 15) return 'lunch';
@@ -494,13 +494,13 @@ const mealTypeFromInstant = (date: Date): SparkyMealType => {
 };
 
 const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
-  // One HealthKit Food correlation → one Sparky food entry. The handler in index.ts
+  // One HealthKit Food correlation → one qla.fit food entry. The handler in index.ts
   // has already normalized the correlation to a plain record with `objects`
   // (contained dietary quantity samples), `metadataFoodType`, `uuid`, `startDate`,
   // `sourceBundleId`, and `metadata.HKTimeZone`. Mirrors Android's Nutrition transformer
   // so the upload path is identical.
   Nutrition: (rec, _record, _metricConfig, output) => {
-    if (isOwnRecord(rec)) return; // don't re-import nutrition Sparky wrote
+    if (isOwnRecord(rec)) return; // don't re-import nutrition qla.fit wrote
 
     // The server keys idempotent re-sync on source_id; an id-less record would create a
     // duplicate entry on every sync, so skip it.

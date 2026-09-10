@@ -15,11 +15,11 @@ import path from 'path';
 
 const LANGUAGE_ROOT = path.join(
   __dirname,
-  '../../targets/android-language/kotlin/com/sparkyapps/sparkyfitness/language'
+  '../../targets/android-language/kotlin/com/qlafit/language'
 );
 const WIDGET_ROOT = path.join(
   __dirname,
-  '../../targets/android-widget/kotlin/com/sparkyapps/sparkyfitness/widget'
+  '../../targets/android-widget/kotlin/com/qlafit/widget'
 );
 
 function readSource(relativeRoot: string, file: string): string {

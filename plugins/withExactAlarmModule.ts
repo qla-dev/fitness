@@ -10,7 +10,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-const MODULE_PACKAGE = 'com.sparkyapps.sparkyfitness.exactalarm';
+const MODULE_PACKAGE = 'com.qlafit.exactalarm';
 const MODULE_PACKAGE_IMPORT = `import ${MODULE_PACKAGE}.ExactAlarmPackage`;
 const MODULE_PACKAGE_ADD_LINE = 'add(ExactAlarmPackage())';
 

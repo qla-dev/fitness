@@ -13,6 +13,14 @@ packageExtensions:
       "metro": "*"
       "metro-cache": "*"
 
+# pnpm truncates directory names in node_modules/.pnpm to a per-OS default:
+# 120 on Linux/macOS, 60 on Windows. The expo-updates fingerprint hashes those
+# paths, so a Windows machine and an EAS Build worker computed different runtime
+# versions from identical dependencies. Pinning the shorter value makes both
+# produce the same names; 60 rather than 120 because Windows is the side with
+# the MAX_PATH limit that the lower default exists to avoid.
+virtualStoreDirMaxLength: 60
+
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@scarf/scarf"

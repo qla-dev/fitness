@@ -1,7 +1,7 @@
 // Pattern for adding another Glance widget (macro, etc.):
 //   1. Drop FooWidget.kt.tmpl + FooWidgetReceiver.kt.tmpl next to the calorie pair
 //      (each receiver owns its own PREFS_* namespace and its own composable).
-//   2. Add res/xml/sparky_foo_widget_info.xml.
+//   2. Add res/xml/qlafit_foo_widget_info.xml.
 //   3. Extend this plugin (or, once we see what varies, generalize it into
 //      withAndroidGlanceWidget.ts parameterized by class name + info XML) to
 //      register the new receiver in the manifest.
@@ -20,20 +20,20 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../src/localization/localeRegistry';
 
-const WIDGET_PACKAGE = 'com.sparkyapps.sparkyfitness.widget';
+const WIDGET_PACKAGE = 'com.qlafit.widget';
 const WIDGET_PACKAGE_IMPORT = `import ${WIDGET_PACKAGE}.CalorieWidgetPackage`;
 const WIDGET_PACKAGE_ADD_LINE = 'add(CalorieWidgetPackage())';
 
 const WIDGET_RECEIVERS = [
   {
     name: `${WIDGET_PACKAGE}.CalorieWidgetReceiver`,
-    label: '@string/sparky_calorie_widget_name',
-    provider: '@xml/sparky_calorie_widget_info',
+    label: '@string/qlafit_calorie_widget_name',
+    provider: '@xml/qlafit_calorie_widget_info',
   },
   {
     name: `${WIDGET_PACKAGE}.MacroWidgetReceiver`,
-    label: '@string/sparky_macro_widget_name',
-    provider: '@xml/sparky_macro_widget_info',
+    label: '@string/qlafit_macro_widget_name',
+    provider: '@xml/qlafit_macro_widget_info',
   },
 ];
 

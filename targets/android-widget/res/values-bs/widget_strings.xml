@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="sparky_calorie_widget_name">Kalorije</string>
-    <string name="sparky_widget_description">Dnevni pregled kalorija s prečicama za brzi unos</string>
-    <string name="sparky_macro_widget_name">Makronutrijenti</string>
-    <string name="sparky_macro_widget_description">Današnji proteini, ugljikohidrati i masti s prečicama za brzi unos</string>
+    <string name="qlafit_calorie_widget_name">Kalorije</string>
+    <string name="qlafit_widget_description">Dnevni pregled kalorija s prečicama za brzi unos</string>
+    <string name="qlafit_macro_widget_name">Makronutrijenti</string>
+    <string name="qlafit_macro_widget_description">Današnji proteini, ugljikohidrati i masti s prečicama za brzi unos</string>
     <string name="widget_kcal_left">%1$s kcal preostalo</string>
     <string name="widget_kcal_left_empty">- kcal preostalo</string>
     <string name="widget_grams">%1$s g</string>

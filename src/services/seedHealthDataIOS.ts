@@ -29,7 +29,7 @@ const HEART_RATE_TYPE = 'HKQuantityTypeIdentifierHeartRate' as const;
  * workout carrying the same tag value before writing a new one, so only the
  * latest seed of each kind survives.
  */
-const SEED_TAG_KEY = 'SparkyFitnessSeedTag';
+const SEED_TAG_KEY = 'QlaFitSeedTag';
 
 const workoutTagFilter = (tag: string) => ({
   metadata: {

@@ -114,9 +114,9 @@ export function getWorkoutIcon(session: ExerciseSessionResponse): IconName {
 }
 
 const SOURCE_DISPLAY_NAMES: Record<string, string> = {
-  manual: 'Sparky',
-  sparky: 'Sparky',
-  'workout plan': 'Sparky',
+  manual: 'qla.fit',
+  sparky: 'qla.fit',
+  'workout plan': 'qla.fit',
   healthkit: 'Apple Health',
   'health connect': 'Health Connect',
   garmin: 'Garmin',
@@ -133,7 +133,7 @@ const SOURCE_DISPLAY_NAMES: Record<string, string> = {
  */
 export function getSourceLabel(source: string | null | undefined): string {
   if (source == null) {
-    return 'Sparky';
+    return 'qla.fit';
   }
 
   const trimmed = source.trim();

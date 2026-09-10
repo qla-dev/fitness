@@ -1,11 +1,10 @@
 const {
   isDevVariant,
   DEV_BUNDLE_IDENTIFIER,
+  PROD_BUNDLE_IDENTIFIER,
 } = require('../../app.identifiers.js');
 const fs = require('fs');
 const path = require('path');
-
-const PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
 
 const escapePlistString = (value) =>
   String(value)

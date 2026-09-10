@@ -1,0 +1,8 @@
+# ios/ and android/ are generated output in this project (both are gitignored and
+# rebuilt by prebuild), so they are not fingerprint inputs. EAS runs prebuild
+# before computing the runtime version and then hashed the resulting ios/ as a
+# "bareNativeDir", while a machine that had never prebuilt had nothing to hash --
+# the two could never agree. What actually determines the native project is the
+# config, the plugins and the dependency set, and those are still hashed.
+ios/**/*
+android/**/*

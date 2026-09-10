@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="sparky_calorie_widget_name">Calorías</string>
-    <string name="sparky_widget_description">Resumen diario de calorías con accesos rápidos</string>
-    <string name="sparky_macro_widget_name">Macros</string>
-    <string name="sparky_macro_widget_description">Proteínas, carbohidratos y grasas de hoy con accesos rápidos</string>
+    <string name="qlafit_calorie_widget_name">Calorías</string>
+    <string name="qlafit_widget_description">Resumen diario de calorías con accesos rápidos</string>
+    <string name="qlafit_macro_widget_name">Macros</string>
+    <string name="qlafit_macro_widget_description">Proteínas, carbohidratos y grasas de hoy con accesos rápidos</string>
     <string name="widget_kcal_left">%1$s kcal restantes</string>
     <string name="widget_kcal_left_empty">- kcal restantes</string>
     <string name="widget_grams">%1$s g</string>

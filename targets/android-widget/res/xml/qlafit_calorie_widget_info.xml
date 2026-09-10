@@ -5,8 +5,8 @@
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/sparky_widget_initial_layout"
-    android:previewLayout="@layout/sparky_widget_initial_layout"
+    android:initialLayout="@layout/qlafit_widget_initial_layout"
+    android:previewLayout="@layout/qlafit_widget_initial_layout"
     android:resizeMode="none"
-    android:description="@string/sparky_widget_description"
+    android:description="@string/qlafit_widget_description"
     android:widgetCategory="home_screen" />

@@ -1,4 +1,4 @@
-package com.sparkyapps.sparkyfitness.exactalarm
+package com.qlafit.exactalarm
 
 import android.view.View
 import com.facebook.react.ReactPackage

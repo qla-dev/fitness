@@ -9,7 +9,7 @@ import type { FoodEntryMeal } from '../types/foodEntryMeals';
 // (one HC record per logged meal, not per component).
 //
 // The collapsed entry has no `source` (logged meals are assembled manually in
-// Sparky), so writeback always exports it — see the source filter in writeback.ts.
+// qla.fit), so writeback always exports it — see the source filter in writeback.ts.
 
 export function hasLoggedMealComponents(foodEntries: FoodEntry[]): boolean {
   return foodEntries?.some((entry) => !!entry?.food_entry_meal_id) ?? false;

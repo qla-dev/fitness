@@ -5,12 +5,13 @@ import { nativeLanguageTags } from './src/localization/localeRegistry';
 const {
   getIosAppGroup,
   DEV_BUNDLE_IDENTIFIER,
+  PROD_BUNDLE_IDENTIFIER,
 } = require('./app.identifiers.js');
 
 const APP_NAME = 'qla.fit';
 const APP_SLUG = 'fitness';
-const ANDROID_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
-const IOS_PROD_BUNDLE_IDENTIFIER = 'com.SparkyApps.SparkyFitnessMobile';
+const ANDROID_PROD_BUNDLE_IDENTIFIER = PROD_BUNDLE_IDENTIFIER;
+const IOS_PROD_BUNDLE_IDENTIFIER = PROD_BUNDLE_IDENTIFIER;
 const DEV_APPLE_TEAM_ID = process.env.EXPO_DEV_APPLE_TEAM_ID || '';
 const PROD_APPLE_TEAM_ID = process.env.EXPO_PROD_APPLE_TEAM_ID || '';
 
@@ -61,7 +62,7 @@ const androidPermissions = [
   'android.permission.health.READ_WHEELCHAIR_PUSHES',
   'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
   'android.permission.health.READ_HEALTH_DATA_HISTORY',
-  // Writeback (Sparky → Health Connect): nutrition + water. Production feature,
+  // Writeback (qla.fit → Health Connect): nutrition + water. Production feature,
   // so these live in the base list (not the dev-only writes below).
   'android.permission.health.WRITE_NUTRITION',
   'android.permission.health.WRITE_HYDRATION',
@@ -309,7 +310,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
             process.env.WIDGET_BUNDLE_IDENTIFIER ||
             (isDev
               ? `${DEV_BUNDLE_IDENTIFIER}.ExpoWidgetsTarget`
-              : 'com.SparkyApps.SparkyFitnessMobile.ExpoWidgetsTarget'),
+              : `${PROD_BUNDLE_IDENTIFIER}.ExpoWidgetsTarget`),
           // Live Activities register at runtime via createLiveActivity and must
           // NOT be listed here — widgets[] is only for home/Lock Screen widgets
           // (an entry without supportedFamilies breaks the generated target).

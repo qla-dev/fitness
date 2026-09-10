@@ -3,7 +3,7 @@ import { attachWorkoutTelemetry } from '../shared/workoutTelemetryPayload';
 import {
   TransformedExerciseSession,
   TransformedNutritionEntry,
-  SparkyMealType,
+  DiaryMealType,
   AggregatedSleepSession,
   RecordTimezoneMetadata,
   SleepStageType,
@@ -507,9 +507,9 @@ const mapHealthConnectSleepStage = (stage: number): SleepStageType | null => {
   }
 };
 
-// Health Connect MealType constants → Sparky meal_type slug.
+// Health Connect MealType constants → qla.fit meal_type slug.
 // HC: BREAKFAST=1, LUNCH=2, DINNER=3, SNACK=4, UNKNOWN=0.
-const mapHealthConnectMealType = (mealType: unknown): SparkyMealType => {
+const mapHealthConnectMealType = (mealType: unknown): DiaryMealType => {
   switch (mealType) {
     case 1:
       return 'breakfast';
@@ -520,12 +520,12 @@ const mapHealthConnectMealType = (mealType: unknown): SparkyMealType => {
     case 4:
       return 'snacks';
     default:
-      return 'snacks'; // UNKNOWN/0 → snacks (no neutral bucket in Sparky)
+      return 'snacks'; // UNKNOWN/0 → snacks (no neutral bucket in qla.fit)
   }
 };
 
 // HC's other Mass nutrients (biotin, magnesium, vitaminB12, …) are intentionally
-// dropped: Sparky has no column for them, and its custom_nutrients are matched by
+// dropped: qla.fit has no column for them, and its custom_nutrients are matched by
 // name to *user-defined* nutrients with *user-chosen* units — so there's no unit
 // we could store them in that would display correctly. Forwarding them would be
 // fabricating both the value's unit and a name that nothing renders.
@@ -569,7 +569,7 @@ const extractEnergyKcal = (
 const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
   Nutrition: (rec, _record, _metricConfig, output) => {
     if (!rec.startTime) return;
-    if (isOwnRecord(rec)) return; // don't re-import nutrition Sparky wrote
+    if (isOwnRecord(rec)) return; // don't re-import nutrition qla.fit wrote
 
     const metadata = rec.metadata as { id?: string } | undefined;
     // Skip records without HC's stable id: the server keys idempotent re-sync on

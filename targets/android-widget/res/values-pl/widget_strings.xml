@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="sparky_calorie_widget_name">Kalorie</string>
-    <string name="sparky_widget_description">Dzienne podsumowanie kalorii ze skrótami szybkiego dodawania</string>
-    <string name="sparky_macro_widget_name">Makroskładniki</string>
-    <string name="sparky_macro_widget_description">Dzisiejsze białko, węglowodany i tłuszcz ze skrótami szybkiego dodawania</string>
+    <string name="qlafit_calorie_widget_name">Kalorie</string>
+    <string name="qlafit_widget_description">Dzienne podsumowanie kalorii ze skrótami szybkiego dodawania</string>
+    <string name="qlafit_macro_widget_name">Makroskładniki</string>
+    <string name="qlafit_macro_widget_description">Dzisiejsze białko, węglowodany i tłuszcz ze skrótami szybkiego dodawania</string>
     <string name="widget_kcal_left">Pozostało %1$s kcal</string>
     <string name="widget_kcal_left_empty">Pozostało - kcal</string>
     <string name="widget_grams">%1$s g</string>

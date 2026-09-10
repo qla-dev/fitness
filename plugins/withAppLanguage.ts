@@ -10,7 +10,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../src/localization/localeRegistry';
 
-const LANGUAGE_PACKAGE = 'com.sparkyapps.sparkyfitness.language';
+const LANGUAGE_PACKAGE = 'com.qlafit.language';
 export const LANGUAGE_IMPORT = `import ${LANGUAGE_PACKAGE}.AppLanguagePackage`;
 export const LANGUAGE_ADD_LINE = 'add(AppLanguagePackage())';
 const SOURCE_DIR = 'targets/android-language/kotlin';
@@ -76,7 +76,7 @@ const withAppLanguage: ConfigPlugin = (config) => {
       await copyTree(sourceRoot, destinationRoot);
       const modulePath = path.join(
         destinationRoot,
-        'com/sparkyapps/sparkyfitness/language/AppLanguageModule.kt'
+        'com/qlafit/language/AppLanguageModule.kt'
       );
       const moduleSource = await fs.promises.readFile(modulePath, 'utf8');
       await fs.promises.writeFile(

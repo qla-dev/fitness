@@ -21,14 +21,14 @@ import { toLocalDateString } from '../../utils/dateUtils';
 // path converts identically.
 export const BLOOD_GLUCOSE_MG_DL_PER_MMOL_L = 18.018;
 
-// HC stores every nutrient as Mass (grams), but Sparky's food columns expect a
+// HC stores every nutrient as Mass (grams), but qla.fit's food columns expect a
 // specific unit per nutrient — matching how OpenFoodFacts/Garmin populate them:
 // macros in grams, most minerals/vitamins in mg, a few trace nutrients in mcg.
 // We convert from grams accordingly; otherwise e.g. sodium lands 1000x too low.
 export const G_TO_MG = 1_000;
 export const G_TO_MCG = 1_000_000;
 
-// HC NutritionRecord Mass field → { Sparky column, grams→column-unit factor }.
+// HC NutritionRecord Mass field → { qla.fit column, grams→column-unit factor }.
 // Exported so the writeback mappers (both platforms) reuse the exact same field/unit
 // mapping (read multiplies grams→column-unit; writeback writes the column value back
 // in that same unit via factor→HC-unit, so the two directions never drift).
@@ -141,7 +141,7 @@ export const createHydrationTransformer =
     getDateString: (date: unknown) => string | null
   ): ValueTransformer =>
   (rec) => {
-    if (isOwnRecord(rec)) return null; // don't re-import water Sparky wrote
+    if (isOwnRecord(rec)) return null; // don't re-import water qla.fit wrote
     const liters = extractNestedValue(rec, 'volume', 'inLiters');
     const date = getDateString(rec.startTime);
     const timestamp =

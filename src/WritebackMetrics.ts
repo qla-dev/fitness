@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 
-// Writeback metrics (Sparky → OS health store). Kept separate from the read
+// Writeback metrics (qla.fit → OS health store). Kept separate from the read
 // HealthMetrics list: those drive background-delivery subscriptions and inbound
 // sync, whereas these are outbound and opt-in. Supported on both platforms — Health
 // Connect on Android (healthconnect/writeback.ts) and HealthKit on iOS

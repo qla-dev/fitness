@@ -183,7 +183,7 @@ export function resolveExerciseCalories(
 /**
  * TDEE baseline: BMR × activity multiplier.
  */
-export function computeSparkyfitnessBurned(
+export function computeQlaFitBurned(
   bmr: number,
   activityLevel: string,
 ): number {
