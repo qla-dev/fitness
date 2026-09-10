@@ -3,15 +3,34 @@ import { z } from 'zod';
 import { isLocalDataMode } from './dataMode';
 import { getActiveServerConfig } from './storage';
 
-export const answersSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
+export const answersSchema = z.record(
+  z.string(),
+  z.union([z.string(), z.array(z.string())])
+);
 export type SetupAnswers = z.infer<typeof answersSchema>;
-const itemSchema = z.object({ id: z.string(), name: z.string(), quantity: z.string(), checked: z.boolean(), price: z.number().optional() });
-const listSchema = z.object({ id: z.string(), name: z.string(), note: z.string(), store: z.string(), archived: z.boolean(), items: z.array(itemSchema), createdAt: z.string() });
+const itemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  quantity: z.string(),
+  checked: z.boolean(),
+  price: z.number().optional(),
+});
+const listSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  note: z.string(),
+  store: z.string(),
+  archived: z.boolean(),
+  items: z.array(itemSchema),
+  createdAt: z.string(),
+});
 export type GroceryList = z.infer<typeof listSchema>;
 export type GroceryItem = z.infer<typeof itemSchema>;
 const stateSchema = z.object({
-  profile: answersSchema.default({}), profileDone: z.boolean().default(false),
-  grocery: answersSchema.default({}), groceryDone: z.boolean().default(false),
+  profile: answersSchema.default({}),
+  profileDone: z.boolean().default(false),
+  grocery: answersSchema.default({}),
+  groceryDone: z.boolean().default(false),
   lists: z.array(listSchema).default([]),
 });
 export type PersonalSetup = z.infer<typeof stateSchema>;
@@ -28,7 +47,10 @@ export async function readSetup(scope: string): Promise<PersonalSetup> {
   return raw === null ? emptySetup() : stateSchema.parse(JSON.parse(raw));
 }
 let queue: Promise<unknown> = Promise.resolve();
-export function updateSetup(scope: string, update: (state: PersonalSetup) => PersonalSetup): Promise<PersonalSetup> {
+export function updateSetup(
+  scope: string,
+  update: (state: PersonalSetup) => PersonalSetup
+): Promise<PersonalSetup> {
   const task = queue.then(async () => {
     const next = stateSchema.parse(update(await readSetup(scope)));
     await AsyncStorage.setItem(key(scope), JSON.stringify(next));

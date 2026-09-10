@@ -51,6 +51,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
 
 // Profile queries and preview modals are independent of family navigation.
 jest.mock('../../src/components/ProfileSummary', () => () => null);
+jest.mock('../../src/components/ProfileSetup', () => () => null);
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSTabsActive: () => false,
