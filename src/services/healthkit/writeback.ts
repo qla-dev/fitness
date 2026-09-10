@@ -41,7 +41,7 @@ import { runTasksInBatches } from '../../utils/concurrency';
 
 type DailySummary = Awaited<ReturnType<typeof fetchDailySummary>>;
 
-// Orchestrates the outbound phase: SparkyFitness diary → HealthKit. Reads the daily
+// Orchestrates the outbound phase: qla.fit diary → HealthKit. Reads the daily
 // summary once per date, maps the manually-logged entries to HealthKit samples, and
 // replaces the previous run's records (delete-then-save). Nutrition is written as one
 // HKCorrelationTypeIdentifierFood per food entry so it appears grouped in Apple Health;
@@ -507,7 +507,7 @@ const localDayDate = (day: string, endOfDay: boolean): Date => {
 };
 
 /**
- * Delete samples SparkyFitness wrote to HealthKit. `range` null = full purge (all
+ * Delete samples qla.fit wrote to HealthKit. `range` null = full purge (all
  * time) — also turns writeback off, a true rollback; a date range removes just that
  * window and leaves writeback on. Deletes by date range per sample type (a predicate
  * delete, like Health Connect) rather than tracked UUIDs, so it also reaches records
@@ -550,7 +550,7 @@ export const removeWrittenData = async (
   }
 
   addLog(
-    `[Writeback] Removed SparkyFitness data from Apple Health (${range ? `${range.from}..${range.to}` : 'all time'})`,
+    `[Writeback] Removed qla.fit data from Apple Health (${range ? `${range.from}..${range.to}` : 'all time'})`,
     'INFO'
   );
   return { ok };

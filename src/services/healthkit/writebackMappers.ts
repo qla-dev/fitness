@@ -11,7 +11,7 @@ import {
 } from '../shared/dataTransformation';
 import { toLocalDateString, addDays } from '../../utils/dateUtils';
 
-// Pure mappers: SparkyFitness diary data → HealthKit write descriptors. No HealthKit
+// Pure mappers: qla.fit diary data → HealthKit write descriptors. No HealthKit
 // I/O here so this stays unit-testable. The orchestrator (writeback.ts) performs the
 // saveCorrelationSample / saveQuantitySample / deleteObjects calls.
 //
@@ -218,7 +218,7 @@ export const foodEntryToNutrientSamples = (
   if (samples.length === 0) return null; // nothing positive to write
 
   return {
-    name: entry.food_name || 'SparkyFitness food',
+    name: entry.food_name || 'qla.fit food',
     mealType: entry.meal_type,
     start,
     end,

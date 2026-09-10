@@ -117,7 +117,7 @@ describe('AppSettingsScreen', () => {
     expect(getByText('Language')).toBeTruthy();
     expect(
       getByText(
-        'Use your device language or choose a language for SparkyFitness.'
+        'Use your device language or choose a language for qla.fit.'
       )
     ).toBeTruthy();
   });

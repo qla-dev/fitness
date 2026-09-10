@@ -1,14 +1,14 @@
-# Privacy Policy for SparkyFitness
+# Privacy Policy for qla.fit
 
 **Last Updated: [Date]**
 
 ## Introduction
 
-SparkyFitness ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how our mobile application (the "App") collects, uses, and safeguards your information.
+qla.fit ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how our mobile application (the "App") collects, uses, and safeguards your information.
 
 ## Health Data
 
-SparkyFitness integrates with Apple HealthKit and Google Health Connect to provide you with fitness insights.
+qla.fit integrates with Apple HealthKit and Google Health Connect to provide you with fitness insights.
 
 ### What We Collect
 

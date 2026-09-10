@@ -11,7 +11,7 @@ import type { LocalRequest, LocalResult } from './request';
 /**
  * Provider catalogs for local data mode.
  *
- * A fresh local database has no foods or exercises because SparkyFitness has
+ * A fresh local database has no foods or exercises because qla.fit has
  * never shipped a bundled catalog — not in this package and not upstream. The
  * server keeps none either: it proxies keyless public APIs and gives every new
  * account a provider row per source (`create_default_external_data_providers`
@@ -47,7 +47,7 @@ const FEDB_DATASET_TTL_MS = 60 * 60 * 1000;
 const FEDB_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 
 // Open Food Facts asks API clients to identify themselves.
-const USER_AGENT = `SparkyFitnessMobile/${
+const USER_AGENT = `qla.fit/${
   Constants.expoConfig?.version ?? '0.0.0'
 } (https://github.com/CodeWithCJ/SparkyFitness)`;
 

@@ -30,7 +30,7 @@ import {
 
 type DailySummary = Awaited<ReturnType<typeof fetchDailySummary>>;
 
-// Orchestrates the outbound phase: SparkyFitness diary → Health Connect. Reads the
+// Orchestrates the outbound phase: qla.fit diary → Health Connect. Reads the
 // daily summary once per date, maps the manually-logged entries to HC records, and
 // replaces the previous run's records (delete-then-insert with fresh ids). Android
 // only; the iOS entry point is a no-op.
@@ -316,7 +316,7 @@ const trackingKeysToClear = (
   });
 
 /**
- * Delete records SparkyFitness wrote to Health Connect. `range` null = full purge
+ * Delete records qla.fit wrote to Health Connect. `range` null = full purge
  * (all time) — also turns writeback off, a true rollback; a date range removes just
  * that window and leaves writeback on. Health Connect only lets an app delete records
  * it authored (by dataOrigin), so other apps' and manual data are never touched, and
@@ -362,7 +362,7 @@ export const removeWrittenData = async (
   }
 
   addLog(
-    `[Writeback] Removed SparkyFitness data from Health Connect (${range ? `${range.from}..${range.to}` : 'all time'})`,
+    `[Writeback] Removed qla.fit data from Health Connect (${range ? `${range.from}..${range.to}` : 'all time'})`,
     'INFO'
   );
   return { ok };

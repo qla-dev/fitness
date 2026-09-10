@@ -433,7 +433,7 @@ export const runForegroundSync = async (
     }
   }
 
-  // Outbound phase: SparkyFitness diary → OS health store. Runs before the inbound
+  // Outbound phase: qla.fit diary → OS health store. Runs before the inbound
   // result is returned, in its own try/catch so a writeback failure never affects
   // the inbound sync outcome.
   try {

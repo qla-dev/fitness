@@ -89,7 +89,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   authorizationStatusFor: jest.fn(() => 2),
   currentAppSource: jest.fn(() => ({
     bundleIdentifier: 'com.sparkyfitness.mobile',
-    name: 'SparkyFitness',
+    name: 'qla.fit',
   })),
   AuthorizationStatus: {
     notDetermined: 0,

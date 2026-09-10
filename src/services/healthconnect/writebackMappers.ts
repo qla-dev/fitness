@@ -15,7 +15,7 @@ import { toLocalDateString, addDays } from '../../utils/dateUtils';
 // HC Mass units we emit (subset of the library's Mass['unit']).
 type MassUnit = 'grams' | 'milligrams' | 'micrograms';
 
-// Pure mappers: SparkyFitness diary data → Health Connect write records. No HC
+// Pure mappers: qla.fit diary data → Health Connect write records. No HC
 // I/O here so this stays unit-testable. The orchestrator (writeback.ts) supplies
 // `clientRecordVersion` (a timestamp) and performs the actual insert/delete.
 
@@ -134,7 +134,7 @@ export const foodEntryToNutritionRecord = (
     startTime: interval.start,
     endTime: interval.end,
     mealType: mealSlugToInt(entry.meal_type),
-    name: entry.food_name || 'SparkyFitness food',
+    name: entry.food_name || 'qla.fit food',
     metadata: {
       clientRecordId: nutritionClientRecordId(entry.id, clientRecordVersion),
       clientRecordVersion,

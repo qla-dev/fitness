@@ -292,7 +292,7 @@ export async function maybePromptForExactAlarmPermission(): Promise<void> {
       notificationCopy('notifications.exactAlarm.title', 'On-time alerts'),
       notificationCopy(
         'notifications.exactAlarm.message',
-        'Android delays scheduled alerts unless SparkyFitness is allowed to set exact alarms. Enable \"Alarms & reminders\" so rest timers and medication reminders ring on time.'
+        'Android delays scheduled alerts unless qla.fit is allowed to set exact alarms. Enable \"Alarms & reminders\" so rest timers and medication reminders ring on time.'
       ),
       [
         {

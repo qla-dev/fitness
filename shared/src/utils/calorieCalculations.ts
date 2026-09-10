@@ -220,10 +220,10 @@ export function computeProjectedBurn(
  */
 export function computeTdeeAdjustment(
   projectedBurn: number,
-  sparkyfitnessBurned: number,
+  qlaFitBurned: number,
   allowNegative: boolean,
 ): number {
-  const raw = projectedBurn - sparkyfitnessBurned;
+  const raw = projectedBurn - qlaFitBurned;
   return allowNegative ? raw : Math.max(0, raw);
 }
 

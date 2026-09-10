@@ -13,7 +13,7 @@ import { usePreferences } from '../hooks/usePreferences';
  * on a runtime language switch without depending on dayjs global-locale state.
  */
 
-/** Maps the SparkyFitness application locale to the dayjs locale expected by the datepicker. */
+/** Maps the qla.fit application locale to the dayjs locale expected by the datepicker. */
 export function appLocaleToDatepickerLocale(locale: string): string {
   return locale.toLowerCase().startsWith('pl') ? 'pl' : 'en';
 }

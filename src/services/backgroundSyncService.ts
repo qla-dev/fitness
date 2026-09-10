@@ -325,7 +325,7 @@ const runBackgroundSync = async (
     );
   }
 
-  // Outbound phase: SparkyFitness diary → OS health store (Health Connect on
+  // Outbound phase: qla.fit diary → OS health store (Health Connect on
   // Android, HealthKit on iOS; resolved via ./writeback). Runs regardless of
   // inbound results and in its own try/catch so a writeback failure never affects
   // the inbound sync or its cursor above.

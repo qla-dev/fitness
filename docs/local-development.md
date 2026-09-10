@@ -10,7 +10,7 @@ pnpm exec expo start --dev-client
 ```
 
 The development client still loads JavaScript from Metro. “Local” means no
-SparkyFitness backend; it does not turn a development client into a standalone
+qla.fit backend; it does not turn a development client into a standalone
 release build. Apple signing and device registration are handled by EAS. If
 requested, provide your Apple team through `EXPO_DEV_APPLE_TEAM_ID`.
 
@@ -30,7 +30,7 @@ defaults, not a personalized plan.
 
 ## Provider catalogs
 
-The libraries start empty: SparkyFitness ships no bundled food or exercise
+The libraries start empty: qla.fit ships no bundled food or exercise
 catalog, and the server does not hold one either — it proxies public APIs and
 creates a provider row per user at signup. Those APIs need no key, so
 `providerCatalog.ts` calls them from the device and `initialise()` seeds the
