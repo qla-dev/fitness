@@ -238,17 +238,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <SectionErrorBoundary
             sectionName={t('settings.title', { defaultValue: 'Settings' })}
           >
-            {!isLocalDataMode() && (
-              <SettingsRow
-                icon="health-data-sync"
-                title={t('settings.rows.healthSync', {
-                  defaultValue: 'Health Data Sync',
-                })}
-                subtitle={syncSubtitle}
-                onPress={() => navigation.navigate('Sync')}
-                iconColor={catPink}
-              />
-            )}
+            <SettingsRow
+              icon="health-data-sync"
+              title={t('settings.rows.healthSync', {
+                defaultValue: 'Health Data Sync',
+              })}
+              subtitle={syncSubtitle}
+              onPress={() => navigation.navigate('Sync')}
+              iconColor={catPink}
+            />
 
             <SettingsRowGroup
               title={t('profile.preferences', { defaultValue: 'Preferences' })}
@@ -312,7 +310,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               {isConnected && (
                 <SettingsRow
                   icon="diary-settings"
-                  title={t('settings.rows.diary', { defaultValue: 'Nutrition' })}
+                  title={t('settings.rows.diary', {
+                    defaultValue: 'Nutrition',
+                  })}
                   subtitle={t('profile.diarySubtitle', {
                     defaultValue: 'Meal types and diary layout',
                   })}

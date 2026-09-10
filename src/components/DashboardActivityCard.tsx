@@ -1,9 +1,11 @@
 import DashboardCardTitle from './DashboardCardTitle';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useCSSVariable } from 'uniwind';
 import Svg, { Circle } from 'react-native-svg';
 import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
+import { useManualHealthSync } from '../hooks/useManualHealthSync';
 import Icon, { type IconName } from './Icon';
 
 export default function DashboardActivityCard({
@@ -14,6 +16,8 @@ export default function DashboardActivityCard({
   steps?: number | null;
 }) {
   const { t } = useTranslation();
+  const { sync, isPending } = useManualHealthSync();
+  const [textMuted] = useCSSVariable(['--color-text-muted']) as string[];
   const number = (value: number) =>
     formatLocalizedNumber(value, { maximumFractionDigits: 0 });
   const metrics = [
@@ -45,9 +49,30 @@ export default function DashboardActivityCard({
   return (
     <View>
       <View className="bg-surface rounded-2xl p-4 mb-3">
-        <DashboardCardTitle className="mb-3">
-          {t('dashboard.activityRings', { defaultValue: 'Activity Rings' })}
-        </DashboardCardTitle>
+        <View className="flex-row items-center justify-between mb-3">
+          <DashboardCardTitle>
+            {t('dashboard.activityRings', { defaultValue: 'Activity Rings' })}
+          </DashboardCardTitle>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('dashboard.activitySync', {
+              defaultValue: 'Sync health data',
+            })}
+            accessibilityState={{ disabled: isPending, busy: isPending }}
+            disabled={isPending}
+            onPress={() => void sync()}
+            hitSlop={12}
+            // Fixed box so swapping the icon for the spinner cannot nudge the
+            // title or change the card's height mid-sync.
+            className="w-6 h-6 items-center justify-center"
+          >
+            {isPending ? (
+              <ActivityIndicator size="small" color={textMuted} />
+            ) : (
+              <Icon name="sync" size={18} color={textMuted} />
+            )}
+          </Pressable>
+        </View>
         <View className="flex-row items-center gap-3">
           <Svg
             width={144}

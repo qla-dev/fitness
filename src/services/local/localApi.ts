@@ -15,6 +15,11 @@ import { LOCAL_PROVIDER_SEEDS, catalogRoute } from './providerCatalog';
 import type { LocalRequest } from './request';
 import { goalsForDate, saveGoalsFromToday } from './goalHistory';
 import { getTodayDate } from '../../utils/dateUtils';
+import {
+  importedWater,
+  importHealthData,
+  localMeasurements,
+} from './healthRepository';
 
 // Starter display values, not a personalised recommendation. Stored goals can
 // later be imported/edited through the same API contract.
@@ -82,6 +87,16 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   initialise(db);
   const { path, query, method, body } = request;
   const parts = path.split('/');
+  if (path === '/api/health-data' && method === 'POST')
+    return importHealthData(db, body.records);
+  if (path === '/api/sleep' && method === 'GET')
+    return table(db, 'sleep').filter(
+      (row) =>
+        (!query.get('startDate') ||
+          String(row.entry_date) >= query.get('startDate')!) &&
+        (!query.get('endDate') ||
+          String(row.entry_date) <= query.get('endDate')!)
+    );
   if (path === '/api/daily-summary') {
     const date = query.get('date') ?? '';
     return {
@@ -90,9 +105,12 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
         (row) => row.entry_date === date
       ),
       exerciseSessions: localSessions(db, date),
-      waterIntake: Number(
-        table(db, 'water').find((row) => row.entry_date === date)?.water_ml ?? 0
-      ),
+      waterIntake:
+        importedWater(db, date) +
+        Number(
+          table(db, 'water').find((row) => row.entry_date === date)?.water_ml ??
+            0
+        ),
     };
   }
   if (path === '/api/identity/profiles') {
@@ -161,7 +179,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   if (path === '/api/external-providers' && method === 'GET')
     return table(db, 'providers');
   if (path.startsWith('/api/measurements/check-in-measurements-range/'))
-    return table(db, 'measurements')
+    return localMeasurements(db)
       .filter(
         (row) =>
           String(row.entry_date) >= parts[4] &&
@@ -179,7 +197,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     const existing = table(db, 'water').find((row) => row.entry_date === date);
     if (method === 'GET')
       return {
-        water_ml: existing?.water_ml ?? 0,
+        water_ml: Number(existing?.water_ml ?? 0) + importedWater(db, date),
         manual_ml: existing?.water_ml ?? 0,
       };
     const container = findRecord(db, 'waterContainers', body.container_id);
@@ -257,7 +275,15 @@ export async function localApiFetch<T>(options: {
   const path = rawPath.replace(/\/$/, '');
   // Match the HTTP transport's JSON semantics: omitted values stay omitted,
   // explicit null clears a field, and caller-owned objects cannot mutate storage.
-  const body = asRecord(JSON.parse(JSON.stringify(options.body ?? {})));
+  const body = asRecord(
+    JSON.parse(
+      JSON.stringify(
+        path === '/api/health-data'
+          ? { records: options.body }
+          : (options.body ?? {})
+      )
+    )
+  );
   const request: LocalRequest = {
     path,
     query: new URLSearchParams(search),

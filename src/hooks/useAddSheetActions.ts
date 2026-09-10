@@ -5,14 +5,8 @@ import { CommonActions } from '@react-navigation/native';
 import { queryClient } from './queryClient';
 import { serverConnectionQueryKey } from './queryKeys';
 import { useSyncHealthData } from './useSyncHealthData';
+import { prepareManualHealthSync } from './useManualHealthSync';
 import { promptForActiveWorkoutConflict } from './useStartLiveWorkout';
-import { loadTimeRange } from '../services/storage';
-import type { TimeRange } from '../services/storage';
-import {
-  initHealthConnect,
-  loadHealthPreference,
-} from '../services/healthConnectService';
-import { HEALTH_METRICS } from '../HealthMetrics';
 import { isSyncClaimed } from '../services/autoSyncCoordinator';
 import { loadActiveDraft, clearDraft } from '../services/workoutDraftService';
 import { navigationRef as rootNavigationRef } from '../components/ActiveWorkoutBar';
@@ -321,30 +315,10 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
   const handleSyncHealthData = useCallback(async () => {
     if (syncMutation.isPending || isSyncClaimed()) return;
 
-    const initialized = await initHealthConnect();
-    if (!initialized) {
-      Alert.alert(
-        t('addSheetActions.healthUnavailable.title', {
-          defaultValue: 'Health Data Unavailable',
-        }),
-        t('addSheetActions.healthUnavailable.message', {
-          defaultValue:
-            'Could not initialize health data access. Check your permissions in Settings.',
-        })
-      );
-      return;
-    }
+    const params = await prepareManualHealthSync(t);
+    if (!params) return;
 
-    const loadedTimeRange = await loadTimeRange();
-    const timeRange: TimeRange = loadedTimeRange ?? '3d';
-
-    const healthMetricStates: Record<string, boolean> = {};
-    for (const metric of HEALTH_METRICS) {
-      const enabled = await loadHealthPreference<boolean>(metric.preferenceKey);
-      healthMetricStates[metric.stateKey] = enabled === true;
-    }
-
-    syncMutation.mutate({ timeRange, healthMetricStates });
+    syncMutation.mutate(params);
   }, [syncMutation, t]);
 
   const handleAddSheetDismissWithoutAction = useCallback(() => {

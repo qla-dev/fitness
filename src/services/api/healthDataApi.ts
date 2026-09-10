@@ -451,6 +451,13 @@ const sendHealthDataChunked = async (
 export const syncHealthData = async (
   data: HealthDataPayload
 ): Promise<HealthDataSyncSummary | undefined> => {
+  if (isLocalDataMode()) {
+    return localApiFetch<HealthDataSyncSummary>({
+      endpoint: '/api/health-data',
+      method: 'POST',
+      body: data,
+    });
+  }
   const config = await getActiveServerConfig();
   if (!config) {
     throw new Error('Server configuration not found.');

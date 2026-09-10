@@ -7,6 +7,14 @@ const measurementsRangeQueryFamily = ['measurementsRange'] as const;
 const exerciseHistoryQueryFamily = ['exerciseHistory'] as const;
 
 export function refreshHealthSyncCache(queryClient: QueryClient) {
+  for (const family of [
+    'sleep',
+    'sleepRange',
+    'customCategories',
+    'customMeasurements',
+  ]) {
+    void queryClient.invalidateQueries({ queryKey: [family] });
+  }
   void queryClient.invalidateQueries({ queryKey: dailySummaryQueryFamily });
   void queryClient.invalidateQueries({ queryKey: measurementsQueryFamily });
   void queryClient.invalidateQueries({

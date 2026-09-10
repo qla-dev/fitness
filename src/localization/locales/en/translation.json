@@ -727,7 +727,8 @@
     "trendPeriod_other": "Last {{count}} days",
     "trendSleepSummary": "Your average recorded sleep was {{value}} per night.",
     "trendWeightSummary": "Your average recorded weight was {{value}}.",
-    "trendStepsSummary": "Your daily step average for this period was {{value}}."
+    "trendStepsSummary": "Your daily step average for this period was {{value}}.",
+    "activitySync": "Sync health data"
   },
   "syncScreen": {
     "healthConnectSettings": "Health Connect settings",
@@ -1694,6 +1695,8 @@
     "daysToDue_other": "{{count}}d to due date"
   },
   "syncHealth": {
+    "noMetricsTitle": "Choose health data to sync",
+    "noMetricsMessage": "Tap the profile icon in the top-right, open Health Data Sync, and enable the metrics you want to import. Then try again.",
     "unknownError": "Unknown sync error",
     "syncing": "Syncing health data…",
     "incomplete": "Sync incomplete",
