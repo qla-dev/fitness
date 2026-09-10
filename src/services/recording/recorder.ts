@@ -30,6 +30,8 @@ import {
   getSensorSnapshot,
   loadSavedSensors,
   resumeSavedSensors,
+  startWatchHeartRate,
+  stopWatchHeartRate,
   subscribeSensorReadings,
 } from './sensors';
 import {
@@ -365,6 +367,10 @@ export async function startRecording(
     };
     await checkpointRecording(next);
     publish({ session: next });
+    // Best effort and deliberately not awaited into the failure path: a watch
+    // that is asleep, unpaired, or without the app installed must not stop a
+    // run from being recorded on the phone.
+    void startWatchHeartRate(sport);
   });
 }
 
@@ -389,6 +395,10 @@ export async function pauseRecording(finish = false) {
     wheelAt = 0;
     if (await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK))
       await Location.stopLocationUpdatesAsync(RECORDING_TASK);
+    // A pause deliberately leaves the watch session open: recordSensor drops
+    // anything outside the recording phase, so nothing is mis-credited, and
+    // resuming costs nothing. Only finishing ends the workout on the watch.
+    if (finish) void stopWatchHeartRate();
   });
 }
 
@@ -422,6 +432,10 @@ export async function discardRecording() {
     publish({ session: null, points: [], error: false });
     filter = undefined;
     wheelAt = 0;
+    // Discarding abandons a session that may never have been finished, so the
+    // watch workout has to be ended here too or it would run until the battery
+    // died.
+    void stopWatchHeartRate();
   });
 }
 

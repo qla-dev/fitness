@@ -116,6 +116,11 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
 
   const isDev = environment === 'dev' || environment === 'development';
 
+  // Single source of truth for the linked EAS project: the update URL is
+  // derived from the same id EAS Build already reads out of app.json.
+  const easProjectId = (config.extra as { eas?: { projectId?: string } })
+    ?.eas?.projectId;
+
   if (isDev) {
     androidPermissions.push(...devAndroidPermissions);
   }
@@ -128,6 +133,18 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
     name: APP_NAME,
     slug: APP_SLUG,
     version: packageJson.version,
+    // OTA updates. The runtime version is a fingerprint of the native project
+    // rather than the app version: a JS-only change keeps the same fingerprint
+    // and ships over the air, while any native change (a new target, a
+    // permission, a patched module) produces a new one, so an update can never
+    // land on a build whose native side does not match it.
+    runtimeVersion: { policy: 'fingerprint' },
+    updates: {
+      url: `https://u.expo.dev/${easProjectId}`,
+      // A cold start must not block on the network; a downloaded update is
+      // applied on the next launch instead.
+      fallbackToCacheTimeout: 0,
+    },
     locales: Object.fromEntries(
       nativeLanguageTags().map((language) => [
         language,

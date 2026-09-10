@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PermissionsAndroid, Platform } from 'react-native';
 import type { BleManager, Device, Subscription } from 'react-native-ble-plx';
+import {
+  addWatchHeartRateListener,
+  addWatchWorkoutStateListener,
+  isWatchLinkAvailable,
+  startWatchWorkout,
+  stopWatchWorkout,
+} from '@/modules/watch-link';
 import { addLog } from '../LogService';
 import {
   CSC_MEASUREMENT,
@@ -31,6 +38,14 @@ interface SensorSnapshot {
   wheelMm: number;
   heartRate: number | null;
   heartRateAt: number;
+  /**
+   * Which source produced the current heart rate, so the panel can say so. A
+   * chest strap and the watch are both plausible at once, and a reading with no
+   * attribution reads as a malfunction when the two disagree.
+   */
+  heartRateSource: 'ble' | 'watch' | null;
+  /** The paired watch has an open workout session streaming to us. */
+  watchStreaming: boolean;
   cadence: number | null;
   cadenceAt: number;
   speed: number | null;
@@ -45,6 +60,8 @@ let snapshot: SensorSnapshot = {
   wheelMm: 2105,
   heartRate: null,
   heartRateAt: 0,
+  heartRateSource: null,
+  watchStreaming: false,
   cadence: null,
   cadenceAt: 0,
   speed: null,
@@ -338,7 +355,11 @@ export async function connectSensor(id: string) {
           };
           if (sensor.kind === 'heartRate') {
             sample.heartRate = parseHeartRate(characteristic.value);
-            update({ heartRate: sample.heartRate, heartRateAt: timestamp });
+            update({
+              heartRate: sample.heartRate,
+              heartRateAt: timestamp,
+              heartRateSource: sample.heartRate === null ? null : 'ble',
+            });
           } else {
             const counters = parseCsc(characteristic.value);
             if (!counters) return;
@@ -401,4 +422,104 @@ export async function setWheelCircumference(mm: number) {
     throw new Error('Invalid wheel circumference');
   update({ wheelMm: mm });
   await persist();
+}
+
+// ---------------------------------------------------------------------------
+// Apple Watch heart rate
+//
+// The watch app holds an HKWorkoutSession open and streams each beat over
+// WatchConnectivity. That session is what makes it live: heart rate written to
+// HealthKit without one only reaches the phone when the watch next syncs, which
+// is batched and can lag by minutes.
+// ---------------------------------------------------------------------------
+
+/**
+ * A connected chest strap wins over the watch. Both measure the same thing, but
+ * a strap samples continuously from the chest while the watch is optical and
+ * lags on hard efforts, and interleaving the two would produce a series that
+ * jumps between them mid-effort.
+ */
+const hasBleHeartRateSensor = () =>
+  snapshot.devices.some(
+    (device) => device.kind === 'heartRate' && device.status === 'connected'
+  );
+
+let watchSubscriptions: { remove: () => void }[] = [];
+
+/**
+ * Asks the paired watch to open a workout session and starts feeding its
+ * samples into the same pipeline the BLE sensors use.
+ *
+ * Safe to call on Android and on builds without the watch target: the native
+ * module resolves to null and every call becomes a no-op.
+ */
+export async function startWatchHeartRate(sport: 'run' | 'ride') {
+  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
+  if (watchSubscriptions.length > 0) return;
+
+  const heartRate = addWatchHeartRateListener(({ bpm, timestamp }) => {
+    if (!Number.isFinite(bpm) || bpm <= 0) return;
+    if (hasBleHeartRateSensor()) return;
+    const rounded = Math.round(bpm);
+    // The watch stamps each sample with the time the sensor produced it, which
+    // can trail the message that carried it; keeping that stamp is what lines
+    // the series up with the route rather than with delivery latency.
+    const sample: SensorReading = {
+      timestamp,
+      heartRate: rounded,
+      cadence: null,
+      speed: null,
+      wheelDistance: null,
+    };
+    update({
+      heartRate: rounded,
+      heartRateAt: timestamp,
+      heartRateSource: 'watch',
+    });
+    readings.forEach((fn) => fn(sample));
+  });
+
+  const state = addWatchWorkoutStateListener(({ state: next }) => {
+    const streaming = next === 'running';
+    update({
+      watchStreaming: streaming,
+      ...(streaming || hasBleHeartRateSensor()
+        ? {}
+        : { heartRate: null, heartRateSource: null }),
+    });
+  });
+
+  watchSubscriptions = [heartRate, state].filter(
+    (subscription): subscription is { remove: () => void } =>
+      subscription !== null
+  );
+
+  try {
+    await startWatchWorkout(sport);
+  } catch (error) {
+    addLog('[Recording sensors] Watch workout start failed', 'WARNING', [
+      String(error),
+    ]);
+  }
+}
+
+/** Ends the watch workout and detaches. Never throws into the save path. */
+export async function stopWatchHeartRate() {
+  watchSubscriptions.forEach((subscription) => subscription.remove());
+  watchSubscriptions = [];
+  if (snapshot.watchStreaming || snapshot.heartRateSource === 'watch')
+    update({
+      watchStreaming: false,
+      ...(snapshot.heartRateSource === 'watch'
+        ? { heartRate: null, heartRateSource: null }
+        : {}),
+    });
+  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
+  try {
+    await stopWatchWorkout();
+  } catch (error) {
+    addLog('[Recording sensors] Watch workout stop failed', 'WARNING', [
+      String(error),
+    ]);
+  }
 }

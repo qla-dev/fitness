@@ -5221,6 +5221,11 @@
     "reconnect": "Reconnect",
     "forget": "Forget sensor",
     "wheel": "Wheel circumference (mm)",
-    "saveWheel": "Save wheel size"
+    "saveWheel": "Save wheel size",
+    "appleWatch": "Apple Watch",
+    "watchNotInstalled": "Install qla.fit on your Apple Watch from the Watch app to use it as a heart-rate sensor.",
+    "watchStreaming": "Streaming your heart rate.",
+    "watchOverriddenByStrap": "Connected. Your chest strap is more accurate, so it is being used instead.",
+    "watchReady": "Ready. Your watch starts measuring when you start a run or ride."
   }
 }
