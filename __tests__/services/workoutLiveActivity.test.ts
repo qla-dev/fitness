@@ -51,8 +51,24 @@ const mockSharedContainers: Record<string, string> = {};
 jest.mock('expo-asset', () => ({
   Asset: {
     fromModule: jest.fn(() => ({
-      localUri: 'file:///bundle/appstore.png',
+      localUri: 'file:///bundle/appicon.png',
       downloadAsync: jest.fn(async () => undefined),
+    })),
+  },
+}));
+const mockResize = jest.fn();
+jest.mock('expo-image-manipulator', () => ({
+  SaveFormat: { PNG: 'png' },
+  ImageManipulator: {
+    manipulate: jest.fn(() => ({
+      resize: mockResize,
+      renderAsync: jest.fn(async () => ({
+        saveAsync: jest.fn(async () => ({
+          uri: 'file:///cache/current-icon.png',
+        })),
+        release: jest.fn(),
+      })),
+      release: jest.fn(),
     })),
   },
 }));
@@ -590,6 +606,7 @@ describe('workoutLiveActivity', () => {
       expect(props.appIconUri).toBe(
         'file:///shared/group.test/workout-live-activity-icon.png'
       );
+      expect(mockResize).toHaveBeenCalledWith({ width: 96, height: 96 });
     });
 
     it('omits the icon uri when no shared container is available', async () => {

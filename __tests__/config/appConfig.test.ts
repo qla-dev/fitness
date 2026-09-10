@@ -89,6 +89,7 @@ describe('brand assets', () => {
       'assets/images/logo@2x.png',
       'assets/images/splash.png',
       'assets/images/splashold.png',
+      'assets/icons/live-activity-icon.png',
       // The Icon Composer document for the retired blue-square icon; nothing
       // referenced it, app.config.ts points at the flat artwork instead.
       'assets/icons/appicon.icon/icon.json',

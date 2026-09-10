@@ -1,5 +1,6 @@
 import { Asset } from 'expo-asset';
 import { File, Paths } from 'expo-file-system';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import {
   addUserInteractionListener,
   type LiveActivity,
@@ -88,16 +89,33 @@ async function resolveAppIcon(): Promise<void> {
     // Must stay small: WidgetKit rejects oversized Live Activity images
     // ("widget archival failed") and renders a grey placeholder shape, so the
     // full-resolution icon art cannot be used directly.
-    const asset = Asset.fromModule(
-      require('../../assets/icons/live-activity-icon.png')
-    );
+    const asset = Asset.fromModule(require('../../assets/icons/appicon.png'));
     await asset.downloadAsync();
     if (asset.localUri == null) return;
-    const destination = new File(container, 'workout-live-activity-icon.png');
-    // Overwrite so an icon change ships with the next app update.
-    if (destination.exists) destination.delete();
-    new File(asset.localUri).copy(destination);
-    appIconUri = destination.uri;
+    // Derive the small image from the current app artwork instead of keeping
+    // a second brand asset that can survive a rebrand unnoticed.
+    const context = ImageManipulator.manipulate(asset.localUri);
+    context.resize({ width: 96, height: 96 });
+    const image = await context.renderAsync();
+    try {
+      const resized = await image.saveAsync({ format: SaveFormat.PNG });
+      const temporary = new File(resized.uri);
+      try {
+        const destination = new File(
+          container,
+          'workout-live-activity-icon.png'
+        );
+        // Overwrite the old shared-container copy on the next app launch.
+        if (destination.exists) destination.delete();
+        temporary.copy(destination);
+        appIconUri = destination.uri;
+      } finally {
+        if (temporary.exists) temporary.delete();
+      }
+    } finally {
+      image.release();
+      context.release();
+    }
   } catch (error) {
     logActivityError('app icon resolve failed', error);
   }
