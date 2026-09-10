@@ -9,10 +9,9 @@ import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
  * on About and Onboarding purely because those screens each held their own
  * `require`.
  *
- * `assets/images/logo.png` is the two figures alone on transparency, and the
- * ground behind them lives here. That is what lets one asset serve every
- * surface: the splash paints the same black as its own background and drops
- * the same glyph on top, so the launch screen and this mark are the same
+ * `assets/images/logo.png` is the two figures on the brand's black ground.
+ * The splash paints the same black as its own background and displays
+ * the same image, so the launch screen and this mark are the same
  * artwork rather than two files that have to be kept in step.
  *
  * The ground is black rather than themed, because the mark is drawn for black
