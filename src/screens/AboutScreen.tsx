@@ -1,4 +1,5 @@
 import React from 'react';
+import AppLogo from '../components/AppLogo';
 import AppWordmark from '../components/AppWordmark';
 import { useTranslation } from 'react-i18next';
 import {
@@ -7,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
@@ -58,11 +58,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
         }
       >
         <View className="bg-surface rounded-xl p-5 mb-4 items-center">
-          <Image
-            source={require('../../assets/images/logo.png')}
-            className="w-20 h-20 mb-4"
-            resizeMode="contain"
-          />
+          <AppLogo size={80} style={{ marginBottom: 16 }} />
           <Text className="text-xl font-bold text-text-primary mb-1">
             <AppWordmark />
           </Text>

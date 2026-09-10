@@ -28,7 +28,8 @@ import {
 } from './metrics';
 import {
   getSensorSnapshot,
-  initializeSensors,
+  loadSavedSensors,
+  resumeSavedSensors,
   subscribeSensorReadings,
 } from './sensors';
 import {
@@ -116,7 +117,16 @@ function report(error: unknown) {
   addLog('[Run or Ride] Recording operation failed', 'ERROR', [String(error)]);
 }
 
-export async function initializeRecorder() {
+/**
+ * `sensors` opts into the radio. Creating the BLE client raises the iOS
+ * Bluetooth prompt and, with state restoration, lets CoreBluetooth relaunch the
+ * app for sensor traffic - neither belongs on a cold launch by someone who is
+ * not recording, so app startup passes nothing and only an unfinished session
+ * pulls the sensors back up. The recorder screen passes `true`.
+ */
+export async function initializeRecorder({
+  sensors = false,
+}: { sensors?: boolean } = {}) {
   if (Platform.OS === 'web') {
     publish({ ready: true });
     return;
@@ -147,7 +157,14 @@ export async function initializeRecorder() {
     sensorSubscription = subscribeSensorReadings((reading) => {
       void recordSensor(reading).catch(report);
     });
-  await initializeSensors();
+  // Remembered devices are read either way so the sensor panel can list them.
+  await loadSavedSensors();
+  if (
+    sensors ||
+    snapshot.session?.phase === 'recording' ||
+    snapshot.session?.phase === 'paused'
+  )
+    await resumeSavedSensors();
 }
 
 async function recordSensor(reading: SensorReading) {

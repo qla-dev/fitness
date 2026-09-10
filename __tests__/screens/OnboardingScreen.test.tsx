@@ -83,7 +83,7 @@ describe('OnboardingScreen', () => {
     test('renders welcome content and URL input', () => {
       const { getByText, getByPlaceholderText } = renderScreen();
 
-      expect(getByText('SparkyFitness')).toBeTruthy();
+      expect(getByText('qla.fit')).toBeTruthy();
       expect(getByText('Your self-hosted fitness tracker')).toBeTruthy();
       expect(getByPlaceholderText('https://your-sparky-app.com')).toBeTruthy();
       expect(getByText('Next')).toBeTruthy();
@@ -109,11 +109,11 @@ describe('OnboardingScreen', () => {
     test('learn more section toggles on press', () => {
       const { getByText, queryByText } = renderScreen();
 
-      expect(queryByText(/SparkyFitness helps you track/)).toBeNull();
+      expect(queryByText(/qla\.fit helps you track/)).toBeNull();
 
-      fireEvent.press(getByText('Learn more about SparkyFitness'));
+      fireEvent.press(getByText('Learn more about qla.fit'));
 
-      expect(getByText(/SparkyFitness helps you track/)).toBeTruthy();
+      expect(getByText(/qla\.fit helps you track/)).toBeTruthy();
     });
 
     test('Next shows error when URL is empty', async () => {
@@ -163,7 +163,7 @@ describe('OnboardingScreen', () => {
       });
 
       await waitFor(() => {
-        expect(getByText('Connect to SparkyFitness')).toBeTruthy();
+        expect(getByText('Connect to qla.fit')).toBeTruthy();
         expect(getByText('https://example.com')).toBeTruthy();
       });
     });
@@ -221,7 +221,7 @@ describe('OnboardingScreen', () => {
       });
 
       await waitFor(() => {
-        expect(result.getByText('Connect to SparkyFitness')).toBeTruthy();
+        expect(result.getByText('Connect to qla.fit')).toBeTruthy();
       });
     };
 

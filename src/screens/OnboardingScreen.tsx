@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import AppLogo from '../components/AppLogo';
 import AppWordmark from '../components/AppWordmark';
 import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
   TextInput,
-  Image,
   Pressable,
   LayoutAnimation,
   Keyboard,
@@ -605,11 +605,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     <>
       {/* Logo and welcome */}
       <View className="items-center mb-6">
-        <Image
-          source={require('../../assets/images/logo.png')}
-          className="w-20 h-20 mb-4"
-          resizeMode="contain"
-        />
+        <AppLogo size={80} style={{ marginBottom: 16 }} />
         <Text className="text-3xl font-bold text-text-primary">
           <AppWordmark />
         </Text>

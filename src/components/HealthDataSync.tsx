@@ -76,7 +76,7 @@ const HealthDataSync: React.FC<HealthDataSyncProps> = ({
   const platformDetail = isIOS
     ? t('healthSync.appleDetail', {
         defaultValue:
-          'qla.fit reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → SparkyFitnessMobile',
+          'qla.fit reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → qla.fit',
       })
     : t('healthSync.connectDetail', {
         defaultValue:

@@ -563,7 +563,7 @@
     "healthConnect": "Health Connect",
     "appleSummary": "Reads selected data from Apple Health and syncs it to your self-hosted server.",
     "connectSummary": "Reads selected data from Health Connect and syncs it to your self-hosted server.",
-    "appleDetail": "qla.fit reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → SparkyFitnessMobile",
+    "appleDetail": "qla.fit reads the health data you select below using Apple Health (HealthKit). If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).\n\nManage or remove access in Settings → Health → Data Access & Devices → qla.fit",
     "connectDetail": "qla.fit reads the health data you select below using Health Connect. If sync is enabled, data is synchronized only between your device and your self-hosted qla.fit server (manual or background).",
     "title": "Health Data to Sync",
     "notMedicalAdvice": "Not medical advice.",

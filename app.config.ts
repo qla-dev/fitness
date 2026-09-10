@@ -148,7 +148,13 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         // Keeps location updates flowing while a run/ride is recording and the
         // app is backgrounded or the screen is locked. iOS stops delivering
         // them entirely without this mode, so the route would simply stop.
-        UIBackgroundModes: ['location'],
+        // `bluetooth-central` is required by the BLE sensor client, which is
+        // created with a `restoreStateIdentifier`: CoreBluetooth throws
+        // NSInternalInconsistencyException at `createClient` when state
+        // restoration is requested without this mode. The react-native-ble-plx
+        // plugin below appends it too; it is spelled out here so the two
+        // background modes this app relies on are visible in one place.
+        UIBackgroundModes: ['location', 'bluetooth-central'],
         NSLocalNetworkUsageDescription:
           'qla.fit connects to self-hosted servers on your local network.',
         // Required by the food/meal photo picker and the label/barcode
@@ -173,9 +179,9 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       entitlements: {
         'com.apple.security.application-groups': [getIosAppGroup()],
       },
-      // The flat artwork, not the layered Icon Composer bundle: this icon is a
-      // single composed square (its own blue background baked in), which is the
-      // opposite of what a .icon document's transparent layers expect.
+      // The flat artwork: a single composed square with the brand's black
+      // ground baked in, which is the opposite of what a .icon document's
+      // transparent layers expect.
       icon: './assets/icons/appicon.png',
     },
     android: {
@@ -183,10 +189,11 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       permissions: androidPermissions,
       adaptiveIcon: {
         // The launcher mask crops the outer third, so the foreground holds the
-        // artwork scaled into the safe zone and the background is the
-        // artwork's own blue — sampled from it, so the two meet seamlessly.
+        // mark scaled into the safe zone on transparency and the background is
+        // the brand's black ground, the same ground the splash and the iOS
+        // icon paint.
         foregroundImage: './assets/icons/adaptiveicon.png',
-        backgroundColor: '#028FFE',
+        backgroundColor: '#000000',
       },
     },
     plugins: [
@@ -250,7 +257,14 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         // and wins wherever a translation exists.
         'react-native-ble-plx',
         {
-          isBackgroundEnabled: true,
+          // iOS background BLE comes from `modes` alone. `isBackgroundEnabled`
+          // is Android-only in this plugin and its sole effect is
+          // `<uses-feature android:name="android.hardware.bluetooth_le"
+          // android:required="true"/>`, which tells Play to hide the app from
+          // every device without BLE. Sensors are one optional corner of a
+          // nutrition app, so it stays off; Android keeps notifications flowing
+          // through the recording foreground service, not this flag.
+          isBackgroundEnabled: false,
           modes: ['central'],
           bluetoothAlwaysPermission:
             'qla.fit uses Bluetooth to connect to fitness sensors such as heart-rate monitors.',

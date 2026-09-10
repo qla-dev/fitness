@@ -65,7 +65,7 @@ export default function RunRideRecorder({
   const locked = useRef(false);
   const session = snapshot.session;
   useEffect(() => {
-    void initializeRecorder().catch(() => setError(true));
+    void initializeRecorder({ sensors: true }).catch(() => setError(true));
   }, []);
   useEffect(() => {
     if (!focused) return;

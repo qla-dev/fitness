@@ -73,6 +73,7 @@ const update = (patch: Partial<SensorSnapshot>) => {
 };
 let manager: BleManager | undefined;
 let initializing: Promise<void> | undefined;
+let loading: Promise<void> | undefined;
 let saved: SavedSensor[] = [];
 const connections = new Map<
   string,
@@ -121,10 +122,13 @@ async function permissions() {
     throw new Error('Bluetooth permission denied');
 }
 
-export function initializeSensors(): Promise<void> {
-  if (Platform.OS === 'web') return Promise.resolve();
-  if (!initializing)
-    initializing = (async () => {
+/**
+ * Reads the remembered devices and wheel size. Touches no radio and prompts for
+ * nothing, so it is safe on every launch.
+ */
+export function loadSavedSensors(): Promise<void> {
+  if (!loading)
+    loading = (async () => {
       const raw = await AsyncStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -146,6 +150,24 @@ export function initializeSensors(): Promise<void> {
           devices: saved.map((d) => ({ ...d, status: 'disconnected' })),
         });
       }
+    })().catch((error) => {
+      loading = undefined;
+      throw error;
+    });
+  return loading;
+}
+
+/**
+ * Creates the BLE client. On iOS this is what raises the system Bluetooth
+ * prompt, and `restoreStateIdentifier` lets CoreBluetooth relaunch the app for
+ * sensor traffic, so it is deliberately never called from app startup - only
+ * from an explicit scan/connect, or from `resumeSavedSensors` below.
+ */
+function initializeSensors(): Promise<void> {
+  if (Platform.OS === 'web') return Promise.resolve();
+  if (!initializing)
+    initializing = (async () => {
+      await loadSavedSensors();
       const { BleManager: Manager } = await import('react-native-ble-plx');
       manager = new Manager({
         restoreStateIdentifier: 'fitness-recording-sensors',
@@ -179,6 +201,17 @@ export function initializeSensors(): Promise<void> {
       throw error;
     });
   return initializing;
+}
+
+/**
+ * Reconnects remembered sensors. The BLE client is created only once the user
+ * has actually paired something, so a launch by someone who never has stays off
+ * the radio entirely.
+ */
+export async function resumeSavedSensors(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  await loadSavedSensors();
+  if (saved.length) await initializeSensors();
 }
 
 export function stopSensorScan() {
