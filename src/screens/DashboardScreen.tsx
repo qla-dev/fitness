@@ -1,4 +1,5 @@
 import { isLocalDataMode } from '../services/dataMode';
+import ProfileSetup from '../components/ProfileSetup';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -465,6 +466,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         <GestureDetector gesture={swipeGesture}>
           <View collapsable={false} className="flex-1">
             {renderedContent}
+            <ProfileSetup enabled={isConnected} />
           </View>
         </GestureDetector>
         <CalendarSheet
@@ -491,6 +493,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       <GestureDetector gesture={swipeGesture}>
         <View collapsable={false} className="flex-1">
           {renderedContent}
+          <ProfileSetup enabled={isConnected} />
         </View>
       </GestureDetector>
       <CalendarSheet

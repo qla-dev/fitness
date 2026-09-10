@@ -47,14 +47,18 @@
           "image": "./assets/images/logo.png"
         }
       ],
-      ["expo-notifications"],
+      [
+        "expo-notifications"
+      ],
       [
         "expo-navigation-bar",
         {
           "enforceContrast": false
         }
       ],
-      ["@bacons/apple-targets"]
+      [
+        "@bacons/apple-targets"
+      ]
     ],
     "experiments": {
       "reactCompiler": true,
@@ -97,6 +101,9 @@
       }
     },
     "version": "1.6.4",
-    "owner": "kulasinn"
+    "owner": "kulasinn",
+    "ios": {
+      "buildNumber": "2"
+    }
   }
 }
