@@ -18,6 +18,7 @@ import {
   getProfileGoalLabel,
   getProfileGoalUnit,
   goalMaximum,
+  goalMinimum,
   isCustomGoalKey,
   readGoalValue,
 } from '../constants/profileGoals';
@@ -73,6 +74,7 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
     : t('profile.name', { defaultValue: 'Name' });
   const unit = isGoal ? getProfileGoalUnit(goalKey, customNutrients) : '';
   const maximum = isGoal ? goalMaximum(goalKey) : undefined;
+  const minimum = isGoal ? goalMinimum(goalKey) : 0;
 
   const storedName = profileQuery.data?.full_name ?? '';
   const storedGoal = readGoalValue(goalsQuery.data, goalKey);
@@ -107,7 +109,7 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   const valid = isGoal
     ? trimmed.length > 0 &&
       Number.isFinite(numeric) &&
-      numeric >= 0 &&
+      numeric >= minimum &&
       (maximum === undefined || numeric <= maximum)
     : trimmed.length > 0;
 
@@ -242,10 +244,15 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
                 : t('profile.nameSaveFailed', {
                     defaultValue: 'Could not save your name. Please try again.',
                   })
-              : t('profile.goalsInvalid', {
-                  defaultValue:
-                    'Enter a positive number or zero. Stand hours cannot exceed 24.',
-                })}
+              : minimum > 0
+                ? t('profile.goalsInvalidMinimum', {
+                    defaultValue: 'Enter a number of at least {{minimum}}.',
+                    minimum,
+                  })
+                : t('profile.goalsInvalid', {
+                    defaultValue:
+                      'Enter a positive number or zero. Stand hours cannot exceed 24.',
+                  })}
           </Text>
         )}
         {isGoal && (

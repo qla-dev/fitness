@@ -9,10 +9,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
-  BottomSheetModal,
   BottomSheetView,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';

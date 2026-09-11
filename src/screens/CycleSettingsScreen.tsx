@@ -319,8 +319,40 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
     left: { kind: 'back' },
   });
 
-  if (isLoading || !settings) {
+  if (isLoading) {
     return <StatusView loading className="bg-background" />;
+  }
+
+  // Settings resolve to null until cycle tracking has been set up (and always
+  // in local mode, where the endpoint returns null). Showing the loader here
+  // hung the screen forever with no header to leave by; this offers the way
+  // in instead.
+  if (!settings) {
+    return (
+      <View
+        className="flex-1 bg-background"
+        style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+      >
+        {header}
+        <StatusView
+          icon="wellness"
+          title={t('cycleSettings.notSetUp.title', {
+            defaultValue: 'Cycle tracking is not set up',
+          })}
+          subtitle={t('cycleSettings.notSetUp.subtitle', {
+            defaultValue:
+              'Set up cycle or pregnancy tracking to change these settings.',
+          })}
+          action={{
+            label: t('cycleSettings.notSetUp.action', {
+              defaultValue: 'Set up tracking',
+            }),
+            onPress: () => navigation.replace('CycleOnboarding'),
+          }}
+          className="bg-background"
+        />
+      </View>
+    );
   }
 
   return (

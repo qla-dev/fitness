@@ -57,3 +57,30 @@ export async function readProgramAccess(
     return null;
   return value as ProgramAccess;
 }
+
+// ── Installed-program registry ────────────────────────────────────────────
+// Access records above are keyed by preset, which answers "how long does this
+// workout stay unlocked" but not "has this program been added already". The
+// Store had no answer to that, so Start could be tapped twice and install two
+// full copies. One key per scope holds the ids of every program installed.
+
+const installedKey = (scope: string) =>
+  `@Fitness/program-installed/${encodeURIComponent(scope)}`;
+
+export async function readInstalledPrograms(scope: string): Promise<string[]> {
+  const raw = await AsyncStorage.getItem(installedKey(scope));
+  if (!raw) return [];
+  const value: unknown = JSON.parse(raw);
+  return Array.isArray(value)
+    ? value.filter((id): id is string => typeof id === 'string')
+    : [];
+}
+
+export async function markProgramInstalled(scope: string, programId: string) {
+  const current = await readInstalledPrograms(scope);
+  if (current.includes(programId)) return;
+  await AsyncStorage.setItem(
+    installedKey(scope),
+    JSON.stringify([...current, programId])
+  );
+}

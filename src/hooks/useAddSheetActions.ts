@@ -161,6 +161,13 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('FoodScan', { date });
   }, [getActiveDiaryDate, navigateFromSheet]);
 
+  // Same screen as the barcode scanner, opened on its AI photo segment. The
+  // AddSheet hides this tile in local mode, where FoodScan has no photo mode.
+  const handleAiMealScan = useCallback(() => {
+    const date = getActiveDiaryDate();
+    navigateFromSheet('FoodScan', { date, initialMode: 'photo' });
+  }, [getActiveDiaryDate, navigateFromSheet]);
+
   const checkServerConnected = useCallback(
     (message: string, defaultMessage: string): boolean => {
       const isConnected = queryClient.getQueryData(serverConnectionQueryKey);
@@ -357,6 +364,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
+    handleAiMealScan,
     handleStartWorkout,
     handleLogWorkout,
     handleAddActivity,

@@ -4,10 +4,10 @@ import { View, Text } from 'react-native';
 import Button from './ui/Button';
 import { useSheetBackdrop } from './ui/sheetChrome';
 import {
-  BottomSheetModal,
   BottomSheetView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import StepperInput from './StepperInput';
 import { useUpdateFoodEntry } from '../hooks/useUpdateFoodEntry';

@@ -69,6 +69,7 @@ function renderAddSheet(
     onLogWorkout: jest.fn(),
     onSyncHealthData: jest.fn(),
     onBarcodeScan: jest.fn(),
+    onAiMealScan: jest.fn(),
     onAddMeasurements: jest.fn(),
     onAddProgressPhotos: jest.fn(),
     onRunOrRide: jest.fn(),
@@ -90,14 +91,18 @@ function renderAddSheet(
 
 describe('AddSheet', () => {
   const originalPlatform = Platform.OS;
-  it('shows the header and keeps AI meal scan inactive', () => {
-    const screen = renderAddSheet();
+  it('shows the header and routes AI meal scan like the other tiles', () => {
+    const onAiMealScan = jest.fn();
+    const screen = renderAddSheet({ onAiMealScan });
     // The title mixes faces: the lead-in stays in the UI font while the
     // wordmark carries the brand face and the accent on ".fit", so the two
     // halves are separate Text nodes.
     expect(screen.getByText('Log data into qla.fit')).toBeTruthy();
+    // The tile used to render without a handler and read as broken; it now
+    // opens FoodScan on its photo segment and dismisses like every other tile.
     fireEvent.press(screen.getByText('AI meal scan'));
-    expect(mockBottomSheetControls.dismiss).not.toHaveBeenCalled();
+    expect(onAiMealScan).toHaveBeenCalledTimes(1);
+    expect(mockBottomSheetControls.dismiss).toHaveBeenCalled();
     expect(screen.getByText('Hydration')).toBeTruthy();
     expect(screen.queryByText('Live sets & reps')).toBeNull();
   });

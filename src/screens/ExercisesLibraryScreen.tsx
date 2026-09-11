@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
+import { programInstalledToast } from '../utils/programInstallToast';
 import { useCSSVariable } from 'uniwind';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
@@ -624,15 +625,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           onClose={() => setPurchasing(null)}
           onInstalled={(result) => {
             setPurchasing(null);
-            Toast.show({
-              type: 'success',
-              text1: t('programs.purchase.added', {
-                count: result.presetsCreated,
-                defaultValue: '{{count}} workouts added to Programs',
-                defaultValue_one: '{{count}} workout added to Programs',
-                defaultValue_other: '{{count}} workouts added to Programs',
-              }),
-            });
+            Toast.show(programInstalledToast(t, result));
           }}
         />
       )}

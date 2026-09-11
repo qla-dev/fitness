@@ -32,6 +32,7 @@ interface AddSheetProps {
   onLogWorkout: () => void;
   onSyncHealthData: () => void;
   onBarcodeScan: () => void;
+  onAiMealScan: () => void;
   onAddMeasurements: () => void;
   onAddProgressPhotos: () => void;
   onRunOrRide: () => void;
@@ -61,6 +62,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       onLogWorkout,
       onSyncHealthData,
       onBarcodeScan,
+      onAiMealScan,
       onAddMeasurements,
       onAddProgressPhotos,
       onRunOrRide,
@@ -226,10 +228,20 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         icon: 'scan',
         onPress: onBarcodeScan,
       },
-      {
-        label: t('addSheet.aiMealScan', { defaultValue: 'AI meal scan' }),
-        icon: 'sparkles',
-      },
+      // The photo estimate is AI-backed with no local adapter (FoodScanScreen
+      // hides its Photo segment in local mode for the same reason), so the
+      // tile is omitted rather than shown dead.
+      ...(isLocalDataMode()
+        ? []
+        : [
+            {
+              label: t('addSheet.aiMealScan', {
+                defaultValue: 'AI meal scan',
+              }),
+              icon: 'sparkles' as const,
+              onPress: onAiMealScan,
+            },
+          ]),
       {
         label: t('addSheet.runOrRide', { defaultValue: 'Run or Ride' }),
         icon: 'exercise-cycling',
@@ -394,22 +406,24 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
           </>
         ) : (
           <>
-            <View className="flex-row mb-3">
-              {renderCard(cards[0])}
-              {renderCard(cards[1])}
-            </View>
-            <View className="flex-row">
-              {renderCard(cards[2])}
-              {renderCard(cards[3])}
-            </View>
-            <View className="flex-row mt-3">
-              {renderCard(cards[4])}
-              {renderCard(cards[5])}
-            </View>
-            <View className="flex-row mt-3">
-              {renderCard(cards[6])}
-              {renderCard(cards[7])}
-            </View>
+            {/* Two tiles per row; the list length varies by data mode, so an
+                odd tail keeps its half-width with an empty slot beside it. */}
+            {Array.from(
+              { length: Math.ceil(cards.length / 2) },
+              (_, row) => cards.slice(row * 2, row * 2 + 2)
+            ).map((pair, row) => (
+              <View
+                key={pair[0].label}
+                className={row === 0 ? 'flex-row' : 'flex-row mt-3'}
+              >
+                {renderCard(pair[0])}
+                {pair[1] ? (
+                  renderCard(pair[1])
+                ) : (
+                  <View className="flex-1 mx-1.5" />
+                )}
+              </View>
+            ))}
             {!isLocalDataMode() && showCycleCard && onOpenCycle
               ? renderSecondaryRow(
                   cycleLabel ??

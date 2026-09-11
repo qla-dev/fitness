@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { programInstalledToast } from '../utils/programInstallToast';
+import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -51,6 +53,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
     Boolean(program)
   );
   const { getImageSource } = useExerciseImageSource();
+  const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [purchasing, setPurchasing] = useState(false);
   const [expandedSessions, setExpandedSessions] = useState<
@@ -197,13 +200,15 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
               style={{ backgroundColor: accentPrimary }}
             >
               <Text className="text-accent-text text-base font-bold">
-                {t('programs.startFor', {
-                  defaultValue: 'Start for {{price}}',
-                  price: formatLocalizedNumber(program.priceEur, {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }),
-                })}
+                {alreadyInstalled
+                  ? t('programs.added', { defaultValue: 'Added' })
+                  : t('programs.startFor', {
+                      defaultValue: 'Start for {{price}}',
+                      price: formatLocalizedNumber(program.priceEur, {
+                        style: 'currency',
+                        currency: 'EUR',
+                      }),
+                    })}
               </Text>
             </TouchableOpacity>
           </View>
@@ -409,15 +414,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
           onClose={() => setPurchasing(false)}
           onInstalled={(result) => {
             setPurchasing(false);
-            Toast.show({
-              type: 'success',
-              text1: t('programs.purchase.added', {
-                count: result.presetsCreated,
-                defaultValue: '{{count}} workouts added to Programs',
-                defaultValue_one: '{{count}} workout added to Programs',
-                defaultValue_other: '{{count}} workouts added to Programs',
-              }),
-            });
+            Toast.show(programInstalledToast(t, result));
           }}
         />
       )}

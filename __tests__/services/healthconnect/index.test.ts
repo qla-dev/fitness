@@ -493,6 +493,29 @@ describe('readHealthRecords', () => {
     expect(mockReadRecords).toHaveBeenCalledTimes(1);
   });
 
+  test('does not split into fallback sub-windows when the permission is not granted', async () => {
+    // The exact text Health Connect returns when the app reads a record type
+    // the user never granted. It fails identically for every sub-window, so
+    // splitting turned one refusal into 62 day/hour reads and 984 identical
+    // ERROR log lines in a single sync, evicting everything else from the
+    // 1000-entry log.
+    const permissionError = new Error(
+      'android.health.connect.HealthConnectException: java.lang.SecurityException: Caller requires android.permission.health.READ_OXYGEN_SATURATION'
+    );
+    mockReadRecords.mockRejectedValue(permissionError);
+
+    const result = await readHealthRecordsDetailed(
+      'OxygenSaturation',
+      new Date('2024-01-15T00:00:00Z'),
+      new Date('2024-04-14T00:00:00Z') // 90-day range — would normally trigger fallback
+    );
+
+    expect(result.records).toEqual([]);
+    expect(result.error).toContain('SecurityException');
+    // Exactly one call — no fallback splitting.
+    expect(mockReadRecords).toHaveBeenCalledTimes(1);
+  });
+
   test('recovers readable sub-windows after a page-one read failure', async () => {
     const recoveredRecords = [
       { startTime: '2024-01-15T00:30:00Z', beatsPerMinute: 72 },

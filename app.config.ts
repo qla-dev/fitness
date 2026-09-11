@@ -219,6 +219,13 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         foregroundImage: './assets/icons/adaptiveicon.png',
         backgroundColor: '#000000',
       },
+      // Google Maps (Run or Ride route map) needs an API key in the manifest;
+      // without it the native view throws at mount and takes the process down.
+      // Set only when provided so `Constants.expoConfig` reflects absence and
+      // `RouteMap` can fall back to a placeholder instead of crashing.
+      ...(process.env.GOOGLE_MAPS_API_KEY
+        ? { config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY } } }
+        : {}),
     },
     plugins: [
       ...(config.plugins ?? []),

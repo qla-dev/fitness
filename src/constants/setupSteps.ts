@@ -167,8 +167,9 @@ export function profileSteps(
       {
         id: 'calories',
         label: t('setup.calories', {
-          defaultValue: 'Daily calorie goal (kcal, 0–10,000)',
+          defaultValue: 'Daily calorie goal (kcal, 1–10,000)',
         }),
+        min: 1,
         max: 10000,
       },
       {

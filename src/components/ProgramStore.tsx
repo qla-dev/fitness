@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useTranslation } from 'react-i18next';
+import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
 import {
   ScrollView,
   Text,
@@ -100,6 +101,13 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
 }) => {
   const { t } = useTranslation();
   const accents = useProgramAccents();
+  const installed = useInstalledPrograms();
+  // The label is the only installed-state cue on a row; the tap still opens
+  // the purchase sheet, which explains a second copy before creating one.
+  const startLabel = (program: ExerciseProgram) =>
+    installed.has(program.id)
+      ? t('programs.added', { defaultValue: 'Added' })
+      : t('programs.start', { defaultValue: 'Start' });
   const { width } = useWindowDimensions();
   const [category, setCategory] = useState<ProgramCategoryId | null>(null);
   const [textSecondary] = useCSSVariable(['--color-text-secondary']) as [
@@ -214,7 +222,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
         className="absolute right-2 top-5 px-4 py-1.5 rounded-full bg-raised"
       >
         <Text className="text-accent-primary text-sm font-bold">
-          {t('programs.start', { defaultValue: 'Start' })}
+          {startLabel(program)}
         </Text>
       </TouchableOpacity>
       {!isLast && <View className="h-px bg-border-subtle ml-[68px]" />}
@@ -406,7 +414,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                       className="px-4 py-1.5 rounded-full bg-white/25"
                     >
                       <Text className="text-white text-sm font-bold">
-                        {t('programs.start', { defaultValue: 'Start' })}
+                        {startLabel(program)}
                       </Text>
                     </TouchableOpacity>
                     <Text className="text-white text-xs ml-3 opacity-90">
