@@ -9,10 +9,10 @@ import {
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
 import { dateTypeToDate } from './TimeSheet';

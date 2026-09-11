@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from '../ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import { localizedWeekdayLabels } from '../../utils/medicationScheduleLocalization';
 import Icon from '../Icon';

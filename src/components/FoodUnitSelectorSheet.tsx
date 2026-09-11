@@ -14,7 +14,8 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable, useUniwind } from 'uniwind';
 import Icon from './Icon';
 import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';

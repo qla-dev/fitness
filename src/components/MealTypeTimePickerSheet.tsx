@@ -7,7 +7,8 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import MealTypeTimeWheel from './MealTypeTimeWheel';

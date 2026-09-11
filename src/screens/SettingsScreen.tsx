@@ -338,7 +338,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   iconColor={catTeal}
                 />
               )}
-              {isConnected && (
+              {/* Cycle tracking is server-backed; the Dashboard hides its card
+                  in local mode and the settings entry follows. */}
+              {isConnected && !isLocalDataMode() && (
                 <SettingsRow
                   icon="wellness"
                   title={

@@ -108,6 +108,15 @@ export function goalStep(key: string): number {
   return GOAL_STEPS[key] ?? DEFAULT_GOAL_STEP;
 }
 
+/**
+ * Inclusive lower bounds where zero is not a goal but a broken one. A 0 kcal
+ * day target puts a zero under every "remaining" and percentage the app
+ * computes; nutrient goals keep accepting 0, which reads as "avoid".
+ */
+const GOAL_MINIMUMS: Record<string, number> = {
+  calories: 1,
+};
+
 export function isCustomGoalKey(key: string): boolean {
   return key.startsWith(CUSTOM_GOAL_PREFIX);
 }
@@ -118,6 +127,10 @@ export function customGoalName(key: string): string {
 
 export function goalMaximum(key: string): number | undefined {
   return GOAL_MAXIMUMS[key];
+}
+
+export function goalMinimum(key: string): number {
+  return GOAL_MINIMUMS[key] ?? 0;
 }
 
 export function getProfileGoalLabel(

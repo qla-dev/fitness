@@ -18,6 +18,7 @@ import {
 import { ceilToLocalDayStart, getSyncStartDate } from '../../utils/syncUtils';
 import {
   isClientUnavailableError,
+  isPermanentlyUnavailableError,
   isQuotaExceededError,
 } from '../shared/quotaError';
 import { type TelemetryRunContext } from '../shared/telemetryBudget';
@@ -464,6 +465,19 @@ export const readHealthRecordsDetailed = async (
   if (result.clientUnavailable) {
     addLog(
       `[HealthConnectService] Skipping fallback split for ${recordType}: Health Connect client is unavailable.`,
+      'WARNING'
+    );
+    return { records: result.records, error: result.error };
+  }
+
+  // A permission the user has not granted (SecurityException) or a record
+  // type this Health Connect does not support fails identically for every
+  // sub-window. Splitting turned one refusal into 62 day/hour reads per
+  // metric — 984 identical ERROR lines in one sync, evicting everything else
+  // from the 1000-entry log. Same shape as the client-unavailable case above.
+  if (isPermanentlyUnavailableError(result.error)) {
+    addLog(
+      `[HealthConnectService] Skipping fallback split for ${recordType}: permission denied or record type unsupported.`,
       'WARNING'
     );
     return { records: result.records, error: result.error };

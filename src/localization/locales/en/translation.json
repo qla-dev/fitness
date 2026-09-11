@@ -1955,7 +1955,8 @@
     "goalSeparator": " / {{value}}"
   },
   "routeMap": {
-    "unsupported": "Maps are only available on iOS and Android."
+    "unsupported": "Maps are only available on iOS and Android.",
+    "missingApiKey": "The map is unavailable: this build has no Google Maps API key."
   },
   "foodSummary": {
     "tapToAddFood": "Tap to add food",
@@ -1982,6 +1983,11 @@
     "deleteExercise": "Delete exercise"
   },
   "cycleSettings": {
+    "notSetUp": {
+      "title": "Cycle tracking is not set up",
+      "subtitle": "Set up cycle or pregnancy tracking to change these settings.",
+      "action": "Set up tracking"
+    },
     "updateFailed": "Update failed",
     "saveFailed": "Could not save cycle settings. Please try again.",
     "mode": {
@@ -5178,6 +5184,7 @@
     "goalsHelp": "New goals apply from today onward. Previous days keep their goals.",
     "goalsSaveFailed": "Could not save goals. Please try again.",
     "goalsInvalid": "Enter a positive number or zero. Stand hours cannot exceed 24.",
+    "goalsInvalidMinimum": "Enter a number of at least {{minimum}}.",
     "appSubtitle": "Appearance, language, and notifications",
     "caloriesSubtitle": "Energy balance and calorie calculations",
     "foodSubtitle": "Search providers and food preferences",
@@ -5216,6 +5223,7 @@
   "programs": {
     "title": "Program",
     "start": "Start",
+    "added": "Added",
     "allCategories": "All",
     "featured": "Featured",
     "listTitle": "Programs for you",
@@ -5298,8 +5306,12 @@
       "progress": "Adding exercises… {{resolved}} of {{total}}, workout {{session}} of {{sessions}}",
       "failed": "Could not add this program. Please try again.",
       "confirm": "Add to my programs",
+      "confirmAgain": "Add another copy",
+      "alreadyAdded": "This program is already in your Programs. Adding it again creates a second copy of every workout.",
       "added_one": "{{count}} workout added to Programs",
-      "added_other": "{{count}} workouts added to Programs"
+      "added_other": "{{count}} workouts added to Programs",
+      "skipped_one": "{{count}} exercise couldn't be matched and was left out",
+      "skipped_other": "{{count}} exercises couldn't be matched and were left out"
     },
     "searchResults": "Programs",
     "searchEmpty": "No programs match that search",

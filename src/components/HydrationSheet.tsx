@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import HydrationGauge from './HydrationGauge';

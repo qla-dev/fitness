@@ -16,6 +16,10 @@ import ProgramCover from './ProgramCover';
 import { useProgramAccents } from './ProgramStore';
 import { useExternalProviders } from '../hooks/useExternalProviders';
 import {
+  installedProgramsQueryKey,
+  useInstalledPrograms,
+} from '../hooks/useInstalledPrograms';
+import {
   installProgramAsPresets,
   type ProgramInstallProgress,
   type ProgramInstallResult,
@@ -54,6 +58,9 @@ const ProgramPurchaseSheet: React.FC<ProgramPurchaseSheetProps> = ({
 
   const { providers } = useExternalProviders({ category: 'exercise' });
   const provider = providers[0] ?? null;
+  // A second tap on Start used to install a second full copy. The sheet
+  // still allows it — presets may have been deleted — but says so first.
+  const alreadyInstalled = useInstalledPrograms().has(program.id);
   const [progress, setProgress] = useState<ProgramInstallProgress | null>(null);
   const [failed, setFailed] = useState(false);
   const installing = useRef(false);
@@ -78,7 +85,8 @@ const ProgramPurchaseSheet: React.FC<ProgramPurchaseSheetProps> = ({
       );
       await queryClient.invalidateQueries({
         predicate: ({ queryKey }) =>
-          String(queryKey[0]).startsWith('workoutPreset'),
+          String(queryKey[0]).startsWith('workoutPreset') ||
+          queryKey[0] === installedProgramsQueryKey[0],
       });
       onInstalled(result);
     } catch {
@@ -204,6 +212,15 @@ const ProgramPurchaseSheet: React.FC<ProgramPurchaseSheetProps> = ({
             </Text>
           )}
 
+          {alreadyInstalled && !busy && (
+            <Text className="text-text-primary text-sm mb-4">
+              {t('programs.purchase.alreadyAdded', {
+                defaultValue:
+                  'This program is already in your Programs. Adding it again creates a second copy of every workout.',
+              })}
+            </Text>
+          )}
+
           <TouchableOpacity
             accessibilityRole="button"
             disabled={busy}
@@ -216,9 +233,13 @@ const ProgramPurchaseSheet: React.FC<ProgramPurchaseSheetProps> = ({
             }}
           >
             <Text className="text-accent-text text-base font-bold">
-              {t('programs.purchase.confirm', {
-                defaultValue: 'Add to my programs',
-              })}
+              {alreadyInstalled
+                ? t('programs.purchase.confirmAgain', {
+                    defaultValue: 'Add another copy',
+                  })
+                : t('programs.purchase.confirm', {
+                    defaultValue: 'Add to my programs',
+                  })}
             </Text>
           </TouchableOpacity>
 

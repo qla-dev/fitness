@@ -1,8 +1,16 @@
 import React from 'react';
 import { Platform, View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { AppleMaps, GoogleMaps } from 'expo-maps';
+import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
+
+// Google Maps refuses to initialise without `com.google.android.geo.API_KEY`
+// in the manifest and throws from native code, which no error boundary
+// catches. The key reaches the manifest through `android.config.googleMaps`
+// in app.config.ts, so its absence there means its absence in the build.
+const hasGoogleMapsApiKey = (): boolean =>
+  Boolean(Constants.expoConfig?.android?.config?.googleMaps?.apiKey);
 
 export type RouteCoordinate = { latitude: number; longitude: number };
 
@@ -82,6 +90,19 @@ const RouteMap: React.FC<RouteMapProps> = ({
           scheme === 'dark' ? AppleMaps.MapColorScheme.DARK : undefined
         }
       />
+    );
+  }
+
+  if (Platform.OS === 'android' && !hasGoogleMapsApiKey()) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surface">
+        <Text className="text-text-muted text-sm text-center px-6">
+          {t('routeMap.missingApiKey', {
+            defaultValue:
+              'The map is unavailable: this build has no Google Maps API key.',
+          })}
+        </Text>
+      </View>
     );
   }
 

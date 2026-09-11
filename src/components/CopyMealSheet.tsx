@@ -9,7 +9,8 @@ import {
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
 import Button from './ui/Button';

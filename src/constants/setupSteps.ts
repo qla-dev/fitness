@@ -239,6 +239,7 @@ export function profileSteps(t: TFunction): SetupStep[] {
         unit: 'kcal',
         suggestion: 2000,
         numeric: true,
+        min: 1,
         max: 10000,
       },
       t('setup.caloriesHint', {

@@ -137,10 +137,30 @@ describe('the profile goals flow', () => {
     fireEvent.press(getByText('Save'));
 
     expect(localApiFetch).not.toHaveBeenCalled();
-    expect(
-      getByText(
-        'Enter a positive number or zero. Stand hours cannot exceed 24.'
-      )
-    ).toBeTruthy();
+    // Calories carry a floor of 1 (a 0 kcal target divides every "remaining"
+    // by zero), so the message names that floor rather than "or zero".
+    expect(getByText('Enter a number of at least 1.')).toBeTruthy();
+  });
+
+  it('refuses a zero calorie goal, which nutrient goals still accept', async () => {
+    const { findByDisplayValue, getByLabelText, getByText } = renderWithClient(
+      <ProfileEditScreen
+        navigation={mockNavigation}
+        route={
+          {
+            key: 'ProfileEdit',
+            name: 'ProfileEdit',
+            params: { field: 'goal', goalKey: 'calories' },
+          } as never
+        }
+      />
+    );
+
+    await findByDisplayValue('2100');
+    fireEvent.changeText(getByLabelText('Calories'), '0');
+    fireEvent.press(getByText('Save'));
+
+    expect(localApiFetch).not.toHaveBeenCalled();
+    expect(getByText('Enter a number of at least 1.')).toBeTruthy();
   });
 });

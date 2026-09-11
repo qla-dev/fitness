@@ -8,7 +8,8 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Platform, Pressable, Text, View } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import DurationWheel from './DurationWheel';
 import Button from './ui/Button';

@@ -9,10 +9,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import {
-  BottomSheetModal,
   BottomSheetTextInput,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import Button from './ui/Button';
 import { useSheetBackdrop } from './ui/sheetChrome';

@@ -7,6 +7,7 @@ import { createWorkoutPreset } from './api/workoutPresetsApi';
 import { addLog } from './LogService';
 import {
   createProgramAccess,
+  markProgramInstalled,
   programAccessScope,
   saveProgramAccess,
 } from './programAccess';
@@ -200,6 +201,10 @@ export async function installProgramAsPresets(
     presetsCreated += 1;
     exercisesAdded += payloadExercises.length;
   }
+
+  // A session that resolved nothing creates no preset; only a real install is
+  // recorded, so a fully unresolvable program can be retried from Start.
+  if (presetsCreated > 0) await markProgramInstalled(scope, program.id);
 
   addLog(
     `[Programs] Installed "${program.name}": ${presetsCreated} presets, ${exercisesAdded} exercises, ${skipped.length} skipped.`,

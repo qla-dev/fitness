@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useTranslation } from 'react-i18next';
+import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
 import {
   ScrollView,
   Text,
@@ -112,6 +113,13 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
 }) => {
   const { t } = useTranslation();
   const accents = useProgramAccents();
+  const installed = useInstalledPrograms();
+  // The label is the only installed-state cue on a row; the tap still opens
+  // the purchase sheet, which explains a second copy before creating one.
+  const startLabel = (program: ExerciseProgram) =>
+    installed.has(program.id)
+      ? t('programs.added', { defaultValue: 'Added' })
+      : t('programs.start', { defaultValue: 'Start' });
   const { width } = useWindowDimensions();
   // The chips live in the screen header now, so the filter is a prop; the
   // internal state is only the fallback for a caller that renders no chips.
@@ -257,7 +265,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
           className="h-full px-4 items-center justify-center"
         >
           <Text className="text-accent-primary text-sm font-bold">
-            {t('programs.start', { defaultValue: 'Start' })}
+            {startLabel(program)}
           </Text>
         </TouchableOpacity>
       </LiquidGlassSurface>
@@ -438,7 +446,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                         className="h-full px-4 items-center justify-center"
                       >
                         <Text className="text-white text-sm font-bold">
-                          {t('programs.start', { defaultValue: 'Start' })}
+                          {startLabel(program)}
                         </Text>
                       </TouchableOpacity>
                     </LiquidGlassSurface>
