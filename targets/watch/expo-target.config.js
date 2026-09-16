@@ -60,7 +60,7 @@ module.exports = () => {
     type: 'watch',
     name: 'qlafitWatch',
     bundleIdentifier: `${companionBundleIdentifier}.watchkitapp`,
-    icon: '../../assets/icons/appicon.jpg',
+    icon: '../../assets/icons/logo-v3.jpg',
     deploymentTarget: '10.0',
     frameworks: ['HealthKit', 'WatchConnectivity'],
     entitlements: {

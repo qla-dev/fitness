@@ -9,7 +9,7 @@ import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
  * on About and Onboarding purely because those screens each held their own
  * `require`.
  *
- * `assets/icons/appicon.jpg` is the two figures on the brand's black ground.
+ * `assets/icons/logo-v3.jpg` is the two figures on the brand's black ground.
  * The splash paints the same black as its own background and displays
  * the same image, so the launch screen and this mark are the same
  * artwork rather than two files that have to be kept in step.
@@ -49,7 +49,7 @@ const AppLogo: React.FC<{
     ]}
   >
     <Image
-      source={require('../../assets/icons/appicon.jpg')}
+      source={require('../../assets/icons/logo-v3.jpg')}
       style={{ width: size, height: size }}
       resizeMode="contain"
       accessibilityIgnoresInvertColors

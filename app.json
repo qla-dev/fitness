@@ -4,7 +4,7 @@
     "slug": "fitness",
     "scheme": "sparkyfitnessmobile",
     "orientation": "portrait",
-    "icon": "./assets/icons/appicon.jpg",
+    "icon": "./assets/icons/logo-v3.jpg",
     "userInterfaceStyle": "automatic",
     "plugins": [
       [
@@ -44,7 +44,7 @@
         {
           "backgroundColor": "#000000",
           "imageWidth": 200,
-          "image": "./assets/icons/appicon.jpg"
+          "image": "./assets/icons/logo-v3.jpg"
         }
       ],
       [
@@ -97,13 +97,13 @@
             }
           }
         },
-        "projectId": "28f98299-f213-404c-a9ff-2eaef31c6750"
+        "projectId": "e8f7109f-9728-439e-8de3-ca22211e401a"
       }
     },
     "version": "1.6.4",
-    "owner": "kulasinn",
+    "owner": "kulasinn-2",
     "ios": {
-      "buildNumber": "5"
+      "buildNumber": "7"
     }
   }
 }

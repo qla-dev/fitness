@@ -210,7 +210,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // The flat artwork: a single composed square with the brand's black
       // ground baked in, which is the opposite of what a .icon document's
       // transparent layers expect.
-      icon: './assets/icons/appicon.jpg',
+      icon: './assets/icons/logo-v3.jpg',
     },
     android: {
       // Same as ios: keep app.json's versionCode from autoIncrement.
@@ -224,7 +224,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         // The launcher mask crops the outer third of this foreground, which
         // the mark's own margin absorbs; the background repaints the same
         // black so the cropped edge cannot show through.
-        foregroundImage: './assets/icons/appicon.jpg',
+        foregroundImage: './assets/icons/logo-v3.jpg',
         backgroundColor: '#000000',
       },
     },

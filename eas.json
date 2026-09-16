@@ -24,7 +24,6 @@
         "APP_VARIANT": "production",
         "FITNESS_DATA_MODE": "local"
       },
-      "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
