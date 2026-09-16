@@ -224,7 +224,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
         // The launcher mask crops the outer third of this foreground, which
         // the mark's own margin absorbs; the background repaints the same
         // black so the cropped edge cannot show through.
-        foregroundImage: './assets/icons/adaptiveicon.png',
+        foregroundImage: './assets/icons/appicon.jpg',
         backgroundColor: '#000000',
       },
     },

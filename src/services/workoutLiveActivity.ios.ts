@@ -89,7 +89,7 @@ async function resolveAppIcon(): Promise<void> {
     // Must stay small: WidgetKit rejects oversized Live Activity images
     // ("widget archival failed") and renders a grey placeholder shape, so the
     // full-resolution icon art cannot be used directly.
-    const asset = Asset.fromModule(require('../../assets/icons/appicon.png'));
+    const asset = Asset.fromModule(require('../../assets/icons/appicon.jpg'));
     await asset.downloadAsync();
     if (asset.localUri == null) return;
     // Derive the small image from the current app artwork instead of keeping

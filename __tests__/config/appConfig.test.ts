@@ -66,9 +66,9 @@ describe('brand assets', () => {
   it('paints the splash and the in-app mark from one logo asset', () => {
     // Both sit the same white-on-transparent glyph on the same blue, so the
     // launch screen and the mark cannot drift apart.
-    expect(read('app.json')).toContain('"./assets/images/logo.png"');
+    expect(read('app.json')).toContain('"./assets/icons/appicon.jpg"');
     expect(read('src/components/AppLogo.tsx')).toContain(
-      "require('../../assets/images/logo.png')"
+      "require('../../assets/icons/appicon.jpg')"
     );
   });
 
@@ -80,7 +80,7 @@ describe('brand assets', () => {
       'src/screens/OnboardingScreen.tsx',
     ]) {
       expect(read(screen)).toContain("from '../components/AppLogo'");
-      expect(read(screen)).not.toMatch(/require(.*assets.*logo.png.*)/);
+      expect(read(screen)).not.toMatch(/require(.*assets.*(logo|appicon).*)/);
     }
   });
 

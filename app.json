@@ -44,7 +44,7 @@
         {
           "backgroundColor": "#000000",
           "imageWidth": 200,
-          "image": "./assets/images/logo.png"
+          "image": "./assets/icons/appicon.jpg"
         }
       ],
       [
@@ -103,7 +103,7 @@
     "version": "1.6.4",
     "owner": "kulasinn",
     "ios": {
-      "buildNumber": "3"
+      "buildNumber": "5"
     }
   }
 }
