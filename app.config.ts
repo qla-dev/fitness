@@ -212,10 +212,12 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       package: isDev ? DEV_PACKAGE : PROD_PACKAGE,
       permissions: androidPermissions,
       adaptiveIcon: {
-        // The launcher mask crops the outer third, so the foreground holds the
-        // mark scaled into the safe zone on transparency and the background is
-        // the brand's black ground, the same ground the splash and the iOS
-        // icon paint.
+        // One flat artwork feeds every icon surface: the same opaque square
+        // with the brand's black ground baked in, carrying no alpha channel
+        // (the App Store rejects an icon that has one, even fully opaque).
+        // The launcher mask crops the outer third of this foreground, which
+        // the mark's own margin absorbs; the background repaints the same
+        // black so the cropped edge cannot show through.
         foregroundImage: './assets/icons/adaptiveicon.png',
         backgroundColor: '#000000',
       },
@@ -328,7 +330,11 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
     extra: {
       ...config.extra,
       APP_VARIANT: environment,
-      dataMode: process.env.FITNESS_DATA_MODE || (isDev ? 'local' : 'server'),
+      // Local (AsyncStorage) is the shipping data mode for every variant. This
+      // used to fall back to 'server' whenever APP_VARIANT was not a dev one,
+      // so TestFlight/production builds silently ran against the backend while
+      // dev builds ran locally. Only FITNESS_DATA_MODE flips it now.
+      dataMode: process.env.FITNESS_DATA_MODE || 'local',
       iosAppGroup: getIosAppGroup(),
     },
   };

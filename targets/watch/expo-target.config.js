@@ -63,5 +63,8 @@ module.exports = () => {
     icon: '../../assets/icons/adaptiveicon.png',
     deploymentTarget: '10.0',
     frameworks: ['HealthKit', 'WatchConnectivity'],
+    entitlements: {
+      'com.apple.developer.healthkit': true,
+    },
   };
 };

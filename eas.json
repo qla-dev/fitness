@@ -14,13 +14,15 @@
     },
     "preview": {
       "env": {
-        "APP_VARIANT": "preview"
+        "APP_VARIANT": "preview",
+        "FITNESS_DATA_MODE": "local"
       },
       "distribution": "internal"
     },
     "production": {
       "env": {
-        "APP_VARIANT": "production"
+        "APP_VARIANT": "production",
+        "FITNESS_DATA_MODE": "local"
       },
       "autoIncrement": true,
       "android": {
@@ -34,7 +36,7 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6757314392"
+        "ascAppId": "6810657126"
       }
     }
   }
