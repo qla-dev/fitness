@@ -4,7 +4,7 @@
     "slug": "fitness",
     "scheme": "sparkyfitnessmobile",
     "orientation": "portrait",
-    "icon": "./assets/icons/appstore.png",
+    "icon": "./assets/icons/appicon.jpg",
     "userInterfaceStyle": "automatic",
     "plugins": [
       [

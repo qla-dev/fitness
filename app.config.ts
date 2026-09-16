@@ -159,6 +159,10 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       ])
     ),
     ios: {
+      // Keep app.json's ios block (buildNumber, which EAS autoIncrement writes
+      // there). Without this spread it was dropped and every build shipped as
+      // build 1, which App Store Connect rejects as already used.
+      ...config.ios,
       bundleIdentifier: isDev
         ? DEV_BUNDLE_IDENTIFIER
         : IOS_PROD_BUNDLE_IDENTIFIER,
@@ -206,9 +210,11 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // The flat artwork: a single composed square with the brand's black
       // ground baked in, which is the opposite of what a .icon document's
       // transparent layers expect.
-      icon: './assets/icons/appicon.png',
+      icon: './assets/icons/appicon.jpg',
     },
     android: {
+      // Same as ios: keep app.json's versionCode from autoIncrement.
+      ...config.android,
       package: isDev ? DEV_PACKAGE : PROD_PACKAGE,
       permissions: androidPermissions,
       adaptiveIcon: {
