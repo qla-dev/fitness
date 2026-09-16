@@ -88,6 +88,16 @@ const ICON_MAP = {
 
   // Food
   food: { sf: 'fork.knife', ion: 'restaurant' },
+  // Setup questionnaire options
+  'trend-down': { sf: 'arrow.down.right', ion: 'trending-down-outline' },
+  desk: { sf: 'desktopcomputer', ion: 'desktop-outline' },
+  hammer: { sf: 'hammer', ion: 'hammer-outline' },
+  leaf: { sf: 'leaf', ion: 'leaf-outline' },
+  carrot: { sf: 'carrot', ion: 'nutrition-outline' },
+  fish: { sf: 'fish', ion: 'fish-outline' },
+  hourglass: { sf: 'hourglass', ion: 'hourglass-outline' },
+  repeat: { sf: 'repeat', ion: 'repeat-outline' },
+  shuffle: { sf: 'shuffle', ion: 'shuffle-outline' },
 
   // Meals
   meal: { sf: 'square.stack.3d.up.fill', ion: 'layers' },

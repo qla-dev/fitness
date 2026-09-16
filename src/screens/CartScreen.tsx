@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,10 +7,11 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { randomUUID } from 'expo-crypto';
 import Button from '../components/ui/Button';
-import SetupWizard from '../components/SetupWizard';
 import GroceryListEditor from '../components/GroceryListEditor';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -24,6 +25,11 @@ import {
   type SampleRecipe,
 } from '../services/groceryPlanner';
 import type { GroceryList } from '../services/personalSetup';
+import {
+  isSetupWizardOpen,
+  openSetupWizardSession,
+} from '../services/setupWizardSession';
+import type { RootStackParamList } from '../types/navigation';
 import { formatLocalizedNumber } from '../localization';
 
 export default function CartScreen() {
@@ -38,6 +44,30 @@ export default function CartScreen() {
   const [swaps, setSwaps] = useState<Record<number, string>>({});
   const [draft, setDraft] = useState<GroceryList | null>(null);
   const state = setup.state;
+  const focused = useIsFocused();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const showWizard =
+    focused && !!state && (wizard || !state.groceryDone) && !draft;
+  // The wizard is a root-stack route so it gets a real native header.
+  useEffect(() => {
+    if (!showWizard || !state || isSetupWizardOpen()) return;
+    openSetupWizardSession({
+      steps: grocerySteps(t),
+      initial: state.grocery,
+      onClose: () => setWizard(false),
+      onSave: async (answers, done) => {
+        await setup.save((s) => ({
+          ...s,
+          grocery: answers,
+          groceryDone: done,
+        }));
+        setSwaps({});
+        setOffset(0);
+      },
+    });
+    navigation.navigate('SetupWizard');
+  });
   const plan = makeSamplePlan(state?.grocery ?? {}, offset);
   const meals = plan.meals.map(
     (meal, index) => plan.eligible.find((r) => r.id === swaps[index]) ?? meal
@@ -305,23 +335,6 @@ export default function CartScreen() {
           </>
         )}
       </ScrollView>
-      {state && (wizard || !state.groceryDone) && !draft && (
-        <SetupWizard
-          title={t('groceries.setup', { defaultValue: 'Your grocery setup' })}
-          steps={grocerySteps(t)}
-          initial={state.grocery}
-          onClose={() => setWizard(false)}
-          onSave={async (answers, done) => {
-            await setup.save((s) => ({
-              ...s,
-              grocery: answers,
-              groceryDone: done,
-            }));
-            setSwaps({});
-            setOffset(0);
-          }}
-        />
-      )}
       {draft && (
         <GroceryListEditor
           initial={draft}

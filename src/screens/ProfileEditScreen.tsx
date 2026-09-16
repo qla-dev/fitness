@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCSSVariable } from 'uniwind';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import Icon from '../components/Icon';
+import PillInput from '../components/ui/PillInput';
 import { useCustomNutrients } from '../hooks';
 import { goalsQueryKey, profileQueryKey } from '../hooks/queryKeys';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -45,9 +44,6 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const queryClient = useQueryClient();
-  const [textSecondary] = useCSSVariable(['--color-text-secondary']) as [
-    string,
-  ];
   const input = useRef<TextInput>(null);
 
   const isGoal = params.field === 'goal';
@@ -174,61 +170,29 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
     >
       {header}
       <View className="px-4 pt-4" style={{ paddingBottom: insets.bottom }}>
-        <View
-          className="bg-surface flex-row items-center"
-          style={{
-            height: 52,
-            borderRadius: 26,
-            paddingLeft: 18,
-            paddingRight: 10,
-          }}
-        >
-          <TextInput
-            ref={input}
-            accessibilityLabel={label}
-            value={value}
-            onChangeText={setDraft}
-            placeholder={
-              isGoal
-                ? t('profile.goalPlaceholder', {
-                    defaultValue: 'Enter a value',
-                  })
-                : t('profile.namePlaceholder', {
-                    defaultValue: 'Enter your name',
-                  })
-            }
-            placeholderTextColor={textSecondary}
-            keyboardType={isGoal ? 'decimal-pad' : 'default'}
-            autoCapitalize={isGoal ? 'none' : 'words'}
-            autoComplete={isGoal ? 'off' : 'name'}
-            maxLength={isGoal ? 12 : 100}
-            editable={!busy}
-            returnKeyType="done"
-            onSubmitEditing={() => void save()}
-            className="flex-1 h-full text-text-primary"
-            style={{ fontSize: 17 }}
-          />
-          {unit ? (
-            <Text className="text-text-secondary ml-2" style={{ fontSize: 15 }}>
-              {unit}
-            </Text>
-          ) : null}
-          {value.length > 0 && !busy ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('common.clear', { defaultValue: 'Clear' })}
-              hitSlop={8}
-              onPress={() => {
-                setDraft('');
-                input.current?.focus();
-              }}
-              className="bg-raised rounded-full items-center justify-center ml-2"
-              style={{ width: 22, height: 22 }}
-            >
-              <Icon name="close" size={13} color={textSecondary} />
-            </Pressable>
-          ) : null}
-        </View>
+        <PillInput
+          ref={input}
+          accessibilityLabel={label}
+          value={value}
+          onChangeText={setDraft}
+          unit={unit}
+          placeholder={
+            isGoal
+              ? t('profile.goalPlaceholder', {
+                  defaultValue: 'Enter a value',
+                })
+              : t('profile.namePlaceholder', {
+                  defaultValue: 'Enter your name',
+                })
+          }
+          keyboardType={isGoal ? 'decimal-pad' : 'default'}
+          autoCapitalize={isGoal ? 'none' : 'words'}
+          autoComplete={isGoal ? 'off' : 'name'}
+          maxLength={isGoal ? 12 : 100}
+          editable={!busy}
+          returnKeyType="done"
+          onSubmitEditing={() => void save()}
+        />
         {(failed || invalidNumber) && (
           <Text
             accessibilityRole="alert"

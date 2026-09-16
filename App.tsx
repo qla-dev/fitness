@@ -100,6 +100,7 @@ import {
   SafeFamilyCopyReview,
   SafeCycleSettings,
   SafeCycleOnboarding,
+  SafeSetupWizard,
   SafeCycleHub,
   SafeCycleLogModal,
   SafePregnancySetup,
@@ -810,6 +811,16 @@ function AppContent() {
             options={createStackScreenOptions(t('screens.cycleSetup', { defaultValue: 'Cycle Setup' }), {
               presentation: 'modal',
               headerBackButtonDisplayMode: 'minimal',
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          <Stack.Screen
+            name="SetupWizard"
+            component={SafeSetupWizard}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              gestureEnabled: false,
+              headerBackVisible: false,
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),
             })}
           />

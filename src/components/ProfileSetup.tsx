@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import Button from './ui/Button';
-import SetupWizard from './SetupWizard';
 import { profileSteps } from '../constants/setupSteps';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import {
@@ -15,6 +15,13 @@ import { localApiFetch } from '../services/local/localApi';
 import { isLocalDataMode } from '../services/dataMode';
 import { getTodayDate } from '../utils/dateUtils';
 import type { SetupAnswers } from '../services/personalSetup';
+import {
+  answerValues,
+  isSetupWizardOpen,
+  openSetupWizardSession,
+  type SetupWizardSession,
+} from '../services/setupWizardSession';
+import type { RootStackParamList } from '../types/navigation';
 
 export default function ProfileSetup({
   enabled,
@@ -25,6 +32,8 @@ export default function ProfileSetup({
 }) {
   const { t } = useTranslation();
   const focused = useIsFocused();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const setup = usePersonalSetup(enabled);
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -63,7 +72,10 @@ export default function ProfileSetup({
   const state = setup.state;
   const existing = { ...state?.profile, ...source.data };
   const missing =
-    !existing.age || !existing.height || !existing.weight || !existing.focus;
+    !existing.age ||
+    !existing.height ||
+    !existing.weight ||
+    answerValues(existing, 'focus').length === 0;
   const visible =
     enabled &&
     focused &&
@@ -74,6 +86,74 @@ export default function ProfileSetup({
     setOpen(false);
     setDismissed(true);
   };
+  const saveWith =
+    (sourceData: SetupAnswers): SetupWizardSession['onSave'] =>
+    async (answers, done) => {
+      if (done) {
+        // Weight and height are pre-filled from the latest measurements.
+        // Only a value the user actually changed is written, through the same
+        // endpoint as manual check-ins, so untouched Health imports are left alone.
+        const changed = (field: 'weight' | 'height') => {
+          const answer = answers[field];
+          if (typeof answer !== 'string' || !answer.trim()) return undefined;
+          const value = Number(answer.replace(',', '.'));
+          return sourceData[field] !== undefined &&
+            Number(sourceData[field]) === value
+            ? undefined
+            : value;
+        };
+        const weight = changed('weight');
+        const height = changed('height');
+        if (weight !== undefined || height !== undefined)
+          await upsertCheckIn({
+            entryDate: getTodayDate(),
+            weight,
+            height,
+          });
+        // Profile goal editing is currently local-only elsewhere in the app.
+        // Keep the same contract; server mode retains these questionnaire choices locally.
+        if (isLocalDataMode()) {
+          const goals: Record<string, number> = {};
+          for (const field of ['steps', 'water_goal_ml', 'calories', 'protein'])
+            if (answers[field])
+              goals[field] = Number(String(answers[field]).replace(',', '.'));
+          if (Object.keys(goals).length)
+            await localApiFetch({
+              endpoint: '/api/goals',
+              method: 'PUT',
+              body: goals,
+            });
+        }
+      }
+      await setup.save((s) => ({
+        ...s,
+        profile: answers,
+        profileDone: done,
+      }));
+      if (done)
+        await client.invalidateQueries({
+          predicate: (q) =>
+            [
+              'measurements',
+              'measurementsRange',
+              'dailySummary',
+              'goals',
+              'profileSetupSource',
+            ].includes(String(q.queryKey[0])),
+        });
+    };
+  // The wizard is a root-stack route so it gets a real native header; the
+  // guard keeps both Dashboard branches from opening it twice.
+  useEffect(() => {
+    if (!visible || !source.data || isSetupWizardOpen()) return;
+    openSetupWizardSession({
+      steps: profileSteps(t),
+      initial: existing,
+      onClose: close,
+      onSave: saveWith(source.data),
+    });
+    navigation.navigate('SetupWizard');
+  });
   return (
     <>
       {manual && (
@@ -91,71 +171,6 @@ export default function ProfileSetup({
         >
           {t('common.retry', { defaultValue: 'Retry' })}
         </Button>
-      )}
-      {visible && (
-        <SetupWizard
-          title={t('setup.title', { defaultValue: 'Made for you' })}
-          steps={profileSteps(t, source.data)}
-          initial={existing}
-          onClose={close}
-          onSave={async (answers, done) => {
-            if (done) {
-              // Measurement writes use the same endpoint as manual check-ins and
-              // omit existing values, including Health imports, rather than overwrite them.
-              const weight =
-                !source.data.weight && answers.weight
-                  ? Number(String(answers.weight).replace(',', '.'))
-                  : undefined;
-              const height =
-                !source.data.height && answers.height
-                  ? Number(String(answers.height).replace(',', '.'))
-                  : undefined;
-              if (weight !== undefined || height !== undefined)
-                await upsertCheckIn({
-                  entryDate: getTodayDate(),
-                  weight,
-                  height,
-                });
-              // Profile goal editing is currently local-only elsewhere in the app.
-              // Keep the same contract; server mode retains these questionnaire choices locally.
-              if (isLocalDataMode()) {
-                const goals: Record<string, number> = {};
-                for (const field of [
-                  'steps',
-                  'water_goal_ml',
-                  'calories',
-                  'protein',
-                ])
-                  if (answers[field])
-                    goals[field] = Number(
-                      String(answers[field]).replace(',', '.')
-                    );
-                if (Object.keys(goals).length)
-                  await localApiFetch({
-                    endpoint: '/api/goals',
-                    method: 'PUT',
-                    body: goals,
-                  });
-              }
-            }
-            await setup.save((s) => ({
-              ...s,
-              profile: answers,
-              profileDone: done,
-            }));
-            if (done)
-              await client.invalidateQueries({
-                predicate: (q) =>
-                  [
-                    'measurements',
-                    'measurementsRange',
-                    'dailySummary',
-                    'goals',
-                    'profileSetupSource',
-                  ].includes(String(q.queryKey[0])),
-              });
-          }}
-        />
       )}
     </>
   );
