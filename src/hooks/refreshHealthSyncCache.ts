@@ -6,7 +6,32 @@ const measurementsQueryFamily = ['measurements'] as const;
 const measurementsRangeQueryFamily = ['measurementsRange'] as const;
 const exerciseHistoryQueryFamily = ['exerciseHistory'] as const;
 
-export function refreshHealthSyncCache(queryClient: QueryClient) {
+/**
+ * Invalidates data derived from HealthKit / Health Connect after an upload.
+ *
+ * The Dashboard starts its initial daily-summary request while sync-on-open is
+ * also starting. React Query deliberately keeps an in-flight first request
+ * (there is no cached data to cancel), so a normal invalidation can wait for a
+ * response that began before the upload and then mark that stale response
+ * fresh. When that race is present, issue one more Dashboard refresh after the
+ * first request settles.
+ */
+export async function refreshHealthSyncCache(
+  queryClient: QueryClient
+): Promise<void> {
+  const dashboardInitialFetchWasInFlight = [
+    dailySummaryQueryFamily,
+    measurementsQueryFamily,
+  ].some((queryKey) =>
+    queryClient
+      .getQueryCache()
+      .findAll({ queryKey })
+      .some(
+        (query) =>
+          query.state.data === undefined && query.state.fetchStatus !== 'idle'
+      )
+  );
+
   for (const family of [
     'sleep',
     'sleepRange',
@@ -15,8 +40,10 @@ export function refreshHealthSyncCache(queryClient: QueryClient) {
   ]) {
     void queryClient.invalidateQueries({ queryKey: [family] });
   }
-  void queryClient.invalidateQueries({ queryKey: dailySummaryQueryFamily });
-  void queryClient.invalidateQueries({ queryKey: measurementsQueryFamily });
+  const dashboardRefreshes = [
+    queryClient.invalidateQueries({ queryKey: dailySummaryQueryFamily }),
+    queryClient.invalidateQueries({ queryKey: measurementsQueryFamily }),
+  ];
   void queryClient.invalidateQueries({
     queryKey: measurementsRangeQueryFamily,
   });
@@ -30,4 +57,13 @@ export function refreshHealthSyncCache(queryClient: QueryClient) {
     type: 'inactive',
   });
   queryClient.setQueryData(exerciseHistoryResetQueryKey, Date.now());
+
+  await Promise.all(dashboardRefreshes);
+
+  if (dashboardInitialFetchWasInFlight) {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: dailySummaryQueryFamily }),
+      queryClient.invalidateQueries({ queryKey: measurementsQueryFamily }),
+    ]);
+  }
 }

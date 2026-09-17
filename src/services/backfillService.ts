@@ -507,7 +507,7 @@ export const runBackfill = async (
     setBackfillRunning(false);
     release();
     if (recordsUploaded > 0) {
-      refreshHealthSyncCache(queryClient);
+      void refreshHealthSyncCache(queryClient);
     }
   }
 };

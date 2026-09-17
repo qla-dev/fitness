@@ -224,8 +224,7 @@ const depthFirstIndex = (root: { children: unknown[] }, node: unknown) => {
   const walk = (current: { children: unknown[] }) => {
     all.push(current);
     current.children.forEach((child) => {
-      if (typeof child !== 'string')
-        walk(child as { children: unknown[] });
+      if (typeof child !== 'string') walk(child as { children: unknown[] });
     });
   };
   walk(root);
@@ -265,6 +264,21 @@ describe('Activities screen exercise log', () => {
   test('keeps the log card on a day with no sessions, as the add affordance', () => {
     const { getByTestId } = renderScreen();
     expect(getByTestId('exercise-summary')).toBeTruthy();
+  });
+
+  test('keeps the Home card layout visible with inline skeletons while loading', () => {
+    (useDailySummary as jest.Mock).mockReturnValue({
+      summary: undefined,
+      isLoading: true,
+      isError: false,
+      refetch: jest.fn(),
+    });
+
+    const { getByTestId, getAllByTestId, queryByTestId } = renderScreen();
+
+    expect(getByTestId('dashboard-loading-skeleton')).toBeTruthy();
+    expect(getAllByTestId('dashboard-skeleton-line').length).toBeGreaterThan(0);
+    expect(queryByTestId('status-view')).toBeNull();
   });
 
   test('no longer offers the Activity / Nutrients switcher', () => {

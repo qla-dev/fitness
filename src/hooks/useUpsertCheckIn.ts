@@ -32,7 +32,7 @@ export function useUpsertCheckIn(options?: { showErrorToast?: boolean }) {
         measurementsQueryKey(vars.entryDate),
         data
       );
-      refreshHealthSyncCache(queryClient);
+      void refreshHealthSyncCache(queryClient);
     },
     onError: (error) => {
       addLog(`Failed to upsert check-in: ${error}`, 'ERROR');

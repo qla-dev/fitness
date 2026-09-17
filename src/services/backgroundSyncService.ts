@@ -52,7 +52,7 @@ let inflightSync: Promise<void> | null = null;
 
 async function refreshHealthSyncCacheWhenActive() {
   if (isAppActive()) {
-    refreshHealthSyncCache(queryClient);
+    await refreshHealthSyncCache(queryClient);
     return;
   }
 
@@ -73,7 +73,7 @@ export const flushPendingHealthSyncCacheRefresh =
       return false;
     }
 
-    refreshHealthSyncCache(queryClient);
+    await refreshHealthSyncCache(queryClient);
     return true;
   };
 

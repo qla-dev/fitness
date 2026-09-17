@@ -36,6 +36,7 @@ import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
+import DashboardLoadingSkeleton from '../components/DashboardLoadingSkeleton';
 import ExerciseSummary from '../components/ExerciseSummary';
 import FastingCard from '../components/FastingCard';
 import FastingGoalReconciler from '../components/FastingGoalReconciler';
@@ -318,11 +319,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       isMeasurementsLoading
     ) {
       return (
-        <StatusView
-          loading
-          title={t('dashboard.loadingSummary', {
-            defaultValue: 'Loading summary...',
-          })}
+        <DashboardLoadingSkeleton
+          activeWorkoutBarPadding={activeWorkoutBarPadding}
+          usesNativeTabs={usesNativeTabs}
         />
       );
     }

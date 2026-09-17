@@ -66,9 +66,14 @@ export function useSyncHealthData(options?: {
         });
       }
     },
-    onSuccess: (data) => {
-      refreshHealthSyncCache(queryClient);
-      queryClient.invalidateQueries({ queryKey: serverConnectionQueryKey });
+    onSuccess: async (data) => {
+      // Keep the successful sync lifecycle open until the Dashboard has read
+      // the post-upload server state. In particular, this closes the
+      // cold-start race between the initial Home request and sync-on-open.
+      await refreshHealthSyncCache(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: serverConnectionQueryKey,
+      });
       if (showToasts) {
         if (data.syncErrors.length > 0 || data.uploadErrors.length > 0) {
           const details = [

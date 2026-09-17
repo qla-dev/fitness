@@ -44,7 +44,7 @@ export function useSaveCustomMeasurement() {
       queryClient.invalidateQueries({
         queryKey: customMeasurementsByDateQueryKey(vars.entry_date),
       });
-      refreshHealthSyncCache(queryClient);
+      void refreshHealthSyncCache(queryClient);
     },
     onError: (err: Error) => {
       addLog(`Failed to save custom measurement: ${err.message}`, 'ERROR');
@@ -62,7 +62,7 @@ export function useDeleteCustomMeasurement() {
       queryClient.invalidateQueries({
         queryKey: customMeasurementsByDateQueryKey(vars.entryDate),
       });
-      refreshHealthSyncCache(queryClient);
+      void refreshHealthSyncCache(queryClient);
     },
     onError: (err: Error) => {
       addLog(`Failed to delete custom measurement: ${err.message}`, 'ERROR');
