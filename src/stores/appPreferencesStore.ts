@@ -7,9 +7,10 @@ import {
 } from '../constants/healthTrends';
 import type { LanguagePreference } from '../localization';
 import type { OwnershipFilter } from '../utils/shareStatus';
+import { canUseLiquidGlass } from '../utils/liquidGlass';
 
 const STORE_KEY = '@SparkyFitness/app-preferences';
-const STORE_VERSION = 1;
+const STORE_VERSION = 2;
 
 /**
  * Legacy per-key AsyncStorage entries that existed before this store was
@@ -183,6 +184,9 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
   persist(
     (set) => ({
       ...PREFERENCE_DEFAULTS,
+      // On by default wherever the iOS 26 Liquid Glass APIs exist; the
+      // PREFERENCE_DEFAULTS value stays false for devices without them.
+      liquidGlassTabBarEnabled: canUseLiquidGlass(),
 
       setHapticsEnabled: (value) => set({ hapticsEnabled: value }),
       setSoundsEnabled: (value) => set({ soundsEnabled: value }),
@@ -284,12 +288,19 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         ) {
           return persistedState as AppPreferencesState;
         }
+        let migrated = persistedState as Partial<AppPreferencesData>;
         // v0 → v1: state was populated from legacy per-key storage by the custom
         // storage adapter. Field names are unchanged; apply defaults for any gaps.
-        return {
-          ...PREFERENCE_DEFAULTS,
-          ...(persistedState as Partial<AppPreferencesData>),
-        } as AppPreferencesState;
+        if (version < 1) {
+          migrated = { ...PREFERENCE_DEFAULTS, ...migrated };
+        }
+        // v1 → v2: Liquid Glass navigation became the default on iOS 26+, so it
+        // is switched on once for existing users there. Turning it off again in
+        // App Settings persists as usual.
+        if (version < 2 && canUseLiquidGlass()) {
+          migrated = { ...migrated, liquidGlassTabBarEnabled: true };
+        }
+        return migrated as AppPreferencesState;
       },
     }
   )

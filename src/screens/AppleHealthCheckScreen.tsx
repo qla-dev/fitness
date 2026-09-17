@@ -1,24 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
+import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Button from '../components/ui/Button';
 import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import BottomSheetPicker from '../components/BottomSheetPicker';
+import HealthMetricList from '../components/HealthMetricList';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useSyncHealthData } from '../hooks';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
+import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
+import { useBackfillRunner } from '../hooks/useBackfillRunner';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
-import { initHealthConnect } from '../services/healthConnectService';
+import {
+  initHealthConnect,
+  loadHealthPreference,
+} from '../services/healthConnectService';
 import {
   applyBackgroundSyncEnabled,
-  areAllHealthMetricsEnabled,
   confirmHealthStartup,
   loadHealthMetricStates,
 } from '../services/healthSyncSettings';
+import { fetchHealthDisplayData } from '../services/healthDataDisplay';
 import { isSyncClaimed } from '../services/autoSyncCoordinator';
 import { fireSelectionHaptic } from '../services/haptics';
 import {
@@ -29,17 +46,82 @@ import {
   saveTimeRange,
   type TimeRange,
 } from '../services/storage';
+import {
+  CATEGORY_ORDER,
+  HEALTH_METRICS,
+  getHealthCategoryLabel,
+} from '../HealthMetrics';
+import { WRITEBACK_METRICS } from '../WritebackMetrics';
+import { formatLocalizedNumber } from '../localization';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /**
+ * Health app's apps-and-sources list, where a user turns an app's read access
+ * back on after declining the system sheet (iOS cannot re-present it). The path
+ * is undocumented: reported to open that list on iOS 16, and anything the
+ * Health app does not recognise still opens the app itself.
+ */
+const HEALTH_APPS_URL = 'x-apple-health://Sources/';
+
+// Fixed blue tones so the heart reads the same in light and dark mode.
+const HERO_GRADIENT_TOP = 'hsl(205, 95%, 62%)';
+const HERO_GRADIENT_BOTTOM = 'hsl(225, 85%, 50%)';
+const HERO_SIZE = 76;
+const HEART_PATH =
+  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+
+/** A gradient-filled heart with a slow, resting heartbeat pulse. */
+function HealthHeroIcon() {
+  const reducedMotion = useReducedMotion();
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 900, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 1300, easing: Easing.inOut(Easing.quad) })
+      ),
+      -1
+    );
+    return () => cancelAnimation(scale);
+  }, [reducedMotion, scale]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={pulseStyle}>
+      <Svg width={HERO_SIZE} height={HERO_SIZE} viewBox="0 0 24 24">
+        <Defs>
+          <LinearGradient id="healthHero" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={HERO_GRADIENT_TOP} />
+            <Stop offset="1" stopColor={HERO_GRADIENT_BOTTOM} />
+          </LinearGradient>
+        </Defs>
+        <Path d={HEART_PATH} fill="url(#healthHero)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+const metricsByCategory = CATEGORY_ORDER.map((category) => ({
+  category,
+  metrics: HEALTH_METRICS.filter(
+    (metric) => (metric.category || 'Other') === category
+  ),
+})).filter((group) => group.metrics.length > 0);
+
+/**
  * Last step of the iOS startup protocol, straight after the Apple Health access
- * sheet: the sync settings that matter on day one (range, background sync,
- * sync on open) and the two ways to get data in now. Laid out like the setup
- * wizard so the startup steps read as one flow.
+ * sheet: where to fix Health permissions, the sync range and automatic sync
+ * settings, which data syncs, and one Sync Now that imports the full history
+ * the first time.
+ * Laid out like the setup wizard so the startup steps read as one flow.
  *
- * Only acting here (syncing, importing, or switching on automatic sync) marks
- * Health as set up; closing with Done alone brings both Health steps back on
- * the next start.
+ * Only acting here (syncing or switching on automatic sync) marks Health as set
+ * up; closing with Done alone brings both Health steps back on the next start.
  */
 export default function AppleHealthCheckScreen({
   navigation,
@@ -55,47 +137,123 @@ export default function AppleHealthCheckScreen({
   const [timeRange, setTimeRange] = useState<TimeRange>('3d');
   const [backgroundSync, setBackgroundSync] = useState(false);
   const [syncOnOpen, setSyncOnOpen] = useState(false);
-  const [healthAllowed, setHealthAllowed] = useState(false);
-  const syncMutation = useSyncHealthData();
+  const [healthReady, setHealthReady] = useState(false);
+  const [healthMetricStates, setHealthMetricStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [writebackStates, setWritebackStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [healthData, setHealthData] = useState<Record<string, string>>({});
+  const [isLoadingHealthData, setIsLoadingHealthData] = useState(true);
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
+  const refreshData = () => setDataRefreshKey((key) => key + 1);
+
+  const syncMutation = useSyncHealthData({ onSuccess: refreshData });
+  const backfill = useBackfillRunner();
+  const { isAllMetricsEnabled, toggleMetric, toggleAllMetrics } =
+    useHealthMetricToggles({
+      healthMetricStates,
+      setHealthMetricStates,
+      writebackStates,
+      onChanged: refreshData,
+    });
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await initHealthConnect();
-      const [range, background, onOpen] = await Promise.all([
+      const initialized = await initHealthConnect();
+      const [range, background, onOpen, metricStates] = await Promise.all([
         loadTimeRange(),
         loadBackgroundSyncEnabled(),
         loadSyncOnOpenEnabled(),
+        loadHealthMetricStates(),
       ]);
+      const writeback: Record<string, boolean> = {};
+      for (const metric of WRITEBACK_METRICS) {
+        writeback[metric.id] =
+          (await loadHealthPreference<boolean>(metric.preferenceKey)) === true;
+      }
       if (cancelled) return;
       if (range) setTimeRange(range);
       setBackgroundSync(background);
       setSyncOnOpen(onOpen);
+      setHealthMetricStates(metricStates);
+      setWritebackStates(writeback);
+      setHealthReady(initialized);
+      if (!initialized) setIsLoadingHealthData(false);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Re-read on focus: metrics changed on the Health Data Sync screen should
-  // show on the way back.
+  // Latest value per metric, so an empty one points the user at permissions.
   useEffect(() => {
-    const refresh = () => {
-      void areAllHealthMetricsEnabled().then(setHealthAllowed);
+    if (!healthReady) return;
+    let cancelled = false;
+    fetchHealthDisplayData(timeRange).then((data) => {
+      if (cancelled) return;
+      setHealthData(data);
+      setIsLoadingHealthData(false);
+    });
+    return () => {
+      cancelled = true;
     };
-    refresh();
-    return navigation.addListener('focus', refresh);
-  }, [navigation]);
+  }, [healthReady, timeRange, dataRefreshKey]);
 
-  const syncNow = async () => {
+  const syncRange = async () => {
     if (syncMutation.isPending || isSyncClaimed()) return;
-    fireSelectionHaptic();
-    void confirmHealthStartup();
     syncMutation.mutate({
       timeRange,
       healthMetricStates: await loadHealthMetricStates(),
     });
   };
+
+  // The history import stops at the start of today, so a finished import is
+  // followed by a normal sync that brings today in too.
+  const importWasRunning = useRef(false);
+  useEffect(() => {
+    if (backfill.status === 'running') {
+      importWasRunning.current = true;
+      return;
+    }
+    if (!importWasRunning.current) return;
+    importWasRunning.current = false;
+    refreshData();
+    if (backfill.status === 'done') void syncRange();
+    // syncRange reads current state; only the status transition should fire it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backfill.status]);
+
+  const importing = backfill.status === 'running';
+  const busy = importing || syncMutation.isPending;
+
+  // Sync Now imports the full history until it has completed once (resuming an
+  // interrupted import), then syncs the chosen range like the Sync screen.
+  const syncNow = () => {
+    if (busy || backfill.status === 'loading') return;
+    fireSelectionHaptic();
+    void confirmHealthStartup();
+    if (backfill.status === 'done') void syncRange();
+    else backfill.start();
+  };
+
+  const progress = backfill.progress;
+  const syncLabel = importing
+    ? progress?.phase === 'importing' && progress.totalDays > 0
+      ? t('appleHealthCheck.importingPercent', {
+          defaultValue: 'Importing history… {{percent}}%',
+          percent: formatLocalizedNumber(
+            Math.round((progress.importedDays / progress.totalDays) * 100)
+          ),
+        })
+      : t('appleHealthCheck.preparingImport', {
+          defaultValue: 'Preparing import…',
+        })
+    : syncMutation.isPending
+      ? t('syncScreen.syncing', { defaultValue: 'Syncing…' })
+      : t('syncScreen.syncNow', { defaultValue: 'Sync Now' });
 
   const header = useScreenHeader({
     title: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
@@ -114,14 +272,14 @@ export default function AppleHealthCheckScreen({
     >
       {header}
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 24 }}>
-        <View className="flex-row items-center gap-3 mb-3">
-          <Icon name="heart-rate" size={28} color={accentColor} />
-          <Text className="flex-1 text-text-primary text-3xl font-bold">
-            {t('appleHealthCheck.heading', {
-              defaultValue: 'Keep your health data in sync',
-            })}
-          </Text>
+        <View className="items-center mb-4">
+          <HealthHeroIcon />
         </View>
+        <Text className="text-text-primary text-3xl font-bold mb-3">
+          {t('appleHealthCheck.heading', {
+            defaultValue: 'Keep your health data in sync',
+          })}
+        </Text>
         <Text className="text-text-secondary text-base mb-7">
           {t('appleHealthCheck.hint', {
             defaultValue:
@@ -131,40 +289,27 @@ export default function AppleHealthCheckScreen({
 
         <SettingsRowGroup>
           <SettingsRow
-            icon="heart-rate"
-            iconColor={accentColor}
-            title={t('appleHealthCheck.allowTitle', {
-              defaultValue: 'Allow Apple Health',
-            })}
-            subtitle={t('appleHealthCheck.allowSubtitle', {
-              defaultValue: 'Change what qla.fit may read in Apple Health',
-            })}
-            rightAccessory={
-              <Switch
-                accessibilityLabel={t('appleHealthCheck.allowTitle', {
-                  defaultValue: 'Allow Apple Health',
-                })}
-                value={healthAllowed}
-                // iOS offers apps no supported link into Settings > Health, and
-                // read access can only be changed by the user; the Health app
-                // (profile > Apps > qla.fit) is the closest the system allows.
-                onValueChange={() => {
-                  fireSelectionHaptic();
-                  void Linking.openURL('x-apple-health://');
-                }}
-              />
-            }
-          />
-          <SettingsRow
             icon="health-data-sync"
             iconColor={accentColor}
-            title={t('syncScreen.title', { defaultValue: 'Health Data Sync' })}
-            subtitle={t('appleHealthCheck.syncSettingsSubtitle', {
-              defaultValue: 'Pick which health data qla.fit syncs',
+            title={t('appleHealthCheck.checkPermissionsTitle', {
+              defaultValue: 'Check Apple Health Permissions',
             })}
-            onPress={() => navigation.navigate('Sync')}
+            subtitle={t('appleHealthCheck.checkPermissionsSubtitle', {
+              defaultValue: 'Opens the Health app',
+            })}
+            // iOS offers apps no supported link into Settings > Health, and
+            // read access can only be changed by the user; see HEALTH_APPS_URL.
+            onPress={() => {
+              void Linking.openURL(HEALTH_APPS_URL);
+            }}
           />
         </SettingsRowGroup>
+        <Text className="text-text-secondary text-sm px-4 -mt-2 mb-6">
+          {t('appleHealthCheck.permissionsHelp', {
+            defaultValue:
+              'If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.',
+          })}
+        </Text>
 
         <SettingsRowGroup>
           <SettingsRow
@@ -252,28 +397,47 @@ export default function AppleHealthCheckScreen({
             }
           />
         </SettingsRowGroup>
+        <SettingsRowGroup
+          title={t('healthSync.title', { defaultValue: 'Health Data to Sync' })}
+        >
+          <SettingsRow
+            title={t('healthSync.enableAll', {
+              defaultValue: 'Enable All Health Metrics',
+            })}
+            rightAccessory={
+              <Switch
+                accessibilityLabel={t('healthSync.enableAll', {
+                  defaultValue: 'Enable All Health Metrics',
+                })}
+                value={isAllMetricsEnabled}
+                onValueChange={() => void toggleAllMetrics()}
+              />
+            }
+          />
+        </SettingsRowGroup>
+        {metricsByCategory.map(({ category, metrics }) => (
+          <View key={category} className="mb-4">
+            <Text className="px-4 pb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">
+              {getHealthCategoryLabel(t, category)}
+            </Text>
+            <HealthMetricList
+              card
+              metrics={metrics}
+              healthMetricStates={healthMetricStates}
+              onToggle={(metric, value) => void toggleMetric(metric, value)}
+              healthData={healthData}
+              isLoadingHealthData={isLoadingHealthData}
+            />
+          </View>
+        ))}
       </ScrollView>
 
       <View
-        className="px-5 pt-3 gap-2 bg-background border-t border-border"
+        className="px-5 pt-3 bg-background border-t border-border"
         style={{ paddingBottom: Math.max(insets.bottom, 12) }}
       >
-        <Button loading={syncMutation.isPending} onPress={() => void syncNow()}>
-          {syncMutation.isPending
-            ? t('syncScreen.syncing', { defaultValue: 'Syncing…' })
-            : t('syncScreen.syncNow', { defaultValue: 'Sync Now' })}
-        </Button>
-        <Button
-          variant="secondary"
-          onPress={() => {
-            fireSelectionHaptic();
-            void confirmHealthStartup();
-            navigation.navigate('ImportHistory');
-          }}
-        >
-          {t('syncScreen.import.title', {
-            defaultValue: 'Import Full History',
-          })}
+        <Button loading={busy} disabled={!healthReady} onPress={syncNow}>
+          {syncLabel}
         </Button>
       </View>
     </View>

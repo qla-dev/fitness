@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Image, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import {
   HEALTH_METRICS,
   HealthMetric,
   CATEGORY_ORDER,
-  getHealthMetricLabel,
   getHealthCategoryLabel,
 } from '../HealthMetrics';
 import Button from './ui/Button';
 import Switch from './ui/Switch';
+import HealthMetricList from './HealthMetricList';
 import CollapsibleSection from './CollapsibleSection';
 import {
   saveCollapsedCategories,
   loadCollapsedCategories,
 } from '../services/storage';
-import { NO_DATA_DISPLAY } from '../services/healthDataDisplay';
 import { useTranslation } from 'react-i18next';
 
 // Re-export HealthMetric for backwards compatibility
@@ -117,65 +116,6 @@ const HealthDataSync: React.FC<HealthDataSyncProps> = ({
 
   const groupedMetrics = groupMetricsByCategory(HEALTH_METRICS);
 
-  const renderMetricItem = (metric: HealthMetric) => {
-    const metricLabel = getHealthMetricLabel(t, metric);
-    const value = healthData?.[metric.id];
-    const displayValue =
-      value === NO_DATA_DISPLAY
-        ? t('healthSync.noData', { defaultValue: 'No data' })
-        : value;
-    const showLoading = isLoadingHealthData && !value;
-
-    return (
-      <View
-        key={metric.id}
-        className="flex-row justify-between items-center mb-2"
-      >
-        <View className="flex-row items-center flex-1 mr-2">
-          <Image source={metric.icon} className="w-6 h-6" />
-          <Text
-            className="ml-2 text-base text-text-primary flex-shrink"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {metricLabel}
-          </Text>
-        </View>
-        {showLoading && (
-          <ActivityIndicator
-            size="small"
-            className="mr-2"
-            accessibilityLabel={t('healthSync.loading', {
-              defaultValue: 'Loading health data',
-            })}
-            accessibilityState={{ busy: true }}
-          />
-        )}
-        {value && (
-          <Text
-            className={`text-sm mr-2 flex-shrink-0 ${value === NO_DATA_DISPLAY ? 'text-text-muted italic' : 'text-text-muted'}`}
-            numberOfLines={1}
-          >
-            {displayValue}
-          </Text>
-        )}
-        <Switch
-          accessibilityLabel={t('healthSync.syncMetricLabel', {
-            defaultValue: 'Sync {{metric}}',
-            metric: metricLabel,
-          })}
-          accessibilityHint={t('healthSync.syncMetricHint', {
-            defaultValue: 'Toggles synchronization for this health metric.',
-          })}
-          onValueChange={(newValue) =>
-            handleToggleHealthMetric(metric, newValue)
-          }
-          value={healthMetricStates[metric.stateKey]}
-        />
-      </View>
-    );
-  };
-
   return (
     <View className="bg-surface rounded-xl p-4 mb-4">
       <Text className="text-lg font-bold mb-3 text-text-primary">
@@ -265,7 +205,13 @@ const HealthDataSync: React.FC<HealthDataSyncProps> = ({
               onToggle={() => handleCategoryToggle(category)}
               itemCount={metricsInCategory.length}
             >
-              {metricsInCategory.map(renderMetricItem)}
+              <HealthMetricList
+                metrics={metricsInCategory}
+                healthMetricStates={healthMetricStates}
+                onToggle={handleToggleHealthMetric}
+                healthData={healthData}
+                isLoadingHealthData={isLoadingHealthData}
+              />
             </CollapsibleSection>
           );
         })}

@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppLocale } from '../localization';
 import {
@@ -29,10 +23,7 @@ import {
   type WritebackMetric,
   type WritebackDateRange,
 } from '../WritebackMetrics';
-import {
-  enabledWritebackPermissions,
-  enabledReadPermissionsForRecordType,
-} from '../services/shared/healthPermissionSets';
+import { enabledReadPermissionsForRecordType } from '../services/shared/healthPermissionSets';
 import HealthSourceLabel from '../components/HealthSourceLabel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -44,12 +35,6 @@ import {
   saveHealthPreference,
   requestHealthPermissions,
   refreshEnabledMetricPermissions,
-  enableBackgroundDeliveryForMetric,
-  disableBackgroundDeliveryForMetric,
-  setupBackgroundDeliveryForEnabledMetrics,
-  disableAllBackgroundDelivery,
-  cleanupAllSubscriptions,
-  refreshSubscriptions,
 } from '../services/healthConnectService';
 import { removeWrittenData } from '../services/writeback';
 import DateRangeSheet, {
@@ -71,13 +56,13 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { formatRelativeTime } from '../utils/dateUtils';
 import { HEALTH_METRICS, getHealthMetricLabel } from '../HealthMetrics';
-import type { HealthMetric } from '../HealthMetrics';
 import type {
   HealthMetricStates,
   HealthDataDisplayState,
 } from '../types/healthRecords';
 import { useSyncHealthData } from '../hooks';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
+import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
 import { applyBackgroundSyncEnabled } from '../services/healthSyncSettings';
 import type { RootStackScreenProps } from '../types/navigation';
 import { fetchHealthDisplayData } from '../services/healthDataDisplay';
@@ -124,11 +109,6 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
       });
 
   const [isSharingReport, setIsSharingReport] = useState(false);
-
-  const isAllMetricsEnabled = useMemo(
-    () => HEALTH_METRICS.every((metric) => healthMetricStates[metric.stateKey]),
-    [healthMetricStates]
-  );
 
   const syncMutation = useSyncHealthData({
     onSuccess: (newLastSyncedTime) => {
@@ -261,87 +241,20 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
     await applyBackgroundSyncEnabled(newValue);
   };
 
+  const {
+    isAllMetricsEnabled,
+    toggleMetric: handleToggleHealthMetric,
+    toggleAllMetrics: handleToggleAllMetrics,
+  } = useHealthMetricToggles({
+    healthMetricStates,
+    setHealthMetricStates,
+    writebackStates,
+    onChanged: () => setHealthDataRefreshKey((k) => k + 1),
+  });
+
   const handleToggleSyncOnOpen = async (newValue: boolean): Promise<void> => {
     setIsSyncOnOpenEnabled(newValue);
     await saveSyncOnOpenEnabled(newValue);
-  };
-
-  const handleToggleHealthMetric = async (
-    metric: HealthMetric,
-    newValue: boolean
-  ): Promise<void> => {
-    setHealthMetricStates((prevStates) => ({
-      ...prevStates,
-      [metric.stateKey]: newValue,
-    }));
-    await saveHealthPreference(metric.preferenceKey, newValue);
-    if (!newValue) {
-      disableBackgroundDeliveryForMetric(metric.recordType).catch(() => {});
-    }
-    if (newValue) {
-      try {
-        // Carry the write direction too when writeback for this record type is already
-        // on, so the sheet cannot commit it back to off. See healthPermissionSets.ts.
-        const granted = await requestHealthPermissions([
-          ...metric.permissions,
-          ...enabledWritebackPermissions(
-            writebackStates,
-            new Set([metric.recordType])
-          ),
-        ]);
-        if (!granted) {
-          Alert.alert(
-            t('syncScreen.permissionDenied.title', {
-              defaultValue: 'Permission Denied',
-            }),
-            t('syncScreen.permissionDenied.read', {
-              defaultValue:
-                'Please grant {{metric}} permission in {{settings}}.',
-              metric: getHealthMetricLabel(t, metric),
-              settings: healthSettingsName,
-            })
-          );
-          setHealthMetricStates((prevStates) => ({
-            ...prevStates,
-            [metric.stateKey]: false,
-          }));
-          await saveHealthPreference(metric.preferenceKey, false);
-          addLog(
-            `Permission Denied: ${metric.defaultLabel} permission not granted.`,
-            'WARNING'
-          );
-        } else {
-          addLog(`${metric.id} sync enabled and permissions granted.`, 'INFO');
-          enableBackgroundDeliveryForMetric(metric.recordType).catch(() => {});
-        }
-      } catch (permissionError) {
-        const errorMessage =
-          permissionError instanceof Error
-            ? permissionError.message
-            : String(permissionError);
-        Alert.alert(
-          t('syncScreen.permissionError.title', {
-            defaultValue: 'Permission Error',
-          }),
-          t('syncScreen.permissionError.metricRead', {
-            defaultValue: 'Failed to request {{metric}} permissions: {{error}}',
-            metric: getHealthMetricLabel(t, metric),
-            error: errorMessage,
-          })
-        );
-        setHealthMetricStates((prevStates) => ({
-          ...prevStates,
-          [metric.stateKey]: false,
-        }));
-        await saveHealthPreference(metric.preferenceKey, false);
-        addLog(
-          `Permission Request Error for ${metric.id}: ${errorMessage}`,
-          'ERROR'
-        );
-      }
-    }
-    refreshSubscriptions();
-    setHealthDataRefreshKey((k) => k + 1);
   };
 
   const handleToggleWriteback = async (
@@ -490,115 +403,6 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
   // Date range → the picker's own confirm button is the commit point.
   const handleRemoveDateRange = (): void => {
     dateRangeSheetRef.current?.present();
-  };
-
-  const handleToggleAllMetrics = async (): Promise<void> => {
-    const newValue = !isAllMetricsEnabled;
-
-    const newHealthMetricStates: HealthMetricStates = {};
-    HEALTH_METRICS.forEach((metric) => {
-      newHealthMetricStates[metric.stateKey] = newValue;
-    });
-
-    if (newValue) {
-      const allPermissions = [
-        ...HEALTH_METRICS.flatMap((metric) => metric.permissions),
-        ...enabledWritebackPermissions(writebackStates),
-      ];
-      addLog(
-        `[SyncScreen] Requesting permissions for all ${HEALTH_METRICS.length} metrics`,
-        'DEBUG'
-      );
-
-      try {
-        const granted = await requestHealthPermissions(allPermissions);
-
-        if (!granted) {
-          Alert.alert(
-            t('syncScreen.permissionRequired.allTitle', {
-              defaultValue: 'Permissions Required',
-            }),
-            t('syncScreen.permissionRequired.allMessage', {
-              defaultValue:
-                'Some permissions were not granted. Please enable all required health permissions in the {{settings}} to sync all data.',
-              settings: healthSettingsName,
-            })
-          );
-          HEALTH_METRICS.forEach((metric) => {
-            newHealthMetricStates[metric.stateKey] = false;
-          });
-          addLog(
-            '[SyncScreen] Not all permissions were granted. Reverting "Enable All".',
-            'WARNING'
-          );
-        } else {
-          addLog(
-            `[SyncScreen] All ${HEALTH_METRICS.length} metric permissions granted`,
-            'INFO'
-          );
-        }
-      } catch (permissionError) {
-        const errorMessage =
-          permissionError instanceof Error
-            ? permissionError.message
-            : String(permissionError);
-        Alert.alert(
-          t('syncScreen.permissionError.title', {
-            defaultValue: 'Permission Error',
-          }),
-          t('syncScreen.permissionError.allMetrics', {
-            defaultValue:
-              'An error occurred while requesting health permissions: {{error}}',
-            error: errorMessage,
-          })
-        );
-        HEALTH_METRICS.forEach((metric) => {
-          newHealthMetricStates[metric.stateKey] = false;
-        });
-        addLog(
-          `[SyncScreen] Error requesting all permissions: ${errorMessage}`,
-          'ERROR'
-        );
-      }
-    } else {
-      addLog(
-        `[SyncScreen] Disabling all ${HEALTH_METRICS.length} metrics`,
-        'DEBUG'
-      );
-      disableAllBackgroundDelivery().catch(() => {});
-      cleanupAllSubscriptions();
-    }
-
-    setHealthMetricStates(newHealthMetricStates);
-
-    const saveErrors: string[] = [];
-    for (const metric of HEALTH_METRICS) {
-      try {
-        await saveHealthPreference(
-          metric.preferenceKey,
-          newHealthMetricStates[metric.stateKey]
-        );
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        saveErrors.push(`${metric.id}: ${errorMessage}`);
-      }
-    }
-
-    if (saveErrors.length > 0) {
-      addLog(
-        `[SyncScreen] Failed to save ${saveErrors.length}/${HEALTH_METRICS.length} metric preferences`,
-        'WARNING',
-        saveErrors
-      );
-    }
-
-    if (newValue) {
-      setupBackgroundDeliveryForEnabledMetrics().catch(() => {});
-    }
-
-    refreshSubscriptions();
-    setHealthDataRefreshKey((k) => k + 1);
   };
 
   const handleShareHealthReport = async (): Promise<void> => {

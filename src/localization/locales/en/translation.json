@@ -5388,8 +5388,10 @@
     "rangeSubtitle": "How far back the next sync reaches",
     "backgroundSubtitle": "Updates whenever your iPhone allows it",
     "onOpenSubtitle": "Fresh numbers every time you open the app",
-    "allowTitle": "Allow Apple Health",
-    "allowSubtitle": "Change what qla.fit may read in Apple Health",
-    "syncSettingsSubtitle": "Pick which health data qla.fit syncs"
+    "checkPermissionsTitle": "Check Apple Health Permissions",
+    "checkPermissionsSubtitle": "Opens the Health app",
+    "permissionsHelp": "If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.",
+    "importingPercent": "Importing history… {{percent}}%",
+    "preparingImport": "Preparing import…"
   }
 }

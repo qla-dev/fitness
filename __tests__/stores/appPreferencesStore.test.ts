@@ -6,6 +6,11 @@ import {
   __resetAppPreferencesStoreForTests,
 } from '../../src/stores/appPreferencesStore';
 
+const mockCanUseLiquidGlass = jest.fn(() => false);
+jest.mock('../../src/utils/liquidGlass', () => ({
+  canUseLiquidGlass: () => mockCanUseLiquidGlass(),
+}));
+
 describe('appPreferencesStore', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
@@ -202,6 +207,57 @@ describe('appPreferencesStore', () => {
       await useAppPreferencesStore.persist.rehydrate();
 
       expect(useAppPreferencesStore.getState().soundsEnabled).toBe(false);
+    });
+  });
+
+  describe('Liquid Glass on iOS 26+', () => {
+    afterEach(() => mockCanUseLiquidGlass.mockReturnValue(false));
+
+    it('switches Liquid Glass on once for existing users on supported devices', async () => {
+      mockCanUseLiquidGlass.mockReturnValue(true);
+      await AsyncStorage.setItem(
+        '@SparkyFitness/app-preferences',
+        JSON.stringify({
+          state: { ...PREFERENCE_DEFAULTS, liquidGlassTabBarEnabled: false },
+          version: 1,
+        })
+      );
+
+      await useAppPreferencesStore.persist.rehydrate();
+
+      expect(useAppPreferencesStore.getState().liquidGlassTabBarEnabled).toBe(
+        true
+      );
+    });
+
+    it('keeps it off once turned off after the migration', async () => {
+      mockCanUseLiquidGlass.mockReturnValue(true);
+      await AsyncStorage.setItem(
+        '@SparkyFitness/app-preferences',
+        JSON.stringify({
+          state: { ...PREFERENCE_DEFAULTS, liquidGlassTabBarEnabled: false },
+          version: 2,
+        })
+      );
+
+      await useAppPreferencesStore.persist.rehydrate();
+
+      expect(useAppPreferencesStore.getState().liquidGlassTabBarEnabled).toBe(
+        false
+      );
+    });
+
+    it('leaves it off on devices without Liquid Glass', async () => {
+      await AsyncStorage.setItem(
+        '@SparkyFitness/app-preferences',
+        JSON.stringify({ state: { ...PREFERENCE_DEFAULTS }, version: 1 })
+      );
+
+      await useAppPreferencesStore.persist.rehydrate();
+
+      expect(useAppPreferencesStore.getState().liquidGlassTabBarEnabled).toBe(
+        false
+      );
     });
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, Switch, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import Switch from '../ui/Switch';
 import { useCSSVariable } from 'uniwind';
 import { useCycleHistory } from '../../hooks/useCycleHistory';
 import CycleBarGlyph from './CycleBarGlyph';
