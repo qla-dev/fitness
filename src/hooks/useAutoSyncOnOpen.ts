@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useSyncHealthData } from './useSyncHealthData';
 import {
-  loadTimeRange,
+  loadDailySyncRange,
   getActiveServerConfig,
   loadSyncOnOpenEnabled,
 } from '../services/storage';
@@ -92,8 +92,10 @@ export function useAutoSyncOnOpen({
           return;
         }
 
-        const loadedTimeRange = await loadTimeRange();
-        const timeRange: TimeRange = loadedTimeRange ?? '3d';
+        // The automatic syncs use their own range, so widening the manual
+        // Sync Range for a one-off catch-up does not make every app open read
+        // that far back.
+        const timeRange: TimeRange = await loadDailySyncRange();
         const healthMetricStates: Record<string, boolean> = {};
         await Promise.all(
           HEALTH_METRICS.map(async (metric) => {

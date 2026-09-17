@@ -276,7 +276,10 @@ describe('Activities screen exercise log', () => {
     expect(getByTestId('exercise-summary')).toBeTruthy();
   });
 
-  test('keeps the Home card layout visible with inline skeletons while loading', () => {
+  // The cards carry the same titles and ring tracks whether or not the day has
+  // loaded, so Home shows them straight away and only the numbers fill in. A
+  // skeleton standing in for them made the whole screen flash on every open.
+  test('renders the real cards while the day is still loading', () => {
     (useDailySummary as jest.Mock).mockReturnValue({
       summary: undefined,
       isLoading: true,
@@ -284,11 +287,13 @@ describe('Activities screen exercise log', () => {
       refetch: jest.fn(),
     });
 
-    const { getByTestId, getAllByTestId, queryByTestId } = renderScreen();
+    const { getByTestId, queryByTestId } = renderScreen();
 
-    expect(getByTestId('dashboard-loading-skeleton')).toBeTruthy();
-    expect(getAllByTestId('dashboard-skeleton-line').length).toBeGreaterThan(0);
+    // The chrome is there; only the digits wait.
+    expect(queryByTestId('dashboard-loading-skeleton')).toBeNull();
+    expect(getByTestId('exercise-summary')).toBeTruthy();
     expect(queryByTestId('status-view')).toBeNull();
+    expect(getByTestId('activity-card')).toBeTruthy();
   });
 
   test('no longer offers the Activity / Nutrients switcher', () => {

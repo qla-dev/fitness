@@ -33,6 +33,7 @@ export type TimeRange =
 const SERVER_CONFIGS_KEY = 'serverConfigs';
 const ACTIVE_SERVER_CONFIG_ID_KEY = 'activeServerConfigId';
 const TIME_RANGE_KEY = 'timeRange';
+const DAILY_SYNC_RANGE_KEY = 'dailySyncRange';
 const LAST_SYNCED_TIME_KEY = 'lastSyncedTime';
 const LAST_WRITEBACK_TIME_KEY = 'lastWritebackTime';
 const BACKGROUND_SYNC_ENABLED_KEY = 'backgroundSyncEnabled';
@@ -326,6 +327,36 @@ export const saveTimeRange = async (timeRange: TimeRange): Promise<void> => {
 };
 
 /**
+ * The range the automatic syncs reach back over, kept separate from the manual
+ * Sync Range so widening a one-off catch-up does not also make every
+ * open-the-app sync read that far back.
+ */
+export const DEFAULT_DAILY_SYNC_RANGE: TimeRange = '3d';
+
+export const saveDailySyncRange = async (
+  timeRange: TimeRange
+): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DAILY_SYNC_RANGE_KEY, timeRange);
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to save daily sync range: ${message}`, 'ERROR');
+    throw e;
+  }
+};
+
+export const loadDailySyncRange = async (): Promise<TimeRange> => {
+  try {
+    const stored = await AsyncStorage.getItem(DAILY_SYNC_RANGE_KEY);
+    return (stored as TimeRange | null) ?? DEFAULT_DAILY_SYNC_RANGE;
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to load daily sync range: ${message}`, 'ERROR');
+    return DEFAULT_DAILY_SYNC_RANGE;
+  }
+};
+
+/**
  * Retrieves the saved time range.
  */
 export const loadTimeRange = async (): Promise<TimeRange | null> => {
@@ -530,4 +561,96 @@ export const clearSessionToken = async (configId: string): Promise<void> => {
 
 export const clearServerConfigCache = (): void => {
   activeServerConfigCache = undefined;
+};
+
+/**
+ * FitPass connector.
+ *
+ * There is no FitPass service wired up yet: this stores what the user typed so
+ * the connector screen can be filled in and switched on, and nothing is sent
+ * anywhere. The password still goes to SecureStore rather than AsyncStorage —
+ * a credential is a credential whether or not anything reads it yet, and
+ * moving it later would leave the old copy behind in plain storage.
+ */
+const FITPASS_USERNAME_KEY = 'fitPassUsername';
+const FITPASS_SYNC_ENABLED_KEY = 'fitPassSyncEnabled';
+const FITPASS_PASSWORD_SECURE_KEY = 'fitPassPassword';
+
+export interface FitPassCredentials {
+  username: string;
+  password: string;
+}
+
+export const saveFitPassCredentials = async ({
+  username,
+  password,
+}: FitPassCredentials): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(FITPASS_USERNAME_KEY, username);
+    if (password) {
+      await SecureStore.setItemAsync(
+        FITPASS_PASSWORD_SECURE_KEY,
+        password,
+        secureStoreOptions
+      );
+    } else {
+      await SecureStore.deleteItemAsync(FITPASS_PASSWORD_SECURE_KEY);
+    }
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to save FitPass credentials: ${message}`, 'ERROR');
+    throw e;
+  }
+};
+
+export const loadFitPassCredentials = async (): Promise<FitPassCredentials> => {
+  try {
+    const [username, password] = await Promise.all([
+      AsyncStorage.getItem(FITPASS_USERNAME_KEY),
+      SecureStore.getItemAsync(FITPASS_PASSWORD_SECURE_KEY, secureStoreOptions),
+    ]);
+    return { username: username ?? '', password: password ?? '' };
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to load FitPass credentials: ${message}`, 'ERROR');
+    return { username: '', password: '' };
+  }
+};
+
+export const clearFitPassCredentials = async (): Promise<void> => {
+  try {
+    await AsyncStorage.multiRemove([
+      FITPASS_USERNAME_KEY,
+      FITPASS_SYNC_ENABLED_KEY,
+    ]);
+    await SecureStore.deleteItemAsync(FITPASS_PASSWORD_SECURE_KEY);
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to clear FitPass connection: ${message}`, 'ERROR');
+  }
+};
+
+export const saveFitPassSyncEnabled = async (
+  enabled: boolean
+): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(
+      FITPASS_SYNC_ENABLED_KEY,
+      JSON.stringify(enabled)
+    );
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to save FitPass sync flag: ${message}`, 'ERROR');
+  }
+};
+
+export const loadFitPassSyncEnabled = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(FITPASS_SYNC_ENABLED_KEY);
+    return value === null ? false : (JSON.parse(value) as boolean);
+  } catch (e) {
+    const message = getErrorMessage(e);
+    addLog(`[Storage] Failed to load FitPass sync flag: ${message}`, 'ERROR');
+    return false;
+  }
 };

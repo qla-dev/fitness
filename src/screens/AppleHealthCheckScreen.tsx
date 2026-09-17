@@ -50,6 +50,9 @@ import {
   loadBackgroundSyncEnabled,
   loadSyncOnOpenEnabled,
   loadTimeRange,
+  loadDailySyncRange,
+  saveDailySyncRange,
+  DEFAULT_DAILY_SYNC_RANGE,
   saveSyncOnOpenEnabled,
   saveTimeRange,
   type TimeRange,
@@ -143,6 +146,9 @@ export default function AppleHealthCheckScreen({
   ]) as [string, string];
   const timeRangeOptions = useSyncTimeRangeOptions();
   const [timeRange, setTimeRange] = useState<TimeRange>('3d');
+  const [dailySyncRange, setDailySyncRange] = useState<TimeRange>(
+    DEFAULT_DAILY_SYNC_RANGE
+  );
   const [backgroundSync, setBackgroundSync] = useState(false);
   const [syncOnOpen, setSyncOnOpen] = useState(false);
   const [healthReady, setHealthReady] = useState(false);
@@ -171,12 +177,14 @@ export default function AppleHealthCheckScreen({
     let cancelled = false;
     void (async () => {
       const initialized = await initHealthConnect();
-      const [range, background, onOpen, metricStates] = await Promise.all([
-        loadTimeRange(),
-        loadBackgroundSyncEnabled(),
-        loadSyncOnOpenEnabled(),
-        loadHealthMetricStates(),
-      ]);
+      const [range, dailyRange, background, onOpen, metricStates] =
+        await Promise.all([
+          loadTimeRange(),
+          loadDailySyncRange(),
+          loadBackgroundSyncEnabled(),
+          loadSyncOnOpenEnabled(),
+          loadHealthMetricStates(),
+        ]);
       const writeback: Record<string, boolean> = {};
       for (const metric of WRITEBACK_METRICS) {
         writeback[metric.id] =
@@ -184,6 +192,7 @@ export default function AppleHealthCheckScreen({
       }
       if (cancelled) return;
       if (range) setTimeRange(range);
+      setDailySyncRange(dailyRange);
       setBackgroundSync(background);
       setSyncOnOpen(onOpen);
       setHealthMetricStates(metricStates);
@@ -237,10 +246,22 @@ export default function AppleHealthCheckScreen({
   // Turning everything on here also switches on both automatic syncs, so a
   // single tap leaves Health fully set up. Turning it off only touches metrics.
   const enableAll = async () => {
-    const turningOn = !isAllMetricsEnabled;
-    await toggleAllMetrics();
+    // Read against the master switch, not the metric list: with every metric on
+    // but an automatic sync off, the switch reads off, and tapping it has to
+    // finish the setup rather than turn the metrics back off.
+    const turningOn = !isEverythingEnabled;
+    if (turningOn !== isAllMetricsEnabled) await toggleAllMetrics();
+    if (!turningOn) {
+      setBackgroundSync(false);
+      setSyncOnOpen(false);
+      await Promise.all([
+        applyBackgroundSyncEnabled(false),
+        saveSyncOnOpenEnabled(false),
+      ]);
+      return;
+    }
     // A refused permission reverts the metrics; leave automatic sync alone then.
-    if (!turningOn || !(await areAllHealthMetricsEnabled())) return;
+    if (!(await areAllHealthMetricsEnabled())) return;
     setBackgroundSync(true);
     setSyncOnOpen(true);
     await Promise.all([
@@ -249,6 +270,14 @@ export default function AppleHealthCheckScreen({
       confirmHealthStartup(),
     ]);
   };
+
+  /**
+   * "Enable All" stands for a fully set-up Health connection, not just the
+   * metric list: switching off either automatic sync below leaves Health only
+   * half on, so the master switch has to follow it back off.
+   */
+  const isEverythingEnabled =
+    isAllMetricsEnabled && backgroundSync && syncOnOpen;
 
   const importing = backfill.status === 'running';
   const busy = importing || syncMutation.isPending;
@@ -303,7 +332,9 @@ export default function AppleHealthCheckScreen({
         })
     : syncMutation.isPending
       ? t('syncScreen.syncing', { defaultValue: 'Syncing…' })
-      : t('syncScreen.syncNow', { defaultValue: 'Sync Now' });
+      : t('appleHealthCheck.syncHistoryNow', {
+          defaultValue: 'Sync History Now',
+        });
 
   const header = useScreenHeader({
     title: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
@@ -373,7 +404,7 @@ export default function AppleHealthCheckScreen({
                 accessibilityLabel={t('healthSync.enableAll', {
                   defaultValue: 'Enable All Health Metrics',
                 })}
-                value={isAllMetricsEnabled}
+                value={isEverythingEnabled}
                 onValueChange={() => void enableAll()}
               />
             }
@@ -397,6 +428,46 @@ export default function AppleHealthCheckScreen({
                 onSelect={(value) => {
                   setTimeRange(value);
                   void saveTimeRange(value);
+                }}
+                renderTrigger={({ onPress, selectedOption }) => (
+                  <Pressable
+                    onPress={onPress}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    className="flex-row items-center gap-1"
+                  >
+                    <Text className="text-text-secondary text-base">
+                      {selectedOption?.label}
+                    </Text>
+                    <Icon
+                      name="chevron-expand"
+                      size={12}
+                      color={textSecondary}
+                    />
+                  </Pressable>
+                )}
+              />
+            }
+          />
+          <SettingsRow
+            icon="timer"
+            iconColor={accentColor}
+            title={t('syncScreen.dailyRange.title', {
+              defaultValue: 'Daily Sync Range',
+            })}
+            subtitle={t('appleHealthCheck.dailyRangeSubtitle', {
+              defaultValue: 'How far back the automatic syncs reach',
+            })}
+            rightAccessory={
+              <BottomSheetPicker
+                value={dailySyncRange}
+                options={timeRangeOptions}
+                title={t('syncScreen.dailyRange.selectTitle', {
+                  defaultValue: 'Select Daily Sync Range',
+                })}
+                onSelect={(value) => {
+                  setDailySyncRange(value);
+                  void saveDailySyncRange(value);
                 }}
                 renderTrigger={({ onPress, selectedOption }) => (
                   <Pressable

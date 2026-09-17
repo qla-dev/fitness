@@ -413,6 +413,9 @@ jest.mock('react-native-reanimated', () => {
     },
     useSharedValue: (init) => React.useRef({ value: init }).current,
     useAnimatedStyle: (fn) => fn(),
+    // Same shape as useAnimatedStyle: run the worklet once and hand back the
+    // props, which is what a synchronous render assertion needs.
+    useAnimatedProps: (fn) => fn(),
     useDerivedValue: (fn) => ({ value: fn() }),
     // Linear map between the first and last stops, clamped — enough for the
     // synchronous worklet the useAnimatedStyle mock runs.

@@ -3,18 +3,81 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Svg, { Circle } from 'react-native-svg';
+import Animated, {
+  useAnimatedProps,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { useEffect } from 'react';
 import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import { useManualHealthSync } from '../hooks/useManualHealthSync';
 import Icon, { type IconName } from './Icon';
 import { ACTIVITY_RING_COLORS } from '../constants/activityRings';
+import ValueSkeleton from './ValueSkeleton';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/**
+ * One filled ring. It mounts empty and grows to its value, so the card can be
+ * on screen with its tracks and labels before the day's numbers arrive and
+ * then fill in place — no skeleton standing in for it.
+ *
+ * Drawn with a full dasharray and an animated offset rather than an animated
+ * dasharray: the offset is a single number, so it interpolates on the UI
+ * thread instead of rebuilding a string every frame.
+ */
+function ProgressRing({
+  radius,
+  color,
+  progress,
+}: {
+  radius: number;
+  color: string;
+  progress: number;
+}) {
+  const length = 2 * Math.PI * radius;
+  const reducedMotion = useReducedMotion();
+  const offset = useSharedValue(length);
+
+  useEffect(() => {
+    const target = length * (1 - progress);
+    offset.value = reducedMotion
+      ? target
+      : withTiming(target, { duration: 650 });
+  }, [length, progress, reducedMotion, offset]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: offset.value,
+  }));
+
+  return (
+    <AnimatedCircle
+      cx={72}
+      cy={72}
+      r={radius}
+      fill="none"
+      stroke={color}
+      strokeWidth={12}
+      strokeLinecap="round"
+      strokeDasharray={length}
+      animatedProps={animatedProps}
+      rotation={-90}
+      origin="72, 72"
+    />
+  );
+}
 
 export default function DashboardActivityCard({
   summary,
   steps,
+  loading = false,
 }: {
   summary: DailySummary;
   steps?: number | null;
+  /** Only the numbers wait: the rings, icons and labels are already correct. */
+  loading?: boolean;
 }) {
   const { t } = useTranslation();
   const { sync, isPending } = useManualHealthSync();
@@ -96,29 +159,21 @@ export default function DashboardActivityCard({
                 />
               );
             })}
-            {metrics.map((metric, index) => {
-              const radius = 61 - index * 16;
-              const length = 2 * Math.PI * radius;
-              const progress =
-                metric.goal > 0
-                  ? Math.min(1, Math.max(0, (metric.value ?? 0) / metric.goal))
-                  : 0;
-              return progress > 0 ? (
-                <Circle
-                  key={metric.label}
-                  cx={72}
-                  cy={72}
-                  r={radius}
-                  fill="none"
-                  stroke={metric.color}
-                  strokeWidth={12}
-                  strokeLinecap="round"
-                  strokeDasharray={`${length * progress} ${length}`}
-                  rotation={-90}
-                  origin="72, 72"
-                />
-              ) : null;
-            })}
+            {metrics.map((metric, index) => (
+              <ProgressRing
+                key={metric.label}
+                radius={61 - index * 16}
+                color={metric.color}
+                progress={
+                  metric.goal > 0
+                    ? Math.min(
+                        1,
+                        Math.max(0, (metric.value ?? 0) / metric.goal)
+                      )
+                    : 0
+                }
+              />
+            ))}
           </Svg>
           <View className="flex-1 gap-2">
             {metrics.map((metric) => (
@@ -131,15 +186,22 @@ export default function DashboardActivityCard({
                 </View>
                 {/* Nothing recorded is a real zero, not an unknown: "0/200
                     kcal" states the day so far, where an em dash reads as a
-                    fault in the app. */}
-                <Text
-                  style={{ color: metric.color }}
-                  className="font-bold text-xl"
-                >
-                  {number(metric.value ?? 0)}
-                  {metric.goal > 0 ? `/${number(metric.goal)}` : ''}{' '}
-                  {metric.unit}
-                </Text>
+                    fault in the app. Until the day has loaded there is no
+                    figure to state either way, so the digits alone wait. */}
+                {loading ? (
+                  <View className="h-7 justify-center">
+                    <ValueSkeleton width={96} />
+                  </View>
+                ) : (
+                  <Text
+                    style={{ color: metric.color }}
+                    className="font-bold text-xl"
+                  >
+                    {number(metric.value ?? 0)}
+                    {metric.goal > 0 ? `/${number(metric.goal)}` : ''}{' '}
+                    {metric.unit}
+                  </Text>
+                )}
               </View>
             ))}
           </View>
@@ -160,13 +222,19 @@ export default function DashboardActivityCard({
               </View>
               {/* The tiles carry the same value/goal pair as the ring legend
                   above, so the two never disagree at a glance. */}
-              <Text
-                style={{ color: metric.color }}
-                className="text-3xl font-semibold mt-1"
-              >
-                {number(metric.value ?? 0)}
-                {metric.goal > 0 ? `/${number(metric.goal)}` : ''}
-              </Text>
+              {loading ? (
+                <View className="h-9 justify-center mt-1">
+                  <ValueSkeleton width={88} height={26} />
+                </View>
+              ) : (
+                <Text
+                  style={{ color: metric.color }}
+                  className="text-3xl font-semibold mt-1"
+                >
+                  {number(metric.value ?? 0)}
+                  {metric.goal > 0 ? `/${number(metric.goal)}` : ''}
+                </Text>
+              )}
               <Text className="text-text-muted text-sm mt-1">
                 {metric.unit ||
                   (metric.goal > 0

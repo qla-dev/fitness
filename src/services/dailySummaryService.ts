@@ -150,3 +150,21 @@ export function buildDailySummary(
       : {},
   };
 }
+
+/**
+ * A day with nothing in it yet, used while the real one is still loading.
+ *
+ * Home renders its cards immediately rather than swapping in skeletons: the
+ * titles and ring tracks are the same either way, so only the numbers are
+ * unknown, and every card already reads a missing value as a real zero. The
+ * rings then animate from empty to the day's values when they arrive.
+ */
+export function emptyDailySummary(date: string): DailySummary {
+  return buildDailySummary(date, {
+    goals: {} as DailyGoals,
+    foodEntries: [],
+    exerciseEntries: [],
+    waterIntake: { water_ml: 0 },
+    stepCalories: 0,
+  });
+}

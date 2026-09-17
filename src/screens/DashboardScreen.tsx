@@ -35,8 +35,8 @@ import RingCalendarSheet, {
 import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
+import { emptyDailySummary } from '../services/dailySummaryService';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
-import DashboardLoadingSkeleton from '../components/DashboardLoadingSkeleton';
 import ExerciseSummary from '../components/ExerciseSummary';
 import FastingCard from '../components/FastingCard';
 import FastingGoalReconciler from '../components/FastingGoalReconciler';
@@ -181,13 +181,17 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   );
 
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
-  const { summary, isLoading, isError, refetch } = useDailySummary({
+  const {
+    summary: loadedSummary,
+    isLoading,
+    isError,
+    refetch,
+  } = useDailySummary({
     date: selectedDate,
     enabled: isConnected,
   });
   const {
     preferences,
-    isLoading: isPreferencesLoading,
     isError: isPreferencesError,
     refetch: refetchPreferences,
   } = usePreferences({
@@ -195,7 +199,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   });
   const {
     measurements,
-    isLoading: isMeasurementsLoading,
     isError: isMeasurementsError,
     refetch: refetchMeasurements,
   } = useMeasurements({
@@ -213,8 +216,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   // the app, so they keep showing the unavailable note rather than a
   // fabricated series.
   const hourlyExercise = useMemo(
-    () => buildHourlyExerciseMinutes(summary?.exerciseEntries),
-    [summary?.exerciseEntries]
+    () => buildHourlyExerciseMinutes(loadedSummary?.exerciseEntries),
+    [loadedSummary?.exerciseEntries]
   );
 
   const { refetch: refetchCustomNutrients } = useCustomNutrients({
@@ -224,7 +227,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     enabled: isConnected,
   });
 
-  useWidgetSync(summary);
+  // Widgets only ever publish real numbers, never the placeholder day.
+  useWidgetSync(loadedSummary);
 
   const accentColor = useCSSVariable('--color-accent-primary') as string;
 
@@ -311,21 +315,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       );
     }
 
-    // Loading state
-    if (
-      isLoading ||
-      isConnectionLoading ||
-      isPreferencesLoading ||
-      isMeasurementsLoading
-    ) {
-      return (
-        <DashboardLoadingSkeleton
-          activeWorkoutBarPadding={activeWorkoutBarPadding}
-          usesNativeTabs={usesNativeTabs}
-        />
-      );
-    }
-
     // Error state
     if (isError || isPreferencesError || isMeasurementsError) {
       return (
@@ -348,10 +337,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       );
     }
 
-    // Data loaded successfully
-    if (!summary || !preferences) {
-      return null;
-    }
+    // No skeleton: the card titles and ring tracks are identical either way,
+    // so an empty day stands in until the real one lands and the values fill.
+    const summary = loadedSummary ?? emptyDailySummary(selectedDate);
 
     return (
       <ScrollView
@@ -374,7 +362,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           />
         }
       >
-        <DashboardActivityCard summary={summary} steps={measurements?.steps} />
+        <DashboardActivityCard
+          summary={summary}
+          steps={measurements?.steps}
+          loading={isLoading}
+        />
 
         {/* Tap-to-open launcher for the Sparky chat. Styled like an input to
             invite, but it pushes the full chat screen rather than capturing text
@@ -398,7 +390,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           summary={summary}
           steps={measurements?.steps}
           hourlyExercise={hourlyExercise}
-          distanceUnit={preferences.default_distance_unit ?? 'km'}
+          distanceUnit={distanceUnit}
           standGoal={summary.goals.stand_hours}
           stepsGoal={summary.goals.steps}
         />

@@ -4,6 +4,7 @@ import { useAutoSyncOnOpen } from '../../src/hooks/useAutoSyncOnOpen';
 import type { useSyncHealthData } from '../../src/hooks/useSyncHealthData';
 import {
   loadTimeRange,
+  loadDailySyncRange,
   getActiveServerConfig,
   loadSyncOnOpenEnabled,
 } from '../../src/services/storage';
@@ -23,6 +24,7 @@ import {
 
 jest.mock('../../src/services/storage', () => ({
   loadTimeRange: jest.fn(),
+  loadDailySyncRange: jest.fn(),
   getActiveServerConfig: jest.fn(),
   loadSyncOnOpenEnabled: jest.fn(),
 }));
@@ -48,6 +50,9 @@ jest.mock('../../src/services/LogService', () => ({
   addLog: jest.fn(),
 }));
 
+const mockLoadDailySyncRange = loadDailySyncRange as jest.MockedFunction<
+  typeof loadDailySyncRange
+>;
 const mockLoadTimeRange = loadTimeRange as jest.MockedFunction<
   typeof loadTimeRange
 >;
@@ -107,6 +112,8 @@ function mockHappyPathServices() {
   >);
   mockInitHealthConnect.mockResolvedValue(true);
   mockLoadTimeRange.mockResolvedValue('7d');
+  // Automatic syncs read their own range, not the manual Sync Range.
+  mockLoadDailySyncRange.mockResolvedValue('7d');
   mockLoadHealthPreference.mockResolvedValue(true);
   mockRecordAutoSyncTime.mockResolvedValue(undefined);
   mockFlushPendingRefresh.mockResolvedValue(undefined);

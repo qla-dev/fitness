@@ -65,8 +65,24 @@
     "notNow": "Not now",
     "skip": "Skip"
   },
+  "fitPass": {
+    "title": "FitPass",
+    "intro": "Sign in to bring your gym visits into your diary automatically.",
+    "rowSubtitle": "Bring your gym visits into the diary",
+    "username": "Username or email",
+    "usernamePlaceholder": "you@example.com",
+    "password": "Password",
+    "syncEnable": "Sync FitPass",
+    "syncSubtitle": "Bring new visits in with every health sync",
+    "notLiveNotice": "FitPass syncing is not live yet. Your details are saved on this device only.",
+    "connect": "Connect",
+    "disconnect": "Disconnect FitPass",
+    "connected": "FitPass connected",
+    "connectedDetail": "Your visits will sync once the service is available."
+  },
   "settings": {
     "app": "App Settings",
+    "connectors": "Connectors",
     "language": {
       "title": "Language",
       "system": "System",
@@ -92,6 +108,8 @@
     "rows": {
       "server": "Server",
       "healthSync": "Health Data Sync",
+      "appleHealthSync": "Apple Health Data Sync",
+      "fitPassSync": "FitPass Sync",
       "app": "App Settings",
       "calories": "Calories & BMR",
       "food": "Food",
@@ -782,6 +800,10 @@
       "selectTitle": "Select Sync Range",
       "description": "Controls how much data will be included in the next sync",
       "largeWarning": "Large time ranges may take a while."
+    },
+    "dailyRange": {
+      "title": "Daily Sync Range",
+      "selectTitle": "Select Daily Sync Range"
     },
     "unavailable": {
       "healthConnect": "Health Connect is not available. Please make sure it is installed and enabled.",
@@ -5246,6 +5268,7 @@
     "saveError": "Could not save. Your answers are still here. Please try again.",
     "finish": "Save and start",
     "edit": "Personal setup & goals",
+    "editSubtitle": "Your details, activity level and daily targets",
     "focusHeading": "Make room for your goals",
     "focusHint": "Start with what matters to you. Every question is optional.",
     "focus": "Your focus",
@@ -5391,6 +5414,8 @@
     "title": "Apple Health",
     "heading": "Keep your health data in sync",
     "hint": "Choose how qla.fit stays up to date with Apple Health. You can change this any time in Sync settings.",
+    "syncHistoryNow": "Sync History Now",
+    "dailyRangeSubtitle": "How far back the automatic syncs reach",
     "rangeSubtitle": "How far back the next sync reaches",
     "backgroundSubtitle": "Updates whenever your iPhone allows it",
     "onOpenSubtitle": "Fresh numbers every time you open the app",

@@ -1,6 +1,9 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import type { ToastConfig } from 'react-native-toast-message';
+import Icon, { type IconName } from '../Icon';
+import MenuItem from '../MenuItem';
+import MenuItemIcon from '../MenuItemIcon';
 
 type ToastVariant = 'success' | 'error' | 'info';
 
@@ -11,27 +14,37 @@ interface ToastTapProps {
   onPress?: () => void;
 }
 
+/**
+ * A toast is built from the same row as a settings menu item: an icon tile, a
+ * title and a subtitle on one 66pt row. Toasts used to carry their own padding
+ * and type scale, which read as a different design language from every list in
+ * the app for the two seconds they were on screen.
+ *
+ * Only the icon and its tile carry the variant; the card itself stays the
+ * surface colour so a success and an error are the same object with a
+ * different badge, the way a row with a red icon is still a row.
+ */
 const variantTokens: Record<
   ToastVariant,
-  { bg: string; text: string; border: string }
+  { icon: IconName; tint: string; tile: string }
 > = {
   success: {
-    bg: '--color-bg-success',
+    icon: 'checkmark-circle-filled',
     // i18n-audit-ignore-next-line hardcoded-ui-text -- CSS variable identifier, not user-visible text.
-    text: '--color-text-success',
-    border: '--color-bg-success',
+    tint: '--color-text-success',
+    tile: '--color-bg-success',
   },
   error: {
-    bg: '--color-bg-danger',
+    icon: 'alert-circle',
     // i18n-audit-ignore-next-line hardcoded-ui-text -- CSS variable identifier, not user-visible text.
-    text: '--color-text-danger',
-    border: '--color-bg-danger',
+    tint: '--color-text-danger',
+    tile: '--color-bg-danger',
   },
   info: {
-    bg: '--color-surface',
+    icon: 'info-circle',
     // i18n-audit-ignore-next-line hardcoded-ui-text -- CSS variable identifier, not user-visible text.
-    text: '--color-text-primary',
-    border: '--color-accent-primary',
+    tint: '--color-accent-primary',
+    tile: '--color-menu-icon-bg',
   },
 };
 
@@ -47,43 +60,47 @@ function ToastContent({
   onPress?: () => void;
 }) {
   const tokens = variantTokens[variant];
-  const [bgColor, textColor] = useCSSVariable([tokens.bg, tokens.text]) as [
-    string,
-    string,
-  ];
+  const [surface, tint, tile] = useCSSVariable([
+    '--color-surface',
+    tokens.tint,
+    tokens.tile,
+  ]) as [string, string, string];
 
   const body = (
     <View
       style={{
-        backgroundColor: bgColor,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
+        backgroundColor: surface,
         marginHorizontal: 16,
+        borderRadius: 16,
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
-        shadowRadius: 4,
+        shadowRadius: 8,
         elevation: 4,
-        borderRadius: 8,
       }}
     >
-      {text1 ? (
-        <Text style={{ color: textColor, fontWeight: '600', fontSize: 14 }}>
-          {text1}
-        </Text>
-      ) : null}
-      {text2 ? (
-        <Text
-          style={{
-            color: textColor,
-            fontSize: 13,
-            marginTop: 2,
-            opacity: 0.85,
-          }}
-        >
-          {text2}
-        </Text>
-      ) : null}
+      <MenuItem
+        leading={
+          <MenuItemIcon backgroundColor={tile}>
+            <Icon name={tokens.icon} size={20} color={tint} />
+          </MenuItemIcon>
+        }
+      >
+        {text1 ? (
+          <Text
+            className="text-text-primary text-base font-semibold"
+            numberOfLines={1}
+          >
+            {text1}
+          </Text>
+        ) : null}
+        {text2 ? (
+          <Text className="text-text-secondary text-sm" numberOfLines={2}>
+            {text2}
+          </Text>
+        ) : null}
+      </MenuItem>
     </View>
   );
 

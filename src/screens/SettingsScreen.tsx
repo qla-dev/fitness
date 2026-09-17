@@ -16,6 +16,9 @@ import {
 import DevTools from '../components/DevTools';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
+import FitPassConnectSheet, {
+  type FitPassConnectSheetRef,
+} from '../components/FitPassConnectSheet';
 import { SectionErrorBoundary } from '../components/ScreenErrorBoundary';
 import {
   shareDiagnosticReport,
@@ -46,6 +49,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [showHeaderTitle, setShowHeaderTitle] = useState(false);
 
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
+  const fitPassSheet = React.useRef<FitPassConnectSheetRef>(null);
 
   const { isConnected } = useServerConnection();
   const { activeConfig } = useServerConfigs();
@@ -240,15 +244,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <SectionErrorBoundary
             sectionName={t('settings.title', { defaultValue: 'Settings' })}
           >
-            <SettingsRow
-              icon="health-data-sync"
-              title={t('settings.rows.healthSync', {
-                defaultValue: 'Health Data Sync',
-              })}
-              subtitle={syncSubtitle}
-              onPress={() => navigation.navigate('Sync')}
-              iconColor={catPink}
-            />
+            {/* Connectors open the same modal the startup protocol presents,
+                rather than pushing an inner settings screen: connecting a data
+                source is a self-contained task you finish and dismiss. */}
+            <SettingsRowGroup
+              title={t('settings.connectors', { defaultValue: 'Connectors' })}
+            >
+              <SettingsRow
+                icon="health-data-sync"
+                title={t('settings.rows.appleHealthSync', {
+                  defaultValue: 'Apple Health Data Sync',
+                })}
+                subtitle={syncSubtitle}
+                onPress={() => navigation.navigate('AppleHealthCheck')}
+                iconColor={catPink}
+              />
+              <SettingsRow
+                icon="exercise-weights"
+                title={t('settings.rows.fitPassSync', {
+                  defaultValue: 'FitPass Sync',
+                })}
+                subtitle={t('fitPass.rowSubtitle', {
+                  defaultValue: 'Bring your gym visits into the diary',
+                })}
+                onPress={() => fitPassSheet.current?.present()}
+                iconColor={catSlate}
+              />
+            </SettingsRowGroup>
 
             <SettingsRowGroup
               title={t('profile.preferences', { defaultValue: 'Preferences' })}
@@ -413,6 +435,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         </View>
       </ScrollView>
 
+      <FitPassConnectSheet ref={fitPassSheet} />
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
