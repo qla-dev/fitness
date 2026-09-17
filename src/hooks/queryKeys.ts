@@ -242,3 +242,9 @@ export const programThumbnailQueryKey = (
   programId: string,
   providerId: string | null
 ) => ['programThumbnail', programId, providerId] as const;
+
+/** One entry per visible calendar month, kept apart from the Dashboard's per-day summaries. */
+export const activityRingsRangeQueryKey = (
+  startDate: string,
+  endDate: string
+) => ['activityRingsRange', startDate, endDate] as const;

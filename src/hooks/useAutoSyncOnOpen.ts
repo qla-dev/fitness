@@ -23,6 +23,18 @@ import {
 import { addLog } from '../services/LogService';
 import { isLocalDataMode } from '../services/dataMode';
 
+/**
+ * Bookkeeping key for an auto-sync run, used for the per-target cooldown.
+ * Local-first builds have no server config, so they use a stable synthetic id
+ * rather than skipping the sync outright — the health data still has somewhere
+ * to go, namely the on-device database.
+ */
+const resolveSyncConfigId = async (): Promise<string | null> => {
+  if (isLocalDataMode()) return 'local';
+  const config = await getActiveServerConfig();
+  return config?.id ?? null;
+};
+
 const AUTO_SYNC_WATCHDOG_MS = 90_000;
 
 interface AutoSyncOnOpenArgs {
@@ -63,10 +75,22 @@ export function useAutoSyncOnOpen({
     async (configId: string, release: () => void) => {
       let committed = false;
       try {
-        if (syncMutation.isPending) return;
+        if (syncMutation.isPending) {
+          addLog(
+            '[App] Auto sync on open skipped: a health sync is already running.',
+            'DEBUG'
+          );
+          return;
+        }
 
         const initialized = await initHealthConnect();
-        if (!initialized) return;
+        if (!initialized) {
+          addLog(
+            '[App] Auto sync on open skipped: health provider unavailable or permissions not granted.',
+            'WARNING'
+          );
+          return;
+        }
 
         const loadedTimeRange = await loadTimeRange();
         const timeRange: TimeRange = loadedTimeRange ?? '3d';
@@ -111,18 +135,30 @@ export function useAutoSyncOnOpen({
   }, [triggerAutoSync]);
 
   useEffect(() => {
-    if (initialRoute !== 'Tabs' || isLocalDataMode()) return;
+    // Logged, because this gate produced no evidence at all: the effect reruns
+    // as initialRoute resolves from null, so a startup that never reaches
+    // 'Tabs' looked identical to one where sync-on-open simply did nothing.
+    if (initialRoute !== 'Tabs') {
+      addLog(
+        `[App] Cold-start sync on open not started: initialRoute=${initialRoute ?? 'null'}.`,
+        'DEBUG'
+      );
+      return;
+    }
 
     const triggerColdStartSync = async () => {
-      const syncOnOpen = await loadSyncOnOpenEnabled();
-      if (!syncOnOpen) return;
-      const config = await getActiveServerConfig();
-      if (!config) return;
-
+      // Open the yield window and take the claim BEFORE the preference reads.
+      // Those reads are async, and on iOS a HealthKit observer firing in that
+      // gap would take the claim first, leaving this path to return silently
+      // while the observer ran a toast-less background sync instead.
       setForegroundAutoSyncWindowState(true);
       const coordRelease = tryClaimAutoSync();
       if (!coordRelease) {
         setForegroundAutoSyncWindowState(false);
+        addLog(
+          '[App] Cold-start sync on open skipped: another sync already holds the auto-sync claim.',
+          'DEBUG'
+        );
         return;
       }
 
@@ -136,11 +172,34 @@ export function useAutoSyncOnOpen({
         cleanup();
       };
 
-      await triggerAutoSyncRef.current(config.id, safeCleanup);
+      try {
+        const syncOnOpen = await loadSyncOnOpenEnabled();
+        if (!syncOnOpen) {
+          addLog(
+            '[App] Cold-start sync on open skipped: "Sync on Open" is turned off in Sync settings.',
+            'INFO'
+          );
+          safeCleanup();
+          return;
+        }
+        const configId = await resolveSyncConfigId();
+        if (!configId) {
+          addLog(
+            '[App] Cold-start sync on open skipped: no active server config.',
+            'WARNING'
+          );
+          safeCleanup();
+          return;
+        }
+
+        await triggerAutoSyncRef.current(configId, safeCleanup);
+      } catch (error) {
+        safeCleanup();
+        throw error;
+      }
     };
 
     triggerColdStartSync().catch((error) => {
-      setForegroundAutoSyncWindowState(false);
       const message = error instanceof Error ? error.message : String(error);
       addLog(`[App] Cold-start sync on open failed: ${message}`, 'ERROR');
     });
@@ -148,7 +207,6 @@ export function useAutoSyncOnOpen({
 
   useEffect(() => {
     const FOREGROUND_SYNC_MIN_AWAY_MS = 5 * 60 * 1000;
-    if (isLocalDataMode()) return;
 
     const subscription = AppState.addEventListener(
       'change',
@@ -162,7 +220,19 @@ export function useAutoSyncOnOpen({
 
           if (nextAppState !== 'active') return;
 
-          await flushPendingHealthSyncCacheRefresh();
+          // Fire-and-forget: this now awaits the Dashboard refetches, and a
+          // request issued the instant the app resumes can retry for tens of
+          // seconds over a radio that has not reconnected yet. Awaiting it
+          // here delayed — or, past the watchdog, effectively skipped — the
+          // foreground-return sync decision below.
+          void flushPendingHealthSyncCacheRefresh().catch((error) => {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            addLog(
+              `[App] Failed to flush pending health sync refresh: ${message}`,
+              'ERROR'
+            );
+          });
           if (!wasInBackgroundRef.current) return;
 
           const enteredAt = backgroundEnteredAtRef.current;
@@ -173,17 +243,16 @@ export function useAutoSyncOnOpen({
             enteredAt !== null ? Date.now() - enteredAt : Infinity;
           if (timeAway < FOREGROUND_SYNC_MIN_AWAY_MS) return;
 
-          const config = await getActiveServerConfig();
-          if (!config) return;
-
-          const syncOnOpen = await loadSyncOnOpenEnabled();
-          if (!syncOnOpen) return;
-          if (!(await shouldRunForegroundResumeAutoSync(config.id))) return;
-
+          // Claim before the preference reads, for the same reason the
+          // cold-start path does.
           setForegroundAutoSyncWindowState(true);
           const coordRelease = tryClaimAutoSync();
           if (!coordRelease) {
             setForegroundAutoSyncWindowState(false);
+            addLog(
+              '[App] Foreground-return sync skipped: another sync already holds the auto-sync claim.',
+              'DEBUG'
+            );
             return;
           }
 
@@ -197,7 +266,40 @@ export function useAutoSyncOnOpen({
             cleanup();
           };
 
-          await triggerAutoSyncRef.current(config.id, safeCleanup);
+          try {
+            const configId = await resolveSyncConfigId();
+            if (!configId) {
+              addLog(
+                '[App] Foreground-return sync skipped: no active server config.',
+                'WARNING'
+              );
+              safeCleanup();
+              return;
+            }
+
+            const syncOnOpen = await loadSyncOnOpenEnabled();
+            if (!syncOnOpen) {
+              addLog(
+                '[App] Foreground-return sync skipped: "Sync on Open" is turned off in Sync settings.',
+                'INFO'
+              );
+              safeCleanup();
+              return;
+            }
+            if (!(await shouldRunForegroundResumeAutoSync(configId))) {
+              addLog(
+                '[App] Foreground-return sync skipped: within the auto-sync cooldown.',
+                'DEBUG'
+              );
+              safeCleanup();
+              return;
+            }
+
+            await triggerAutoSyncRef.current(configId, safeCleanup);
+          } catch (error) {
+            safeCleanup();
+            throw error;
+          }
         } catch (error) {
           setForegroundAutoSyncWindowState(false);
           const message =

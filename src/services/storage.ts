@@ -438,7 +438,10 @@ export const saveSyncOnOpenEnabled = async (
 export const loadSyncOnOpenEnabled = async (): Promise<boolean> => {
   try {
     const value = await AsyncStorage.getItem(SYNC_ON_OPEN_ENABLED_KEY);
-    if (value === null) return false;
+    // Default ON. Health sync is the only thing that puts Apple Health /
+    // Health Connect data into the app, so defaulting it off left a fresh
+    // install showing an empty Home until the user found the Sync screen.
+    if (value === null) return true;
     return JSON.parse(value) as boolean;
   } catch (error) {
     const message = getErrorMessage(error);

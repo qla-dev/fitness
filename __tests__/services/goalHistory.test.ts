@@ -47,3 +47,52 @@ it('updates the same day without duplicating versions, and preserves earlier ver
   expect(goalsForDate(db, '2026-09-07').custom_nutrients).toBeUndefined();
   expect(db.tables.goalVersions).toHaveLength(2);
 });
+
+// Every Activity ring divides by one of these goals, and a goal of 0 renders
+// an empty ring. A goals row saved before these fields existed must still
+// produce fillable rings rather than three flat circles on every day.
+it('backfills the Activity ring goals a stored row is missing', () => {
+  const db = database();
+
+  const goals = goalsForDate(db, '2026-09-07');
+
+  expect(goals.steps).toBe(10000);
+  expect(goals.target_exercise_calories_burned).toBe(500);
+  expect(goals.target_exercise_duration_minutes).toBe(30);
+});
+
+it('keeps a real ring goal the user has chosen', () => {
+  const db = database();
+  saveGoalsFromToday(db, { steps: 6000 });
+
+  const goals = goalsForDate(db, '2026-09-07');
+
+  expect(goals.steps).toBe(6000);
+  expect(goals.target_exercise_duration_minutes).toBe(30);
+});
+
+// A ring with a goal of 0 can never fill, so a stored 0 is treated as unset
+// rather than as a choice — otherwise every ring reads empty forever no matter
+// how much health data is imported.
+it('replaces a ring goal stored as zero', () => {
+  const db = database();
+  saveGoalsFromToday(db, {
+    steps: 0,
+    target_exercise_calories_burned: 0,
+    target_exercise_duration_minutes: 0,
+  });
+
+  const goals = goalsForDate(db, '2026-09-07');
+
+  expect(goals.steps).toBe(10000);
+  expect(goals.target_exercise_calories_burned).toBe(500);
+  expect(goals.target_exercise_duration_minutes).toBe(30);
+});
+
+it('backfilling never mutates the stored goals row', () => {
+  const db = database();
+
+  goalsForDate(db, '2026-09-07');
+
+  expect(db.tables.goals[0].steps).toBeUndefined();
+});

@@ -138,7 +138,11 @@ export default function RecordingSummary({
       )}
       <Text className="text-text-secondary">
         {t('recording.maxSpeed', { defaultValue: 'Max speed' })}:{' '}
-        {fmt(distanceFromKm(detail.maxSpeed * 3.6, unit))} {label}/h
+        {fmt(distanceFromKm(detail.maxSpeed * 3.6, unit))}{' '}
+        {t('recording.speedPerHour', {
+          defaultValue: '{{unit}}/h',
+          unit: label,
+        })}
       </Text>
       <Text className="text-text-secondary">
         {t('recording.elevation', { defaultValue: 'Elevation gain' })}:{' '}

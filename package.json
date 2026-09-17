@@ -149,6 +149,7 @@
       "./jest.setup.js"
     ],
     "testPathIgnorePatterns": [
+      "/.kilo/",
       "__tests__/helpers/",
       "__tests__/hooks/queryTestUtils\\.ts$",
       "__tests__/screens/helpers/",
@@ -187,7 +188,11 @@
       "!**/eslint.config.js",
       "!**/expo-env.d.ts",
       "!**/.expo/**",
-      "!**/devdocs/**"
+      "!**/devdocs/**",
+      "!**/.kilo/**"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.kilo/"
     ]
   },
   "packageManager": "pnpm@10.33.4",

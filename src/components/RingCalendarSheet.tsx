@@ -7,28 +7,25 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
-import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
-import { useQueries, useQuery } from '@tanstack/react-query';
+import {
+  FlatList,
+  Pressable,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import Svg, { Circle } from 'react-native-svg';
 import { useCSSVariable } from 'uniwind';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import CustomModal, { type CustomModalRef } from './CustomModal';
 import {
   ACTIVITY_RING_COLORS,
-  activityRingProgress,
+  ringProgressFromParts,
   type ActivityRingProgress,
 } from '../constants/activityRings';
-import {
-  buildDailySummary,
-  loadDailySummaryRawData,
-} from '../services/dailySummaryService';
-import { fetchMeasurementsRange } from '../services/api/measurementsApi';
-import {
-  dailySummaryQueryKey,
-  measurementsRangeQueryKey,
-} from '../hooks/queryKeys';
+import { fetchActivityRingsRange } from '../services/api/measurementsApi';
+import { activityRingsRangeQueryKey } from '../hooks/queryKeys';
 import { fireSelectionHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
@@ -55,24 +52,11 @@ const MONTHS_BACK = 12;
 const RING_SIZE = 38;
 const RING_STROKE = 4;
 
-// Fixed geometry so FlatList can place every month without measuring it:
-// unmeasured rows are rendered, measured and re-rendered around a scroll jump,
-// which left the list blank while dozens of ring SVGs redrew.
-const MONTH_HEADER_HEIGHT = 44;
-const MONTH_BOTTOM_PADDING = 16;
+// Only the day-number pill has a size of its own; every enclosing box takes
+// its height from what it contains, so a four-row month is shorter than a
+// six-row one and the sheet follows.
 const DAY_LABEL_HEIGHT = 24;
 const DAY_CELL_PADDING = 6;
-const DAY_CELL_HEIGHT = DAY_CELL_PADDING * 2 + DAY_LABEL_HEIGHT + 4 + RING_SIZE;
-
-// Must be a stable object: FlatList throws if it changes between renders.
-const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 10 };
-
-function monthHeight(year: number, month: number, firstDayOfWeek: number) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const leading = (new Date(year, month, 1).getDay() - firstDayOfWeek + 7) % 7;
-  const rows = Math.ceil((leading + daysInMonth) / 7);
-  return MONTH_HEADER_HEIGHT + rows * DAY_CELL_HEIGHT + MONTH_BOTTOM_PADDING;
-}
 
 const pad = (value: number) => String(value).padStart(2, '0');
 
@@ -89,10 +73,18 @@ interface MonthKey {
   month: number;
 }
 
+/**
+ * Newest month first, so the current month is index 0 and the list opens on it
+ * with no scroll. Oldest-first relied on `initialScrollIndex` jumping twelve
+ * months forward, and inside the bottom sheet that jump did not land: the
+ * calendar opened a year in the past, on months with no data and therefore no
+ * rings. The list is inverted, so page 0 sits on the right and swiping right
+ * moves to an older month; there is no month after the current one.
+ */
 function monthsUpTo(today: string): MonthKey[] {
   const [year, month] = today.split('-').map(Number);
   return Array.from({ length: MONTHS_BACK + 1 }, (_, index) => {
-    const date = new Date(year, month - 1 - (MONTHS_BACK - index), 1);
+    const date = new Date(year, month - 1 - index, 1);
     return { year: date.getFullYear(), month: date.getMonth() };
   });
 }
@@ -151,9 +143,10 @@ interface MonthGridProps extends MonthKey {
   today: string;
   selectedDate: string;
   firstDayOfWeek: number;
-  monthLabel: string;
   markedSet: Set<string>;
   cellWidth: number;
+  /** Every page is exactly one sheet wide; its height comes from its own rows. */
+  pageWidth: number;
   onSelect: (date: string) => void;
 }
 
@@ -166,9 +159,9 @@ const MonthGrid = memo(function MonthGrid({
   today,
   selectedDate,
   firstDayOfWeek,
-  monthLabel,
   markedSet,
   cellWidth,
+  pageWidth,
   onSelect,
 }: MonthGridProps) {
   const [accent, textPrimary] = useCSSVariable([
@@ -185,50 +178,31 @@ const MonthGrid = memo(function MonthGrid({
   const first = days[0];
   const last = days[days.length - 1];
 
-  // Same query keys as the Dashboard, so days already opened there are cached.
-  const summaries = useQueries({
-    queries: pastDays.map((day) => ({
-      queryKey: dailySummaryQueryKey(day),
-      queryFn: () => loadDailySummaryRawData(day),
-      select: (raw: Awaited<ReturnType<typeof loadDailySummaryRawData>>) =>
-        buildDailySummary(day, raw),
-      enabled: active,
-    })),
-  });
-  const steps = useQuery({
-    queryKey: measurementsRangeQueryKey(first, last),
-    queryFn: () => fetchMeasurementsRange(first, last),
+  // One request for the whole month. Asking per day meant a separate read for
+  // each of up to 31 days, into the same cache entries the Dashboard reads —
+  // which made opening the calendar disturb what Home was showing.
+  const rings = useQuery({
+    queryKey: activityRingsRangeQueryKey(first, last),
+    queryFn: () => fetchActivityRingsRange(first, last),
     enabled: active && pastDays.length > 0,
   });
 
-  const stepsByDay = useMemo(() => {
-    const map = new Map<string, number | null | undefined>();
-    for (const row of steps.data ?? []) map.set(row.entry_date, row.steps);
+  const progressByDay = useMemo(() => {
+    const map = new Map<string, ActivityRingProgress>();
+    for (const day of rings.data ?? []) {
+      map.set(day.entry_date, ringProgressFromParts(day));
+    }
     return map;
-  }, [steps.data]);
+  }, [rings.data]);
 
   return (
-    <View
-      className="px-2"
-      style={{ height: monthHeight(year, month, firstDayOfWeek) }}
-    >
-      <Text
-        className="text-text-primary text-xl font-bold px-2 capitalize"
-        style={{ height: MONTH_HEADER_HEIGHT, lineHeight: MONTH_HEADER_HEIGHT }}
-      >
-        {monthLabel}
-      </Text>
+    <View className="px-2 pb-2" style={{ width: pageWidth }}>
       <View className="flex-row flex-wrap">
         {Array.from({ length: leading }, (_, index) => (
           <View key={`blank-${index}`} style={{ width: cellWidth }} />
         ))}
         {days.map((day, index) => {
-          const summaryIndex = pastDays.indexOf(day);
-          const summary =
-            summaryIndex >= 0 ? summaries[summaryIndex]?.data : undefined;
-          const progress = summary
-            ? activityRingProgress(summary, stepsByDay.get(day))
-            : EMPTY_PROGRESS;
+          const progress = progressByDay.get(day) ?? EMPTY_PROGRESS;
           const isToday = day === today;
           const isSelected = day === selectedDate;
           const isFuture = day > today;
@@ -240,7 +214,6 @@ const MonthGrid = memo(function MonthGrid({
               onPress={() => onSelect(day)}
               style={{
                 width: cellWidth,
-                height: DAY_CELL_HEIGHT,
                 paddingVertical: DAY_CELL_PADDING,
                 opacity: isFuture ? 0.35 : 1,
               }}
@@ -308,8 +281,7 @@ const RingCalendarSheet = forwardRef<
   const sheetRef = useRef<CustomModalRef>(null);
   const { t } = useTranslation();
   const { appLocale, presentation } = useCalendarPresentation();
-  const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const today = getTodayDate();
   const months = useMemo(() => monthsUpTo(today), [today]);
   const monthNames = useMemo(
@@ -322,6 +294,8 @@ const RingCalendarSheet = forwardRef<
   );
   const markedSet = useMemo(() => new Set(markedDates ?? []), [markedDates]);
   const [activeMonths, setActiveMonths] = useState<Set<string>>(new Set());
+  // Page 0 is the current month: the list opens there without scrolling.
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useImperativeHandle(ref, () => ({
     present: () => sheetRef.current?.present(),
@@ -338,6 +312,22 @@ const RingCalendarSheet = forwardRef<
     )
   );
 
+  /**
+   * The month the sheet opens on, plus its neighbours, load without waiting to
+   * be reported visible. `onViewableItemsChanged` does not reliably fire for
+   * the initial screenful of a list that opens at `initialScrollIndex` inside
+   * a bottom sheet, and when it did not, no month was ever marked active and
+   * every day rendered an empty ring — including today's.
+   */
+  const alwaysActive = useMemo(() => {
+    const keys = new Set<string>();
+    for (let index = initialIndex - 1; index <= initialIndex + 1; index += 1) {
+      const entry = months[index];
+      if (entry) keys.add(`${entry.year}-${entry.month}`);
+    }
+    return keys;
+  }, [months, initialIndex]);
+
   const handleSelect = useCallback(
     (date: string) => {
       fireSelectionHaptic();
@@ -347,39 +337,57 @@ const RingCalendarSheet = forwardRef<
     [onSelectDate]
   );
 
-  // Stable for the list's lifetime: FlatList rejects a changing handler.
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: { item: MonthKey }[] }) => {
+  // A page spans the full sheet width and carries the same px-2 as the weekday
+  // header above it, so the seven ring columns line up with the seven labels.
+  const pageWidth = width;
+
+  // Measured, never computed: the page reports what it actually laid out, so
+  // no constant here has to stay in step with the cell's real size.
+  const [pageHeights, setPageHeights] = useState<Record<number, number>>({});
+  const handlePageLayout = useCallback((index: number, height: number) => {
+    setPageHeights((previous) =>
+      previous[index] === height ? previous : { ...previous, [index]: height }
+    );
+  }, []);
+  const visibleHeight = pageHeights[currentIndex];
+
+  // Paging settles on whole pages, so the index is exact rather than inferred
+  // from partial visibility — and it only fires once the finger has let go.
+  const onMomentumScrollEnd = useCallback(
+    (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+      const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
+      setCurrentIndex((previous) => {
+        // Only when a different month has actually settled: a swipe that
+        // springs back to where it started should not feel like a page turn.
+        if (previous !== index) fireSelectionHaptic();
+        return index;
+      });
       setActiveMonths((previous) => {
         const next = new Set(previous);
-        for (const { item } of viewableItems) {
-          next.add(`${item.year}-${item.month}`);
+        for (let step = index - 1; step <= index + 1; step += 1) {
+          const entry = months[step];
+          if (entry) next.add(`${entry.year}-${entry.month}`);
         }
         return next.size === previous.size ? previous : next;
       });
     },
-    []
+    [months, pageWidth]
   );
 
-  const layouts = useMemo(() => {
-    let offset = 0;
-    return months.map((entry) => {
-      const length = monthHeight(
-        entry.year,
-        entry.month,
-        presentation.firstDayOfWeek
-      );
-      const layout = { length, offset };
-      offset += length;
-      return layout;
-    });
-  }, [months, presentation.firstDayOfWeek]);
+  // The page on screen names itself in the sheet header rather than above each
+  // grid, so the month and year stay put while the days slide underneath.
+  const visibleMonth = months[currentIndex] ?? months[0];
+  const headerTitle = visibleMonth
+    ? `${monthNames[visibleMonth.month] ?? ''} ${String(visibleMonth.year)}`
+    : t('ringCalendar.title', { defaultValue: 'Calendar' });
+
   const getItemLayout = useCallback(
     (_: ArrayLike<MonthKey> | null | undefined, index: number) => ({
-      ...layouts[index],
+      length: pageWidth,
+      offset: pageWidth * index,
       index,
     }),
-    [layouts]
+    [pageWidth]
   );
 
   // Weekday labels follow the user's first day of week.
@@ -391,7 +399,7 @@ const RingCalendarSheet = forwardRef<
   return (
     <CustomModal
       ref={sheetRef}
-      title={t('ringCalendar.title', { defaultValue: 'Calendar' })}
+      title={headerTitle}
     >
       <View className="flex-row px-2 pb-2 border-b border-border-subtle">
         {orderedWeekdays.map((label, index) => (
@@ -404,36 +412,67 @@ const RingCalendarSheet = forwardRef<
           </Text>
         ))}
       </View>
-      <BottomSheetFlatList
+      {/* A plain FlatList, not BottomSheetFlatList: that wrapper exists to
+          hand vertical scrolling to the sheet's drag gesture, and it does not
+          drive a horizontal pager — the months would not move at all. Nothing
+          here scrolls vertically. */}
+      <FlatList
         data={months}
         keyExtractor={(item: MonthKey) => `${item.year}-${item.month}`}
-        // Leaves room above the sheet so it never reaches full height.
-        style={{ height: height * 0.6 }}
-        initialScrollIndex={initialIndex}
+        horizontal
+        // Native paging tracks the finger the whole way and only settles on a
+        // page once it is released — no snapping mid-gesture.
+        pagingEnabled
+        // Page 0 is the current month; inverting the axis places it on the
+        // right, so swiping right walks back through the year the way a
+        // calendar reads.
+        inverted
+        showsHorizontalScrollIndicator={false}
+        // Hard stop at both ends: there is no month after the current one, and
+        // nothing before the oldest.
+        bounces={false}
+        overScrollMode="never"
         getItemLayout={getItemLayout}
         // iOS would otherwise pad the list with the window safe areas, pushing
         // the last weeks out of reach; only the home indicator is cleared.
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 8 }}
+        // Pages are laid out in a row, and a row stretches its children to the
+        // tallest one by default — which made every page measure as tall as the
+        // longest month and defeated the measurement below. Aligning to the
+        // start lets each page keep its own height.
+        contentContainerStyle={{ alignItems: 'flex-start' }}
+        // Every page sits in one row, so the list would otherwise stand as tall
+        // as the tallest month currently mounted — a five-row month shown next
+        // to a six-row one left an empty band under the last week. Tracking the
+        // measured height of the page on screen keeps it exact.
+        style={visibleHeight ? { height: visibleHeight } : undefined}
         initialNumToRender={2}
         maxToRenderPerBatch={2}
         windowSize={5}
-        viewabilityConfig={VIEWABILITY_CONFIG}
-        onViewableItemsChanged={onViewableItemsChanged}
-        renderItem={({ item }: { item: MonthKey }) => (
-          <MonthGrid
-            year={item.year}
-            month={item.month}
-            active={activeMonths.has(`${item.year}-${item.month}`)}
-            today={today}
-            selectedDate={selectedDate}
-            firstDayOfWeek={presentation.firstDayOfWeek}
-            monthLabel={`${monthNames[item.month] ?? ''} ${String(item.year)}`}
-            markedSet={markedSet}
-            cellWidth={cellWidth}
-            onSelect={handleSelect}
-          />
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        renderItem={({ item, index }: { item: MonthKey; index: number }) => (
+          <View
+            onLayout={(event) =>
+              handlePageLayout(index, event.nativeEvent.layout.height)
+            }
+          >
+            <MonthGrid
+              year={item.year}
+              month={item.month}
+              active={
+                activeMonths.has(`${item.year}-${item.month}`) ||
+                alwaysActive.has(`${item.year}-${item.month}`)
+              }
+              today={today}
+              selectedDate={selectedDate}
+              firstDayOfWeek={presentation.firstDayOfWeek}
+              markedSet={markedSet}
+              cellWidth={cellWidth}
+              pageWidth={pageWidth}
+              onSelect={handleSelect}
+            />
+          </View>
         )}
       />
     </CustomModal>

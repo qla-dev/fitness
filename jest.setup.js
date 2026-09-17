@@ -138,6 +138,48 @@ jest.mock('expo-task-manager', () => ({
   unregisterTaskAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock expo-location. The real module reads a `platform` parameter off the
+// native config at import time and throws "Missing required parameter
+// `platform`" under jest, which fails any suite that transitively imports the
+// run/ride GPS task.
+jest.mock('expo-location', () => ({
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  ActivityType: {
+    Other: 1,
+    AutomotiveNavigation: 2,
+    Fitness: 3,
+    OtherNavigation: 4,
+    Airborne: 5,
+  },
+  requestForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', granted: true })
+  ),
+  requestBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', granted: true })
+  ),
+  hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
+  startLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  stopLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock expo-crypto for the same reason: its native shim is not loadable under
+// jest, and only randomUUID is used in app code.
+jest.mock('expo-crypto', () => {
+  let counter = 0;
+  const randomUUID = jest.fn(
+    () =>
+      `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`
+  );
+  return { randomUUID, default: { randomUUID } };
+});
+
 // Mock expo-background-task
 jest.mock('expo-background-task', () => ({
   registerTaskAsync: jest.fn(() => Promise.resolve()),

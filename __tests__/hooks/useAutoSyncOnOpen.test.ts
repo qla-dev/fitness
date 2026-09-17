@@ -191,17 +191,39 @@ describe('useAutoSyncOnOpen cold-start sync', () => {
     expect(syncMutation.mutate).not.toHaveBeenCalled();
   });
 
-  it('does nothing when sync-on-open is disabled', async () => {
+  // The window and the claim are taken before the preference reads, so an
+  // iOS observer firing during those async reads cannot take the claim first
+  // and leave the cold-start path returning silently. A disabled preference
+  // therefore hands both straight back rather than never taking them.
+  it('does not sync when sync-on-open is disabled, and gives the claim back', async () => {
     mockHappyPathServices();
     mockLoadSyncOnOpenEnabled.mockResolvedValue(false);
+    const release = jest.fn();
+    mockTryClaimAutoSync.mockReturnValue(release);
     const syncMutation = buildSyncMutation();
 
     renderHook(() => useAutoSyncOnOpen({ initialRoute: 'Tabs', syncMutation }));
     await flushAsync();
 
-    expect(mockSetWindowOpen).not.toHaveBeenCalled();
-    expect(mockTryClaimAutoSync).not.toHaveBeenCalled();
     expect(syncMutation.mutate).not.toHaveBeenCalled();
+    expect(mockSetWindowOpen).toHaveBeenNthCalledWith(1, true);
+    expect(mockSetWindowOpen).toHaveBeenLastCalledWith(false);
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not sync when there is no active server config, and gives the claim back', async () => {
+    mockHappyPathServices();
+    mockGetActiveServerConfig.mockResolvedValue(null);
+    const release = jest.fn();
+    mockTryClaimAutoSync.mockReturnValue(release);
+    const syncMutation = buildSyncMutation();
+
+    renderHook(() => useAutoSyncOnOpen({ initialRoute: 'Tabs', syncMutation }));
+    await flushAsync();
+
+    expect(syncMutation.mutate).not.toHaveBeenCalled();
+    expect(mockSetWindowOpen).toHaveBeenLastCalledWith(false);
+    expect(release).toHaveBeenCalledTimes(1);
   });
 
   it('closes the window again without syncing when the claim is not granted', async () => {

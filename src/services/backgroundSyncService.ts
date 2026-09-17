@@ -34,6 +34,7 @@ import { isBackfillRunning, markSyncInFlight } from './autoSyncCoordinator';
 import { listMedications, listEntries } from './api/medicationsApi';
 import { reconcileMedicationReminders } from './medicationReminderService';
 import { getTodayDate } from '../utils/dateUtils';
+import { isLocalDataMode } from './dataMode';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import {
   BACKGROUND_TELEMETRY_BUDGET,
@@ -344,8 +345,14 @@ const runBackgroundSync = async (
   // so any pending reminders get cancelled.
   try {
     const prefs = useAppPreferencesStore.getState();
+    // Medications have no local implementation, so in a local-first build the
+    // fetches below throw "A backend is required for this feature" on every
+    // background sync. The reconcile still runs, cancelling any reminders left
+    // over from a build that had a server.
     const remindersActive =
-      prefs.medicationRemindersEnabled && prefs.notificationsEnabled;
+      !isLocalDataMode() &&
+      prefs.medicationRemindersEnabled &&
+      prefs.notificationsEnabled;
     const today = getTodayDate();
     const [medications, entries] = remindersActive
       ? await Promise.all([

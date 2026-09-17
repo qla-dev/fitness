@@ -8,9 +8,12 @@ import {
   saveRecord,
   table,
   type LocalDatabase,
+  type LocalRecord,
 } from './database';
 import { foodRepository } from './foodRepository';
 import { localSessions, workoutRepository } from './workoutRepository';
+import { calculateExerciseStats } from '../../utils/workoutSession';
+import type { ExerciseSessionResponse } from '@workspace/shared';
 import { LOCAL_PROVIDER_SEEDS, catalogRoute } from './providerCatalog';
 import type { LocalRequest } from './request';
 import { goalsForDate, saveGoalsFromToday } from './goalHistory';
@@ -30,6 +33,12 @@ const initialGoals: DailyGoals = {
   fat: 67,
   dietary_fiber: 30,
   water_goal_ml: 2000,
+  // The three Activity ring goals. Without them every ring divides by 0 and
+  // renders empty; `goalHistory.ts` backfills the same values for goals rows
+  // saved before these fields existed.
+  steps: 10000,
+  target_exercise_calories_burned: 500,
+  target_exercise_duration_minutes: 30,
 };
 
 function initialise(db: LocalDatabase) {
@@ -178,6 +187,51 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   if (path === '/api/water-containers') return table(db, 'waterContainers');
   if (path === '/api/external-providers' && method === 'GET')
     return table(db, 'providers');
+  // One transaction for a whole month of rings. The ring calendar used to ask
+  // for each day's full daily summary separately, which re-read and re-parsed
+  // the entire database once per day on screen, and wrote into the same cache
+  // entries the Dashboard reads. Only days that actually hold something are
+  // returned, so a day with no data draws no ring.
+  if (path.startsWith('/api/activity-rings-range/')) {
+    const [start, end] = [parts[3], parts[4]];
+    const inRange = (day: string) => day >= start && day <= end;
+
+    const stepsByDay = new Map<string, unknown>();
+    for (const row of localMeasurements(db)) {
+      const day = String(row.entry_date);
+      if (inRange(day) && row.steps != null) stepsByDay.set(day, row.steps);
+    }
+
+    const sessionsByDay = new Map<string, LocalRecord[]>();
+    for (const session of localSessions(db)) {
+      const day = String(session.entry_date);
+      if (!inRange(day)) continue;
+      sessionsByDay.set(day, [...(sessionsByDay.get(day) ?? []), session]);
+    }
+
+    return [...new Set([...stepsByDay.keys(), ...sessionsByDay.keys()])]
+      .sort()
+      .map((day) => {
+        const goals = goalsForDate(db, day);
+        const stats = calculateExerciseStats(
+          (sessionsByDay.get(day) ?? []) as unknown as ExerciseSessionResponse[]
+        );
+        return {
+          entry_date: day,
+          activeCalories: stats.activeCalories,
+          otherExerciseCalories: stats.otherExerciseCalories,
+          exerciseMinutes: stats.durationMinutes,
+          steps: Number(stepsByDay.get(day) ?? 0),
+          exerciseCaloriesGoal: Number(
+            goals.target_exercise_calories_burned ?? 0
+          ),
+          exerciseMinutesGoal: Number(
+            goals.target_exercise_duration_minutes ?? 0
+          ),
+          stepsGoal: Number(goals.steps ?? 0),
+        };
+      });
+  }
   if (path.startsWith('/api/measurements/check-in-measurements-range/'))
     return localMeasurements(db)
       .filter(

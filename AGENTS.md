@@ -1,10 +1,22 @@
 # AGENTS.md
 
-_Last updated: 2026-09-05_
+_Last updated: 2026-09-17_
 
-qla.fit is a React Native 0.85 + Expo SDK 56 app for syncing Apple Health / Health Connect data with the qla.fit backend, tracking nutrition, hydration, fasting, measurements, exercise, saved foods, meal templates, custom exercises, workout presets, iOS / Android widgets, the active workout HUD, and the Sparky AI chat.
+qla.fit is a React Native 0.85 + Expo SDK 56 app for syncing Apple Health / Health Connect data, tracking nutrition, hydration, fasting, measurements, exercise, saved foods, meal templates, custom exercises, workout presets, iOS / Android widgets, the active workout HUD, and the Sparky AI chat.
 
-This is the package guide for `SparkyFitnessMobile/`. Work from this directory for mobile implementation and validation. If a task crosses into the backend, frontend, or `shared/`, read that package guide too before editing outside mobile.
+## Local-First: There Is No Server
+
+**This is the standing architecture until the owner says otherwise.** All data lives on the phone. There is no backend to build against, call, or reason about, and this repository contains only the mobile app plus `shared/` (see `pnpm-workspace.yaml`) — no server code.
+
+- `dataMode` in `app.config.ts` defaults to `'local'`, read through `isLocalDataMode()` (`src/services/dataMode.ts`).
+- `apiClient.ts` short-circuits **every** call to `localApiFetch` in local mode, and `healthDataApi.ts` does the same for health uploads. No HTTP request leaves the device.
+- The `/api/...` strings throughout `src/services/api/` are **routing keys into the local SQLite layer**, not network endpoints. Do not read them as evidence of a server, and do not propose server-side fixes.
+- The local implementation is `src/services/local/`: `database.ts` (expo-sqlite), `localApi.ts` (the request router), and the `foodRepository` / `healthRepository` / `workoutRepository` modules. `localApi.ts` is the list of endpoints that actually exist; anything missing there is unimplemented locally.
+- Adding a data capability means adding a handler in `localApi.ts` plus repository support — never a server route.
+- Health sync is **not** gated on `isLocalDataMode()`. Apple Health / Health Connect is the data source and the on-device database is the destination, so sync-on-open, background sync, and the iOS HealthKit observers all run in local mode. `resolveSyncConfigId()` in `useAutoSyncOnOpen.ts` supplies the synthetic `'local'` id where a server config id would otherwise be required.
+- Server-oriented UI (accounts, family diary, Ask Sparky, cycle, medications, progress photos) is hidden behind `!isLocalDataMode()` checks in the screens that own it. Keep new server-dependent UI behind the same check.
+
+This is the package guide for the mobile app at the repository root. Work from here for implementation and validation. If a task crosses into `shared/`, read that package guide too.
 
 ## Scope And Style
 
@@ -13,7 +25,7 @@ This is the package guide for `SparkyFitnessMobile/`. Work from this directory f
 - For ambiguous bugs, prove which layer is failing before patching. One narrow diagnostic check beats speculative edits across multiple layers.
 - Do not replace a working implementation with a rewrite unless the requester explicitly approves that direction.
 - When asked to plan work, confirm scope with clarifying questions before exploring code or drafting the plan.
-- Run scripts from `SparkyFitnessMobile/`, except root package operations such as `pnpm install` for patched dependencies.
+- Run scripts from the repository root.
 - Treat `android/` and `ios/` as generated output when possible. Edit `app.config.ts`, `plugins/`, `targets/`, JS/TS sources, or patch files first, then regenerate with prebuild when needed.
 
 ## Stack And Imports
@@ -21,7 +33,7 @@ This is the package guide for `SparkyFitnessMobile/`. Work from this directory f
 - Primary stack: React 19.2, React Native 0.85, Expo SDK 56, TypeScript 6, React Navigation 7, TanStack Query 5, Uniwind / TailwindCSS v4, Reanimated 4, Skia, Victory Native, Expo Background Task / Task Manager / Notifications, Zustand, assistant-ui + AI SDK (chat).
 - `@/*` maps to this package and `@workspace/shared` maps to `../shared/src/index.ts`.
 - Prefer `@workspace/shared` schemas, constants, date/timezone helpers, and types over local duplicates.
-- The app talks to the backend under `/api`; health uploads go to `POST /api/health-data`.
+- The app routes `/api` calls into the on-device SQLite layer (see **Local-First** above); health uploads go to `POST /api/health-data`, handled by `importHealthData` in `healthRepository.ts`.
 - Global `fetch` is Expo's WinterCG `expo/fetch`, so React Native's `{uri, name, type}` FormData file parts throw "Unsupported FormDataPart implementation". Append an `expo-file-system` `File` (it implements Blob) for multipart uploads; see `pregnancyPhotosApi.ts`.
 - Server-stored distance/weight units are metric. UI conversion belongs in mobile helpers such as `unitConversions.ts`.
 
@@ -98,7 +110,7 @@ npx expo prebuild --clean
 - `src/screens/` - top-level route destinations: dashboard, diary, family member/diary/meal/copy-review flows, settings, sync, logs, Whats New, fasting, food search/scan/photo, library CRUD flows, workout/activity flows, and measurement entry.
 - `src/navigation/` - navigation-level modules such as `safeScreens.tsx`, the error-boundary-wrapped screen components registered in `App.tsx`. (`FoodPhotoFlow` lives in `src/components/`.)
 - `src/hooks/` - TanStack Query hooks, auth/connection hooks, library/search/mutation hooks, measurement/water/check-in hooks, fasting hooks, workout form hooks, widget sync, query client, query keys, and cache helpers.
-- `src/services/api/` - backend clients. `apiClient.ts` handles normal API auth/proxy headers; `healthDataApi.ts`, `aiSettingsApi.ts`, food-photo estimate, and other raw fetch paths must keep auth, proxy, timeout, and session-expiry behavior aligned.
+- `src/services/api/` - API clients. In local mode every call is routed to `src/services/local/localApi.ts` by `apiClient.ts`. `apiClient.ts` handles normal API auth/proxy headers; `healthDataApi.ts`, `aiSettingsApi.ts`, food-photo estimate, and other raw fetch paths must keep auth, proxy, timeout, and session-expiry behavior aligned.
 - `src/services/healthconnect/` - Android Health Connect reads, native aggregation, transformation, enrichment, preferences, and writeback.
 - `src/services/healthkit/` - iOS HealthKit reads, statistics aggregation, transformation, background delivery, preferences, and writeback.
 - `src/services/shared/` - platform-agnostic health helpers: the `collectHealthData` / `runForegroundSync` engine both orchestrators share, the per-run workout-telemetry budget and its reuse cache, Health Connect error classification, sample downsampling, day aggregation/transformation, preference factories, and permission migration/sets.
@@ -361,5 +373,5 @@ const androidService = require('../../src/services/healthConnectService.ts');
 
 ## Priority Rule
 
-- For work inside `SparkyFitnessMobile/`, this file is the package guide.
+- This file is the package guide for the mobile app at the repository root.
 - If a task also changes another package, combine this with that package guide instead of stretching this file to cover the whole monorepo.

@@ -94,7 +94,7 @@ describe('TabHeader', () => {
       />
     );
 
-    const cart = getByRole('button', { name: 'Cart' });
+    const cart = getByRole('button', { name: 'Grocery List' });
     // Its own 44pt tap target, not a slice of a joined block.
     expect(cart.props.style).toEqual(
       expect.objectContaining({ width: 44, height: 44 })
@@ -113,7 +113,7 @@ describe('TabHeader', () => {
       <TabHeader title="Family diary" selectedDate="2025-01-15" />
     );
 
-    expect(queryByRole('button', { name: 'Cart' })).toBeNull();
+    expect(queryByRole('button', { name: 'Grocery List' })).toBeNull();
   });
 
   test('drops the profile button where the header is not a tab root', () => {

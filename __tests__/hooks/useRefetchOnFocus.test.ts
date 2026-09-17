@@ -118,3 +118,54 @@ describe('useRefetchOnFocus', () => {
     expect(mockRefetch).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('useRefetchOnFocus stale bypass', () => {
+  let focusCallback: (() => void) | undefined;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    focusCallback = undefined;
+    mockUseFocusEffect.mockImplementation((callback) => {
+      focusCallback = callback;
+      callback();
+    });
+    jest.spyOn(Date, 'now').mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // A sync run from another screen invalidates the Dashboard's queries while
+  // they are inactive, so focus is the only thing left to refresh them. The
+  // cooldown must not swallow that.
+  test('refetches an invalidated query inside the cooldown window', () => {
+    const mockRefetch = jest.fn();
+
+    const { rerender } = renderHook(
+      ({ isStale }: { isStale: boolean }) =>
+        useRefetchOnFocus(mockRefetch, true, 30_000, isStale),
+      { initialProps: { isStale: false } }
+    );
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+
+    // Well inside the 30s cooldown, but the sync marked the query stale.
+    // The mocked useFocusEffect fires the callback on this rerender.
+    (Date.now as jest.Mock).mockReturnValue(1_000);
+    rerender({ isStale: true });
+
+    expect(mockRefetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('still suppresses a fresh query inside the cooldown window', () => {
+    const mockRefetch = jest.fn();
+
+    renderHook(() => useRefetchOnFocus(mockRefetch, true, 30_000, false));
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+
+    (Date.now as jest.Mock).mockReturnValue(1_000);
+    focusCallback?.();
+
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+  });
+});

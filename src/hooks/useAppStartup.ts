@@ -23,7 +23,6 @@ import {
 import { initMedicationNotificationActions } from '../services/medicationNotificationHandler';
 import { initWorkoutLiveActivity } from '../services/workoutLiveActivity';
 import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
-import { isLocalDataMode } from '../services/dataMode';
 import { initializeRecorder } from '../services/recording/recorder';
 
 interface AppStartupArgs {
@@ -96,8 +95,11 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     });
 
     const initializeSyncServices = async () => {
-      if (isLocalDataMode()) return;
-      // Bootstrap timezone before any sync path is configured so the server
+      // Deliberately NOT gated on isLocalDataMode(): health sync is what fills
+      // a local-first build. Apple Health / Health Connect is the data source
+      // and the on-device database is the destination, so background sync,
+      // timezone bootstrap and the HealthKit observers all still apply.
+      // Bootstrap timezone before any sync path is configured so the store
       // has a stable timezone for the very first sync.
       const timezone = await ensureTimezoneBootstrapped();
       if (!timezone) {

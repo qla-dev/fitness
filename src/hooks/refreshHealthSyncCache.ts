@@ -9,27 +9,28 @@ const exerciseHistoryQueryFamily = ['exerciseHistory'] as const;
 /**
  * Invalidates data derived from HealthKit / Health Connect after an upload.
  *
- * The Dashboard starts its initial daily-summary request while sync-on-open is
- * also starting. React Query deliberately keeps an in-flight first request
- * (there is no cached data to cancel), so a normal invalidation can wait for a
- * response that began before the upload and then mark that stale response
- * fresh. When that race is present, issue one more Dashboard refresh after the
- * first request settles.
+ * The Dashboard can have a daily-summary request in flight when an upload
+ * finishes. React Query only honours `cancelRefetch` for a query that already
+ * holds data, so an initial request (`dataUpdatedAt === 0`) is not cancelled —
+ * the invalidation piggybacks on the in-flight promise, waits for a response
+ * that began before the upload, and then marks that stale response fresh.
+ *
+ * Any in-flight fetch counts here, not just the initial one: which branch
+ * React Query takes depends on timing this function cannot observe, so it
+ * settles the first pass and then issues one more Dashboard refresh. The
+ * second pass starts from an idle query and is always a real request.
  */
 export async function refreshHealthSyncCache(
   queryClient: QueryClient
 ): Promise<void> {
-  const dashboardInitialFetchWasInFlight = [
+  const dashboardFetchWasInFlight = [
     dailySummaryQueryFamily,
     measurementsQueryFamily,
   ].some((queryKey) =>
     queryClient
       .getQueryCache()
       .findAll({ queryKey })
-      .some(
-        (query) =>
-          query.state.data === undefined && query.state.fetchStatus !== 'idle'
-      )
+      .some((query) => query.state.fetchStatus !== 'idle')
   );
 
   for (const family of [
@@ -60,7 +61,7 @@ export async function refreshHealthSyncCache(
 
   await Promise.all(dashboardRefreshes);
 
-  if (dashboardInitialFetchWasInFlight) {
+  if (dashboardFetchWasInFlight) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: dailySummaryQueryFamily }),
       queryClient.invalidateQueries({ queryKey: measurementsQueryFamily }),

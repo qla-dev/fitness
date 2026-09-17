@@ -71,6 +71,13 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
 }));
 
+// The ring calendar reads its rings straight from react-query; these suites
+// render no QueryClientProvider, so it is stubbed out.
+jest.mock('../../src/components/RingCalendarSheet', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: () => <View testID="ring-calendar-sheet" /> };
+});
+
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, type DimensionValue } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
 interface DashboardLoadingSkeletonProps {
@@ -8,7 +8,7 @@ interface DashboardLoadingSkeletonProps {
 }
 
 interface SkeletonLineProps {
-  width: number | string;
+  width: DimensionValue;
   textMuted: string;
   className?: string;
 }

@@ -18,7 +18,7 @@ export function useMeasurements({
     enabled,
   });
 
-  useRefetchOnFocus(query.refetch, enabled);
+  useRefetchOnFocus(query.refetch, enabled, undefined, query.isStale);
 
   return {
     measurements: query.data,

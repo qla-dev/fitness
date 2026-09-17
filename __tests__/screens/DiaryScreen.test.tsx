@@ -167,6 +167,13 @@ jest.mock('../../src/components/CalendarSheet', () => {
   return { __esModule: true, default: () => <View testID="calendar-sheet" /> };
 });
 
+// The ring calendar reads its rings straight from react-query; these suites
+// render no QueryClientProvider, so it is stubbed like the plain CalendarSheet.
+jest.mock('../../src/components/RingCalendarSheet', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: () => <View testID="ring-calendar-sheet" /> };
+});
+
 jest.mock('../../src/components/ServingAdjustSheet', () => {
   const { View } = require('react-native');
   return { __esModule: true, default: () => <View testID="serving-sheet" /> };

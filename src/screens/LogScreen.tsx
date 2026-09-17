@@ -252,23 +252,6 @@ const LogScreen: React.FC<LogScreenProps> = ({ navigation }) => {
 
   const hasLogs = logs.length > 0;
 
-  // Clear is destructive-ish but not a save, so it stays a neutral text action.
-  const header = useScreenHeader({
-    title: t('logScreen.title', { defaultValue: 'Logs' }),
-    left: { kind: 'back' },
-    right: {
-      kind: 'text',
-      label: t('common.clear', { defaultValue: 'Clear' }),
-      role: 'secondary',
-      disabled: !hasLogs,
-      onPress: handleClearLogs,
-      accessibilityLabel: t('logScreen.clearLogs', {
-        defaultValue: 'Clear logs',
-      }),
-      identifier: 'logs-clear',
-    },
-  });
-
   const handleCopyLogToClipboard = (item: LogEntry): void => {
     let logText = `${t('logScreen.clipboard.status', { defaultValue: 'Status' })}: ${item.status}\n`;
     logText += `${t('logScreen.clipboard.message', { defaultValue: 'Message' })}: ${item.message}\n`;
@@ -294,6 +277,76 @@ const LogScreen: React.FC<LogScreenProps> = ({ navigation }) => {
     if (selectedStatuses.length === 0) return logs;
     return logs.filter((log) => selectedStatuses.includes(log.status));
   }, [logs, selectedStatuses]);
+
+  /**
+   * Prints every currently-visible log entry to the JS console in one block,
+   * so a Metro / Xcode / logcat session can be read or pasted whole. Also
+   * copies the same text, because on a release build the console has no
+   * attached reader.
+   */
+  const handleDumpLogsToConsole = useCallback((): void => {
+    const asText = filteredLogs
+      .map((item) => {
+        const timestamp = new Date(item.timestamp).toISOString();
+        const details =
+          item.details && item.details.length > 0
+            ? ` | ${item.details.join(' | ')}`
+            : '';
+        return `[${timestamp}] ${item.status}: ${item.message}${details}`;
+      })
+      .join('\n');
+
+    // Oldest-first reads like a trace; the list itself is newest-first.
+    const block = asText.split('\n').reverse().join('\n');
+    console.log(
+      `===== qla.fit logs (${filteredLogs.length}) =====\n${block}\n===== end logs =====`
+    );
+    Clipboard.setString(block);
+
+    Toast.show({
+      type: 'success',
+      text1: t('logScreen.dumped', { defaultValue: 'Sent to console' }),
+      text2: t('logScreen.dumpedMessage', {
+        defaultValue: '{{count}} entries printed and copied to the clipboard.',
+        defaultValue_one:
+          '{{count}} entry printed and copied to the clipboard.',
+        defaultValue_other:
+          '{{count}} entries printed and copied to the clipboard.',
+        count: filteredLogs.length,
+      }),
+    });
+  }, [filteredLogs, t]);
+
+  // Neither action is a save, so both stay neutral text actions and the
+  // screen declares no accent primary.
+  const header = useScreenHeader({
+    title: t('logScreen.title', { defaultValue: 'Logs' }),
+    left: { kind: 'back' },
+    right: [
+      {
+        kind: 'text',
+        label: t('logScreen.console', { defaultValue: 'Console' }),
+        role: 'secondary',
+        disabled: filteredLogs.length === 0,
+        onPress: handleDumpLogsToConsole,
+        accessibilityLabel: t('logScreen.dumpLogs', {
+          defaultValue: 'Print logs to console',
+        }),
+        identifier: 'logs-console',
+      },
+      {
+        kind: 'text',
+        label: t('common.clear', { defaultValue: 'Clear' }),
+        role: 'secondary',
+        disabled: !hasLogs,
+        onPress: handleClearLogs,
+        accessibilityLabel: t('logScreen.clearLogs', {
+          defaultValue: 'Clear logs',
+        }),
+        identifier: 'logs-clear',
+      },
+    ],
+  });
 
   const allActive = selectedStatuses.length === 0;
 

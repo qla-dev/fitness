@@ -1,4 +1,5 @@
 import { apiFetch } from './apiClient';
+import type { ActivityRingParts } from '../../constants/activityRings';
 import { getTodayDate } from '../../utils/dateUtils';
 import type {
   CheckInMeasurement,
@@ -199,3 +200,24 @@ export const changeWaterIntake = async (params: {
     },
   });
 };
+
+/**
+ * A month of Activity ring values in one request. The ring calendar draws up
+ * to 31 days at once; asking per day meant 31 separate reads that also shared
+ * the Dashboard's per-day cache entries. Days with nothing recorded are simply
+ * absent, so the calendar draws no ring for them.
+ */
+export interface ActivityRingDay extends ActivityRingParts {
+  entry_date: string;
+  steps: number;
+}
+
+export const fetchActivityRingsRange = (
+  startDate: string,
+  endDate: string
+): Promise<ActivityRingDay[]> =>
+  apiFetch<ActivityRingDay[]>({
+    endpoint: `/api/activity-rings-range/${startDate}/${endDate}`,
+    serviceName: 'Measurements API',
+    operation: 'fetch activity rings range',
+  });

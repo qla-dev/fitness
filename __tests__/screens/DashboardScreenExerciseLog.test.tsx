@@ -33,8 +33,18 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+// RingCalendarSheet (mounted by the Dashboard) reads its ring data straight
+// from react-query rather than through src/hooks, so the stubs below keep it
+// inert instead of it reaching a real QueryClient.
 jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useQuery: jest.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: jest.fn(),
+  })),
+  useQueries: jest.fn(() => []),
 }));
 
 jest.mock('../../src/hooks', () => ({

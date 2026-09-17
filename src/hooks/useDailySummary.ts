@@ -25,7 +25,7 @@ export function useDailySummary({
     enabled,
   });
 
-  useRefetchOnFocus(query.refetch, enabled);
+  useRefetchOnFocus(query.refetch, enabled, undefined, query.isStale);
 
   return {
     summary: query.data,
