@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  AppState,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -32,6 +39,7 @@ import {
 } from '../services/healthConnectService';
 import {
   applyBackgroundSyncEnabled,
+  areAllHealthMetricsEnabled,
   confirmHealthStartup,
   loadHealthMetricStates,
 } from '../services/healthSyncSettings';
@@ -115,9 +123,9 @@ const metricsByCategory = CATEGORY_ORDER.map((category) => ({
 
 /**
  * Last step of the iOS startup protocol, straight after the Apple Health access
- * sheet: where to fix Health permissions, the sync range and automatic sync
- * settings, which data syncs, and one Sync Now that imports the full history
- * the first time.
+ * sheet: where to fix Health permissions, which data syncs, the sync range and
+ * automatic sync settings, and one Sync Now that imports the full history the
+ * first time.
  * Laid out like the setup wizard so the startup steps read as one flow.
  *
  * Only acting here (syncing or switching on automatic sync) marks Health as set
@@ -226,18 +234,60 @@ export default function AppleHealthCheckScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backfill.status]);
 
+  // Turning everything on here also switches on both automatic syncs, so a
+  // single tap leaves Health fully set up. Turning it off only touches metrics.
+  const enableAll = async () => {
+    const turningOn = !isAllMetricsEnabled;
+    await toggleAllMetrics();
+    // A refused permission reverts the metrics; leave automatic sync alone then.
+    if (!turningOn || !(await areAllHealthMetricsEnabled())) return;
+    setBackgroundSync(true);
+    setSyncOnOpen(true);
+    await Promise.all([
+      applyBackgroundSyncEnabled(true),
+      saveSyncOnOpenEnabled(true),
+      confirmHealthStartup(),
+    ]);
+  };
+
   const importing = backfill.status === 'running';
   const busy = importing || syncMutation.isPending;
 
   // Sync Now imports the full history until it has completed once (resuming an
   // interrupted import), then syncs the chosen range like the Sync screen.
+  const startSync = () => {
+    if (busy || backfill.status === 'loading') return;
+    if (backfill.status === 'done') void syncRange();
+    else backfill.start();
+  };
+
   const syncNow = () => {
     if (busy || backfill.status === 'loading') return;
     fireSelectionHaptic();
     void confirmHealthStartup();
-    if (backfill.status === 'done') void syncRange();
-    else backfill.start();
+    startSync();
   };
+
+  // Coming back from the Health app or iPhone Settings (e.g. after Check Apple
+  // Health Permissions) may mean new permissions: reload what the screen shows
+  // and sync straight away. Only a return from the background counts, so
+  // pulling down Notification Center does not start a sync.
+  const startSyncRef = useRef(startSync);
+  useEffect(() => {
+    startSyncRef.current = startSync;
+  });
+  useEffect(() => {
+    let previous = AppState.currentState;
+    const subscription = AppState.addEventListener('change', (next) => {
+      const cameBack = previous === 'background' && next === 'active';
+      previous = next;
+      if (!cameBack) return;
+      void loadHealthMetricStates().then(setHealthMetricStates);
+      setDataRefreshKey((key) => key + 1);
+      startSyncRef.current();
+    });
+    return () => subscription.remove();
+  }, []);
 
   const progress = backfill.progress;
   const syncLabel = importing
@@ -311,6 +361,24 @@ export default function AppleHealthCheckScreen({
           })}
         </Text>
 
+        <SettingsRowGroup
+          title={t('healthSync.title', { defaultValue: 'Health Data to Sync' })}
+        >
+          <SettingsRow
+            title={t('healthSync.enableAll', {
+              defaultValue: 'Enable All Health Metrics',
+            })}
+            rightAccessory={
+              <Switch
+                accessibilityLabel={t('healthSync.enableAll', {
+                  defaultValue: 'Enable All Health Metrics',
+                })}
+                value={isAllMetricsEnabled}
+                onValueChange={() => void enableAll()}
+              />
+            }
+          />
+        </SettingsRowGroup>
         <SettingsRowGroup>
           <SettingsRow
             icon="calendar"
@@ -393,24 +461,6 @@ export default function AppleHealthCheckScreen({
                   void saveSyncOnOpenEnabled(value);
                   if (value) void confirmHealthStartup();
                 }}
-              />
-            }
-          />
-        </SettingsRowGroup>
-        <SettingsRowGroup
-          title={t('healthSync.title', { defaultValue: 'Health Data to Sync' })}
-        >
-          <SettingsRow
-            title={t('healthSync.enableAll', {
-              defaultValue: 'Enable All Health Metrics',
-            })}
-            rightAccessory={
-              <Switch
-                accessibilityLabel={t('healthSync.enableAll', {
-                  defaultValue: 'Enable All Health Metrics',
-                })}
-                value={isAllMetricsEnabled}
-                onValueChange={() => void toggleAllMetrics()}
               />
             }
           />

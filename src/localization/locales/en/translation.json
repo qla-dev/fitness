@@ -5393,5 +5393,8 @@
     "permissionsHelp": "If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.",
     "importingPercent": "Importing history… {{percent}}%",
     "preparingImport": "Preparing import…"
+  },
+  "ringCalendar": {
+    "title": "Calendar"
   }
 }

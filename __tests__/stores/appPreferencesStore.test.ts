@@ -6,10 +6,15 @@ import {
   __resetAppPreferencesStoreForTests,
 } from '../../src/stores/appPreferencesStore';
 
-const mockCanUseLiquidGlass = jest.fn(() => false);
+import { canUseLiquidGlass } from '../../src/utils/liquidGlass';
+
+// The store reads this while the module loads, so the factory must not close
+// over a test-scope variable (it would still be in its temporal dead zone).
 jest.mock('../../src/utils/liquidGlass', () => ({
-  canUseLiquidGlass: () => mockCanUseLiquidGlass(),
+  canUseLiquidGlass: jest.fn(() => false),
 }));
+
+const mockCanUseLiquidGlass = canUseLiquidGlass as jest.Mock;
 
 describe('appPreferencesStore', () => {
   beforeEach(async () => {

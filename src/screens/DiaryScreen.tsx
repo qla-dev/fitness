@@ -21,9 +21,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../components/CalendarSheet';
+import RingCalendarSheet, {
+  type RingCalendarSheetRef,
+} from '../components/RingCalendarSheet';
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
@@ -89,7 +89,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const goToToday = useDiaryDateStore((s) => s.goToToday);
   const syncTodayRollover = useDiaryDateStore((s) => s.syncTodayRollover);
   const scrollViewRef = useRef<ScrollView>(null);
-  const calendarRef = useRef<CalendarSheetRef>(null);
+  const calendarRef = useRef<RingCalendarSheetRef>(null);
   const servingSheetRef = useRef<ServingAdjustSheetRef>(null);
 
   useFocusEffect(
@@ -471,7 +471,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             {renderedContent ?? <View className="flex-1 bg-background" />}
           </View>
         </GestureDetector>
-        <CalendarSheet
+        <RingCalendarSheet
           ref={calendarRef}
           selectedDate={selectedDate}
           onSelectDate={handleCalendarSelect}
@@ -515,7 +515,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         )
       )}
       {renderedContent}
-      <CalendarSheet
+      <RingCalendarSheet
         ref={calendarRef}
         selectedDate={selectedDate}
         onSelectDate={handleCalendarSelect}

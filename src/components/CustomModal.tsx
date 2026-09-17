@@ -9,6 +9,7 @@ import {
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
 import { useSheetBackdrop } from './ui/sheetChrome';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -34,6 +35,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
     const sheet = useRef<BottomSheetModal>(null);
     const { t } = useTranslation();
     const backdrop = useSheetBackdrop();
+    const insets = useSafeAreaInsets();
     const [surface, raised, foreground, muted] = useCSSVariable([
       '--color-surface',
       '--color-raised',
@@ -54,6 +56,9 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
         enableDynamicSizing
         detached={false}
         bottomInset={0}
+        // Tall content caps below the status bar instead of snapping to the
+        // full screen height over it.
+        topInset={insets.top}
         backdropComponent={backdrop}
         onDismiss={onDismiss}
         onAnimate={onAnimate}

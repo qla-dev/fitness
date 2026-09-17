@@ -29,9 +29,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { addSheetRef } from '../components/AddSheet';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../components/CalendarSheet';
+import RingCalendarSheet, {
+  type RingCalendarSheetRef,
+} from '../components/RingCalendarSheet';
 import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
@@ -89,7 +89,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const goToToday = useDiaryDateStore((s) => s.goToToday);
   const syncTodayRollover = useDiaryDateStore((s) => s.syncTodayRollover);
   const scrollViewRef = useRef<ScrollView>(null);
-  const calendarRef = useRef<CalendarSheetRef>(null);
+  const calendarRef = useRef<RingCalendarSheetRef>(null);
 
   // Only reset to today when the calendar day has actually changed (midnight rollover)
   useFocusEffect(
@@ -467,7 +467,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             {renderedContent}
           </View>
         </GestureDetector>
-        <CalendarSheet
+        <RingCalendarSheet
           ref={calendarRef}
           selectedDate={selectedDate}
           onSelectDate={handleCalendarSelect}
@@ -493,7 +493,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           {renderedContent}
         </View>
       </GestureDetector>
-      <CalendarSheet
+      <RingCalendarSheet
         ref={calendarRef}
         selectedDate={selectedDate}
         onSelectDate={handleCalendarSelect}

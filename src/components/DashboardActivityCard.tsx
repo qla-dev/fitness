@@ -7,6 +7,7 @@ import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import { useManualHealthSync } from '../hooks/useManualHealthSync';
 import Icon, { type IconName } from './Icon';
+import { ACTIVITY_RING_COLORS } from '../constants/activityRings';
 
 export default function DashboardActivityCard({
   summary,
@@ -27,7 +28,7 @@ export default function DashboardActivityCard({
       value: summary.activeCalories + summary.otherExerciseCalories,
       goal: summary.exerciseCaloriesGoal,
       unit: t('dashboard.activityKcal', { defaultValue: 'kcal' }),
-      color: '#FF375F',
+      color: ACTIVITY_RING_COLORS.move,
     },
     {
       icon: 'exercise-running' as IconName,
@@ -35,7 +36,7 @@ export default function DashboardActivityCard({
       value: summary.exerciseMinutes,
       goal: summary.exerciseMinutesGoal,
       unit: t('dashboard.activityMinutes', { defaultValue: 'min' }),
-      color: '#A8EF00',
+      color: ACTIVITY_RING_COLORS.exercise,
     },
     {
       icon: 'exercise-walking' as IconName,
@@ -43,7 +44,7 @@ export default function DashboardActivityCard({
       value: steps,
       goal: summary.goals.steps ?? 0,
       unit: '',
-      color: '#00D8EB',
+      color: ACTIVITY_RING_COLORS.steps,
     },
   ];
   return (

@@ -675,8 +675,11 @@ jest.mock('react-native-pager-view', () => {
 // Mock @gorhom/bottom-sheet
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');
-  const { View, ScrollView } = require('react-native');
+  const { View, ScrollView, FlatList } = require('react-native');
   return {
+    BottomSheetFlatList: React.forwardRef((props, ref) =>
+      React.createElement(FlatList, { ...props, ref })
+    ),
     BottomSheetModal: React.forwardRef(({ children }, ref) => {
       React.useImperativeHandle(ref, () => ({
         present: jest.fn(),
