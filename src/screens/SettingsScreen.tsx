@@ -212,7 +212,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       >
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
-          <ProfileSetup enabled={isConnected} manual />
+          <ProfileSetup enabled={isConnected} />
 
           {!isLocalDataMode() && (
             <SettingsRow

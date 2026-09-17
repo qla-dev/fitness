@@ -5380,5 +5380,16 @@
     "otherAppliancesHint": "Anything else you cook with. We save it as a note for now.",
     "minutesHint": "Think about a busy weekday. Quick meals can still be really good.",
     "leftoversHint": "Cooking extra saves time. Pick variety if you would rather eat something new each day."
+  },
+  "appleHealthCheck": {
+    "title": "Apple Health",
+    "heading": "Keep your health data in sync",
+    "hint": "Choose how qla.fit stays up to date with Apple Health. You can change this any time in Sync settings.",
+    "rangeSubtitle": "How far back the next sync reaches",
+    "backgroundSubtitle": "Updates whenever your iPhone allows it",
+    "onOpenSubtitle": "Fresh numbers every time you open the app",
+    "allowTitle": "Allow Apple Health",
+    "allowSubtitle": "Change what qla.fit may read in Apple Health",
+    "syncSettingsSubtitle": "Pick which health data qla.fit syncs"
   }
 }

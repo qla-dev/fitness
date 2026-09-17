@@ -76,6 +76,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
     'First-run cycle setup wizard route presented above the tab host.',
   SetupWizard:
     'Profile and grocery setup wizard route presented above the tab host.',
+  AppleHealthCheck:
+    'iOS startup sync settings sheet presented above the tab host.',
   CycleHub:
     'Root-stack main cycle and wellness dashboard presented above the tab host.',
   PregnancySetup:

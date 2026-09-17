@@ -15,7 +15,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  AppState,
 } from 'react-native';
 import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
@@ -51,30 +50,18 @@ import {
   disableAllBackgroundDelivery,
   cleanupAllSubscriptions,
   refreshSubscriptions,
-  startObservers,
-  stopObservers,
 } from '../services/healthConnectService';
-import {
-  configureBackgroundSync,
-  stopBackgroundSync,
-  performBackgroundSync,
-} from '../services/backgroundSyncService';
 import { removeWrittenData } from '../services/writeback';
 import DateRangeSheet, {
   type DateRangeSheetRef,
 } from '../components/DateRangeSheet';
 import Toast from 'react-native-toast-message';
-import {
-  tryClaimAutoSync,
-  isForegroundAutoSyncWindowOpen,
-  isSyncClaimed,
-} from '../services/autoSyncCoordinator';
+import { isSyncClaimed } from '../services/autoSyncCoordinator';
 import {
   saveTimeRange,
   loadTimeRange,
   loadLastSyncedTime,
   loadBackgroundSyncEnabled,
-  saveBackgroundSyncEnabled,
   saveSyncOnOpenEnabled,
   loadSyncOnOpenEnabled,
 } from '../services/storage';
@@ -83,7 +70,6 @@ import { addLog } from '../services/LogService';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { formatRelativeTime } from '../utils/dateUtils';
-import { getErrorMessage } from '../utils/errors';
 import { HEALTH_METRICS, getHealthMetricLabel } from '../HealthMetrics';
 import type { HealthMetric } from '../HealthMetrics';
 import type {
@@ -91,72 +77,19 @@ import type {
   HealthDataDisplayState,
 } from '../types/healthRecords';
 import { useSyncHealthData } from '../hooks';
+import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
+import { applyBackgroundSyncEnabled } from '../services/healthSyncSettings';
 import type { RootStackScreenProps } from '../types/navigation';
 import { fetchHealthDisplayData } from '../services/healthDataDisplay';
 import { shareHealthDiagnosticReport } from '../services/healthDiagnosticService';
 
 type SyncScreenProps = RootStackScreenProps<'Sync'>;
 
-interface TimeRangeOption {
-  label: string;
-  value: TimeRange;
-}
-
 const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const appLocale = useAppLocale();
   const dateLocale = appLocale;
-  const timeRangeOptions = useMemo<TimeRangeOption[]>(
-    () => [
-      {
-        label: t('syncScreen.timeRanges.today', { defaultValue: 'Today' }),
-        value: 'today',
-      },
-      {
-        label: t('syncScreen.timeRanges.last24Hours', {
-          defaultValue: 'Last 24 Hours',
-        }),
-        value: '24h',
-      },
-      {
-        label: t('syncScreen.timeRanges.last3Days', {
-          defaultValue: 'Last 3 Days',
-        }),
-        value: '3d',
-      },
-      {
-        label: t('syncScreen.timeRanges.last7Days', {
-          defaultValue: 'Last 7 Days',
-        }),
-        value: '7d',
-      },
-      {
-        label: t('syncScreen.timeRanges.last30Days', {
-          defaultValue: 'Last 30 Days',
-        }),
-        value: '30d',
-      },
-      {
-        label: t('syncScreen.timeRanges.last90Days', {
-          defaultValue: 'Last 90 Days',
-        }),
-        value: '90d',
-      },
-      {
-        label: t('syncScreen.timeRanges.last6Months', {
-          defaultValue: 'Last 6 Months',
-        }),
-        value: '180d',
-      },
-      {
-        label: t('syncScreen.timeRanges.lastYear', {
-          defaultValue: 'Last Year',
-        }),
-        value: '365d',
-      },
-    ],
-    [t]
-  );
+  const timeRangeOptions = useSyncTimeRangeOptions();
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const accentPrimary = useCSSVariable('--color-accent-primary') as
@@ -325,39 +258,7 @@ const SyncScreen: React.FC<SyncScreenProps> = ({ navigation }) => {
       }
     }
     setIsBackgroundSyncEnabled(newValue);
-    await saveBackgroundSyncEnabled(newValue);
-    if (newValue) {
-      await configureBackgroundSync();
-      if (Platform.OS === 'ios') {
-        startObservers(() => {
-          if (
-            AppState.currentState === 'active' &&
-            isForegroundAutoSyncWindowOpen()
-          ) {
-            return;
-          }
-
-          const release = tryClaimAutoSync();
-          if (!release) return;
-
-          performBackgroundSync('healthkit-observer')
-            .catch((error) => {
-              addLog(
-                `[SyncScreen] Observer-triggered sync failed: ${getErrorMessage(error)}`,
-                'ERROR'
-              );
-            })
-            .finally(() => {
-              release();
-            });
-        });
-      }
-    } else {
-      await stopBackgroundSync();
-      if (Platform.OS === 'ios') {
-        stopObservers();
-      }
-    }
+    await applyBackgroundSyncEnabled(newValue);
   };
 
   const handleToggleSyncOnOpen = async (newValue: boolean): Promise<void> => {

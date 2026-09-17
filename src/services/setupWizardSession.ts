@@ -38,6 +38,25 @@ export function answerValues(answers: SetupAnswers, id: string): string[] {
   return typeof value === 'string' && value ? [value] : [];
 }
 
+/** The fields of a step that apply given the answers so far. */
+export function visibleFields(step: SetupStep, answers: SetupAnswers) {
+  return step.fields.filter(
+    (field) => !field.showWhen || field.showWhen(answers)
+  );
+}
+
+/**
+ * True when every question that applies has an answer. A skipped question
+ * counts as unanswered, so the startup protocol keeps offering the wizard.
+ */
+export function isSetupComplete(steps: SetupStep[], answers: SetupAnswers) {
+  return steps.every((step) =>
+    visibleFields(step, answers).every((field) =>
+      answerValues(answers, field.id).some((value) => value.trim() !== '')
+    )
+  );
+}
+
 export interface SetupWizardSession {
   steps: SetupStep[];
   initial: SetupAnswers;

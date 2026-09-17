@@ -67,6 +67,7 @@ export type RootStackParamList = {
   CycleSettings: undefined;
   CycleOnboarding: undefined;
   SetupWizard: undefined;
+  AppleHealthCheck: undefined;
   CycleHub: undefined;
   CycleLogModal: { date?: string } | undefined;
   PregnancySetup: { pregnancy?: SharedPregnancy } | undefined;

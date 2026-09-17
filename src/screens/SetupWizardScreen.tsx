@@ -19,17 +19,12 @@ import {
   clearSetupWizardSession,
   answerValues,
   getSetupWizardSession,
+  visibleFields,
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
 import type { SetupAnswers } from '../services/personalSetup';
 import type { RootStackScreenProps } from '../types/navigation';
-
-function visibleFields(step: SetupStep, answers: SetupAnswers) {
-  return step.fields.filter(
-    (field) => !field.showWhen || field.showWhen(answers)
-  );
-}
 
 function isFieldValid(field: SetupField, answers: SetupAnswers) {
   const value = answers[field.id];

@@ -101,6 +101,7 @@ import {
   SafeCycleSettings,
   SafeCycleOnboarding,
   SafeSetupWizard,
+  SafeAppleHealthCheck,
   SafeCycleHub,
   SafeCycleLogModal,
   SafePregnancySetup,
@@ -131,6 +132,7 @@ import ActiveWorkoutBar, {
 import { ActiveWorkoutTransitionScreenLayout } from './src/components/ActiveWorkoutTransitionProbe';
 import ActiveWorkoutKeepAwake from './src/components/ActiveWorkoutKeepAwake';
 import MedicationReminderReconciler from './src/components/MedicationReminderReconciler';
+import StartUpProtocol from './src/components/StartUpProtocol';
 import { useNativeIOSTabsActive, useNativeIOSHeadersActive } from './src/services/nativeTabBarPreference';
 import { useWidgetLanguageRefresh } from './src/hooks/useWidgetLanguageRefresh';
 import { useIOSWidgetLanguageRefresh } from './src/hooks/useIOSWidgetLanguageRefresh';
@@ -825,6 +827,15 @@ function AppContent() {
             })}
           />
           <Stack.Screen
+            name="AppleHealthCheck"
+            component={SafeAppleHealthCheck}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          <Stack.Screen
             name="CycleHub"
             component={SafeCycleHub}
             options={createStackScreenOptions(t('screens.wellnessHub', { defaultValue: 'Wellness Hub' }), { headerBackButtonDisplayMode: 'minimal' })}
@@ -911,6 +922,7 @@ function AppContent() {
         <ActiveWorkoutBar />
         <ActiveWorkoutKeepAwake />
         <MedicationReminderReconciler />
+        <StartUpProtocol />
         <SafeAreaToast />
         </LightboxProvider>
       </SafeAreaProvider>
