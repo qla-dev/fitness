@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 interface Props {
   size?: number;
@@ -7,45 +7,18 @@ interface Props {
   accentColor?: string;
 }
 
+/**
+ * A torso with calipers closing on it from both sides — body fat is the one
+ * measurement taken by pinching rather than reading off a dial.
+ */
 const BodyFatIcon: React.FC<Props> = ({
   size = 24,
-  color = '#030004',
+  color = '#464b53',
   accentColor = '#518df1',
 }) => (
   <Svg width={size} height={size} viewBox="0 0 512 512">
-    <Circle
-      cx="227.11"
-      cy="302.73"
-      r="15.19"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Circle
-      cx="285.9"
-      cy="360.9"
-      r="15.19"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Line
-      x1="224.1"
-      y1="375.53"
-      x2="289.6"
-      y2="287.67"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
     <Path
-      d="M345.84,433.86c-17.74-88.15,18.16-173.13,21.55-212.45"
+      d="M256,96 C170,96 140,170 140,250 C140,350 190,416 256,416 C322,416 372,350 372,250 C372,170 342,96 256,96 Z"
       stroke={color}
       strokeWidth={14}
       strokeLinecap="round"
@@ -53,24 +26,32 @@ const BodyFatIcon: React.FC<Props> = ({
       fill="none"
     />
     <Path
-      d="M420.94,240.22c2.06-60.3,2.49-83.55-63.27-104.32-52.27-16.51-63.67-25.61-61.21-56.27"
-      stroke={color}
+      d="M76,256 L116,256"
+      stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     />
     <Path
-      d="M167.17,433.86c17.74-88.15-18.16-173.13-21.55-212.45"
-      stroke={color}
+      d="M100,236 L120,256 L100,276"
+      stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     />
     <Path
-      d="M92.06,240.22c-2.06-60.3-2.49-83.55,63.27-104.32,52.27-16.51,63.67-25.61,61.21-56.27"
-      stroke={color}
+      d="M436,256 L396,256"
+      stroke={accentColor}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Path
+      d="M412,236 L392,256 L412,276"
+      stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
       strokeLinejoin="round"

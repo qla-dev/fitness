@@ -1044,7 +1044,8 @@
     "retry": "Retry",
     "title": "Tracker",
     "addFood": "Add Food",
-    "emptyDay": "No entries recorded for this day"
+    "emptyDay": "No entries recorded for this day",
+    "subtitle": "Keep a track of your habits"
   },
   "medications": {
     "title": "Medications",
@@ -2116,7 +2117,7 @@
     },
     "title": "Measurements",
     "more": "More",
-    "notRecordedToday": "Not recorded today",
+    "notRecordedToday": "No today record",
     "pickToRecord": "Tap a measurement to record it.",
     "recordHint": "Saved against the day you are looking at.",
     "recordRange": "Enter a number up to {{max}}.",
@@ -4943,7 +4944,8 @@
     "restingHeartRate": "Resting heart rate",
     "percentUnit": "%",
     "bpmUnit": "bpm",
-    "quality": "Sleep Quality"
+    "quality": "Sleep Quality",
+    "sleepValue": "Sleep: {{value}}"
   },
   "foodProvenance": {
     "aiEstimate": "AI estimate",

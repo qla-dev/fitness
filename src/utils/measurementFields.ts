@@ -44,7 +44,8 @@ export const DEFAULT_MEASUREMENT_UNITS: MeasurementUnits = {
 export interface MeasurementField {
   id: MeasurementFieldId;
   /** Which drawn icon to use; ids without one fall back to a generic glyph. */
-  kind: MeasurementKind | 'other';
+  /** Which drawn icon the tile uses. Every field has one — see MeasurementIcons. */
+  kind: MeasurementKind;
   label: (t: TFunction) => string;
   /** Unit shown beside the input and after the value. */
   unit: (units: MeasurementUnits) => string;
@@ -87,10 +88,11 @@ const massStorage = (input: number, units: MeasurementUnits) =>
 
 const percentField = (
   id: MeasurementFieldId,
+  kind: MeasurementKind,
   label: (t: TFunction) => string
 ): MeasurementField => ({
   id,
-  kind: id === 'body_fat_percentage' ? 'body_fat_percentage' : 'other',
+  kind,
   label,
   unit: () => '%',
   format: (value) => `${asNumber(value)}%`,
@@ -119,10 +121,11 @@ const lengthField = (
 
 const massField = (
   id: MeasurementFieldId,
+  kind: MeasurementKind,
   label: (t: TFunction) => string
 ): MeasurementField => ({
   id,
-  kind: 'other',
+  kind,
   label,
   unit: massUnit,
   format: massFormat,
@@ -150,7 +153,7 @@ export const MEASUREMENT_FIELDS: MeasurementField[] = [
     max: 1000,
     deltaUnit: (units) => (units.weightMode === 'kg' ? 'kg' : 'lbs'),
   },
-  percentField('body_fat_percentage', (t) =>
+  percentField('body_fat_percentage', 'body_fat_percentage', (t) =>
     t('measurements.fields.bodyFatPercentage', { defaultValue: 'Body fat %' })
   ),
   {
@@ -197,20 +200,20 @@ export const MEASUREMENT_FIELDS: MeasurementField[] = [
     max: 200000,
     deltaUnit: () => '',
   },
-  massField('muscle_mass_kg', (t) =>
+  massField('muscle_mass_kg', 'muscle_mass', (t) =>
     t('measurements.fields.muscleMass', { defaultValue: 'Muscle mass' })
   ),
-  massField('bone_mass_kg', (t) =>
+  massField('bone_mass_kg', 'bone_mass', (t) =>
     t('measurements.fields.boneMass', { defaultValue: 'Bone mass' })
   ),
-  percentField('body_water_percentage', (t) =>
+  percentField('body_water_percentage', 'body_water', (t) =>
     t('measurements.fields.bodyWaterPercentage', {
       defaultValue: 'Body water %',
     })
   ),
   {
     id: 'bmr',
-    kind: 'other',
+    kind: 'bmr',
     label: (t) => t('measurements.fields.bmr', { defaultValue: 'BMR' }),
     unit: () => 'kcal',
     format: (value) => `${Math.round(value)} kcal`,

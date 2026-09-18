@@ -15,6 +15,8 @@ import {
   resolveSleepZone,
 } from '../utils/sleepDay';
 import Icon, { type IconName } from './Icon';
+import TileIconSlot from './TileIconSlot';
+import { SleepIcons } from './icons/sleep';
 
 export type SleepCardNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Diary'>,
@@ -292,5 +294,164 @@ export const BedTimeCard: React.FC<BedTimeCardProps> = ({
         clockValue={entryClockTime(entry.bedtime, entry)}
       />
     </SleepCardShell>
+  );
+};
+
+interface SleepTileProps {
+  entry: SleepEntry | null;
+  /** Which end of the night this tile reads: the wake or the bedtime. */
+  kind: 'wake' | 'bedtime';
+  day: string;
+  navigation: SleepCardNavigation;
+  /**
+   * The most recent night before this one, for the corner delta. Null when
+   * nothing came before within the lookback — which is a different statement
+   * from "no change", so the corner stays empty rather than showing a zero.
+   */
+  previousSeconds?: number | null;
+}
+
+/**
+ * Wake and bedtime as grid tiles, sized and shaped like the measurement tiles
+ * they sit under rather than as full-width cards of their own.
+ *
+ * Deliberately the same skeleton as `MeasurementTileCard`: a short top row
+ * carrying the secondary reading, then icon, value and label. Two components
+ * rather than one shared primitive because only the shape is common — a
+ * measurement tile compares against yesterday and a sleep tile reports a
+ * duration, and folding both into one card would mean a prop per difference.
+ *
+ * An absent night still renders, with a dash, for the same reason weight does:
+ * the gap is what tells the user there is nothing recorded, and a missing tile
+ * would leave a hole in the grid instead.
+ */
+export const SleepTile: React.FC<SleepTileProps> = ({
+  entry,
+  kind,
+  day,
+  navigation,
+  previousSeconds = null,
+}) => {
+  const { t } = useTranslation();
+  const entryClockTime = useEntryClockTime();
+  const [accentPrimary, iconDecorative, successColor, dangerColor] =
+    useCSSVariable([
+      '--color-accent-primary',
+      '--color-icon-decorative',
+      '--color-icon-success',
+      '--color-icon-danger',
+    ]) as [string, string, string, string];
+
+  const label =
+    kind === 'wake'
+      ? t('sleep.wakeUp', { defaultValue: 'Wake Up' })
+      : t('sleep.bedTime', { defaultValue: 'Bedtime' });
+  const DrawnIcon = SleepIcons[kind];
+
+  // Same fallback the full card makes: sources that never separate awake-in-bed
+  // time report no `time_asleep_in_seconds`, so the span stands in for it.
+  const hasTimeAsleep = entry?.time_asleep_in_seconds != null;
+  const durationSeconds = entry
+    ? hasTimeAsleep
+      ? entry.time_asleep_in_seconds
+      : entry.duration_in_seconds
+    : null;
+
+  // Left corner carries the night's length beside its name, the way the
+  // measurement tiles carry the reading they are compared against, so the big
+  // number above stays the clock time the tile is named for.
+  const cornerLabel =
+    durationSeconds === null
+      ? t('measurements.notRecordedToday', {
+          defaultValue: 'No today record',
+        })
+      : t('sleep.sleepValue', {
+          value: formatSleepDuration(durationSeconds, t),
+          defaultValue: 'Sleep: {{value}}',
+        });
+
+  // Right corner is the change against the most recent night before this one —
+  // not necessarily yesterday, since a night can be missing from the record.
+  const deltaSeconds =
+    durationSeconds === null || previousSeconds === null
+      ? null
+      : durationSeconds - previousSeconds;
+  // A minute either way is noise from rounding, not a change worth reporting.
+  const showDelta = deltaSeconds !== null && Math.abs(deltaSeconds) >= 60;
+
+  const body = (
+    <View className="bg-surface rounded-xl py-3 px-3">
+      <View
+        className="flex-row items-center justify-between"
+        style={{ minHeight: 16 }}
+      >
+        <Text
+          className="text-[10px] text-text-muted flex-1"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {cornerLabel}
+        </Text>
+        {showDelta && deltaSeconds !== null && (
+          <View className="flex-row items-center gap-0.5">
+            <Icon
+              name={deltaSeconds > 0 ? 'chevron-up' : 'chevron-down'}
+              size={10}
+              color={deltaSeconds > 0 ? successColor : dangerColor}
+            />
+            <Text
+              className="text-xs font-semibold"
+              style={{ color: deltaSeconds > 0 ? successColor : dangerColor }}
+            >
+              {formatSleepDuration(Math.abs(deltaSeconds), t)}
+            </Text>
+          </View>
+        )}
+      </View>
+      <View className="flex-row items-center">
+        {/* The same slot and the same drawn family as the measurement tiles,
+            so all four line up and read as one set. */}
+        <TileIconSlot>
+          <DrawnIcon
+            size={56}
+            color={iconDecorative}
+            accentColor={accentPrimary}
+          />
+        </TileIconSlot>
+        <View className="flex-1 ml-2 items-center">
+          <Text
+            className={`text-lg font-bold ${
+              entry ? 'text-text-primary' : 'text-text-muted'
+            }`}
+            numberOfLines={1}
+          >
+            {entry
+              ? entryClockTime(
+                  kind === 'wake' ? entry.wake_time : entry.bedtime,
+                  entry
+                )
+              : '—'}
+          </Text>
+          <Text className="text-sm text-text-secondary" numberOfLines={1}>
+            {label}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Nothing to open without a session behind it.
+  if (!entry) return body;
+  return (
+    <Pressable
+      testID={kind === 'wake' ? 'wake-up-tile' : 'bedtime-tile'}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={() =>
+        navigation.navigate('SleepDetail', { entryId: entry.id, day })
+      }
+    >
+      {body}
+    </Pressable>
   );
 };

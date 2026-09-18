@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 interface Props {
   size?: number;
@@ -8,65 +8,62 @@ interface Props {
 }
 
 /**
- * Two footprints, one ahead of the other. Soles in `color`, toes in the accent
- * — the detail that makes them read as feet rather than blobs.
+ * A dial: basal metabolic rate is a rate, so it is shown being read off a
+ * gauge rather than as the flame every calorie figure already uses — body
+ * water's droplet is close enough to a flame as it is.
  */
-const StepsIcon: React.FC<Props> = ({
+const BmrIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
 }) => (
   <Svg width={size} height={size} viewBox="0 0 512 512">
     <Path
-      d="M150,404 C122,404 108,378 112,344 C116,308 140,286 166,290 C192,294 202,322 198,356 C194,388 178,404 150,404 Z"
+      d="M86,300 A170,170 0 0 1 426,300"
       stroke={color}
       strokeWidth={14}
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     />
-    <Circle
-      cx="122"
-      cy="268"
-      r="13"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Circle
-      cx="152"
-      cy="258"
-      r="12"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Circle
-      cx="180"
-      cy="262"
-      r="11"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Path
-      d="M362,238 C390,238 404,212 400,178 C396,142 372,120 346,124 C320,128 310,156 314,190 C318,222 334,238 362,238 Z"
+    <Line
+      x1="256"
+      y1="170"
+      x2="256"
+      y2="140"
       stroke={color}
       strokeWidth={14}
       strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeMiterlimit={10}
       fill="none"
     />
-    <Circle
-      cx="390"
-      cy="102"
-      r="13"
+    <Line
+      x1="144"
+      y1="235"
+      x2="118"
+      y2="220"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      fill="none"
+    />
+    <Line
+      x1="368"
+      y1="235"
+      x2="394"
+      y2="220"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      fill="none"
+    />
+    <Line
+      x1="256"
+      y1="300"
+      x2="202"
+      y2="207"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
@@ -74,19 +71,31 @@ const StepsIcon: React.FC<Props> = ({
       fill="none"
     />
     <Circle
-      cx="360"
-      cy="92"
-      r="12"
+      cx="256"
+      cy="300"
+      r="15"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
       strokeMiterlimit={10}
       fill="none"
     />
-    <Circle
-      cx="332"
-      cy="96"
-      r="11"
+    <Line
+      x1="150"
+      y1="348"
+      x2="362"
+      y2="348"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      fill="none"
+    />
+    <Line
+      x1="186"
+      y1="396"
+      x2="326"
+      y2="396"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
@@ -96,4 +105,4 @@ const StepsIcon: React.FC<Props> = ({
   </Svg>
 );
 
-export default StepsIcon;
+export default BmrIcon;

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { TFunction } from 'i18next';
 import Icon from './Icon';
+import TileIconSlot from './TileIconSlot';
 import { MeasurementIcons } from './icons/measurements';
 import {
   MEASUREMENT_FIELDS,
@@ -260,7 +261,7 @@ export const MeasurementTileCard: React.FC<{
       ? null
       : !tile.recordedToday
         ? t('measurements.notRecordedToday', {
-            defaultValue: 'Not recorded today',
+            defaultValue: 'No today record',
           })
         : tile.previousValue !== null
           ? t('measurements.previousValue', {
@@ -314,11 +315,16 @@ export const MeasurementTileCard: React.FC<{
         )}
       </View>
       <View className="flex-row items-center">
-        {DrawnIcon ? (
-          <DrawnIcon size={56} color={iconColor} accentColor={accentColor} />
-        ) : (
-          <Icon name="chart-bar" size={32} color={accentColor} />
-        )}
+        {/* Fixed slot, not a fixed icon size: the drawn figures and the symbol
+            fall-back are different families and read at different sizes, so the
+            box is what is shared. */}
+        <TileIconSlot>
+          {DrawnIcon ? (
+            <DrawnIcon size={56} color={iconColor} accentColor={accentColor} />
+          ) : (
+            <Icon name="chart-bar" size={32} color={accentColor} />
+          )}
+        </TileIconSlot>
         <View className="flex-1 ml-2 items-center">
           <Text
             className={`text-lg font-bold ${

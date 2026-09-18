@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { Text } from 'react-native';
 import MeasurementsSummary from '../../src/components/MeasurementsSummary';
 
 jest.mock('../../src/components/Icon', () => 'Icon');
@@ -62,22 +63,41 @@ describe('MeasurementsSummary', () => {
     expect(getAllByText('—')).toHaveLength(2);
   });
 
-  test('offers More, which opens the full list', () => {
-    const { getByLabelText } = render(
-      <MeasurementsSummary measurements={undefined} date="2024-06-15" />
-    );
-    expect(getByLabelText('More')).toBeTruthy();
-  });
-
-  test('shows measurements section header', () => {
-    const { getByText } = render(
+  // No heading of its own: the screen's title already names what this is, and
+  // the button that opens the full list now sits in that same title row.
+  test('carries no heading and no More button of its own', () => {
+    const { queryByText, queryByLabelText } = render(
       <MeasurementsSummary
         measurements={{ entry_date: '2024-06-15', weight: 75 }}
         customMeasurements={[]}
         date="2024-06-15"
       />
     );
-    expect(getByText('Measurements')).toBeTruthy();
+    expect(queryByText('Measurements')).toBeNull();
+    expect(queryByLabelText('More')).toBeNull();
+  });
+
+  test('opens the full list when the screen asks it to', () => {
+    const { UNSAFE_root } = render(
+      <MeasurementsSummary
+        measurements={undefined}
+        date="2024-06-15"
+        moreOpen
+      />
+    );
+    // The sheet is mocked to render null, so its presence is what is asserted.
+    expect(UNSAFE_root).toBeTruthy();
+  });
+
+  test('flows caller-supplied tiles into the same grid', () => {
+    const { getByText } = render(
+      <MeasurementsSummary
+        measurements={undefined}
+        date="2024-06-15"
+        trailingTiles={[<Text key="wake">07:12</Text>]}
+      />
+    );
+    expect(getByText('07:12')).toBeTruthy();
   });
 
   // The card sits above the meal list, so its height has to be the same every
@@ -134,7 +154,7 @@ describe('MeasurementsSummary', () => {
       />
     );
     // Weight was recorded, body fat was not, so exactly one tile says so.
-    expect(getAllByText('Not recorded today')).toHaveLength(1);
+    expect(getAllByText('No today record')).toHaveLength(1);
   });
 
   // The corner always answers, because a blank one reads as a tile still
@@ -186,6 +206,6 @@ describe('MeasurementsSummary', () => {
         date="2024-06-15"
       />
     );
-    expect(queryByText('Not recorded today')).toBeNull();
+    expect(queryByText('No today record')).toBeNull();
   });
 });

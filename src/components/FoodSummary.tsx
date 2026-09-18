@@ -6,6 +6,7 @@ import type { DailyGoals } from '../types/goals';
 import type { MealType } from '../types/mealTypes';
 import { MEAL_CONFIG } from '../constants/meals';
 import MealLogCard from './MealLogCard';
+import { CARD_GAP } from '../constants/layout';
 import SwipeableFoodRow from './SwipeableFoodRow';
 import {
   calculateEntryNutrition,
@@ -156,7 +157,7 @@ const FoodSummary: React.FC<FoodSummaryProps> = ({
   }
 
   return (
-    <View className="gap-2 mb-2">
+    <View style={{ gap: CARD_GAP }}>
       {groups.map((group) => (
         <MealSection
           key={

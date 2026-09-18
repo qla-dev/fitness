@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 
 import Icon, { type IconName } from './Icon';
-import MenuItemIcon from './MenuItemIcon';
 import MeasurementRecordSheet from './MeasurementRecordSheet';
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
@@ -51,9 +50,7 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
   const [editingHeight, setEditingHeight] = useState(false);
   const today = getTodayDate();
-  const [textSecondary] = useCSSVariable(['--color-text-secondary']) as [
-    string,
-  ];
+  const accentPrimary = useCSSVariable('--color-accent-primary') as string;
 
   const { data: profile } = useQuery({
     queryKey: profileQueryKey,
@@ -71,8 +68,8 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const age = ageFromDateOfBirth(profile?.date_of_birth);
 
   // The same icons the setup wizard puts on these two questions, so the answer
-  // is marked the way the question was, in the same leading tile the Library
-  // rows use.
+  // is marked the way the question was — drawn bare and in the accent colour,
+  // the way the Library cards directly below this one draw theirs.
   const stats: {
     key: string;
     icon: IconName;
@@ -118,19 +115,9 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
       <View className="bg-surface rounded-2xl overflow-hidden mb-5 flex-row">
         {stats.map((stat, index) => {
           const body = (
-            <View
-              className="flex-row items-center px-4 py-3"
-              style={{ gap: 12 }}
-            >
-              <MenuItemIcon size={39}>
-                <Icon
-                  name={stat.icon}
-                  size={22}
-                  color={textSecondary}
-                  weight="semibold"
-                />
-              </MenuItemIcon>
-              <View className="flex-1">
+            <View className="flex-row items-center px-3 py-3">
+              <Icon name={stat.icon} size={24} color={accentPrimary} />
+              <View className="flex-1 ml-4">
                 <Text
                   className="text-text-secondary text-sm"
                   numberOfLines={1}

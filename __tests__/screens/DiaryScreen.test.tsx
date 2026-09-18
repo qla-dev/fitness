@@ -82,6 +82,14 @@ jest.mock('../../src/hooks/useCustomMeasurements', () => ({
 
 // This suite renders DiaryScreen without a QueryClientProvider, so the sleep hook's real
 // useQuery would throw. Mocked to an empty day by default.
+jest.mock('../../src/hooks/useSleepComparison', () => ({
+  useSleepComparison: jest.fn(() => ({ previousSleep: null })),
+}));
+
+jest.mock('../../src/hooks/useSleepComparison', () => ({
+  useSleepComparison: jest.fn(() => ({ previousSleep: null })),
+}));
+
 jest.mock('../../src/hooks/useSleepDay', () => ({
   useSleepDay: jest.fn(() => ({
     wakeUp: null,
@@ -247,9 +255,13 @@ jest.mock('../../src/components/ExerciseSummary', () => {
 
 jest.mock('../../src/components/MeasurementsSummary', () => {
   const { View } = require('react-native');
+  // Renders the caller's trailing tiles, because wake and bedtime now live in
+  // this grid and the screen's ordering test looks for them here.
   return {
     __esModule: true,
-    default: () => <View testID="measurements-summary" />,
+    default: ({ trailingTiles }: { trailingTiles?: React.ReactNode[] }) => (
+      <View testID="measurements-summary">{trailingTiles}</View>
+    ),
   };
 });
 
@@ -613,6 +625,19 @@ describe('DiaryScreen custom queries', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('FamilyMembers');
   });
 
+  // The subtitle row under the screen's name carries the link into the full
+  // measurement list. It is a row of content rather than anything in the bar,
+  // because on iOS the name above it is a large title drawn outside this view.
+  // The link went missing entirely once the "Measurements" heading it used to
+  // sit beside was removed, so this holds it in place.
+  test('offers a subtitle row carrying More', () => {
+    const { getByTestId, getByText, getByLabelText } = renderScreen();
+
+    expect(getByTestId('diary-intro')).toBeTruthy();
+    expect(getByText('diary.subtitle')).toBeTruthy();
+    expect(getByLabelText('measurements.more')).toBeTruthy();
+  });
+
   test('hides the native family diaries action while disconnected', () => {
     configureConnection(false);
     mockUseNativeIOSTabsActive.mockReturnValue(true);
@@ -692,9 +717,9 @@ describe('DiaryScreen sleep cards', () => {
   test('renders all three cards when the day has sleep data', () => {
     const { getByTestId } = renderScreen();
 
-    expect(getByTestId('wake-up-card')).toBeTruthy();
+    expect(getByTestId('wake-up-tile')).toBeTruthy();
     expect(getByTestId('naps-card')).toBeTruthy();
-    expect(getByTestId('bed-time-card')).toBeTruthy();
+    expect(getByTestId('bedtime-tile')).toBeTruthy();
   });
 
   test('sleep alone keeps the day non-empty, suppressing the illustration', () => {
@@ -703,7 +728,7 @@ describe('DiaryScreen sleep cards', () => {
     const { getByTestId, queryByTestId } = renderScreen();
 
     expect(queryByTestId('empty-day')).toBeNull();
-    expect(getByTestId('wake-up-card')).toBeTruthy();
+    expect(getByTestId('wake-up-tile')).toBeTruthy();
     // The food section still renders, empty, as the day's scaffolding.
     expect(getByTestId('food-summary')).toBeTruthy();
     // Exercise moved to the Activities tab, so this screen never renders it.
@@ -719,8 +744,10 @@ describe('DiaryScreen sleep cards', () => {
 
     expect(queryByTestId('empty-day')).toBeNull();
     expect(getByTestId('naps-card')).toBeTruthy();
-    expect(queryByTestId('wake-up-card')).toBeNull();
-    expect(queryByTestId('bed-time-card')).toBeNull();
+    // No session behind them, so the tiles render their dash and are not
+    // pressable — the testID belongs to the pressable, so it is absent.
+    expect(queryByTestId('wake-up-tile')).toBeNull();
+    expect(queryByTestId('bedtime-tile')).toBeNull();
   });
 
   test('shows the rest of the diary while the sleep query is still in flight', () => {
@@ -766,12 +793,12 @@ describe('DiaryScreen sleep cards', () => {
     const { getByTestId, queryByTestId } = renderScreen();
 
     expect(queryByTestId('empty-day')).toBeNull();
-    expect(getByTestId('bed-time-card')).toBeTruthy();
+    expect(getByTestId('bedtime-tile')).toBeTruthy();
   });
 
   // The measurements lead: they are what the user opens this screen to check,
-  // and the meal list is long enough to push them off the first screenful. The
-  // sleep cards keep their chronological places around the food they bracket.
+  // and the meal list is long enough to push them off the first screenful. Wake
+  // and bedtime ride inside that same grid, so only the naps sit below the food.
   test('leads with the measurements, then the day in chronological order', () => {
     // A populated day so the food/exercise/measurements branch renders.
     mockUseDailySummary.mockReturnValue({
@@ -784,11 +811,11 @@ describe('DiaryScreen sleep cards', () => {
     const { getByTestId, UNSAFE_root } = renderScreen();
 
     const order = [
-      'wake-up-card',
       'measurements-summary',
+      'wake-up-tile',
+      'bedtime-tile',
       'food-summary',
       'naps-card',
-      'bed-time-card',
     ];
     const positions = order.map((testID) => {
       const node = getByTestId(testID);
@@ -846,9 +873,9 @@ describe('DiaryScreen sleep cards', () => {
 
     // All three hide rather than showing empty states, so a user with no sleep source
     // sees no sleep section on the Diary.
-    expect(queryByTestId('wake-up-card')).toBeNull();
+    expect(queryByTestId('wake-up-tile')).toBeNull();
     expect(queryByTestId('naps-card')).toBeNull();
-    expect(queryByTestId('bed-time-card')).toBeNull();
+    expect(queryByTestId('bedtime-tile')).toBeNull();
     // The day no longer collapses to an illustration: the meal cards stand.
     expect(queryByTestId('empty-day')).toBeNull();
     expect(getByTestId('food-summary')).toBeTruthy();
@@ -864,8 +891,8 @@ describe('DiaryScreen sleep cards', () => {
 
     const { queryByTestId, getByTestId } = renderScreen();
 
-    expect(queryByTestId('wake-up-card')).toBeNull();
-    expect(queryByTestId('bed-time-card')).toBeNull();
+    expect(queryByTestId('wake-up-tile')).toBeNull();
+    expect(queryByTestId('bedtime-tile')).toBeNull();
     // The rest of the Diary is unaffected.
     expect(queryByTestId('empty-day')).toBeNull();
     expect(getByTestId('food-summary')).toBeTruthy();

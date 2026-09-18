@@ -12,7 +12,13 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import {
   Directions,
   Gesture,
@@ -25,6 +31,7 @@ import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
+import Icon from '../components/Icon';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import FoodSummary from '../components/FoodSummary';
@@ -33,7 +40,7 @@ import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import ServingAdjustSheet, {
   type ServingAdjustSheetRef,
 } from '../components/ServingAdjustSheet';
-import { BedTimeCard, NapsCard, WakeUpCard } from '../components/SleepCards';
+import { NapsCard, SleepTile } from '../components/SleepCards';
 import StatusView from '../components/StatusView';
 import {
   useCustomNutrients,
@@ -52,6 +59,8 @@ import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useMeasurements } from '../hooks/useMeasurements';
 import { usePreferences } from '../hooks/usePreferences';
 import { useSleepDay } from '../hooks/useSleepDay';
+import { useSleepComparison } from '../hooks/useSleepComparison';
+import { CARD_GAP, SCREEN_GUTTER } from '../constants/layout';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
 import type { FoodEntry } from '../types/foodEntries';
@@ -73,7 +82,6 @@ type DiaryScreenProps = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Diary'>,
   NativeStackScreenProps<RootStackParamList>
 >;
-
 const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const { t, i18n: translationI18n } = useTranslation();
   const dateLocale = translationI18n.language.startsWith('pl')
@@ -117,6 +125,9 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // The photo-day markers are fetched on first calendar open rather than at
   // mount: a user who never opens the picker should not pay a request for it.
   const [calendarOpened, setCalendarOpened] = useState(false);
+  // Held here rather than inside MeasurementsSummary: the button that opens the
+  // full measurement list now sits in this screen's own header row.
+  const [measurementsMoreOpen, setMeasurementsMoreOpen] = useState(false);
   const { dates: photoDates } = useCheckInPhotoDates(calendarOpened);
   // Owned here rather than inside CheckInPhotosSummary: the empty-day predicate
   // below needs the same answer, and one subscription keeps refetch-on-focus
@@ -272,6 +283,9 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     bedTime,
     refetch: refetchSleep,
   } = useSleepDay(selectedDate, { enabled: isConnected });
+  // The night the wake tile measures itself against — the most recent one
+  // before this day, which is not always yesterday.
+  const { previousSleep } = useSleepComparison(selectedDate, isConnected);
 
   const diaryNutrientRow = nutrientPrefs.find(
     (p) => p.view_group === 'diary' && p.platform === 'mobile'
@@ -384,9 +398,13 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         className="flex-1 bg-background"
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 16 + activeWorkoutBarPadding,
+          paddingHorizontal: SCREEN_GUTTER,
+          // No padding above the subtitle: iOS already leaves room under its
+          // large title, and adding to it pushed the line away from the name it
+          // belongs to.
+          paddingTop: 0,
+          paddingBottom: SCREEN_GUTTER + activeWorkoutBarPadding,
+          gap: CARD_GAP,
         }}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -400,6 +418,40 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           />
         }
       >
+        {/* The line under the screen's name, the way Mail sets one under its
+            own large title — and the row that finally gives More a home.
+
+            A real row of content rather than anything positioned over the
+            title: iOS draws its large title above this scroll view instead of
+            inside it, so nothing can be laid out beside it, and a raised
+            overlay would have had to be nudged into place by hand and would
+            still have sat wrong at other text sizes. This just follows the
+            title, on every header path, and scrolls with the content. */}
+        <View className="flex-row items-center" testID="diary-intro">
+          <Text
+            className="flex-1 text-sm text-text-secondary"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {t('diary.subtitle', {
+              defaultValue: 'Keep a track of your habits',
+            })}
+          </Text>
+          <Pressable
+            onPress={() => setMeasurementsMoreOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('measurements.more', {
+              defaultValue: 'More',
+            })}
+            hitSlop={12}
+            className="flex-row items-center gap-1"
+          >
+            <Text className="text-sm font-semibold text-accent-primary">
+              {t('measurements.more', { defaultValue: 'More' })}
+            </Text>
+            <Icon name="chevron-forward" size={12} color={accentColor} />
+          </Pressable>
+        </View>
         {(summary.foodEntries.length > 0 ||
           hasSupplementNutrition(summary.supplementTotals) ||
           summary.exerciseEntries.length > 0 ||
@@ -415,64 +467,74 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             illustration and one Add Food button once every query settled
             empty, which hid the per-meal cards — the very things that offer a
             place to log on an untouched day. */}
-          <WakeUpCard
-            entry={wakeUp}
-            day={selectedDate}
-            navigation={navigation}
-          />
-          {/* Above the meal cards: the day's body numbers are what the user
+        {/* Above the meal cards: the day's body numbers are what the user
               comes to this screen to check, and the meal list is long enough
               to push them off the first screenful. The photos stay directly
               under them — both halves are one check-in, keyed on
               (user_id, entry_date). */}
-          <MeasurementsSummary
-            measurements={measurements}
-            history={measurementHistory}
-            date={selectedDate}
-            customMeasurements={manualCustomMeasurements}
-            weightMode={weightMode}
-            bodyUnit={bodyUnit}
-            heightMode={heightMode}
-            onPress={() =>
-              navigation.navigate('MeasurementsAdd', { date: selectedDate })
-            }
-          />
-          {/* Below the measurements: both are the same check-in, keyed on
+        <MeasurementsSummary
+          measurements={measurements}
+          history={measurementHistory}
+          date={selectedDate}
+          customMeasurements={manualCustomMeasurements}
+          weightMode={weightMode}
+          bodyUnit={bodyUnit}
+          heightMode={heightMode}
+          onPress={() =>
+            navigation.navigate('MeasurementsAdd', { date: selectedDate })
+          }
+          moreOpen={measurementsMoreOpen}
+          onMoreOpenChange={setMeasurementsMoreOpen}
+          // Under weight and body fat, in the same grid: the night is part of
+          // what the body did today, and as full-width cards it sat above and
+          // below everything else on the screen.
+          trailingTiles={[
+            <SleepTile
+              key="wake"
+              kind="wake"
+              entry={wakeUp}
+              day={selectedDate}
+              navigation={navigation}
+              previousSeconds={previousSleep?.seconds ?? null}
+            />,
+            <SleepTile
+              key="bedtime"
+              kind="bedtime"
+              entry={bedTime}
+              day={selectedDate}
+              navigation={navigation}
+            />,
+          ]}
+        />
+        {/* Below the measurements: both are the same check-in, keyed on
               (user_id, entry_date) server-side. */}
-          <CheckInPhotosSummary
-            date={selectedDate}
-            photos={dayPhotos}
-            onPress={() =>
-              navigation.navigate('ProgressPhotos', { date: selectedDate })
-            }
-          />
-          <FoodSummary
-            foodEntries={summary.foodEntries}
-            mealTypes={mealTypes}
-            goals={summary.goals}
-            calorieGoal={summary.calorieGoal}
-            onAddFood={() =>
-              navigation.navigate('FoodSearch', { date: selectedDate })
-            }
-            onAdjustServing={(entry) =>
-              servingSheetRef.current?.present(entry)
-            }
-            onPressMealType={openMealTypeDetail}
-            onLogFood={(mealTypeId) =>
-              navigation.navigate('FoodSearch', {
-                date: selectedDate,
-                // A historical group has no live meal type to log into, so
-                // the search opens on the day with no meal preselected.
-                mealTypeId: mealTypeId ?? undefined,
-              })
-            }
-          />
-          <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
-          <BedTimeCard
-            entry={bedTime}
-            day={selectedDate}
-            navigation={navigation}
-          />
+        <CheckInPhotosSummary
+          date={selectedDate}
+          photos={dayPhotos}
+          onPress={() =>
+            navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+        />
+        <FoodSummary
+          foodEntries={summary.foodEntries}
+          mealTypes={mealTypes}
+          goals={summary.goals}
+          calorieGoal={summary.calorieGoal}
+          onAddFood={() =>
+            navigation.navigate('FoodSearch', { date: selectedDate })
+          }
+          onAdjustServing={(entry) => servingSheetRef.current?.present(entry)}
+          onPressMealType={openMealTypeDetail}
+          onLogFood={(mealTypeId) =>
+            navigation.navigate('FoodSearch', {
+              date: selectedDate,
+              // A historical group has no live meal type to log into, so
+              // the search opens on the day with no meal preselected.
+              mealTypeId: mealTypeId ?? undefined,
+            })
+          }
+        />
+        <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
       </ScrollView>
     );
   };

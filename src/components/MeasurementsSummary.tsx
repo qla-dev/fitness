@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, Pressable } from 'react-native';
+import { View } from 'react-native';
+import { CARD_GAP } from '../constants/layout';
 import { useCSSVariable } from 'uniwind';
-import Icon from './Icon';
 import MoreMeasurementsSheet from './MoreMeasurementsSheet';
 import MeasurementRecordSheet from './MeasurementRecordSheet';
 import {
@@ -27,6 +27,23 @@ interface MeasurementsSummaryProps extends Partial<MeasurementUnits> {
   date: string;
   onPress?: () => void;
   customMeasurements?: CustomMeasurementEntry[];
+  /**
+   * Tiles that flow into the same grid after the measurements — the day's wake
+   * and bedtime. Rendered here rather than as cards of their own above and
+   * below the meal list, because they answer the same question the weight tile
+   * does ("what did my body do today") and reading them meant scrolling past
+   * everything in between. The caller supplies them already rendered, so this
+   * component keeps knowing nothing about sleep; it only owns the grid.
+   */
+  trailingTiles?: React.ReactNode[];
+  /**
+   * The full list is opened from the screen's own header, so its open state is
+   * the screen's to hold. This component still owns the sheet itself, because
+   * the sheet hands a picked field straight to the record sheet beside it and
+   * only one of the two may be on screen at a time.
+   */
+  moreOpen?: boolean;
+  onMoreOpenChange?: (open: boolean) => void;
 }
 
 const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
@@ -38,6 +55,9 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
   heightMode = 'cm',
   onPress,
   customMeasurements,
+  trailingTiles,
+  moreOpen = false,
+  onMoreOpenChange,
 }) => {
   const [accentPrimary, iconColor, mutedColor, dangerColor, successColor] =
     useCSSVariable([
@@ -49,7 +69,6 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
     ]) as [string, string, string, string, string];
 
   const { t } = useTranslation();
-  const [moreOpen, setMoreOpen] = useState(false);
   const [recording, setRecording] = useState<MeasurementFieldId | null>(null);
 
   const units = useMemo(
@@ -75,50 +94,53 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
     [measurements, history, units, t]
   );
 
-  // The header sits outside the tiles: a More button nested inside a pressable
-  // that opens the logging form is two targets in one, and the inner one is
-  // three millimetres from the edge of the outer.
-  const header = (
-    <View className="flex-row items-center gap-2 mb-2 px-1">
-      <Text className="text-base font-bold text-text-secondary flex-1">
-        {t('measurements.title', { defaultValue: 'Measurements' })}
-      </Text>
-      <Pressable
-        onPress={() => setMoreOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel={t('measurements.more', { defaultValue: 'More' })}
-        hitSlop={8}
-        className="flex-row items-center gap-1"
-      >
-        <Text className="text-sm font-semibold text-accent-primary">
-          {t('measurements.more', { defaultValue: 'More' })}
-        </Text>
-        <Icon name="chevron-forward" size={12} color={accentPrimary} />
-      </Pressable>
-    </View>
-  );
+  // Laid out as explicit rows of two rather than a wrapping grid: a wrapped
+  // row sets its columns with `justify-between`, which makes the horizontal gap
+  // whatever is left over — near enough to the vertical one to look like a
+  // mistake, never equal to it. Two flexed children and one gap are exact.
+  const cells: React.ReactNode[] = [
+    ...tiles.map((tile) => (
+      <MeasurementTileCard
+        key={tile.id}
+        tile={tile}
+        iconColor={iconColor}
+        accentColor={accentPrimary}
+        mutedColor={mutedColor}
+        dangerColor={dangerColor}
+        successColor={successColor}
+        t={t}
+        onPress={() =>
+          tile.fieldId ? setRecording(tile.fieldId) : onPress?.()
+        }
+      />
+    )),
+    ...(trailingTiles ?? []),
+  ];
+  const rows: React.ReactNode[][] = [];
+  for (let index = 0; index < cells.length; index += 2) {
+    rows.push(cells.slice(index, index + 2));
+  }
 
   return (
-    <View className="mb-2" testID="measurements-summary">
-      {header}
-      <View className="flex-row flex-wrap justify-between">
-        {tiles.map((tile) => (
-          <View key={tile.id} className="w-[48%] mb-2">
-            <MeasurementTileCard
-              tile={tile}
-              iconColor={iconColor}
-              accentColor={accentPrimary}
-              mutedColor={mutedColor}
-              dangerColor={dangerColor}
-              successColor={successColor}
-              t={t}
-              onPress={() =>
-                tile.fieldId ? setRecording(tile.fieldId) : onPress?.()
-              }
-            />
-          </View>
-        ))}
-      </View>
+    <View testID="measurements-summary" style={{ gap: CARD_GAP }}>
+      {/* No heading: the screen's own title already names what this is, and a
+          second one directly under it only repeated the word. */}
+      {rows.map((row, rowIndex) => (
+        <View
+          key={`row-${rowIndex}`}
+          className="flex-row"
+          style={{ gap: CARD_GAP }}
+        >
+          {row.map((cell, cellIndex) => (
+            <View key={`cell-${cellIndex}`} className="flex-1">
+              {cell}
+            </View>
+          ))}
+          {/* An odd last row keeps its tile at half width rather than letting
+              it stretch across the screen. */}
+          {row.length === 1 && <View className="flex-1" />}
+        </View>
+      ))}
       {moreOpen && (
         <MoreMeasurementsSheet
           measurements={measurements}
@@ -129,7 +151,7 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
           // The record sheet opens only once this one has finished closing:
           // two bottom sheets on screen together flash and share a gesture.
           onClose={(picked) => {
-            setMoreOpen(false);
+            onMoreOpenChange?.(false);
             if (picked) setRecording(picked);
           }}
         />
