@@ -29,6 +29,7 @@ export interface DailySummaryRawData {
   exerciseEntries: ExerciseSessionResponse[];
   waterIntake: WaterIntake;
   stepCalories: number;
+  hourlyActivity?: Record<string, number[]>;
   calorieBalance?: CalorieBalance;
   supplementTotals?: SupplementTotals;
   adjustedGoals?: {
@@ -51,6 +52,7 @@ export async function loadDailySummaryRawData(
     exerciseEntries: data.exerciseSessions,
     waterIntake: { water_ml: data.waterIntake },
     stepCalories: data.stepCalories ?? 0,
+    hourlyActivity: data.hourlyActivity,
     calorieBalance: data.calorieBalance,
     supplementTotals: data.supplementTotals,
     adjustedGoals: data.adjustedGoals ?? null,
@@ -67,6 +69,7 @@ export function buildDailySummary(
     exerciseEntries,
     waterIntake,
     stepCalories,
+    hourlyActivity,
     calorieBalance,
     supplementTotals,
     adjustedGoals,
@@ -109,6 +112,11 @@ export function buildDailySummary(
     otherExerciseCalories,
     stepCalories,
     exerciseMinutes,
+    // The charts want the hours behind the ring, under the names the health
+    // records carry. Undefined where the provider gave no breakdown, which the
+    // chart reports as unavailable rather than drawing an empty day.
+    hourlyMove: hourlyActivity?.['Active Calories'],
+    hourlyStand: hourlyActivity?.apple_stand_hours,
     exerciseMinutesGoal: goals.target_exercise_duration_minutes || 0,
     exerciseCaloriesGoal: goals.target_exercise_calories_burned || 0,
     netCalories,

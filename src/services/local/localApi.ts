@@ -21,6 +21,7 @@ import { goalsForDate, saveGoalsFromToday } from './goalHistory';
 import { getTodayDate } from '../../utils/dateUtils';
 import {
   importedWater,
+  localHourlyActivity,
   importHealthData,
   localMeasurements,
 } from './healthRepository';
@@ -126,6 +127,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
         (row) => row.entry_date === date
       ),
       exerciseSessions: localSessions(db, date),
+      hourlyActivity: localHourlyActivity(db, date),
       waterIntake:
         importedWater(db, date) +
         Number(

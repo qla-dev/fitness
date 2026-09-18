@@ -111,13 +111,17 @@ test('imports into local storage without a server, preserves manual data and upd
     await request(
       `/api/measurements/check-in-measurements-range/${date}/${date}`
     )
-  ).toEqual([expect.objectContaining({ steps: 5100, weight: 80 })]);
+    // The provider's figure, not it plus the manual 100 above: Apple Health
+    // already counts every device feeding it, so adding a stored count on top
+    // put the dashboard thousands of steps ahead of the Health app. Manual
+    // weight is untouched — only steps have an authoritative source.
+  ).toEqual([expect.objectContaining({ steps: 5000, weight: 80 })]);
   await syncHealthData([{ ...payload[0], value: 6000 }]);
   expect(
     await request(
       `/api/measurements/check-in-measurements-range/${date}/${date}`
     )
-  ).toEqual([expect.objectContaining({ steps: 6100 })]);
+  ).toEqual([expect.objectContaining({ steps: 6000 })]);
   expect(
     await request<LocalRecord[]>('/api/measurements/custom-entries/' + date)
   ).toHaveLength(1);

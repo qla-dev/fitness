@@ -1058,6 +1058,25 @@ const ALL_HEALTH_METRICS: HealthMetric[] = [
     backgroundDeliveryFrequency: 'none',
     aggregationStrategy: 'sum',
   },
+  {
+    // Not a duplicate of the metric above: that one is minutes spent standing,
+    // this is the count of hours that CONTAINED standing, which is what the
+    // watch's Stand ring shows. Reading only the first is why Stand read 0.
+    id: 'appleStandHours',
+    labelKey: 'healthMetrics.appleStandHours',
+    defaultLabel: 'Apple Stand Hours',
+    stateKey: 'isAppleStandHoursSyncEnabled',
+    preferenceKey: 'syncAppleStandHoursEnabled',
+    recordType: 'AppleStandHour',
+    unit: 'count',
+    icon: require('../assets/icons/health-metrics/stand_time.png'),
+    permissions: [{ accessType: 'read', recordType: 'AppleStandHour' }],
+    type: 'apple_stand_hours',
+    platforms: ['ios'],
+    category: 'Apple',
+    backgroundDeliveryFrequency: 'none',
+    readKind: 'cumulative-day',
+  },
   // End of added metrics
 ];
 
@@ -1284,6 +1303,10 @@ export function getHealthMetricLabel(
     case 'appleStandTime':
       return t('healthMetrics.appleStandTime', {
         defaultValue: 'Apple Stand Time',
+      });
+    case 'appleStandHours':
+      return t('healthMetrics.appleStandHours', {
+        defaultValue: 'Apple Stand Hours',
       });
     default:
       return t('healthMetrics.unknown', { defaultValue: 'Health metric' });

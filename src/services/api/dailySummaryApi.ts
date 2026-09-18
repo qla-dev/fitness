@@ -13,6 +13,12 @@ export interface DailySummaryApiResponse {
   exerciseSessions: ExerciseSessionResponse[];
   waterIntake: number;
   stepCalories?: number;
+  /**
+   * 24-slot breakdowns of the day, keyed by health record type. Optional
+   * because only some providers can break a metric down by hour, and only for
+   * some metrics.
+   */
+  hourlyActivity?: Record<string, number[]>;
   calorieBalance?: CalorieBalance;
   // Optional: a client can outrun the server it talks to, and supplement totals only exist
   // on servers new enough to send them.

@@ -178,6 +178,7 @@ const SUPPORTED_HK_TYPES = new Set<string>([
   'HKQuantityTypeIdentifierAppleMoveTime',
   'HKQuantityTypeIdentifierAppleExerciseTime',
   'HKQuantityTypeIdentifierAppleStandTime',
+  'HKCategoryTypeIdentifierAppleStandHour',
   'HKWorkoutRouteTypeIdentifier', // GPS route attached to a workout
 ]);
 
@@ -288,6 +289,7 @@ export const HEALTHKIT_TYPE_MAP: Record<string, string> = {
   AppleMoveTime: 'HKQuantityTypeIdentifierAppleMoveTime',
   AppleExerciseTime: 'HKQuantityTypeIdentifierAppleExerciseTime',
   AppleStandTime: 'HKQuantityTypeIdentifierAppleStandTime',
+  AppleStandHour: 'HKCategoryTypeIdentifierAppleStandHour',
 };
 
 // Alias for cross-platform compatibility - Android uses initHealthConnect
@@ -531,7 +533,13 @@ const queryDayStatistics = async (
   statistics: readonly StatisticsOptions[],
   filterStart: Date,
   endDate: Date,
-  unit?: string
+  unit?: string,
+  /**
+   * Bucket width. Hourly buckets stay anchored to the same local midnight as
+   * daily ones, so hour 0 of a day is midnight local and the 24 buckets line up
+   * with the day total they break down.
+   */
+  interval: { day?: number; hour?: number } = { day: 1 }
 ): Promise<QueryStatisticsResponse[]> => {
   const now = new Date();
   const filterEnd = endDate.getTime() < now.getTime() ? endDate : now; // never query future dates
@@ -549,7 +557,7 @@ const queryDayStatistics = async (
     identifier as Parameters<typeof queryStatisticsCollectionForQuantity>[0],
     statistics,
     startOfLocalDay(filterStart), // anchor buckets to local midnight
-    { day: 1 },
+    interval,
     options
   );
 
@@ -634,15 +642,133 @@ export const getAggregatedStepsByDate = (startDate: Date, endDate: Date) =>
     (result) => result.records
   );
 
-export const getAggregatedActiveCaloriesByDateDetailed = (
+/** 24 slots per local day, indexed by hour, for a cumulative quantity. */
+const queryHourlyByDay = async (
+  identifier: string,
+  startDate: Date,
+  endDate: Date,
+  unit: string
+): Promise<Map<string, number[]>> => {
+  const buckets = await queryDayStatistics(
+    identifier,
+    ['cumulativeSum'],
+    startDate,
+    endDate,
+    unit,
+    { hour: 1 }
+  );
+  const byDay = new Map<string, number[]>();
+  for (const bucket of buckets) {
+    const sum = bucket.sumQuantity?.quantity ?? 0;
+    if (sum <= 0) continue;
+    const start = new Date(bucket.startDate as Date);
+    const day = toLocalDateString(start);
+    const hours = byDay.get(day) ?? new Array<number>(24).fill(0);
+    hours[start.getHours()] += sum;
+    byDay.set(day, hours);
+  }
+  return byDay;
+};
+
+export const getAggregatedActiveCaloriesByDateDetailed = async (
   startDate: Date,
   endDate: Date
-) =>
-  getAggregatedDataByDateDetailed(
+): Promise<HealthKitReadResult<AggregatedHealthRecord>> => {
+  const result = await getAggregatedDataByDateDetailed(
     startDate,
     endDate,
     AGGREGATION_CONFIGS.activeCalories
   );
+  if (result.records.length === 0) return result;
+  // The Move chart's bars. Read alongside the day totals rather than as its own
+  // metric: it is the same quantity at a finer grain, and a second toggle for
+  // "the same number, by hour" would be a setting nobody could answer.
+  try {
+    const hourly = await queryHourlyByDay(
+      AGGREGATION_CONFIGS.activeCalories.identifier,
+      startDate,
+      endDate,
+      AGGREGATION_CONFIGS.activeCalories.unit
+    );
+    return {
+      ...result,
+      records: result.records.map((record) => {
+        const hours = hourly.get(record.date);
+        return hours ? { ...record, hourly: hours.map(Math.round) } : record;
+      }),
+    };
+  } catch (error) {
+    // The day totals are the ring; losing their breakdown costs a chart, so it
+    // must not cost the metric.
+    addLog(
+      `[HealthKitService] Hourly active energy unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      'DEBUG'
+    );
+    return result;
+  }
+};
+
+/**
+ * Apple's Stand ring: hours in which the user stood, not time spent standing.
+ *
+ * These are two different pieces of data and the app only ever read the other
+ * one. AppleStandTime is a quantity holding minutes on your feet;
+ * AppleStandHour is a category sample per hour of the day, whose value says
+ * whether that hour counted (`stood`) or not (`idle`). The ring counts the
+ * former, which is why a stand figure derived from stand *time* never matched
+ * the watch.
+ */
+const APPLE_STAND_HOUR_STOOD = 0;
+
+export const getAggregatedStandHoursByDateDetailed = async (
+  startDate: Date,
+  endDate: Date
+): Promise<HealthKitReadResult<AggregatedHealthRecord>> => {
+  if (!isHealthKitAvailable) {
+    return { records: [] };
+  }
+  try {
+    const samples = await queryCategorySamples(
+      'HKCategoryTypeIdentifierAppleStandHour' as Parameters<
+        typeof queryCategorySamples
+      >[0],
+      {
+        ascending: true,
+        limit: 0,
+        filter: { date: { startDate, endDate } },
+      }
+    );
+    const byDay = new Map<string, number[]>();
+    for (const sample of samples) {
+      if (Number(sample.value) !== APPLE_STAND_HOUR_STOOD) continue;
+      const start = new Date(sample.startDate);
+      if (!isInDateRange(start, startDate, endDate)) continue;
+      const day = toLocalDateString(start);
+      const hours = byDay.get(day) ?? new Array<number>(24).fill(0);
+      // One sample per hour, so this is a flag rather than a tally.
+      hours[start.getHours()] = 1;
+      byDay.set(day, hours);
+    }
+    const deviceTz = getDeviceTimezone();
+    const records = [...byDay.entries()]
+      .sort(([dayA], [dayB]) => dayA.localeCompare(dayB))
+      .map(([date, hours]) => ({
+        date,
+        value: hours.reduce((count, stood) => count + stood, 0),
+        type: 'apple_stand_hours',
+        hourly: hours,
+        record_timezone: deviceTz,
+      }));
+    return { records };
+  } catch (error) {
+    return {
+      records: [],
+      error: recordReadError(error, 'Stand hours query'),
+    };
+  }
+};
 
 export const getAggregatedActiveCaloriesByDate = (
   startDate: Date,

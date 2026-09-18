@@ -228,9 +228,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     if (metres == null || !Number.isFinite(Number(metres))) return undefined;
     return distanceFromKm(Number(metres) / 1000, distanceUnit);
   }, [measurements?.distance_m, distanceUnit]);
-  // The Exercise chart's 24 bars. Move and Stand have no hourly source in
-  // the app, so they keep showing the unavailable note rather than a
-  // fabricated series.
+  // The Exercise chart's 24 bars, built from the day's logged sessions. Move
+  // and Stand come off the summary instead: their breakdowns are read from the
+  // health provider, not derived from anything the app holds.
   const hourlyExercise = useMemo(
     () => buildHourlyExerciseMinutes(loadedSummary?.exerciseEntries),
     [loadedSummary?.exerciseEntries]
@@ -407,7 +407,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           summary={summary}
           steps={measurements?.steps}
           distance={dayDistance}
+          standHours={measurements?.stand_hours}
           hourlyExercise={hourlyExercise}
+          hourlyMove={summary.hourlyMove}
+          hourlyStand={summary.hourlyStand}
           distanceUnit={distanceUnit}
           standGoal={summary.goals.stand_hours}
           stepsGoal={summary.goals.steps}

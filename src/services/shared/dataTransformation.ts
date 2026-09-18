@@ -282,6 +282,12 @@ export const createTransformHealthRecords =
             if (typeof rec.timestamp === 'string') {
               transformedRecord.timestamp = rec.timestamp;
             }
+            // Forwarded explicitly, like the timezone metadata below: this
+            // builds a fresh record rather than spreading, so anything not
+            // named here is dropped.
+            if (Array.isArray(rec.hourly)) {
+              transformedRecord.hourly = rec.hourly as number[];
+            }
             // Forward timezone metadata from aggregation layer
             if (rec.record_timezone != null) {
               transformedRecord.record_timezone = rec.record_timezone as string;

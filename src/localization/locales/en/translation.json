@@ -563,6 +563,7 @@
     "appleMoveTime": "Apple Move Time",
     "appleExerciseTime": "Apple Exercise Time",
     "appleStandTime": "Apple Stand Time",
+    "appleStandHours": "Apple Stand Hours",
     "unknown": "Health metric"
   },
   "healthCategories": {

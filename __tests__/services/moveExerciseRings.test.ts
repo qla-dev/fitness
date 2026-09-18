@@ -174,6 +174,81 @@ describe('Move and Exercise after an Apple Health sync', () => {
     expect(days[0]?.distance_m).toBe(5090);
   });
 
+  test('standing hours come from the hours that contained standing', async () => {
+    const stood = [
+      0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    await request('/api/health-data', 'POST', [
+      {
+        type: 'apple_stand_hours',
+        value: 8,
+        date,
+        hourly: stood,
+        source: 'Apple Health',
+      },
+    ]);
+
+    const days = await request<{ stand_hours?: number }[]>(
+      `/api/measurements/check-in-measurements-range/${date}/${date}`
+    );
+    const raw = await request<{ hourlyActivity?: Record<string, number[]> }>(
+      `/api/daily-summary?date=${date}`
+    );
+
+    expect(days[0]?.stand_hours).toBe(8);
+    expect(raw.hourlyActivity?.apple_stand_hours).toEqual(stood);
+  });
+
+  test('the Move chart gets the hours behind the day total', async () => {
+    const hourly = new Array(24).fill(0);
+    hourly[9] = 120;
+    hourly[18] = 240;
+    await request('/api/health-data', 'POST', [
+      {
+        type: 'active_calories',
+        value: 360,
+        date,
+        hourly,
+        source: 'Apple Health',
+      },
+    ]);
+
+    const raw = await request<Record<string, unknown>>(
+      `/api/daily-summary?date=${date}`
+    );
+    const summary = buildDailySummary(date, {
+      goals: (raw.goals ?? {}) as never,
+      foodEntries: [],
+      exerciseEntries: (raw.exerciseSessions ?? []) as never,
+      waterIntake: { water_ml: 0 },
+      stepCalories: 0,
+      hourlyActivity: raw.hourlyActivity as Record<string, number[]>,
+    });
+
+    expect(summary.hourlyMove).toEqual(hourly);
+  });
+
+  // The provider deduplicates across the devices feeding it, so its figure is
+  // the answer — it used to be added to whatever the check-in row already held.
+  test('steps read the provider total, not it plus the stored one', async () => {
+    await request('/api/measurements/check-in', 'POST', {
+      entry_date: date,
+      steps: 876,
+    });
+    await request('/api/health-data', 'POST', [
+      { type: 'step', value: 6577, date, source: 'Apple Health' },
+    ]);
+    await request('/api/health-data', 'POST', [
+      { type: 'step', value: 6577, date, source: 'Apple Health' },
+    ]);
+
+    const days = await request<{ steps?: number }[]>(
+      `/api/measurements/check-in-measurements-range/${date}/${date}`
+    );
+
+    expect(days[0]?.steps).toBe(6577);
+  });
+
   test('a workout Apple never saw adds on top of its totals', async () => {
     const summary = await syncAndSummarize([
       ...appleDay(),

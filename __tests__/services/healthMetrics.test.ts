@@ -1,7 +1,7 @@
 import { HEALTH_METRICS, metricReadKind } from '../../src/HealthMetrics';
 
 describe('metricReadKind', () => {
-  test('exactly the six day-aggregated metrics declare readKind cumulative-day', () => {
+  test('exactly the day-aggregated metrics declare readKind cumulative-day', () => {
     const cumulative = HEALTH_METRICS.filter(
       (metric) => metricReadKind(metric) === 'cumulative-day'
     )
@@ -10,6 +10,9 @@ describe('metricReadKind', () => {
 
     expect(cumulative).toEqual([
       'ActiveCaloriesBurned',
+      // Category samples rather than a quantity, but still one figure per day:
+      // the count of hours that contained standing, for the Stand ring.
+      'AppleStandHour',
       'BasalMetabolicRate',
       'Distance',
       'FloorsClimbed',

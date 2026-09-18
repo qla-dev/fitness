@@ -132,13 +132,25 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
     return distanceFromKm(Number(metres) / 1000, distanceUnit);
   })();
 
+  // Three metrics can answer "when in the day", each from its own source:
+  // exercise from the logged sessions, the other two from the provider's own
+  // breakdown. The rest have no hourly meaning and show no chart at all.
+  const hourlyForMetric =
+    metric === 'exercise'
+      ? hourlyExercise
+      : metric === 'move'
+        ? summary?.hourlyMove
+        : metric === 'stand'
+          ? summary?.hourlyStand
+          : undefined;
+
   const today = (() => {
     if (activity && summary) {
       const inputs: ActivityGoalInputs = {
         summary,
         steps: measurements?.steps,
         distance: dayDistance,
-        standHours: undefined,
+        standHours: measurements?.stand_hours,
         standGoal: summary.goals.stand_hours,
         stepsGoal: summary.goals.steps,
         distanceUnit,
@@ -260,7 +272,7 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
           </View>
         ) : null}
 
-        {metric === 'exercise' ? (
+        {hourlyForMetric ? (
           <View className="bg-surface rounded-xl p-4 mb-3">
             <ActivityMetricChart
               title={t('goalDetail.byHour', { defaultValue: 'By hour' })}
@@ -269,7 +281,8 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
               value={today?.value}
               goal={today?.goal}
               unit={today?.unit ?? ''}
-              hourlyValues={hourlyExercise}
+              hourlyValues={hourlyForMetric}
+              binary={metric === 'stand'}
             />
           </View>
         ) : null}

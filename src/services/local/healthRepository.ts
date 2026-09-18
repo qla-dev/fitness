@@ -92,6 +92,9 @@ const measurementFields: Record<string, string> = {
   // below replaces the day's figure rather than accumulating it the way steps
   // do. Stored raw and converted at the edge, like every other metric here.
   distance: 'distance_m',
+  // Hours that contained standing — the Stand ring's own number. Deliberately
+  // NOT apple_stand_time, which is minutes spent on your feet.
+  apple_stand_hours: 'stand_hours',
   weight: 'weight',
   height: 'height',
   body_fat: 'body_fat_percentage',
@@ -397,6 +400,35 @@ export function importHealthData(
   return { recordsSent: records.length, recordErrors: [] };
 }
 
+/**
+ * The 24-slot breakdowns a day's health records carry, by record type.
+ *
+ * Providers send these attached to the day total they belong to, so this reads
+ * them back off the stored record rather than keeping a second table. A type
+ * with no breakdown is absent rather than zero-filled: the chart draws its
+ * "unavailable" note for the first and a real empty day for the second, and
+ * those are different answers.
+ */
+export function localHourlyActivity(
+  db: LocalDatabase,
+  date: unknown
+): Record<string, number[]> {
+  const hourly: Record<string, number[]> = {};
+  for (const row of table(db, 'healthRecords')) {
+    if (row.entry_date !== date || !Array.isArray(row.hourly)) continue;
+    const slots = (row.hourly as unknown[]).map((slot) => Number(slot) || 0);
+    if (slots.length === 0) continue;
+    const type = String(row.type);
+    const existing = hourly[type];
+    // More than one source can report the same day; the charts show one series,
+    // so they add up the way the day totals behind them do.
+    hourly[type] = existing
+      ? existing.map((value, hour) => value + (slots[hour] ?? 0))
+      : slots;
+  }
+  return hourly;
+}
+
 export function importedWater(db: LocalDatabase, date: unknown): number {
   return table(db, 'healthRecords')
     .filter((row) => row.type === 'water' && row.entry_date === date)
@@ -438,6 +470,12 @@ export function localMeasurements(
   imported.sort((a, b) =>
     String(a.timestamp || a.date).localeCompare(String(b.timestamp || b.date))
   );
+  // Imported steps per day and source, kept apart from the row until every
+  // record has been seen. They used to be added straight onto `row.steps`,
+  // which starts life as the check-in row — so any step count already sitting
+  // there was added to the provider's, and the dashboard read thousands more
+  // than the Health app for the same day.
+  const importedSteps = new Map<string, Map<string, number>>();
   for (const record of imported) {
     const field = measurementFields[String(record.type)];
     const date = String(record.entry_date);
@@ -446,12 +484,24 @@ export function localMeasurements(
       user_id: db.userId,
       entry_date: date,
     };
-    // Steps are additive with manually entered steps, but repeated imports replace the source total.
-    if (field === 'steps')
-      row.steps = Number(row.steps ?? 0) + Number(record.value ?? 0);
-    else if (firstManualByDay.get(date)?.[field] == null)
+    if (field === 'steps') {
+      const bySource = importedSteps.get(date) ?? new Map<string, number>();
+      const source = String(record.source ?? 'Health');
+      bySource.set(source, Number(record.value ?? 0));
+      importedSteps.set(date, bySource);
+    } else if (firstManualByDay.get(date)?.[field] == null) {
       row[field] = record.value;
+    }
     days.set(date, row);
+  }
+  for (const [date, bySource] of importedSteps) {
+    const row = days.get(date);
+    if (!row) continue;
+    // The largest source, not their sum: both providers already deduplicate
+    // across the devices feeding them, so adding two sources together would
+    // count the same walk twice. A day the provider answered for is its
+    // answer — a manual count only stands where it never did.
+    row.steps = Math.max(...bySource.values());
   }
   return [...days.values()];
 }

@@ -82,6 +82,12 @@ export interface AggregatedHealthRecord extends RecordTimezoneMetadata {
   type: string;
   /** Instant when this cumulative snapshot was read from the health provider. */
   timestamp?: string;
+  /**
+   * The day's 24 hourly slots, where the provider can break the total down.
+   * Carried alongside the total rather than as its own metric: it is the same
+   * reading at a finer grain, and the charts want both.
+   */
+  hourly?: readonly number[];
 }
 
 /** Sleep session output (complex structure) */
@@ -256,6 +262,8 @@ export interface TransformedRecord extends RecordTimezoneMetadata {
   source: string;
   timestamp?: string;
   source_id?: string;
+  /** See AggregatedHealthRecord.hourly — carried through to the payload. */
+  hourly?: readonly number[];
 }
 
 /** qla.fit meal type slug derived from Health Connect MealType constant */

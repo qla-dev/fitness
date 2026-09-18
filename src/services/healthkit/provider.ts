@@ -7,6 +7,7 @@ import type { HealthReadProvider } from '../shared/healthSyncEngine';
 import {
   getAggregatedStepsByDateDetailed,
   getAggregatedActiveCaloriesByDateDetailed,
+  getAggregatedStandHoursByDateDetailed,
   getAggregatedTotalCaloriesByDateDetailed,
   getAggregatedDistanceByDateDetailed,
   getAggregatedFloorsClimbedByDateDetailed,
@@ -33,6 +34,7 @@ const CUMULATIVE_READERS: Record<string, CumulativeReader> = {
   Distance: getAggregatedDistanceByDateDetailed,
   FloorsClimbed: getAggregatedFloorsClimbedByDateDetailed,
   BasalMetabolicRate: getAggregatedBasalEnergyByDateDetailed,
+  AppleStandHour: getAggregatedStandHoursByDateDetailed,
 };
 
 /**
