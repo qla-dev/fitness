@@ -5,6 +5,7 @@ import {
   findRecord,
   localTransaction,
   newId,
+  markLocalDatabaseDirty,
   saveRecord,
   table,
   type LocalDatabase,
@@ -41,7 +42,18 @@ const initialGoals: DailyGoals = {
   target_exercise_duration_minutes: 30,
 };
 
+// Seeding assigns tables directly rather than going through `saveRecord`, so
+// it has to say so itself: a read-only request skips persistence unless
+// something marks the database dirty, and first launch seeds on a GET.
 function initialise(db: LocalDatabase) {
+  if (
+    !db.tables.mealTypes ||
+    !db.tables.preferences ||
+    !db.tables.goals ||
+    !db.tables.providers ||
+    !db.tables.waterContainers
+  )
+    markLocalDatabaseDirty();
   if (!db.tables.mealTypes)
     db.tables.mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map(
       (name, index) => ({
@@ -194,18 +206,16 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   // returned, so a day with no data draws no ring.
   if (path.startsWith('/api/activity-rings-range/')) {
     const [start, end] = [parts[3], parts[4]];
-    const inRange = (day: string) => day >= start && day <= end;
 
     const stepsByDay = new Map<string, unknown>();
-    for (const row of localMeasurements(db)) {
+    for (const row of localMeasurements(db, { start, end })) {
       const day = String(row.entry_date);
-      if (inRange(day) && row.steps != null) stepsByDay.set(day, row.steps);
+      if (row.steps != null) stepsByDay.set(day, row.steps);
     }
 
     const sessionsByDay = new Map<string, LocalRecord[]>();
-    for (const session of localSessions(db)) {
+    for (const session of localSessions(db, undefined, { start, end })) {
       const day = String(session.entry_date);
-      if (!inRange(day)) continue;
       sessionsByDay.set(day, [...(sessionsByDay.get(day) ?? []), session]);
     }
 
@@ -233,13 +243,9 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
       });
   }
   if (path.startsWith('/api/measurements/check-in-measurements-range/'))
-    return localMeasurements(db)
-      .filter(
-        (row) =>
-          String(row.entry_date) >= parts[4] &&
-          String(row.entry_date) <= parts[5]
-      )
-      .sort((a, b) => String(a.entry_date).localeCompare(String(b.entry_date)));
+    return localMeasurements(db, { start: parts[4], end: parts[5] }).sort(
+      (a, b) => String(a.entry_date).localeCompare(String(b.entry_date))
+    );
   if (path === '/api/measurements/check-in' && method === 'POST') {
     const existing = table(db, 'measurements').find(
       (row) => row.entry_date === body.entry_date

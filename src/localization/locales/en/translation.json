@@ -2120,7 +2120,9 @@
     "pickToRecord": "Tap a measurement to record it.",
     "recordHint": "Saved against the day you are looking at.",
     "recordRange": "Enter a number up to {{max}}.",
-    "edit": "Edit measurements"
+    "edit": "Edit measurements",
+    "previousValue": "Previous: {{value}}",
+    "noHistory": "No history data"
   },
   "foodScan": {
     "segment": {
@@ -5111,7 +5113,10 @@
     "namePlaceholder": "Enter your name",
     "themeSystemDescription": "Follow the device appearance setting",
     "themeLightDescription": "Always use the light appearance",
-    "themeDarkDescription": "A true-black dark appearance, easy on OLED screens"
+    "themeDarkDescription": "A true-black dark appearance, easy on OLED screens",
+    "age": "Age",
+    "ageValue_one": "{{count}} year",
+    "ageValue_other": "{{count}} years"
   },
   "programs": {
     "title": "Program",

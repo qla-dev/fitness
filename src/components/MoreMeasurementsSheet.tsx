@@ -97,11 +97,12 @@ export default function MoreMeasurementsSheet({
       </Text>
       {/* BottomSheetScrollView, not the plain one: the sheet sizes itself to
           its content, and an RN ScrollView inside that measures as a collapsed
-          box — the sheet flashed open and settled on nothing. */}
-      <BottomSheetScrollView
-        style={{ maxHeight: 440 }}
-        contentContainerClassName="px-4 pb-2"
-      >
+          box — the sheet flashed open and settled on nothing.
+
+          No maxHeight on it: the sheet already caps itself at topInset and
+          scrolls past that, so a fixed cap here just reserved a tall box that
+          short lists left standing empty below the tiles. */}
+      <BottomSheetScrollView contentContainerClassName="px-4 pb-2">
         <View className="flex-row flex-wrap justify-between">
           {tiles.map((tile) => (
             <View key={tile.id} className="w-[48%] mb-2">

@@ -12,6 +12,7 @@ import {
 } from './measurementTiles';
 import {
   measurementValue,
+  ALWAYS_SHOWN_FIELDS,
   type MeasurementFieldId,
 } from '../utils/measurementFields';
 import type { MeasurementHistory } from '../hooks/useMeasurementHistory';
@@ -56,20 +57,22 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
     [weightMode, bodyUnit, heightMode]
   );
 
-  // Weight and body fat are always in, valued or not; everything else appears
-  // only where there is something to show. The card sits above the meal list
-  // now, so it stays short — the full set is one tap away behind More.
+  // Weight and body fat, and nothing else — not the fields that happen to hold
+  // a value today, and not the custom entries either. This card sits above the
+  // meal list, so its height has to be the same every day; letting it grow with
+  // whatever was logged pushed the meals down by an amount that changed daily.
+  // Everything it leaves out is one tap away behind More.
   const tiles = useMemo(
     () =>
       buildMeasurementTiles({
         measurements,
         history,
-        customMeasurements,
         units,
         t,
         includeEmpty: false,
+        restrictTo: ALWAYS_SHOWN_FIELDS,
       }),
-    [measurements, history, customMeasurements, units, t]
+    [measurements, history, units, t]
   );
 
   // The header sits outside the tiles: a More button nested inside a pressable

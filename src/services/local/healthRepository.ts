@@ -61,6 +61,56 @@ export function importHealthData(
   payload: unknown
 ): HealthDataSyncSummary {
   const records = asRecords(payload);
+
+  // Every lookup below used to scan a table that grows with each sync, so an
+  // import cost time proportional to (records arriving x records already
+  // stored) and got slower every time it ran. These indexes are built once and
+  // kept in step with what the loop writes. First match wins, as `find` did.
+  const healthKeyIndexes = new Map<string, Map<string, LocalRecord>>();
+  const byHealthKey = (name: string): Map<string, LocalRecord> => {
+    let index = healthKeyIndexes.get(name);
+    if (!index) {
+      index = new Map();
+      for (const row of table(db, name)) {
+        const value = row.health_key;
+        if (value != null && !index.has(String(value)))
+          index.set(String(value), row);
+      }
+      healthKeyIndexes.set(name, index);
+    }
+    return index;
+  };
+  const saveByHealthKey = (
+    name: string,
+    key: string,
+    body: LocalRecord
+  ): LocalRecord => {
+    const index = byHealthKey(name);
+    const row = saveRecord(db, name, body, index.get(key)?.id);
+    index.set(key, row);
+    return row;
+  };
+
+  const exerciseKey = (name: unknown, source: unknown) =>
+    `${String(name)}\u0000${String(source)}`;
+  const exercisesByNameAndSource = new Map<string, LocalRecord>();
+  for (const row of table(db, 'exercises')) {
+    const composite = exerciseKey(row.name, row.source);
+    if (!exercisesByNameAndSource.has(composite))
+      exercisesByNameAndSource.set(composite, row);
+  }
+  const categoriesByName = new Map<string, LocalRecord>();
+  for (const row of table(db, 'measurementCategories'))
+    if (!categoriesByName.has(String(row.name)))
+      categoriesByName.set(String(row.name), row);
+
+  /**
+   * `source|entry_date` for every day this batch put exercise or active-energy
+   * data into. Only those days can have changed, and the reconciliation at the
+   * end is limited to them.
+   */
+  const touchedDays = new Set<string>();
+
   for (const raw of records) {
     if (typeof raw.type !== 'string')
       throw new Error('Health record has no type.');
@@ -80,24 +130,18 @@ export function importHealthData(
         ? date
         : record.source_id || record.timestamp || date,
     ]);
-    const existing = table(db, 'healthRecords').find(
-      (row) => row.health_key === key
-    );
-    saveRecord(
-      db,
-      'healthRecords',
-      { ...record, entry_date: date, health_key: key },
-      existing?.id
-    );
-    const upsert = (name: string, body: LocalRecord) => {
-      const previous = table(db, name).find((row) => row.health_key === key);
-      return saveRecord(
-        db,
-        name,
-        { ...body, source, health_key: key, entry_date: date },
-        previous?.id
-      );
-    };
+    saveByHealthKey('healthRecords', key, {
+      ...record,
+      entry_date: date,
+      health_key: key,
+    });
+    const upsert = (name: string, body: LocalRecord) =>
+      saveByHealthKey(name, key, {
+        ...body,
+        source,
+        health_key: key,
+        entry_date: date,
+      });
     if (
       record.type === 'ExerciseSession' ||
       record.type === 'Workout' ||
@@ -107,18 +151,17 @@ export function importHealthData(
       const name = active
         ? 'Active Calories'
         : record.title || record.activityType || 'Health workout';
-      let exercise = table(db, 'exercises').find(
-        (row) => row.name === name && row.source === source
-      );
-      if (!exercise)
+      touchedDays.add(`${source}|${date}`);
+      let exercise = exercisesByNameAndSource.get(exerciseKey(name, source));
+      if (!exercise) {
         exercise = saveRecord(db, 'exercises', {
           name,
           modality: 'duration',
           source,
         });
-      const previous = table(db, 'activities').find(
-        (row) => row.health_key === key
-      );
+        exercisesByNameAndSource.set(exerciseKey(name, source), exercise);
+      }
+      const previous = byHealthKey('activities').get(key);
       const result = workoutRepository(db, {
         path: `/api/exercise-entries${previous ? `/${String(previous.id)}` : ''}`,
         query: new URLSearchParams(),
@@ -148,7 +191,13 @@ export function importHealthData(
         },
       });
       const saved = result?.value as LocalRecord;
-      saveRecord(db, 'activities', { health_key: key }, saved.id);
+      const activity = saveRecord(
+        db,
+        'activities',
+        { health_key: key },
+        saved.id
+      );
+      byHealthKey('activities').set(key, activity);
     } else if (record.type === 'Nutrition') {
       const meal =
         table(db, 'mealTypes').find(
@@ -187,16 +236,16 @@ export function importHealthData(
         ...record,
       });
     } else if (!measurementFields[record.type] && record.type !== 'water') {
-      let category = table(db, 'measurementCategories').find(
-        (row) => row.name === record.type
-      );
-      if (!category)
+      let category = categoriesByName.get(String(record.type));
+      if (!category) {
         category = saveRecord(db, 'measurementCategories', {
           name: record.type,
           measurement_type: record.unit || 'numeric',
           frequency: 'Daily',
           data_type: 'numeric',
         });
+        categoriesByName.set(String(record.type), category);
+      }
       upsert('customMeasurements', {
         category_id: category.id,
         value: String(record.value ?? ''),
@@ -206,24 +255,33 @@ export function importHealthData(
   }
   // Daily active energy already includes the imported workouts. Keep only
   // the remainder in the synthetic entry; manual activities remain additive.
-  for (const total of table(db, 'healthRecords').filter(
-    (row) => row.type === 'Active Calories'
-  )) {
-    const activity = table(db, 'activities').find(
-      (row) => row.health_key === total.health_key
-    );
+  //
+  // Limited to the days this batch touched, and to one pass over the health
+  // records. It used to re-derive every "Active Calories" row ever imported,
+  // rescanning the whole activities and health-record tables for each one, on
+  // every sync — including the one that runs each time the app is opened. Only
+  // a touched day can have changed, so the rest was pure repetition.
+  const workoutCaloriesByDay = new Map<string, number>();
+  const activeEnergyTotals: LocalRecord[] = [];
+  for (const row of table(db, 'healthRecords')) {
+    const day = `${String(row.source)}|${String(row.entry_date)}`;
+    if (!touchedDays.has(day)) continue;
+    if (row.type === 'Active Calories') {
+      activeEnergyTotals.push(row);
+    } else if (row.type === 'ExerciseSession' || row.type === 'Workout') {
+      workoutCaloriesByDay.set(
+        day,
+        (workoutCaloriesByDay.get(day) ?? 0) + Number(row.caloriesBurned ?? 0)
+      );
+    }
+  }
+  for (const total of activeEnergyTotals) {
+    const activity = byHealthKey('activities').get(String(total.health_key));
     if (!activity) continue;
-    const workoutCalories = table(db, 'healthRecords')
-      .filter(
-        (row) =>
-          (row.type === 'ExerciseSession' || row.type === 'Workout') &&
-          row.source === total.source &&
-          row.entry_date === total.entry_date
-      )
-      .reduce((sum, row) => sum + Number(row.caloriesBurned ?? 0), 0);
+    const day = `${String(total.source)}|${String(total.entry_date)}`;
     activity.calories_burned = Math.max(
       0,
-      Number(total.value ?? 0) - workoutCalories
+      Number(total.value ?? 0) - (workoutCaloriesByDay.get(day) ?? 0)
     );
   }
   return { recordsSent: records.length, recordErrors: [] };
@@ -235,17 +293,43 @@ export function importedWater(db: LocalDatabase, date: unknown): number {
     .reduce((sum, row) => sum + Number(row.value ?? 0), 0);
 }
 
-export function localMeasurements(db: LocalDatabase): LocalRecord[] {
-  const days = new Map(
-    table(db, 'measurements').map((row) => [String(row.entry_date), { ...row }])
+/**
+ * Manual check-ins merged with the health records imported behind them.
+ *
+ * `range` is pushed down here rather than applied by the caller: without it
+ * this copies, sorts and folds every health record the user has ever synced,
+ * and the diary, the dashboard and the ring calendar all call it. Omit it only
+ * when every day really is wanted.
+ */
+export function localMeasurements(
+  db: LocalDatabase,
+  range?: { start: string; end: string }
+): LocalRecord[] {
+  const inRange = (day: string) =>
+    !range || (day >= range.start && day <= range.end);
+
+  // Two views of the same rows, because the original held two: the merge target
+  // takes the last row for a date, while the "did the user enter this by hand"
+  // guard below took the first. Duplicate dates should not exist — the check-in
+  // route upserts on the date — so in practice they are the same row.
+  const days = new Map<string, LocalRecord>();
+  const firstManualByDay = new Map<string, LocalRecord>();
+  for (const row of table(db, 'measurements')) {
+    const date = String(row.entry_date);
+    if (!firstManualByDay.has(date)) firstManualByDay.set(date, row);
+    if (inRange(date)) days.set(date, { ...row });
+  }
+
+  const imported = table(db, 'healthRecords').filter(
+    (row) =>
+      measurementFields[String(row.type)] !== undefined &&
+      inRange(String(row.entry_date))
   );
-  for (const record of table(db, 'healthRecords')
-    .slice()
-    .sort((a, b) =>
-      String(a.timestamp || a.date).localeCompare(String(b.timestamp || b.date))
-    )) {
+  imported.sort((a, b) =>
+    String(a.timestamp || a.date).localeCompare(String(b.timestamp || b.date))
+  );
+  for (const record of imported) {
     const field = measurementFields[String(record.type)];
-    if (!field) continue;
     const date = String(record.entry_date);
     const row = days.get(date) || {
       id: record.id,
@@ -255,11 +339,7 @@ export function localMeasurements(db: LocalDatabase): LocalRecord[] {
     // Steps are additive with manually entered steps, but repeated imports replace the source total.
     if (field === 'steps')
       row.steps = Number(row.steps ?? 0) + Number(record.value ?? 0);
-    else if (
-      table(db, 'measurements').find((manual) => manual.entry_date === date)?.[
-        field
-      ] == null
-    )
+    else if (firstManualByDay.get(date)?.[field] == null)
       row[field] = record.value;
     days.set(date, row);
   }

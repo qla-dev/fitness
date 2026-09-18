@@ -6,6 +6,7 @@ import { MeasurementIcons } from './icons/measurements';
 import {
   MEASUREMENT_FIELDS,
   ALWAYS_SHOWN_FIELDS,
+  PROFILE_FIELDS,
   DEFAULT_MEASUREMENT_UNITS,
   measurementValue,
   type MeasurementFieldId,
@@ -31,6 +32,18 @@ export interface MeasurementTile {
   value: string | null;
   /** Set when the shown value is older than the selected day. */
   staleFrom: string | null;
+  /**
+   * Whether the selected day itself holds a value for this field. False both
+   * when the tile is showing an older reading and when there is nothing at all,
+   * because in each case the answer to "did I measure this today" is no.
+   */
+  recordedToday: boolean;
+  /**
+   * The day-before reading, formatted, or null when there is none. The same
+   * value the trend chip measures against, so the corner note and the chip
+   * can never disagree about what "previous" means.
+   */
+  previousValue: string | null;
   trend: { direction: TrendDirection; label: string } | null;
 }
 
@@ -54,6 +67,12 @@ interface BuildArgs {
   t: TFunction;
   /** true for the full list behind More: every field, valued or not. */
   includeEmpty: boolean;
+  /**
+   * Restricts the tiles to exactly these fields, in registry order, and drops
+   * the custom measurements with them. The diary summary passes the two
+   * standing fields; leaving it unset keeps the full list.
+   */
+  restrictTo?: readonly MeasurementFieldId[];
 }
 
 export function buildMeasurementTiles({
@@ -63,11 +82,18 @@ export function buildMeasurementTiles({
   units,
   t,
   includeEmpty,
+  restrictTo,
 }: BuildArgs): MeasurementTile[] {
   const resolved: MeasurementUnits = { ...DEFAULT_MEASUREMENT_UNITS, ...units };
   const tiles: MeasurementTile[] = [];
 
   for (const field of MEASUREMENT_FIELDS) {
+    if (restrictTo) {
+      if (!restrictTo.includes(field.id)) continue;
+    } else if (PROFILE_FIELDS.includes(field.id)) {
+      // Shown on the profile instead; see PROFILE_FIELDS.
+      continue;
+    }
     const today = measurementValue(measurements, field.id);
     const entry = history?.[field.id];
     // A tile shows the day's value when there is one and the last recorded
@@ -85,10 +111,12 @@ export function buildMeasurementTiles({
     }
 
     const previous = entry?.previous ?? null;
-    let trend: MeasurementTile['trend'] = null;
+    // Flat with no number when there is nothing to compare against — the
+    // straight line says "no change to report", not "no change". A tile with no
+    // reading at all lands here too: leaving its corner empty made it look like
+    // a tile that had not finished loading, next to siblings that had.
+    let trend: MeasurementTile['trend'] = { direction: 'flat', label: '' };
     if (shown !== null) {
-      // Flat with no number when there is nothing to compare against — the
-      // straight line says "no change to report", not "no change".
       if (previous === null) {
         trend = { direction: 'flat', label: '' };
       } else {
@@ -118,6 +146,9 @@ export function buildMeasurementTiles({
       label: field.label(t),
       value: shown === null ? null : field.format(shown, resolved),
       staleFrom: shown === null ? null : shownDate,
+      recordedToday: today !== null,
+      previousValue:
+        previous === null ? null : field.format(previous, resolved),
       trend,
     });
   }
@@ -125,7 +156,7 @@ export function buildMeasurementTiles({
   // Diary tiles only show MANUAL custom entries (strict source contract).
   // Health-synced entries never render as editable summary tiles.
   let customIndex = 0;
-  for (const entry of customMeasurements ?? []) {
+  for (const entry of restrictTo ? [] : (customMeasurements ?? [])) {
     if (!isManualSource(entry.source)) continue;
     const category = entry.custom_categories;
     const suffix = category?.measurement_type
@@ -140,7 +171,13 @@ export function buildMeasurementTiles({
         t('measurements.title', { defaultValue: 'Measurements' }),
       value: `${formatCustomValue(entry.value, category?.data_type)}${suffix}`,
       staleFrom: null,
-      trend: null,
+      // A custom entry only exists because it was logged on this day.
+      recordedToday: true,
+      // Custom entries are not part of the check-in history model, so there is
+      // no day-before reading to compare one against — which is exactly what
+      // the flat rule reports.
+      previousValue: null,
+      trend: { direction: 'flat', label: '' },
     });
     customIndex += 1;
   }
@@ -189,8 +226,10 @@ export const MeasurementTileCard: React.FC<{
   onPress?: () => void;
   /**
    * Inside a sheet there is no page background behind the card: the sheet
-   * itself is the surface, so a surface-coloured card disappears into it.
-   * Raised plus a hairline is how the pickers lift their rows off the sheet.
+   * itself is the surface, so a surface-coloured card disappears into it and
+   * the raised fill is what separates the two. No border with it — the fill
+   * already does the separating, and the outline just drew a box around every
+   * tile.
    */
   onSheet?: boolean;
   t: TFunction;
@@ -214,18 +253,57 @@ export const MeasurementTileCard: React.FC<{
         ] ?? null);
   const empty = tile.value === null;
 
+  // Custom entries stand outside the check-in history model, so they are the
+  // one case with nothing to say here.
+  const cornerNote =
+    tile.fieldId === null
+      ? null
+      : !tile.recordedToday
+        ? t('measurements.notRecordedToday', {
+            defaultValue: 'Not recorded today',
+          })
+        : tile.previousValue !== null
+          ? t('measurements.previousValue', {
+              value: tile.previousValue,
+              defaultValue: 'Previous: {{value}}',
+            })
+          : t('measurements.noHistory', { defaultValue: 'No history data' });
+
   const body = (
     <View
       className={
         onSheet
-          ? 'bg-raised border border-border-subtle rounded-xl py-3 px-3'
+          ? 'bg-raised rounded-xl py-3 px-3'
           : 'bg-surface rounded-xl py-3 px-3'
       }
     >
-      {/* The trend rides in the corner rather than beside the value: the value
-          is the thing being read, and a chip on its baseline moves it off
-          centre by however wide the number happens to be. */}
-      <View className="flex-row justify-end" style={{ height: 12 }}>
+      {/* Both corners of one row: the trend on the right and, on the left, how
+          the shown number stands in time. Neither belongs beside the value —
+          the value is the thing being read, and anything on its baseline moves
+          it off centre by however wide the number happens to be.
+
+          The left corner always says something, because an empty corner reads
+          as a tile that has not finished loading. It says which of three things
+          is true: the day holds no reading of its own, so the number above (if
+          any) belongs to an earlier day; the day has one and there is a
+          day-before reading to set it against; or the day has one and nothing
+          came before it. */}
+      <View
+        className="flex-row items-center justify-between"
+        style={{ minHeight: 16 }}
+      >
+        {cornerNote === null ? (
+          // Holds the left of the row so the trend stays in its corner.
+          <View className="flex-1" />
+        ) : (
+          <Text
+            className="text-[10px] text-text-muted flex-1"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {cornerNote}
+          </Text>
+        )}
         {tile.trend && (
           <TrendChip
             trend={tile.trend}
@@ -255,18 +333,6 @@ export const MeasurementTileCard: React.FC<{
           </Text>
         </View>
       </View>
-      {/* Said plainly, because the number above is real but belongs to another
-          day — without this the tile would quietly misdate it. */}
-      {tile.staleFrom !== null && (
-        <Text
-          className="text-[10px] text-text-muted text-center mt-1"
-          numberOfLines={1}
-        >
-          {t('measurements.notRecordedToday', {
-            defaultValue: 'Not recorded today',
-          })}
-        </Text>
-      )}
     </View>
   );
 

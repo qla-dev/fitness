@@ -24,13 +24,27 @@ jest.mock('../../src/components/MoreMeasurementsSheet', () => {
   };
 });
 
+const customEntry = (name: string, source: string, value: string) => ({
+  id: `entry-${name}`,
+  category_id: `cat-${name}`,
+  value,
+  entry_date: '2024-06-15',
+  source,
+  custom_categories: {
+    id: `cat-${name}`,
+    name,
+    measurement_type: '',
+    frequency: 'Daily',
+  },
+});
+
 describe('MeasurementsSummary', () => {
   // A card that disappears on the days you have not weighed yourself hides the
   // prompt on exactly the day it is worth something, so weight and body fat
   // always render — with a placeholder where the value would be.
   test('always renders weight and body fat, with a placeholder when unrecorded', () => {
     const { getByText, getAllByText } = render(
-      <MeasurementsSummary measurements={undefined} />
+      <MeasurementsSummary measurements={undefined} date="2024-06-15" />
     );
     expect(getByText('Weight')).toBeTruthy();
     expect(getByText('Body fat %')).toBeTruthy();
@@ -39,7 +53,10 @@ describe('MeasurementsSummary', () => {
 
   test('a day with no values still renders the two standing tiles', () => {
     const { getByText, getAllByText } = render(
-      <MeasurementsSummary measurements={{ entry_date: '2024-06-15' }} />
+      <MeasurementsSummary
+        measurements={{ entry_date: '2024-06-15' }}
+        date="2024-06-15"
+      />
     );
     expect(getByText('Weight')).toBeTruthy();
     expect(getAllByText('—')).toHaveLength(2);
@@ -47,93 +64,9 @@ describe('MeasurementsSummary', () => {
 
   test('offers More, which opens the full list', () => {
     const { getByLabelText } = render(
-      <MeasurementsSummary measurements={undefined} />
+      <MeasurementsSummary measurements={undefined} date="2024-06-15" />
     );
     expect(getByLabelText('More')).toBeTruthy();
-  });
-
-  test('renders built-in measurement rows', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={{
-          entry_date: '2024-06-15',
-          weight: 75,
-          steps: 10000,
-        }}
-      />
-    );
-    expect(getByText('Weight')).toBeTruthy();
-    expect(getByText('Steps')).toBeTruthy();
-  });
-
-  test('renders custom measurement rows', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'entry-1',
-            category_id: 'cat-1',
-            value: '120',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              id: 'cat-1',
-              name: 'Blood Pressure',
-              measurement_type: 'mmHg',
-              frequency: 'Daily',
-            },
-          },
-          {
-            id: 'entry-2',
-            category_id: 'cat-2',
-            value: '95',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              id: 'cat-2',
-              name: 'Blood Sugar',
-              display_name: 'Glucose',
-              measurement_type: 'mg/dL',
-              frequency: 'Daily',
-            },
-          },
-        ]}
-      />
-    );
-    expect(getByText('Blood Pressure')).toBeTruthy();
-    expect(getByText('120 mmHg')).toBeTruthy();
-    expect(getByText('Glucose')).toBeTruthy();
-    expect(getByText('95 mg/dL')).toBeTruthy();
-  });
-
-  test('renders both built-in and custom measurements', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={{
-          entry_date: '2024-06-15',
-          weight: 75,
-        }}
-        customMeasurements={[
-          {
-            id: 'entry-1',
-            category_id: 'cat-1',
-            value: '120',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              id: 'cat-1',
-              name: 'Blood Pressure',
-              measurement_type: 'mmHg',
-              frequency: 'Daily',
-            },
-          },
-        ]}
-      />
-    );
-    expect(getByText('Weight')).toBeTruthy();
-    expect(getByText('Blood Pressure')).toBeTruthy();
-    expect(getByText('120 mmHg')).toBeTruthy();
   });
 
   test('shows measurements section header', () => {
@@ -141,293 +74,118 @@ describe('MeasurementsSummary', () => {
       <MeasurementsSummary
         measurements={{ entry_date: '2024-06-15', weight: 75 }}
         customMeasurements={[]}
+        date="2024-06-15"
       />
     );
     expect(getByText('Measurements')).toBeTruthy();
   });
 
-  test('preserves empty numeric values and formats precise numeric values', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'numeric',
-            category_id: 'cat-1',
-            value: '1.23456789',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Glucose',
-              display_name: null,
-              measurement_type: 'mg/dL',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-          {
-            id: 'boolean',
-            category_id: 'cat-2',
-            value: '   ',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Blank',
-              display_name: null,
-              measurement_type: 'm',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-          {
-            id: 'invalid',
-            category_id: 'cat-3',
-            value: 'not-a-number',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Note',
-              display_name: null,
-              measurement_type: '',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-        ]}
-      />
-    );
-    expect(getByText('1.23456789 mg/dL')).toBeTruthy();
-    expect(getByText('Blank')).toBeTruthy();
-    expect(getByText('m')).toBeTruthy();
-    expect(getByText('not-a-number')).toBeTruthy();
-  });
-
-  test('does not turn empty or whitespace numeric values into zero', () => {
-    const { queryByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'empty',
-            category_id: 'cat-empty',
-            value: '',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Empty',
-              display_name: null,
-              measurement_type: 'm',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-          {
-            id: 'spaces',
-            category_id: 'cat-spaces',
-            value: '   ',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Spaces',
-              display_name: null,
-              measurement_type: 'm',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-        ]}
-      />
-    );
-    expect(queryByText('0 m')).toBeNull();
-  });
-
-  test('Diary shows only manual custom entries', () => {
-    const manualEntry = {
-      id: 'entry-manual',
-      category_id: 'cat-1',
-      value: '120',
-      entry_date: '2024-06-15',
-      source: 'manual',
-      custom_categories: {
-        id: 'cat-1',
-        name: 'Blood Pressure',
-        measurement_type: 'mmHg',
-        frequency: 'Daily',
-      },
-    };
-    const syncedEntry = {
-      id: 'entry-sync',
-      category_id: 'cat-2',
-      value: '75',
-      entry_date: '2024-06-15',
-      source: 'healthkit',
-      custom_categories: {
-        id: 'cat-2',
-        name: 'Resting Heart Rate',
-        measurement_type: 'bpm',
-        frequency: 'Daily',
-      },
-    };
+  // The card sits above the meal list, so its height has to be the same every
+  // day. Anything else the day happens to hold lives behind More, which is why
+  // neither a recorded built-in nor a custom entry may add a tile here.
+  test('shows only weight and body fat, whatever else the day holds', () => {
     const { getByText, queryByText } = render(
       <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[manualEntry, syncedEntry]}
-      />
-    );
-    // Manual entry appears.
-    expect(getByText('Blood Pressure')).toBeTruthy();
-    expect(getByText('120 mmHg')).toBeTruthy();
-    // Synced entry does NOT appear as a Diary tile.
-    expect(queryByText('Resting Heart Rate')).toBeNull();
-  });
-
-  test('Diary shows no tile when only synced custom entries exist', () => {
-    const { queryByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'entry-sync',
-            category_id: 'cat-1',
-            value: '75',
-            entry_date: '2024-06-15',
-            source: 'garmin',
-            custom_categories: {
-              name: 'Heart Rate',
-              measurement_type: 'bpm',
-              frequency: 'Daily',
-            },
-          },
-        ]}
-      />
-    );
-    expect(queryByText('Heart Rate')).toBeNull();
-  });
-
-  test('manual entry with value 0 still appears', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'entry-zero',
-            category_id: 'cat-1',
-            value: '0',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Zero',
-              measurement_type: '',
-              frequency: 'Daily',
-              data_type: 'numeric',
-            },
-          },
-        ]}
-      />
-    );
-    // The rendered value text must show the literal 0 (not empty) so a real
-    // zero cannot be silently dropped by formatting.
-    expect(getByText('0')).toBeTruthy();
-    expect(getByText('Zero')).toBeTruthy();
-  });
-
-  test('manual boolean false still appears', () => {
-    const { getByText } = render(
-      <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'entry-false',
-            category_id: 'cat-1',
-            value: 'false',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Flag',
-              measurement_type: '',
-              frequency: 'Daily',
-              data_type: 'boolean',
-            },
-          },
-        ]}
-      />
-    );
-    // Boolean false is a real value: the tile renders 'false' text.
-    expect(getByText('false')).toBeTruthy();
-    expect(getByText('Flag')).toBeTruthy();
-  });
-
-  test('mixture of manual and synced entries shows only manual tiles', () => {
-    const { getByText, queryByText } = render(
-      <MeasurementsSummary
-        measurements={{ entry_date: '2024-06-15', weight: 75 }}
-        customMeasurements={[
-          {
-            id: 'e1',
-            category_id: 'c1',
-            value: '50',
-            entry_date: '2024-06-15',
-            source: 'manual',
-            custom_categories: {
-              name: 'Manual A',
-              measurement_type: '',
-              frequency: 'Daily',
-            },
-          },
-          {
-            id: 'e2',
-            category_id: 'c2',
-            value: '60',
-            entry_date: '2024-06-15',
-            source: 'oura',
-            custom_categories: {
-              name: 'Oura Metric',
-              measurement_type: '',
-              frequency: 'Daily',
-            },
-          },
-          {
-            id: 'e3',
-            category_id: 'c3',
-            value: '70',
-            entry_date: '2024-06-15',
-            source: 'withings',
-            custom_categories: {
-              name: 'Withings Metric',
-              measurement_type: '',
-              frequency: 'Daily',
-            },
-          },
-        ]}
+        measurements={{
+          entry_date: '2024-06-15',
+          weight: 75,
+          steps: 10000,
+          waist: 84,
+        }}
+        customMeasurements={
+          [
+            customEntry('Blood Pressure', 'manual', '120'),
+            customEntry('Resting Heart Rate', 'healthkit', '58'),
+          ] as React.ComponentProps<
+            typeof MeasurementsSummary
+          >['customMeasurements']
+        }
+        date="2024-06-15"
       />
     );
     expect(getByText('Weight')).toBeTruthy();
-    expect(getByText('Manual A')).toBeTruthy();
-    expect(queryByText('Oura Metric')).toBeNull();
-    expect(queryByText('Withings Metric')).toBeNull();
+    expect(getByText('Body fat %')).toBeTruthy();
+    expect(queryByText('Steps')).toBeNull();
+    expect(queryByText('Waist')).toBeNull();
+    expect(queryByText('Blood Pressure')).toBeNull();
+    expect(queryByText('Resting Heart Rate')).toBeNull();
   });
 
-  test('Diary excludes custom entries with a null/missing source', () => {
+  // Height moved to the profile: it is a standing fact about the person, not
+  // something recorded alongside a weigh-in.
+  test('never shows height, even on a day that recorded one', () => {
     const { queryByText } = render(
       <MeasurementsSummary
-        measurements={undefined}
-        customMeasurements={[
-          {
-            id: 'entry-null',
-            category_id: 'cat-1',
-            value: '75',
-            entry_date: '2024-06-15',
-            source: null,
-            custom_categories: {
-              name: 'Null Source',
-              measurement_type: '',
-              frequency: 'Daily',
-            },
-          },
-        ]}
+        measurements={{ entry_date: '2024-06-15', weight: 75, height: 180 }}
+        date="2024-06-15"
       />
     );
-    // Strict contract: only literal 'manual' creates a tile.
-    expect(queryByText('Null Source')).toBeNull();
+    expect(queryByText('Height')).toBeNull();
+    expect(queryByText('180 cm')).toBeNull();
+  });
+
+  // The question the tile is asked every day is "did I measure this today",
+  // and an empty tile has to answer it as plainly as a stale one does.
+  test('says when body fat was not recorded today', () => {
+    const { getAllByText } = render(
+      <MeasurementsSummary
+        measurements={{ entry_date: '2024-06-15', weight: 75 }}
+        date="2024-06-15"
+      />
+    );
+    // Weight was recorded, body fat was not, so exactly one tile says so.
+    expect(getAllByText('Not recorded today')).toHaveLength(1);
+  });
+
+  // The corner always answers, because a blank one reads as a tile still
+  // loading. Three answers: not recorded, what came before, or nothing did.
+  test('a reading recorded today shows what came before it', () => {
+    const { getByText } = render(
+      <MeasurementsSummary
+        measurements={{ entry_date: '2024-06-15', weight: 80 }}
+        history={
+          {
+            weight: { shown: 80, shownDate: '2024-06-15', previous: 79 },
+            body_fat_percentage: {
+              shown: null,
+              shownDate: null,
+              previous: null,
+            },
+          } as React.ComponentProps<typeof MeasurementsSummary>['history']
+        }
+        date="2024-06-15"
+      />
+    );
+    expect(getByText('Previous: 79 kg')).toBeTruthy();
+  });
+
+  test('a reading with nothing before it says so', () => {
+    const { getByText, getAllByText } = render(
+      <MeasurementsSummary
+        measurements={{
+          entry_date: '2024-06-15',
+          weight: 80,
+          body_fat_percentage: 18,
+        }}
+        date="2024-06-15"
+      />
+    );
+    // Both tiles were recorded today and neither has a day-before reading.
+    expect(getByText('Weight')).toBeTruthy();
+    expect(getAllByText('No history data')).toHaveLength(2);
+  });
+
+  test('a body fat reading on the day carries no such note', () => {
+    const { queryByText } = render(
+      <MeasurementsSummary
+        measurements={{
+          entry_date: '2024-06-15',
+          weight: 75,
+          body_fat_percentage: 18,
+        }}
+        date="2024-06-15"
+      />
+    );
+    expect(queryByText('Not recorded today')).toBeNull();
   });
 });

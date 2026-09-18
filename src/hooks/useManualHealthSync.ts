@@ -6,7 +6,7 @@ import {
   initHealthConnect,
   loadHealthPreference,
 } from '../services/healthConnectService';
-import { loadTimeRange } from '../services/storage';
+import { loadDailySyncRange } from '../services/storage';
 import type { TimeRange } from '../services/storage';
 import { HEALTH_METRICS } from '../HealthMetrics';
 import { isSyncClaimed } from '../services/autoSyncCoordinator';
@@ -42,7 +42,10 @@ export async function prepareManualHealthSync(
     return null;
   }
 
-  const loadedTimeRange = await loadTimeRange();
+  // The startup window, not the history one: these callers are the Dashboard
+  // card and the AddSheet row, which are everyday taps rather than a deliberate
+  // catch-up, and a year-wide read behind either of them is felt immediately.
+  const loadedTimeRange = await loadDailySyncRange();
   const healthMetricStates: Record<string, boolean> = {};
   for (const metric of HEALTH_METRICS) {
     const enabled = await loadHealthPreference<boolean>(metric.preferenceKey);
@@ -62,7 +65,7 @@ export async function prepareManualHealthSync(
     return null;
   }
 
-  return { timeRange: loadedTimeRange ?? '3d', healthMetricStates };
+  return { timeRange: loadedTimeRange, healthMetricStates };
 }
 
 /**

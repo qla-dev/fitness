@@ -144,16 +144,149 @@ test('the difference is reported in the unit the user reads', () => {
   });
 });
 
-test('the full list carries every field, valued or not', () => {
+test('the full list carries every field, valued or not — but not height', () => {
   const tiles = buildMeasurementTiles({
     measurements: { entry_date: '2026-09-18', weight: 80 },
     t,
     includeEmpty: true,
   });
 
-  expect(tiles).toHaveLength(11);
+  expect(tiles).toHaveLength(10);
   expect(tileById(tiles, 'bmr')?.value).toBeNull();
   expect(tileById(tiles, 'weight')?.value).toBe('80 kg');
+  // Height is a standing fact about the person, so it is shown on the profile
+  // rather than among the measurements recorded day by day.
+  expect(tileById(tiles, 'height')).toBeUndefined();
+});
+
+test('restrictTo takes exactly the fields named, and no custom entries', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: { entry_date: '2026-09-18', weight: 80, steps: 9000 },
+    customMeasurements: [
+      {
+        id: 'e1',
+        category_id: 'c1',
+        value: '120',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          id: 'c1',
+          name: 'Blood Pressure',
+          measurement_type: 'mmHg',
+          frequency: 'Daily',
+        },
+      },
+    ] as Parameters<typeof buildMeasurementTiles>[0]['customMeasurements'],
+    t,
+    includeEmpty: false,
+    restrictTo: ['weight', 'body_fat_percentage'],
+  });
+
+  expect(tiles.map((tile) => tile.id)).toEqual([
+    'weight',
+    'body_fat_percentage',
+  ]);
+  // A value recorded that day is still not a reason to add a tile: the diary
+  // card has to be the same height every day.
+  expect(tileById(tiles, 'steps')).toBeUndefined();
+});
+
+test('restrictTo can name a profile field the daily list leaves out', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: { entry_date: '2026-09-18', height: 180 },
+    t,
+    includeEmpty: true,
+    restrictTo: ['height'],
+  });
+
+  expect(tiles).toHaveLength(1);
+  expect(tileById(tiles, 'height')?.value).toBe('180 cm');
+});
+
+test('recordedToday separates a value from today, an older one, and none', () => {
+  const today = buildMeasurementTiles({
+    measurements: { entry_date: '2026-09-18', weight: 80 },
+    t,
+    includeEmpty: false,
+  });
+  expect(tileById(today, 'weight')?.recordedToday).toBe(true);
+
+  const older = buildMeasurementTiles({
+    measurements: { entry_date: '2026-09-18' },
+    history: history({
+      weight: { shown: 80, shownDate: '2026-09-10', previous: null },
+    }),
+    t,
+    includeEmpty: false,
+  });
+  expect(tileById(older, 'weight')?.recordedToday).toBe(false);
+  expect(tileById(older, 'weight')?.value).toBe('80 kg');
+
+  // Nothing ever recorded still answers "did I measure this today" with no,
+  // which is what the tile says out loud.
+  const never = buildMeasurementTiles({
+    measurements: undefined,
+    t,
+    includeEmpty: false,
+  });
+  expect(tileById(never, 'body_fat_percentage')?.recordedToday).toBe(false);
+  expect(tileById(never, 'body_fat_percentage')?.value).toBeNull();
+});
+
+test('custom entries keep manual-only filtering and exact numeric text', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: undefined,
+    customMeasurements: [
+      {
+        id: 'manual',
+        category_id: 'c1',
+        value: '1.23456789',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          name: 'Glucose',
+          display_name: null,
+          measurement_type: 'mg/dL',
+          frequency: 'Daily',
+          data_type: 'numeric',
+        },
+      },
+      {
+        id: 'blank',
+        category_id: 'c2',
+        value: '   ',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          name: 'Blank',
+          display_name: null,
+          measurement_type: 'm',
+          frequency: 'Daily',
+          data_type: 'numeric',
+        },
+      },
+      {
+        id: 'synced',
+        category_id: 'c3',
+        value: '75',
+        entry_date: '2026-09-18',
+        source: 'healthkit',
+        custom_categories: {
+          name: 'Resting Heart Rate',
+          measurement_type: 'bpm',
+          frequency: 'Daily',
+        },
+      },
+    ] as Parameters<typeof buildMeasurementTiles>[0]['customMeasurements'],
+    t,
+    includeEmpty: false,
+  });
+
+  const custom = tiles.filter((tile) => tile.fieldId === null);
+  expect(custom.map((tile) => tile.label)).toEqual(['Glucose', 'Blank']);
+  // Precision is preserved, and whitespace never becomes a zero.
+  expect(custom[0]?.value).toBe('1.23456789 mg/dL');
+  expect(custom[1]?.value).toBe('    m');
 });
 
 test('custom measurements carry no field id, so they route to the full form', () => {
@@ -181,4 +314,101 @@ test('custom measurements carry no field id, so they route to the full form', ()
   const custom = tiles.find((tile) => tile.fieldId === null);
   expect(custom?.label).toBe('Blood Pressure');
   expect(custom?.value).toBe('120 mmHg');
+});
+
+test('a real zero and a boolean false are values, not blanks', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: undefined,
+    customMeasurements: [
+      {
+        id: 'zero',
+        category_id: 'c1',
+        value: '0',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          name: 'Zero',
+          measurement_type: '',
+          frequency: 'Daily',
+          data_type: 'numeric',
+        },
+      },
+      {
+        id: 'flag',
+        category_id: 'c2',
+        value: 'false',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          name: 'Flag',
+          measurement_type: '',
+          frequency: 'Daily',
+          data_type: 'boolean',
+        },
+      },
+    ] as Parameters<typeof buildMeasurementTiles>[0]['customMeasurements'],
+    t,
+    includeEmpty: false,
+  });
+
+  const custom = tiles.filter((tile) => tile.fieldId === null);
+  expect(custom.map((tile) => tile.value)).toEqual(['0', 'false']);
+});
+
+test('previousValue carries the day-before reading the trend is measured against', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: { entry_date: '2026-09-18', weight: 80 },
+    history: history({
+      weight: { shown: 80, shownDate: '2026-09-18', previous: 79 },
+    }),
+    t,
+    includeEmpty: false,
+  });
+
+  expect(tileById(tiles, 'weight')?.previousValue).toBe('79 kg');
+  // Nothing before it: the corner has to say so rather than show a blank.
+  expect(tileById(tiles, 'body_fat_percentage')?.previousValue).toBeNull();
+});
+
+test('custom entries stand outside the history model', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: undefined,
+    customMeasurements: [
+      {
+        id: 'e1',
+        category_id: 'c1',
+        value: '120',
+        entry_date: '2026-09-18',
+        source: 'manual',
+        custom_categories: {
+          id: 'c1',
+          name: 'Blood Pressure',
+          measurement_type: 'mmHg',
+          frequency: 'Daily',
+        },
+      },
+    ] as Parameters<typeof buildMeasurementTiles>[0]['customMeasurements'],
+    t,
+    includeEmpty: false,
+  });
+
+  const custom = tiles.find((tile) => tile.fieldId === null);
+  expect(custom?.previousValue).toBeNull();
+  expect(custom?.recordedToday).toBe(true);
+});
+
+test('a tile with no reading still reports the flat rule', () => {
+  const tiles = buildMeasurementTiles({
+    measurements: undefined,
+    t,
+    includeEmpty: false,
+  });
+
+  // An empty corner read as a tile that had not finished loading, beside
+  // siblings that had; the rule says "no change to report" instead.
+  expect(tileById(tiles, 'body_fat_percentage')?.value).toBeNull();
+  expect(tileById(tiles, 'body_fat_percentage')?.trend).toEqual({
+    direction: 'flat',
+    label: '',
+  });
 });

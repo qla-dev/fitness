@@ -757,3 +757,10 @@ if (!testI18n.isInitialized) {
     interpolation: { escapeValue: false },
   });
 }
+
+// The local database keeps its parsed copy in memory between transactions, so
+// a suite that clears AsyncStorage between tests would otherwise carry the
+// previous test's rows into the next one.
+beforeEach(() => {
+  require('./src/services/local/database').resetLocalDatabaseCache();
+});

@@ -248,3 +248,12 @@ export const ALWAYS_SHOWN_FIELDS: readonly MeasurementFieldId[] = [
   'weight',
   'body_fat_percentage',
 ];
+
+/**
+ * Fields that belong to the person rather than to a day, and so are shown on
+ * the profile instead of among the check-in tiles. They are still stored on the
+ * check-in — height is a measurement like any other — but nobody records their
+ * height on a Tuesday the way they record their weight, and a tile for it in
+ * the daily list only ever read as clutter.
+ */
+export const PROFILE_FIELDS: readonly MeasurementFieldId[] = ['height'];

@@ -88,16 +88,39 @@ function exerciseEntry(
   });
 }
 
-export function localSessions(db: LocalDatabase, date?: string): LocalRecord[] {
+/**
+ * Sessions for one day, or for a range. Narrow first, parse second: every row
+ * that survives the filter is validated through Zod and has its exercise name
+ * looked up, so a caller that wants a month must say so rather than ask for
+ * all time and discard the rest.
+ */
+export function localSessions(
+  db: LocalDatabase,
+  date?: string,
+  range?: { start: string; end: string }
+): LocalRecord[] {
+  const keep = (row: LocalRecord): boolean => {
+    const day = String(row.entry_date);
+    if (date !== undefined && day !== date) return false;
+    if (range && (day < range.start || day > range.end)) return false;
+    return true;
+  };
+  // One pass over the exercises table instead of one scan per activity.
+  const exercisesById = new Map(
+    table(db, 'exercises').map((row) => [String(row.id), row])
+  );
   const individual = table(db, 'activities')
-    .filter((row) => !date || row.entry_date === date)
+    .filter(keep)
     .map((row) => ({
       ...exerciseEntryResponseSchema.strip().parse(row),
       type: 'individual',
-      name: findRecord(db, 'exercises', row.exercise_id).name,
+      name: (
+        exercisesById.get(String(row.exercise_id)) ??
+        findRecord(db, 'exercises', row.exercise_id)
+      ).name,
     }));
   const workouts = table(db, 'workouts')
-    .filter((row) => !date || row.entry_date === date)
+    .filter(keep)
     .map((row) => presetSessionResponseSchema.strip().parse(row));
   return [...individual, ...workouts];
 }

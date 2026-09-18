@@ -348,6 +348,19 @@ export const saveTimeRange = async (timeRange: TimeRange): Promise<void> => {
  */
 export const DEFAULT_DAILY_SYNC_RANGE: TimeRange = '3d';
 
+/**
+ * How far back "Sync History Now" reaches when the Apple Health screen is
+ * opened.
+ *
+ * Deliberately not remembered between visits: the history sync is the
+ * catch-up, so it starts from a full year every time and a narrower choice
+ * applies only to the visit that made it. Everything else — the automatic
+ * syncs, background sync, the Dashboard card and the AddSheet row — runs on
+ * DEFAULT_DAILY_SYNC_RANGE instead, so a one-off catch-up never widens what
+ * the app does on its own.
+ */
+export const DEFAULT_HISTORY_SYNC_RANGE: TimeRange = '365d';
+
 export const saveDailySyncRange = async (
   timeRange: TimeRange
 ): Promise<void> => {

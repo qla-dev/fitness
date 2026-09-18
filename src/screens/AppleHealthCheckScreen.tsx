@@ -49,12 +49,11 @@ import { fireSelectionHaptic } from '../services/haptics';
 import {
   loadBackgroundSyncEnabled,
   loadSyncOnOpenEnabled,
-  loadTimeRange,
   loadDailySyncRange,
   saveDailySyncRange,
   DEFAULT_DAILY_SYNC_RANGE,
+  DEFAULT_HISTORY_SYNC_RANGE,
   saveSyncOnOpenEnabled,
-  saveTimeRange,
   type TimeRange,
 } from '../services/storage';
 import {
@@ -148,7 +147,12 @@ export default function AppleHealthCheckScreen({
     '--color-text-secondary',
   ]) as [string, string];
   const timeRangeOptions = useSyncTimeRangeOptions();
-  const [timeRange, setTimeRange] = useState<TimeRange>('3d');
+  // Per-visit, and never loaded from storage: the history sync opens at a
+  // full year every time (see DEFAULT_HISTORY_SYNC_RANGE). Narrowing it applies
+  // to this visit only, which is why nothing writes it back.
+  const [timeRange, setTimeRange] = useState<TimeRange>(
+    DEFAULT_HISTORY_SYNC_RANGE
+  );
   const [dailySyncRange, setDailySyncRange] = useState<TimeRange>(
     DEFAULT_DAILY_SYNC_RANGE
   );
@@ -179,9 +183,8 @@ export default function AppleHealthCheckScreen({
     let cancelled = false;
     void (async () => {
       const initialized = await initHealthConnect();
-      const [range, dailyRange, background, onOpen, metricStates] =
+      const [dailyRange, background, onOpen, metricStates] =
         await Promise.all([
-          loadTimeRange(),
           loadDailySyncRange(),
           loadBackgroundSyncEnabled(),
           loadSyncOnOpenEnabled(),
@@ -193,7 +196,6 @@ export default function AppleHealthCheckScreen({
           (await loadHealthPreference<boolean>(metric.preferenceKey)) === true;
       }
       if (cancelled) return;
-      if (range) setTimeRange(range);
       setDailySyncRange(dailyRange);
       setBackgroundSync(background);
       setSyncOnOpen(onOpen);
@@ -211,7 +213,7 @@ export default function AppleHealthCheckScreen({
   useEffect(() => {
     if (!healthReady) return;
     let cancelled = false;
-    fetchHealthDisplayData(timeRange).then((data) => {
+    fetchHealthDisplayData(dailySyncRange).then((data) => {
       if (cancelled) return;
       setHealthData(data);
       setIsLoadingHealthData(false);
@@ -219,7 +221,7 @@ export default function AppleHealthCheckScreen({
     return () => {
       cancelled = true;
     };
-  }, [healthReady, timeRange, dataRefreshKey]);
+  }, [healthReady, dailySyncRange, dataRefreshKey]);
 
   /**
    * Set only by a deliberate Sync History Now press: the screen closes itself
@@ -231,7 +233,7 @@ export default function AppleHealthCheckScreen({
    */
   const dismissAfterSyncRef = useRef(false);
 
-  const syncRange = async () => {
+  const syncRange = async (range: TimeRange) => {
     if (syncMutation.isPending || isSyncClaimed()) {
       // Nothing was started, so nothing will arrive to close the screen.
       dismissAfterSyncRef.current = false;
@@ -239,7 +241,7 @@ export default function AppleHealthCheckScreen({
     }
     syncMutation.mutate(
       {
-        timeRange,
+        timeRange: range,
         healthMetricStates: await loadHealthMetricStates(),
       },
       {
@@ -303,9 +305,9 @@ export default function AppleHealthCheckScreen({
    * everything is a deliberate act with its own screen; it does not belong
    * behind the sync button at the foot of a settings screen.
    */
-  const startSync = () => {
+  const startSync = (range: TimeRange) => {
     if (busy) return;
-    void syncRange();
+    void syncRange(range);
   };
 
   const syncNow = () => {
@@ -314,16 +316,19 @@ export default function AppleHealthCheckScreen({
     setFinishingIndex(0);
     void confirmHealthStartup();
     dismissAfterSyncRef.current = true;
-    startSync();
+    startSync(timeRange);
   };
 
   // Coming back from the Health app or iPhone Settings (e.g. after Check Apple
   // Health Permissions) may mean new permissions: reload what the screen shows
   // and sync straight away. Only a return from the background counts, so
   // pulling down Notification Center does not start a sync.
-  const startSyncRef = useRef(startSync);
+  const startSyncRef = useRef<() => void>(() => startSync(dailySyncRange));
   useEffect(() => {
-    startSyncRef.current = startSync;
+    // The startup window, not the history one: this fires on its own when the
+    // user comes back from the Health app, and only a deliberate press should
+    // reach back a year.
+    startSyncRef.current = () => startSync(dailySyncRange);
   });
   useEffect(() => {
     let previous = AppState.currentState;
@@ -481,10 +486,7 @@ export default function AppleHealthCheckScreen({
                 title={t('syncScreen.historyRange.selectTitle', {
                   defaultValue: 'Select History Sync Range',
                 })}
-                onSelect={(value) => {
-                  setTimeRange(value);
-                  void saveTimeRange(value);
-                }}
+                onSelect={setTimeRange}
                 renderTrigger={({ onPress, selectedOption }) => (
                   <Pressable
                     onPress={onPress}
