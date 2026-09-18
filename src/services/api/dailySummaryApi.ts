@@ -19,6 +19,8 @@ export interface DailySummaryApiResponse {
    * some metrics.
    */
   hourlyActivity?: Record<string, number[]>;
+  /** Resting + active energy for the day, as the provider reported it. */
+  totalCaloriesBurned?: number;
   calorieBalance?: CalorieBalance;
   // Optional: a client can outrun the server it talks to, and supplement totals only exist
   // on servers new enough to send them.

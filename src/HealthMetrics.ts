@@ -1040,7 +1040,9 @@ const ALL_HEALTH_METRICS: HealthMetric[] = [
     platforms: ['ios'],
     category: 'Apple',
     backgroundDeliveryFrequency: 'none',
-    aggregationStrategy: 'sum',
+    // Day-aggregated, like steps: HealthKit reports this as many short samples
+    // and only their sum is the ring's number.
+    readKind: 'cumulative-day',
   },
   {
     id: 'appleStandTime',

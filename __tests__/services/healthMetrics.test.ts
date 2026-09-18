@@ -10,6 +10,9 @@ describe('metricReadKind', () => {
 
     expect(cumulative).toEqual([
       'ActiveCaloriesBurned',
+      // HealthKit reports this as many short samples; only their sum is the
+      // Exercise ring's number, so it is read day-aggregated like steps.
+      'AppleExerciseTime',
       // Category samples rather than a quantity, but still one figure per day:
       // the count of hours that contained standing, for the Stand ring.
       'AppleStandHour',

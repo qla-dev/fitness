@@ -8,6 +8,7 @@ import {
   getAggregatedStepsByDateDetailed,
   getAggregatedActiveCaloriesByDateDetailed,
   getAggregatedStandHoursByDateDetailed,
+  getAggregatedExerciseTimeByDateDetailed,
   getAggregatedTotalCaloriesByDateDetailed,
   getAggregatedDistanceByDateDetailed,
   getAggregatedFloorsClimbedByDateDetailed,
@@ -35,6 +36,7 @@ const CUMULATIVE_READERS: Record<string, CumulativeReader> = {
   FloorsClimbed: getAggregatedFloorsClimbedByDateDetailed,
   BasalMetabolicRate: getAggregatedBasalEnergyByDateDetailed,
   AppleStandHour: getAggregatedStandHoursByDateDetailed,
+  AppleExerciseTime: getAggregatedExerciseTimeByDateDetailed,
 };
 
 /**

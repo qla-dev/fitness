@@ -22,6 +22,7 @@ import { getTodayDate } from '../../utils/dateUtils';
 import {
   importedWater,
   localHourlyActivity,
+  localTotalCalories,
   importHealthData,
   localMeasurements,
 } from './healthRepository';
@@ -128,6 +129,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
       ),
       exerciseSessions: localSessions(db, date),
       hourlyActivity: localHourlyActivity(db, date),
+      totalCaloriesBurned: localTotalCalories(db, date),
       waterIntake:
         importedWater(db, date) +
         Number(

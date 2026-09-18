@@ -30,6 +30,8 @@ export interface DailySummaryRawData {
   waterIntake: WaterIntake;
   stepCalories: number;
   hourlyActivity?: Record<string, number[]>;
+  /** Resting + active energy for the day, where the provider reported it. */
+  totalCaloriesBurned?: number;
   calorieBalance?: CalorieBalance;
   supplementTotals?: SupplementTotals;
   adjustedGoals?: {
@@ -53,6 +55,7 @@ export async function loadDailySummaryRawData(
     waterIntake: { water_ml: data.waterIntake },
     stepCalories: data.stepCalories ?? 0,
     hourlyActivity: data.hourlyActivity,
+    totalCaloriesBurned: data.totalCaloriesBurned,
     calorieBalance: data.calorieBalance,
     supplementTotals: data.supplementTotals,
     adjustedGoals: data.adjustedGoals ?? null,
@@ -70,6 +73,7 @@ export function buildDailySummary(
     waterIntake,
     stepCalories,
     hourlyActivity,
+    totalCaloriesBurned,
     calorieBalance,
     supplementTotals,
     adjustedGoals,
@@ -117,6 +121,8 @@ export function buildDailySummary(
     // chart reports as unavailable rather than drawing an empty day.
     hourlyMove: hourlyActivity?.['Active Calories'],
     hourlyStand: hourlyActivity?.apple_stand_hours,
+    hourlyExercise: hourlyActivity?.apple_exercise_time,
+    totalCaloriesBurned,
     exerciseMinutesGoal: goals.target_exercise_duration_minutes || 0,
     exerciseCaloriesGoal: goals.target_exercise_calories_burned || 0,
     netCalories,

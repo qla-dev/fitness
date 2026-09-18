@@ -21,6 +21,12 @@ interface DashboardActivityDetailsProps {
   hourlyMove?: readonly (number | null)[];
   hourlyExercise?: readonly (number | null)[];
   hourlyStand?: readonly (number | null)[];
+  /**
+   * Resting + active energy for the day. Printed as the Move chart's total,
+   * where the Health app prints the same thing — the ring above it counts
+   * active energy alone, so the two deliberately differ.
+   */
+  totalCaloriesBurned?: number;
   /** Opens one metric's own screen. Every block here drills into the same one. */
   onOpenGoal?: (metric: ActivityGoalKey) => void;
 }
@@ -37,6 +43,7 @@ export default function DashboardActivityDetails({
   hourlyMove,
   hourlyExercise,
   hourlyStand,
+  totalCaloriesBurned,
   onOpenGoal,
 }: DashboardActivityDetailsProps) {
   const { t } = useTranslation();
@@ -64,6 +71,14 @@ export default function DashboardActivityDetails({
         goal={summary.exerciseCaloriesGoal}
         unit={t('dashboard.activityKcal', { defaultValue: 'kcal' })}
         hourlyValues={hourlyMove}
+        formatTotal={
+          totalCaloriesBurned != null
+            ? () =>
+                `${formatLocalizedNumber(totalCaloriesBurned, {
+                  maximumFractionDigits: 0,
+                })} ${t('dashboard.activityKcal', { defaultValue: 'kcal' })}`
+            : undefined
+        }
         onOpen={onOpenGoal ? () => onOpenGoal('move') : undefined}
       />
       <ActivityMetricChart

@@ -30,6 +30,14 @@ export interface DailySummary {
   hourlyMove?: number[];
   /** The day's standing hours as 24 flags, from the Stand ring's own records. */
   hourlyStand?: number[];
+  /** The day's exercise minutes by hour, as the provider broke them down. */
+  hourlyExercise?: number[];
+  /**
+   * Resting + active energy for the day. Distinct from the Move ring, which is
+   * active energy alone — this is the figure the Health app prints as the
+   * chart's total underneath it.
+   */
+  totalCaloriesBurned?: number;
   exerciseMinutesGoal: number;
   exerciseCaloriesGoal: number;
   waterConsumed: number;

@@ -349,30 +349,28 @@ export function importHealthData(
   // Daily active energy already includes the imported workouts. Keep only
   // the remainder in the synthetic entry; manual activities remain additive.
   //
+  // Energy only. The same carve-out does NOT hold for exercise minutes: a
+  // provider's exercise time counts the minutes that were brisk enough, not
+  // the length of the workout that earned them, so subtracting one from the
+  // other zeroed the day. That is settled in calculateExerciseStats instead,
+  // by not counting an imported workout's minutes twice.
+  //
   // Limited to the days this batch touched, and to one pass over the health
   // records. It used to re-derive every "Active Calories" row ever imported,
   // rescanning the whole activities and health-record tables for each one, on
   // every sync — including the one that runs each time the app is opened. Only
   // a touched day can have changed, so the rest was pure repetition.
   const workoutCaloriesByDay = new Map<string, number>();
-  const workoutMinutesByDay = new Map<string, number>();
   const activeEnergyTotals: LocalRecord[] = [];
-  const exerciseTimeTotals: LocalRecord[] = [];
   for (const row of table(db, 'healthRecords')) {
     const day = `${String(row.source)}|${String(row.entry_date)}`;
     if (!touchedDays.has(day)) continue;
     if (row.type === 'Active Calories') {
       activeEnergyTotals.push(row);
-    } else if (row.type === APPLE_EXERCISE_TIME) {
-      exerciseTimeTotals.push(row);
     } else if (row.type === 'ExerciseSession' || row.type === 'Workout') {
       workoutCaloriesByDay.set(
         day,
         (workoutCaloriesByDay.get(day) ?? 0) + Number(row.caloriesBurned ?? 0)
-      );
-      workoutMinutesByDay.set(
-        day,
-        (workoutMinutesByDay.get(day) ?? 0) + Number(row.duration ?? 0) / 60
       );
     }
   }
@@ -383,18 +381,6 @@ export function importHealthData(
     activity.calories_burned = Math.max(
       0,
       Number(total.value ?? 0) - (workoutCaloriesByDay.get(day) ?? 0)
-    );
-  }
-  // Apple's exercise minutes count the imported workouts too, so the same
-  // carve-out applies: the day's figure stays Apple's own, and a workout Apple
-  // never saw still adds its minutes on top.
-  for (const total of exerciseTimeTotals) {
-    const activity = byHealthKey('activities').get(String(total.health_key));
-    if (!activity) continue;
-    const day = `${String(total.source)}|${String(total.entry_date)}`;
-    activity.duration_minutes = Math.max(
-      0,
-      Number(total.value ?? 0) / 60 - (workoutMinutesByDay.get(day) ?? 0)
     );
   }
   return { recordsSent: records.length, recordErrors: [] };
@@ -427,6 +413,25 @@ export function localHourlyActivity(
       : slots;
   }
   return hourly;
+}
+
+/**
+ * Resting + active energy for the day, as the provider reported it.
+ *
+ * The Health app prints this under its Move chart while the ring above counts
+ * active energy alone, so the two figures are both right and very different.
+ * Summed across sources, like the hourly breakdowns.
+ */
+export function localTotalCalories(
+  db: LocalDatabase,
+  date: unknown
+): number | undefined {
+  let total: number | undefined;
+  for (const row of table(db, 'healthRecords')) {
+    if (row.entry_date !== date || row.type !== 'total_calories') continue;
+    total = (total ?? 0) + Number(row.value ?? 0);
+  }
+  return total;
 }
 
 export function importedWater(db: LocalDatabase, date: unknown): number {

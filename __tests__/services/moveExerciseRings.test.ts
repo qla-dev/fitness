@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { localApiFetch } from '../../src/services/local/localApi';
 import { buildDailySummary } from '../../src/services/dailySummaryService';
+import { buildHourlyExerciseMinutes } from '../../src/utils/hourlyActivity';
 
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
@@ -247,6 +248,79 @@ describe('Move and Exercise after an Apple Health sync', () => {
     );
 
     expect(days[0]?.steps).toBe(6577);
+  });
+
+  // The case that zeroed the ring: Apple credits 21 minutes for a workout that
+  // ran for 60. Subtracting the duration from the total gave -39, clamped to 0,
+  // so a day with a long walk in it reported no exercise at all.
+  test('a long workout earning fewer minutes does not zero the day', async () => {
+    const summary = await syncAndSummarize([
+      {
+        type: 'apple_exercise_time',
+        value: 21 * 60,
+        unit: 'seconds',
+        date,
+        source: 'Apple Health',
+      },
+      {
+        type: 'ExerciseSession',
+        title: 'Long walk',
+        duration: 60 * 60,
+        caloriesBurned: 180,
+        date,
+        timestamp: `${date}T08:00:00.000Z`,
+        source_id: 'w-walk',
+        source: 'Apple Health',
+      },
+    ]);
+
+    expect(summary.exerciseMinutes).toBe(21);
+  });
+
+  // The Health app prints resting + active under the Move chart while the ring
+  // above it counts active alone; both are right and they are far apart.
+  test("the Move chart's total is the day's whole energy, not the ring's", async () => {
+    await request('/api/health-data', 'POST', [
+      { type: 'active_calories', value: 358, date, source: 'Apple Health' },
+      { type: 'total_calories', value: 1931, date, source: 'Apple Health' },
+    ]);
+
+    const raw = await request<Record<string, unknown>>(
+      `/api/daily-summary?date=${date}`
+    );
+    const summary = buildDailySummary(date, {
+      goals: (raw.goals ?? {}) as never,
+      foodEntries: [],
+      exerciseEntries: (raw.exerciseSessions ?? []) as never,
+      waterIntake: { water_ml: 0 },
+      stepCalories: 0,
+      totalCaloriesBurned: raw.totalCaloriesBurned as number,
+    });
+
+    expect(summary.activeCalories).toBe(358);
+    expect(summary.totalCaloriesBurned).toBe(1931);
+  });
+
+  // The synthetic day entries carry no minutes, but an effort with no duration
+  // still registers as one — so a day holding only these drew bars over a
+  // headline reading 0.
+  test('the synthetic day entries are not drawn as hourly efforts', () => {
+    const sessions = [
+      {
+        type: 'individual',
+        created_at: `${date}T12:00:00.000Z`,
+        duration_minutes: 0,
+        exercise_snapshot: { name: 'Active Calories' },
+      },
+      {
+        type: 'individual',
+        created_at: `${date}T18:00:00.000Z`,
+        duration_minutes: 0,
+        exercise_snapshot: { name: 'Apple Exercise Time' },
+      },
+    ];
+
+    expect(buildHourlyExerciseMinutes(sessions as never)).toBeUndefined();
   });
 
   test('a workout Apple never saw adds on top of its totals', async () => {

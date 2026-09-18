@@ -118,7 +118,9 @@ export function localTransaction<T>(
       const raw = await AsyncStorage.getItem(LOCAL_DATABASE_KEY);
       // Corrupt/unknown versions must fail visibly, never reset user data.
       cache =
-        raw === null ? initialDatabase() : databaseSchema.parse(JSON.parse(raw));
+        raw === null
+          ? initialDatabase()
+          : databaseSchema.parse(JSON.parse(raw));
     }
     const db = cache;
     dirty = false;

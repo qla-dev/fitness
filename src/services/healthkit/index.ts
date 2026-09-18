@@ -770,6 +770,73 @@ export const getAggregatedStandHoursByDateDetailed = async (
   }
 };
 
+/**
+ * Apple's exercise minutes for each day, plus the hours they fell in.
+ *
+ * Read through statistics rather than as raw samples for the same reason steps
+ * are: HealthKit answers this type with a stream of short samples that only
+ * mean anything added up. Summing them here also gives the Exercise chart a
+ * real hourly series, instead of the day's whole figure dropped into whatever
+ * hour its row happened to be written.
+ *
+ * The day total is emitted in seconds because that is the unit the metric
+ * declares and the importer divides by; the hourly slots are minutes, which is
+ * what the chart plots.
+ */
+export const getAggregatedExerciseTimeByDateDetailed = async (
+  startDate: Date,
+  endDate: Date
+): Promise<HealthKitReadResult<AggregatedHealthRecord>> => {
+  if (!isHealthKitAvailable) {
+    return { records: [] };
+  }
+  const identifier = 'HKQuantityTypeIdentifierAppleExerciseTime';
+  try {
+    const buckets = await queryDayStatistics(
+      identifier,
+      ['cumulativeSum'],
+      startDate,
+      endDate,
+      'min'
+    );
+    const deviceTz = getDeviceTimezone();
+    const records: AggregatedHealthRecord[] = [];
+    for (const bucket of buckets) {
+      const minutes = bucket.sumQuantity?.quantity ?? 0;
+      if (minutes <= 0) continue;
+      records.push({
+        date: toLocalDateString(new Date(bucket.startDate as Date)),
+        value: Math.round(minutes * 60),
+        type: 'apple_exercise_time',
+        record_timezone: deviceTz,
+      });
+    }
+    if (records.length === 0) return { records };
+    try {
+      const hourly = await queryHourlyByDay(
+        identifier,
+        startDate,
+        endDate,
+        'min'
+      );
+      return {
+        records: records.map((record) => {
+          const hours = hourly.get(record.date);
+          return hours ? { ...record, hourly: hours.map(Math.round) } : record;
+        }),
+      };
+    } catch {
+      // The ring's number is the point; its breakdown is a bonus.
+      return { records };
+    }
+  } catch (error) {
+    return {
+      records: [],
+      error: recordReadError(error, 'Exercise time query'),
+    };
+  }
+};
+
 export const getAggregatedActiveCaloriesByDate = (
   startDate: Date,
   endDate: Date

@@ -231,9 +231,14 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   // The Exercise chart's 24 bars, built from the day's logged sessions. Move
   // and Stand come off the summary instead: their breakdowns are read from the
   // health provider, not derived from anything the app holds.
+  // The provider's own breakdown wins where it exists: it is the same figure
+  // the ring shows, split by hour. The session-derived series stands in for a
+  // day whose exercise was logged here rather than synced.
   const hourlyExercise = useMemo(
-    () => buildHourlyExerciseMinutes(loadedSummary?.exerciseEntries),
-    [loadedSummary?.exerciseEntries]
+    () =>
+      loadedSummary?.hourlyExercise ??
+      buildHourlyExerciseMinutes(loadedSummary?.exerciseEntries),
+    [loadedSummary?.hourlyExercise, loadedSummary?.exerciseEntries]
   );
 
   const { refetch: refetchCustomNutrients } = useCustomNutrients({
@@ -410,6 +415,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           standHours={measurements?.stand_hours}
           hourlyExercise={hourlyExercise}
           hourlyMove={summary.hourlyMove}
+          totalCaloriesBurned={summary.totalCaloriesBurned}
           hourlyStand={summary.hourlyStand}
           distanceUnit={distanceUnit}
           standGoal={summary.goals.stand_hours}

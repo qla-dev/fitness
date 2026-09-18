@@ -91,6 +91,22 @@ function effortForEntry(entry: TimedEntry): TimedEffort | null {
   return { startMinute, durationMinutes: logged > 0 ? logged : setSpan };
 }
 
+/**
+ * The synthetic day entries a health import creates, which are totals rather
+ * than efforts.
+ *
+ * "Active Calories" is energy and carries no minutes at all; "Apple Exercise
+ * Time" is the day's whole exercise figure, which belongs on the chart as the
+ * provider's own hourly series and not as one lump dropped at whatever o'clock
+ * the row happened to be written. Both used to be drawn here — and because an
+ * effort with no duration still registers as a minute, a day whose only
+ * sessions were these two showed bars above a headline reading 0.
+ */
+const SYNTHETIC_DAY_ENTRIES = new Set([
+  'Active Calories',
+  'Apple Exercise Time',
+]);
+
 /** Flattens a day's sessions into the individual efforts that carry a clock time. */
 function collectTimedEfforts(
   sessions: readonly ExerciseSessionResponse[]
@@ -98,6 +114,11 @@ function collectTimedEfforts(
   const efforts: TimedEffort[] = [];
 
   for (const session of sessions) {
+    if (
+      session.type !== 'preset' &&
+      SYNTHETIC_DAY_ENTRIES.has(session.exercise_snapshot?.name ?? '')
+    )
+      continue;
     if (session.type === 'preset') {
       // Each exercise is placed on its own time, so a workout that ran across
       // two hours reads as two hours rather than one lump.

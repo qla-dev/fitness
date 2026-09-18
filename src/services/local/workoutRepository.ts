@@ -82,6 +82,10 @@ function exerciseEntry(
       force: exercise.force ?? null,
       level: exercise.level ?? null,
       mechanic: exercise.mechanic ?? null,
+      // Which provider this exercise came from, or null for one the user owns.
+      // The day's totals need it: a workout imported from Apple Health is
+      // already inside Apple's own exercise minutes, and one logged here is not.
+      source: exercise.source ?? null,
       calories_per_hour: exercise.calories_per_hour ?? 0,
     },
     sets: sets(db, body.sets),

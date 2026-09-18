@@ -176,6 +176,35 @@ export interface ExerciseStats {
   durationMinutes: number;
 }
 
+const APPLE_EXERCISE_TIME_NAME = 'Apple Exercise Time';
+
+/**
+ * The providers whose workouts are already counted in a daily exercise-time
+ * total, for this day.
+ *
+ * Apple's exercise minutes are the minutes that were brisk enough to count,
+ * NOT the length of the workouts they came from: a 60-minute walk can earn 21
+ * of them. So a workout imported from the same provider must add no minutes of
+ * its own — Apple has already decided how many of them counted — while a
+ * workout logged in this app, which Apple never saw, still adds all of its.
+ *
+ * Subtracting the workouts' duration from the provider's total instead (which
+ * is what this used to do, one layer down in the importer) drove the day
+ * straight to zero whenever a workout ran longer than the minutes it earned.
+ */
+function providersReportingExerciseTime(
+  sessions: readonly ExerciseSessionResponse[]
+): Set<string> {
+  const providers = new Set<string>();
+  for (const session of sessions) {
+    if (session.type === 'preset') continue;
+    if (session.exercise_snapshot?.name !== APPLE_EXERCISE_TIME_NAME) continue;
+    const source = session.exercise_snapshot?.source;
+    if (source) providers.add(source);
+  }
+  return providers;
+}
+
 export function calculateExerciseStats(
   sessions: ExerciseSessionResponse[]
 ): ExerciseStats {
@@ -183,6 +212,7 @@ export function calculateExerciseStats(
   let activeCalories = 0;
   let otherExerciseCalories = 0;
   let durationMinutes = 0;
+  const countedByProvider = providersReportingExerciseTime(sessions);
 
   for (const session of sessions) {
     const sessionCals = getSessionCalories(session);
@@ -198,14 +228,22 @@ export function calculateExerciseStats(
       // energy for those minutes is already inside Active Calories, so adding
       // its (zero) calories anywhere would be the start of a double count.
       const isAppleExerciseTime =
-        session.exercise_snapshot?.name === 'Apple Exercise Time';
+        session.exercise_snapshot?.name === APPLE_EXERCISE_TIME_NAME;
+      const source = session.exercise_snapshot?.source;
+      // Calories still count: the provider's active-energy total is carved out
+      // for them in the importer, so the two halves add back up to its figure.
+      // Only the minutes are already spoken for.
+      const minutesAlreadyCounted = Boolean(
+        source && countedByProvider.has(source)
+      );
       if (isActiveCals) {
         activeCalories += session.calories_burned || 0;
       } else if (isAppleExerciseTime) {
         durationMinutes += session.duration_minutes ?? 0;
       } else {
         otherExerciseCalories += sessionCals;
-        durationMinutes += session.duration_minutes ?? 0;
+        if (!minutesAlreadyCounted)
+          durationMinutes += session.duration_minutes ?? 0;
       }
     }
   }
