@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { useSyncHealthData } from './useSyncHealthData';
 import {
   loadDailySyncRange,
-  getActiveServerConfig,
+  resolveSyncConfigId,
   loadSyncOnOpenEnabled,
 } from '../services/storage';
 import type { TimeRange } from '../services/storage';
@@ -21,19 +21,6 @@ import {
   recordAutoSyncTime,
 } from '../services/autoSyncCoordinator';
 import { addLog } from '../services/LogService';
-import { isLocalDataMode } from '../services/dataMode';
-
-/**
- * Bookkeeping key for an auto-sync run, used for the per-target cooldown.
- * Local-first builds have no server config, so they use a stable synthetic id
- * rather than skipping the sync outright — the health data still has somewhere
- * to go, namely the on-device database.
- */
-const resolveSyncConfigId = async (): Promise<string | null> => {
-  if (isLocalDataMode()) return 'local';
-  const config = await getActiveServerConfig();
-  return config?.id ?? null;
-};
 
 const AUTO_SYNC_WATCHDOG_MS = 90_000;
 

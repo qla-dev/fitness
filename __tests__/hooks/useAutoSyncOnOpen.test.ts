@@ -5,7 +5,7 @@ import type { useSyncHealthData } from '../../src/hooks/useSyncHealthData';
 import {
   loadTimeRange,
   loadDailySyncRange,
-  getActiveServerConfig,
+  resolveSyncConfigId,
   loadSyncOnOpenEnabled,
 } from '../../src/services/storage';
 import {
@@ -25,7 +25,7 @@ import {
 jest.mock('../../src/services/storage', () => ({
   loadTimeRange: jest.fn(),
   loadDailySyncRange: jest.fn(),
-  getActiveServerConfig: jest.fn(),
+  resolveSyncConfigId: jest.fn(),
   loadSyncOnOpenEnabled: jest.fn(),
 }));
 
@@ -56,8 +56,8 @@ const mockLoadDailySyncRange = loadDailySyncRange as jest.MockedFunction<
 const mockLoadTimeRange = loadTimeRange as jest.MockedFunction<
   typeof loadTimeRange
 >;
-const mockGetActiveServerConfig = getActiveServerConfig as jest.MockedFunction<
-  typeof getActiveServerConfig
+const mockResolveSyncConfigId = resolveSyncConfigId as jest.MockedFunction<
+  typeof resolveSyncConfigId
 >;
 const mockLoadSyncOnOpenEnabled = loadSyncOnOpenEnabled as jest.MockedFunction<
   typeof loadSyncOnOpenEnabled
@@ -107,9 +107,7 @@ const ALL_METRICS_ENABLED = Object.fromEntries(
 
 function mockHappyPathServices() {
   mockLoadSyncOnOpenEnabled.mockResolvedValue(true);
-  mockGetActiveServerConfig.mockResolvedValue({ id: 'cfg-1' } as Awaited<
-    ReturnType<typeof getActiveServerConfig>
-  >);
+  mockResolveSyncConfigId.mockResolvedValue('cfg-1');
   mockInitHealthConnect.mockResolvedValue(true);
   mockLoadTimeRange.mockResolvedValue('7d');
   // Automatic syncs read their own range, not the manual Sync Range.
@@ -220,7 +218,7 @@ describe('useAutoSyncOnOpen cold-start sync', () => {
 
   it('does not sync when there is no active server config, and gives the claim back', async () => {
     mockHappyPathServices();
-    mockGetActiveServerConfig.mockResolvedValue(null);
+    mockResolveSyncConfigId.mockResolvedValue(null);
     const release = jest.fn();
     mockTryClaimAutoSync.mockReturnValue(release);
     const syncMutation = buildSyncMutation();
@@ -289,7 +287,7 @@ describe('useAutoSyncOnOpen foreground-return sync', () => {
     });
 
     expect(mockFlushPendingRefresh).toHaveBeenCalled();
-    expect(mockGetActiveServerConfig).not.toHaveBeenCalled();
+    expect(mockResolveSyncConfigId).not.toHaveBeenCalled();
     expect(syncMutation.mutate).not.toHaveBeenCalled();
     jest.useRealTimers();
   });

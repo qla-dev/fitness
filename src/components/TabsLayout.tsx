@@ -189,7 +189,7 @@ function DiaryStackScreen() {
           name="DiaryRoot"
           component={SafeDiary as React.ComponentType}
           options={{
-            title: t('navigation.diary', { defaultValue: 'Nutrition' }),
+            title: t('navigation.diary', { defaultValue: 'Tracker' }),
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
@@ -311,9 +311,9 @@ export function NativeTabsLayout({
           name="Diary"
           component={DiaryStackScreen}
           options={{
-            tabBarLabel: t('navigation.diary', { defaultValue: 'Nutrition' }),
+            tabBarLabel: t('navigation.diary', { defaultValue: 'Tracker' }),
             tabBarIcon: () =>
-              ({ sfSymbol: 'fork.knife' }) as unknown as AppleIcon,
+              ({ sfSymbol: 'checklist' }) as unknown as AppleIcon,
           }}
         />
         <NativeTab.Screen
@@ -402,9 +402,9 @@ export function FallbackTabsLayout({
         name="Diary"
         component={SafeDiary}
         options={{
-          tabBarLabel: t('navigation.diary', { defaultValue: 'Nutrition' }),
+          tabBarLabel: t('navigation.diary', { defaultValue: 'Tracker' }),
           tabBarAccessibilityLabel: t('navigation.diary', {
-            defaultValue: 'Nutrition',
+            defaultValue: 'Tracker',
           }),
         }}
       />

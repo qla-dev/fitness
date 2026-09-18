@@ -22,6 +22,13 @@ jest.mock('../../src/hooks/useMeasurements', () => ({
   useMeasurements: () => ({ measurements: null, customMeasurements: [] }),
 }));
 
+// The tiles read one range query for yesterday's value and the last recorded
+// one; these tests render the screen without a QueryClientProvider.
+jest.mock('../../src/hooks/useMeasurementHistory', () => ({
+  useMeasurementHistory: () => ({ history: undefined, isLoading: false }),
+}));
+
+
 // Sleep is settled and empty throughout: this suite is about the photo arm of the
 // predicate, and an unmocked query would stay pending and hide the day behind the
 // screen's loading gate.

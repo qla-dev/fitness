@@ -10,19 +10,46 @@ jest.mock('../../src/components/icons/measurements', () => ({
 
 jest.mock('uniwind', () => ({
   useCSSVariable: jest.fn(() => ['#000', '#666']),
+  useUniwind: jest.fn(() => ({ theme: 'light' })),
 }));
 
+// The card renders the More sheet beside its tiles; the sheet itself is
+// covered by its own test, and mounting the real bottom-sheet modal here would
+// only drag native sheet chrome into a tile-rendering test.
+jest.mock('../../src/components/MoreMeasurementsSheet', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: React.forwardRef(() => null),
+  };
+});
+
 describe('MeasurementsSummary', () => {
-  test('renders null when no measurements or custom measurements', () => {
-    const { toJSON } = render(<MeasurementsSummary measurements={undefined} />);
-    expect(toJSON()).toBeNull();
+  // A card that disappears on the days you have not weighed yourself hides the
+  // prompt on exactly the day it is worth something, so weight and body fat
+  // always render — with a placeholder where the value would be.
+  test('always renders weight and body fat, with a placeholder when unrecorded', () => {
+    const { getByText, getAllByText } = render(
+      <MeasurementsSummary measurements={undefined} />
+    );
+    expect(getByText('Weight')).toBeTruthy();
+    expect(getByText('Body fat %')).toBeTruthy();
+    expect(getAllByText('—')).toHaveLength(2);
   });
 
-  test('renders null when measurements object has no values and no custom measurements', () => {
-    const { toJSON } = render(
+  test('a day with no values still renders the two standing tiles', () => {
+    const { getByText, getAllByText } = render(
       <MeasurementsSummary measurements={{ entry_date: '2024-06-15' }} />
     );
-    expect(toJSON()).toBeNull();
+    expect(getByText('Weight')).toBeTruthy();
+    expect(getAllByText('—')).toHaveLength(2);
+  });
+
+  test('offers More, which opens the full list', () => {
+    const { getByLabelText } = render(
+      <MeasurementsSummary measurements={undefined} />
+    );
+    expect(getByLabelText('More')).toBeTruthy();
   });
 
   test('renders built-in measurement rows', () => {
@@ -254,8 +281,8 @@ describe('MeasurementsSummary', () => {
     expect(queryByText('Resting Heart Rate')).toBeNull();
   });
 
-  test('Diary shows nothing when only synced custom entries exist', () => {
-    const { toJSON } = render(
+  test('Diary shows no tile when only synced custom entries exist', () => {
+    const { queryByText } = render(
       <MeasurementsSummary
         measurements={undefined}
         customMeasurements={[
@@ -274,7 +301,7 @@ describe('MeasurementsSummary', () => {
         ]}
       />
     );
-    expect(toJSON()).toBeNull();
+    expect(queryByText('Heart Rate')).toBeNull();
   });
 
   test('manual entry with value 0 still appears', () => {
@@ -381,7 +408,7 @@ describe('MeasurementsSummary', () => {
   });
 
   test('Diary excludes custom entries with a null/missing source', () => {
-    const { toJSON } = render(
+    const { queryByText } = render(
       <MeasurementsSummary
         measurements={undefined}
         customMeasurements={[
@@ -401,6 +428,6 @@ describe('MeasurementsSummary', () => {
       />
     );
     // Strict contract: only literal 'manual' creates a tile.
-    expect(toJSON()).toBeNull();
+    expect(queryByText('Null Source')).toBeNull();
   });
 });

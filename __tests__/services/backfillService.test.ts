@@ -26,7 +26,7 @@ jest.mock('../../src/services/api/healthDataApi', () => ({
 }));
 
 jest.mock('../../src/services/storage', () => ({
-  getActiveServerConfig: jest.fn(),
+  resolveSyncConfigId: jest.fn(),
   saveLastSyncedTime: jest.fn(),
 }));
 
@@ -91,7 +91,7 @@ const api = require('../../src/services/api/healthDataApi') as {
   syncHealthData: jest.Mock;
 };
 const storage = require('../../src/services/storage') as {
-  getActiveServerConfig: jest.Mock;
+  resolveSyncConfigId: jest.Mock;
   saveLastSyncedTime: jest.Mock;
 };
 const engine = require('../../src/services/shared/healthSyncEngine') as {
@@ -165,7 +165,7 @@ describe('runBackfill', () => {
         >;
       });
 
-    storage.getActiveServerConfig.mockResolvedValue({ id: 'server-1' });
+    storage.resolveSyncConfigId.mockResolvedValue('server-1');
     healthService.loadHealthPreference.mockImplementation((key: string) =>
       Promise.resolve(key === 'syncStepsEnabled' || key === 'syncWeightEnabled')
     );
@@ -258,7 +258,7 @@ describe('runBackfill', () => {
   });
 
   test('returns no-server without claiming when no config is active', async () => {
-    storage.getActiveServerConfig.mockResolvedValue(null);
+    storage.resolveSyncConfigId.mockResolvedValue(null);
 
     const result = await runBackfill(runOpts());
 
@@ -483,11 +483,11 @@ describe('runBackfill', () => {
   });
 
   test('a server switch at a window boundary stops without advancing further', async () => {
-    storage.getActiveServerConfig
-      .mockResolvedValueOnce({ id: 'server-1' }) // run entry
-      .mockResolvedValueOnce({ id: 'server-1' }) // window 1 boundary
-      .mockResolvedValueOnce({ id: 'server-1' }) // window 1 pre-upload
-      .mockResolvedValue({ id: 'server-2' }); // window 2 boundary onwards
+    storage.resolveSyncConfigId
+      .mockResolvedValueOnce('server-1') // run entry
+      .mockResolvedValueOnce('server-1') // window 1 boundary
+      .mockResolvedValueOnce('server-1') // window 1 pre-upload
+      .mockResolvedValue('server-2'); // window 2 boundary onwards
 
     const result = await runBackfill(runOpts());
 
@@ -499,10 +499,10 @@ describe('runBackfill', () => {
   });
 
   test('a server switch caught right before an upload discards that window', async () => {
-    storage.getActiveServerConfig
-      .mockResolvedValueOnce({ id: 'server-1' }) // run entry
-      .mockResolvedValueOnce({ id: 'server-1' }) // window 1 boundary
-      .mockResolvedValue({ id: 'server-2' }); // window 1 pre-upload onwards
+    storage.resolveSyncConfigId
+      .mockResolvedValueOnce('server-1') // run entry
+      .mockResolvedValueOnce('server-1') // window 1 boundary
+      .mockResolvedValue('server-2'); // window 1 pre-upload onwards
 
     const result = await runBackfill(runOpts());
 

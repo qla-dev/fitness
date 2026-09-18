@@ -577,9 +577,9 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       ? [
           {
             kind: 'icon' as const,
-            sfSymbol: 'cart',
-            ionicon: 'cart-outline',
-            accessibilityLabel: t('cart.title', { defaultValue: 'Grocery List' }),
+            sfSymbol: 'fork.knife',
+            ionicon: 'restaurant',
+            accessibilityLabel: t('cart.title', { defaultValue: 'Meals' }),
             identifier: 'exercises-library-cart',
             onPress: () => navigation.navigate('Cart'),
             // Own glass capsule each, or iOS 26 merges the pair into one

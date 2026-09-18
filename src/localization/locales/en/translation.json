@@ -155,7 +155,7 @@
     "foods": "Foods",
     "meals": "Meals",
     "exercises": "Exercises",
-    "diary": "Nutrition",
+    "diary": "Tracker",
     "dashboard": "Activities",
     "add": "Add",
     "mealTypes": "Meal Types",
@@ -805,6 +805,14 @@
       "title": "Daily Sync Range",
       "selectTitle": "Select Daily Sync Range"
     },
+    "historyRange": {
+      "title": "History Sync Range",
+      "selectTitle": "Select History Sync Range"
+    },
+    "startupRange": {
+      "title": "Startup Sync Range",
+      "selectTitle": "Select Startup Sync Range"
+    },
     "unavailable": {
       "healthConnect": "Health Connect is not available. Please make sure it is installed and enabled.",
       "healthKit": "Health data (HealthKit) is not available. Please enable Health access in the iOS Health app."
@@ -1034,7 +1042,7 @@
     "loadFailed": "Failed to load diary",
     "checkConnection": "Please check your connection and try again.",
     "retry": "Retry",
-    "title": "Nutrition",
+    "title": "Tracker",
     "addFood": "Add Food",
     "emptyDay": "No entries recorded for this day"
   },
@@ -2107,6 +2115,11 @@
       "in": "in"
     },
     "title": "Measurements",
+    "more": "More",
+    "notRecordedToday": "Not recorded today",
+    "pickToRecord": "Tap a measurement to record it.",
+    "recordHint": "Saved against the day you are looking at.",
+    "recordRange": "Enter a number up to {{max}}.",
     "edit": "Edit measurements"
   },
   "foodScan": {
@@ -5193,7 +5206,7 @@
     "loading": "Loading goals..."
   },
   "cart": {
-    "title": "Grocery List",
+    "title": "Meals",
     "empty": "Your grocery list is empty",
     "emptySubtitle": "Items you add to your grocery list will show up here."
   },
@@ -5422,6 +5435,12 @@
     "checkPermissionsTitle": "Check Apple Health Permissions",
     "checkPermissionsSubtitle": "Opens the Health app",
     "permissionsHelp": "If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.",
+    "syncingPercent": "Syncing… {{percent}}%",
+    "finishing": {
+      "saving": "Saving your health data…",
+      "writeback": "Updating your records…",
+      "almost": "Almost done…"
+    },
     "importingPercent": "Importing history… {{percent}}%",
     "preparingImport": "Preparing import…"
   },

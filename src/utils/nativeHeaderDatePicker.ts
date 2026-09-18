@@ -142,7 +142,8 @@ export function createNativeCartAction(
   accessibilityLabel: string
 ): NativeHeaderAction {
   return {
-    sfSymbol: 'cart',
+    // fork.knife, handed over by the Tracker tab: this opens Meals now.
+    sfSymbol: 'fork.knife',
     onPress,
     accessibilityLabel,
     identifier: 'tab-header-cart',

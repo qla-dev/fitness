@@ -151,6 +151,21 @@ export const getActiveServerConfigId = async (): Promise<string | null> => {
 };
 
 /**
+ * The id every piece of sync bookkeeping is keyed by: the backfill checkpoint,
+ * the auto-sync cooldown, the server a run pins itself to. Local mode has no
+ * server config on purpose — getActiveServerConfig returns null below — so a
+ * stable synthetic id stands in: the health data still has somewhere to go,
+ * namely the on-device database. Without it every one of those callers reads
+ * "no server" and quietly does nothing.
+ */
+export const LOCAL_SYNC_CONFIG_ID = 'local';
+
+export const resolveSyncConfigId = async (): Promise<string | null> => {
+  if (isLocalDataMode()) return LOCAL_SYNC_CONFIG_ID;
+  return (await getActiveServerConfig())?.id ?? null;
+};
+
+/**
  * Retrieves the currently active server configuration.
  */
 export const getActiveServerConfig = async (): Promise<ServerConfig | null> => {

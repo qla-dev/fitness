@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RingCalendarSheet from '../../src/components/RingCalendarSheet';
@@ -133,6 +133,79 @@ test('opens on the current month, not twelve months back', async () => {
       new RegExp(String(today.getFullYear()))
     ).length
   ).toBeGreaterThan(0);
+});
+
+// A month still being read used to draw its days as rings at zero, which is
+// exactly what a day with nothing recorded looks like: swiping into a new
+// month read as an empty month until the values landed.
+test('draws the loading sweep until the month arrives', async () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  let resolveRings: (days: never[]) => void = () => {};
+  mockFetch.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveRings = resolve;
+      })
+  );
+
+  const { queryAllByTestId, findAllByTestId } = renderSheet(
+    `${today.getFullYear()}-${month}-15`
+  );
+
+  expect((await findAllByTestId('day-rings-loading')).length).toBeGreaterThan(0);
+
+  await act(async () => {
+    resolveRings([]);
+  });
+
+  await waitFor(
+    () => expect(queryAllByTestId('day-rings-loading')).toHaveLength(0),
+    { timeout: 4000 }
+  );
+});
+
+// Opening the calendar is one range request, for the month on screen. It used
+// to seed the neighbours as well, so an open cost two or three reads of months
+// the user had not asked for; the next month is fetched when a swipe lands on
+// it, not before.
+test('opening the sheet requests exactly one month', async () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const daysInMonth = new Date(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    0
+  ).getDate();
+
+  renderSheet(`${today.getFullYear()}-${month}-15`);
+
+  await waitFor(() => expect(mockFetch).toHaveBeenCalled());
+
+  expect(mockFetch).toHaveBeenCalledTimes(1);
+  expect(mockFetch).toHaveBeenCalledWith(
+    `${today.getFullYear()}-${month}-01`,
+    `${today.getFullYear()}-${month}-${String(daysInMonth).padStart(2, '0')}`
+  );
+});
+
+// The selected date only highlights a day: the sheet opens on the current
+// month whatever it is, so seeding the fetch from the selection asked for a
+// month that was not on screen and left the visible one with empty rings.
+test('requests the month on screen, not the selected date’s month', async () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const threeBack = new Date(today.getFullYear(), today.getMonth() - 3, 15);
+  const backMonth = String(threeBack.getMonth() + 1).padStart(2, '0');
+
+  renderSheet(`${threeBack.getFullYear()}-${backMonth}-15`);
+
+  await waitFor(() => expect(mockFetch).toHaveBeenCalled());
+
+  expect(mockFetch).toHaveBeenCalledTimes(1);
+  expect(mockFetch.mock.calls[0][0]).toBe(
+    `${today.getFullYear()}-${month}-01`
+  );
 });
 
 // The month name belongs to the sheet header, not to each page: it stays put

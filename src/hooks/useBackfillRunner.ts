@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HEALTH_METRICS } from '../HealthMetrics';
 import { loadHealthPreference } from '../services/healthConnectService';
-import { getActiveServerConfig } from '../services/storage';
+import { resolveSyncConfigId } from '../services/storage';
 import {
   runBackfill,
   type BackfillOutcome,
@@ -89,8 +89,8 @@ export const useBackfillRunner = (): BackfillRunner => {
 
   const refreshFromCheckpoint =
     useCallback(async (): Promise<BackfillCheckpoint | null> => {
-      const config = await getActiveServerConfig();
-      const loaded = config ? await loadBackfillCheckpoint(config.id) : null;
+      const configId = await resolveSyncConfigId();
+      const loaded = configId ? await loadBackfillCheckpoint(configId) : null;
       const current = await loadEnabledRecordTypes();
       if (!mountedRef.current) return loaded;
       setCheckpoint(loaded);
@@ -178,9 +178,9 @@ export const useBackfillRunner = (): BackfillRunner => {
   const startOver = useCallback(() => {
     if (runningRef.current) return;
     void (async () => {
-      const config = await getActiveServerConfig();
-      if (config) {
-        await clearBackfillCheckpoint(config.id);
+      const configId = await resolveSyncConfigId();
+      if (configId) {
+        await clearBackfillCheckpoint(configId);
       }
       if (!mountedRef.current) return;
       setCheckpoint(null);

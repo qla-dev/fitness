@@ -29,6 +29,7 @@ import {
   FOREGROUND_TELEMETRY_BUDGET,
   type TelemetryRunContext,
 } from './telemetryBudget';
+import { advanceSyncProgress, beginSyncProgress } from './syncProgress';
 import {
   alignToLocalDayStart,
   buildForegroundWindows,
@@ -260,6 +261,9 @@ export const collectHealthData = async (
     timeoutLabelPrefix: string;
     timeoutMs?: number;
     telemetry: TelemetryRunContext;
+    /** Fired as each metric settles, however it settles, for the run shells
+     *  that have a UI waiting on them. */
+    onMetricSettled?: () => void;
   }
 ): Promise<MetricSyncOutcome[]> => {
   // Required, not defaulted: an omitted context used to fall back to the
@@ -289,7 +293,7 @@ export const collectHealthData = async (
         collectMetric(provider, metric, windows, waterFallbackToSum, telemetry),
         opts.timeoutMs ?? METRIC_TIMEOUT_MS,
         `${opts.timeoutLabelPrefix} for ${metric.recordType}`
-      ),
+      ).finally(() => opts.onMetricSettled?.()),
     {
       stopOnError: (error) => error instanceof TimeoutError,
     }
@@ -395,9 +399,14 @@ export const runForegroundSync = async (
     interactive: true,
   });
 
+  // Published for the button the user is watching. Only this shell counts:
+  // the background task and the history import have no one waiting on a label.
+  // The mutation that owns this run clears it when it settles.
+  beginSyncProgress(metricsToSync.length);
   const outcomes = await collectHealthData(provider, metricsToSync, windows, {
     timeoutLabelPrefix: opts.timeoutLabelPrefix,
     telemetry,
+    onMetricSettled: advanceSyncProgress,
   });
 
   // Decided here, from the settled outcomes, and used for both drain sites

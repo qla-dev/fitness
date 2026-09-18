@@ -144,7 +144,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         trailingActions: [
           createNativeCartAction(
             () => navigation.navigate('Cart'),
-            t('cart.title', { defaultValue: 'Grocery List' })
+            t('cart.title', { defaultValue: 'Meals' })
           ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),

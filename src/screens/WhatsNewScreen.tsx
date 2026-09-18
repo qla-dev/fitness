@@ -205,7 +205,7 @@ const LiquidGlassMockup: React.FC = () => {
     },
     {
       name: 'document-text',
-      label: t('navigation.diary', { defaultValue: 'Nutrition' }),
+      label: t('navigation.diary', { defaultValue: 'Tracker' }),
     },
     {
       name: 'book',

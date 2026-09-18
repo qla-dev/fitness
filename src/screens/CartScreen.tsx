@@ -91,7 +91,7 @@ export default function CartScreen() {
     createdAt: new Date().toISOString(),
   });
   const header = useScreenHeader({
-    title: t('cart.title', { defaultValue: 'Grocery List' }),
+    title: t('cart.title', { defaultValue: 'Meals' }),
     left: { kind: 'back' },
     right: {
       kind: 'primary',

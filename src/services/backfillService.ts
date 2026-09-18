@@ -21,7 +21,7 @@ import {
   ensureHistoryReadPermission,
   requestHealthPermissions,
 } from './healthConnectService';
-import { getActiveServerConfig } from './storage';
+import { resolveSyncConfigId } from './storage';
 import {
   tryClaimAutoSync,
   setBackfillRunning,
@@ -117,11 +117,10 @@ const classifyOutcomes = (
 export const runBackfill = async (
   opts: RunBackfillOptions
 ): Promise<BackfillResult> => {
-  const config = await getActiveServerConfig();
-  if (!config) {
+  const configId = await resolveSyncConfigId();
+  if (!configId) {
     return { outcome: 'no-server', recordsUploaded: 0 };
   }
-  const configId = config.id;
 
   const release = tryClaimAutoSync();
   if (!release) {
@@ -363,7 +362,7 @@ export const runBackfill = async (
       if (opts.shouldCancel()) {
         return { outcome: 'cancelled', recordsUploaded };
       }
-      if ((await getActiveServerConfig())?.id !== configId) {
+      if ((await resolveSyncConfigId()) !== configId) {
         return { outcome: 'server-changed', recordsUploaded };
       }
 
@@ -451,7 +450,7 @@ export const runBackfill = async (
         // window must upload alone — never batched with a non-contiguous one. Recheck
         // the pinned server right before the upload (a switch mid-window would
         // otherwise land this window's data on the wrong server).
-        if ((await getActiveServerConfig())?.id !== configId) {
+        if ((await resolveSyncConfigId()) !== configId) {
           return { outcome: 'server-changed', recordsUploaded };
         }
         let uploadSummary: HealthDataSyncSummary | undefined;

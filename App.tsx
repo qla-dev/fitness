@@ -932,7 +932,7 @@ function AppContent() {
 
 function SafeAreaToast() {
   const insets = useSafeAreaInsets();
-  const toast = <Toast config={toastConfig} topOffset={insets.top + 8} />;
+  const toast = <Toast config={toastConfig} topOffset={insets.top + 5} />;
   // On iOS a plain Toast renders in the normal view tree, so it appears *under*
   // native modals (rename dialogs, form sheets, anchored menus). A
   // FullWindowOverlay hoists it above every window — matching how the app's

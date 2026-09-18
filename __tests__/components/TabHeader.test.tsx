@@ -83,7 +83,7 @@ describe('TabHeader', () => {
     expect(getByRole('button', { name: 'Profile' })).toBeTruthy();
   });
 
-  test('offers the cart button, spaced apart, left of profile', () => {
+  test('offers the meals button, spaced apart, left of profile', () => {
     const onCartPress = jest.fn();
     const onProfilePress = jest.fn();
     const { getByRole } = renderHeader(
@@ -94,7 +94,7 @@ describe('TabHeader', () => {
       />
     );
 
-    const cart = getByRole('button', { name: 'Grocery List' });
+    const cart = getByRole('button', { name: 'Meals' });
     // Its own 44pt tap target, not a slice of a joined block.
     expect(cart.props.style).toEqual(
       expect.objectContaining({ width: 44, height: 44 })
@@ -108,12 +108,12 @@ describe('TabHeader', () => {
     expect(onProfilePress).toHaveBeenCalledTimes(1);
   });
 
-  test('omits the cart button where the header is not a tab root', () => {
+  test('omits the meals button where the header is not a tab root', () => {
     const { queryByRole } = renderHeader(
       <TabHeader title="Family diary" selectedDate="2025-01-15" />
     );
 
-    expect(queryByRole('button', { name: 'Grocery List' })).toBeNull();
+    expect(queryByRole('button', { name: 'Meals' })).toBeNull();
   });
 
   test('drops the profile button where the header is not a tab root', () => {

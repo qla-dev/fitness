@@ -2,6 +2,7 @@ import React, {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -15,6 +16,15 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +68,18 @@ const RING_STROKE = 4;
 const DAY_LABEL_HEIGHT = 24;
 const DAY_CELL_PADDING = 6;
 
+/** Ring radii, outermost first; index 2 is the inner Steps ring. */
+const ringRadius = (index: number) =>
+  RING_SIZE / 2 - RING_STROKE / 2 - index * (RING_STROKE + 1);
+
+/**
+ * How much of the inner ring the loading sweep covers. Short of a full circle
+ * on purpose: a closed ring turning on itself is indistinguishable from a
+ * still one, and the point of this is to say the month is still on its way.
+ */
+const SPINNER_SWEEP = 0.72;
+const SPINNER_DURATION_MS = 900;
+
 const pad = (value: number) => String(value).padStart(2, '0');
 
 /**
@@ -72,6 +94,8 @@ interface MonthKey {
   year: number;
   month: number;
 }
+
+const monthKey = (entry: MonthKey) => `${entry.year}-${entry.month}`;
 
 /**
  * Newest month first, so the current month is index 0 and the list opens on it
@@ -103,7 +127,7 @@ const DayRings = memo(function DayRings({
   return (
     <Svg width={RING_SIZE} height={RING_SIZE} accessible={false}>
       {rings.map((ring, index) => {
-        const radius = center - RING_STROKE / 2 - index * (RING_STROKE + 1);
+        const radius = ringRadius(index);
         const length = 2 * Math.PI * radius;
         return (
           <React.Fragment key={ring.color}>
@@ -137,8 +161,79 @@ const DayRings = memo(function DayRings({
   );
 });
 
+/**
+ * Stands in for a day's rings while its month is still being read. Rings drawn
+ * at zero and rings for a day that has not arrived yet look exactly alike, so
+ * a swipe into a new month used to read as a month with nothing in it until
+ * the values appeared. The sweep is the inner Steps ring's blue, on that same
+ * radius, and every day of the month turns off one shared clock.
+ */
+const DayRingsLoading = memo(function DayRingsLoading({
+  rotation,
+}: {
+  rotation: SharedValue<number>;
+}) {
+  const center = RING_SIZE / 2;
+  const radius = ringRadius(2);
+  const length = 2 * Math.PI * radius;
+  const style = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  return (
+    <View
+      testID="day-rings-loading"
+      style={{ width: RING_SIZE, height: RING_SIZE }}
+    >
+      {/* The tracks stay put, so the cell keeps the size and shape it will
+          have once the real rings replace this. */}
+      <Svg
+        width={RING_SIZE}
+        height={RING_SIZE}
+        accessible={false}
+        style={{ position: 'absolute' }}
+      >
+        {[0, 1, 2].map((index) => (
+          <Circle
+            key={index}
+            cx={center}
+            cy={center}
+            r={ringRadius(index)}
+            fill="none"
+            stroke={
+              [
+                ACTIVITY_RING_COLORS.move,
+                ACTIVITY_RING_COLORS.exercise,
+                ACTIVITY_RING_COLORS.steps,
+              ][index]
+            }
+            strokeOpacity={0.22}
+            strokeWidth={RING_STROKE}
+          />
+        ))}
+      </Svg>
+      <Animated.View style={[{ width: RING_SIZE, height: RING_SIZE }, style]}>
+        <Svg width={RING_SIZE} height={RING_SIZE} accessible={false}>
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="none"
+            stroke={ACTIVITY_RING_COLORS.steps}
+            strokeWidth={RING_STROKE}
+            strokeLinecap="round"
+            strokeDasharray={`${length * SPINNER_SWEEP} ${length}`}
+            rotation={-90}
+            origin={`${center}, ${center}`}
+          />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+});
+
 interface MonthGridProps extends MonthKey {
-  /** Only months on screen fetch their ring data. */
+  /** Only the month on screen fetches its ring data. */
   active: boolean;
   today: string;
   selectedDate: string;
@@ -186,6 +281,27 @@ const MonthGrid = memo(function MonthGrid({
     queryFn: () => fetchActivityRingsRange(first, last),
     enabled: active && pastDays.length > 0,
   });
+
+  // One shared clock for the whole month: 31 cells turning together off a
+  // single value, rather than 31 animations that would drift apart.
+  const loading = rings.isLoading;
+  const rotation = useSharedValue(0);
+  useEffect(() => {
+    if (!loading) {
+      cancelAnimation(rotation);
+      return;
+    }
+    rotation.value = 0;
+    rotation.value = withRepeat(
+      withTiming(360, {
+        duration: SPINNER_DURATION_MS,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+    return () => cancelAnimation(rotation);
+  }, [loading, rotation]);
 
   const progressByDay = useMemo(() => {
     const map = new Map<string, ActivityRingProgress>();
@@ -243,11 +359,15 @@ const MonthGrid = memo(function MonthGrid({
                 </Text>
               </View>
               <View>
-                <DayRings
-                  move={progress.move}
-                  exercise={progress.exercise}
-                  steps={progress.steps}
-                />
+                {loading && !isFuture ? (
+                  <DayRingsLoading rotation={rotation} />
+                ) : (
+                  <DayRings
+                    move={progress.move}
+                    exercise={progress.exercise}
+                    steps={progress.steps}
+                  />
+                )}
                 {markedSet.has(day) && (
                   <View
                     className="absolute rounded-full"
@@ -293,7 +413,19 @@ const RingCalendarSheet = forwardRef<
     [appLocale]
   );
   const markedSet = useMemo(() => new Set(markedDates ?? []), [markedDates]);
-  const [activeMonths, setActiveMonths] = useState<Set<string>>(new Set());
+  /**
+   * Exactly one month asks for its rings: the one on screen. Opening the sheet
+   * therefore costs a single range request — for page 0, the month it opens on
+   * — and every other month is added here only once a swipe settles on it.
+   * Seeding this from the selected date instead requested months that were not
+   * on screen, and pre-loading the neighbours made one open three requests and
+   * one swipe three more, for months nobody looked at. Months already fetched
+   * stay in the set, and keep drawing from the query cache when the sheet is
+   * reopened.
+   */
+  const [requestedMonths, setRequestedMonths] = useState<Set<string>>(
+    () => new Set(months[0] ? [monthKey(months[0])] : [])
+  );
   // Page 0 is the current month: the list opens there without scrolling.
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -303,30 +435,6 @@ const RingCalendarSheet = forwardRef<
   }));
 
   const cellWidth = Math.floor((width - 16) / 7);
-  const [selectedYear, selectedMonth] = selectedDate.split('-').map(Number);
-  const initialIndex = Math.max(
-    0,
-    months.findIndex(
-      (entry) =>
-        entry.year === selectedYear && entry.month === selectedMonth - 1
-    )
-  );
-
-  /**
-   * The month the sheet opens on, plus its neighbours, load without waiting to
-   * be reported visible. `onViewableItemsChanged` does not reliably fire for
-   * the initial screenful of a list that opens at `initialScrollIndex` inside
-   * a bottom sheet, and when it did not, no month was ever marked active and
-   * every day rendered an empty ring — including today's.
-   */
-  const alwaysActive = useMemo(() => {
-    const keys = new Set<string>();
-    for (let index = initialIndex - 1; index <= initialIndex + 1; index += 1) {
-      const entry = months[index];
-      if (entry) keys.add(`${entry.year}-${entry.month}`);
-    }
-    return keys;
-  }, [months, initialIndex]);
 
   const handleSelect = useCallback(
     (date: string) => {
@@ -362,13 +470,12 @@ const RingCalendarSheet = forwardRef<
         if (previous !== index) fireSelectionHaptic();
         return index;
       });
-      setActiveMonths((previous) => {
-        const next = new Set(previous);
-        for (let step = index - 1; step <= index + 1; step += 1) {
-          const entry = months[step];
-          if (entry) next.add(`${entry.year}-${entry.month}`);
-        }
-        return next.size === previous.size ? previous : next;
+      // The month that settled is the one that fetches: a single range
+      // request for its own days, and nothing for months swiped past.
+      setRequestedMonths((previous) => {
+        const entry = months[index];
+        if (!entry || previous.has(monthKey(entry))) return previous;
+        return new Set(previous).add(monthKey(entry));
       });
     },
     [months, pageWidth]
@@ -460,10 +567,7 @@ const RingCalendarSheet = forwardRef<
             <MonthGrid
               year={item.year}
               month={item.month}
-              active={
-                activeMonths.has(`${item.year}-${item.month}`) ||
-                alwaysActive.has(`${item.year}-${item.month}`)
-              }
+              active={requestedMonths.has(monthKey(item))}
               today={today}
               selectedDate={selectedDate}
               firstDayOfWeek={presentation.firstDayOfWeek}

@@ -9,7 +9,7 @@ import {
   clearBackfillCheckpoint,
   type BackfillCheckpoint,
 } from '../../src/services/backfillCheckpoint';
-import { getActiveServerConfig } from '../../src/services/storage';
+import { resolveSyncConfigId } from '../../src/services/storage';
 import { loadHealthPreference } from '../../src/services/healthConnectService';
 
 jest.mock('../../src/services/backfillService', () => ({
@@ -22,7 +22,7 @@ jest.mock('../../src/services/backfillCheckpoint', () => ({
 }));
 
 jest.mock('../../src/services/storage', () => ({
-  getActiveServerConfig: jest.fn(),
+  resolveSyncConfigId: jest.fn(),
 }));
 
 jest.mock('../../src/services/healthConnectService', () => ({
@@ -49,7 +49,7 @@ jest.mock('../../src/HealthMetrics', () => ({
 const mockRunBackfill = runBackfill as jest.Mock;
 const mockLoadCheckpoint = loadBackfillCheckpoint as jest.Mock;
 const mockClearCheckpoint = clearBackfillCheckpoint as jest.Mock;
-const mockGetActiveServerConfig = getActiveServerConfig as jest.Mock;
+const mockResolveSyncConfigId = resolveSyncConfigId as jest.Mock;
 const mockLoadHealthPreference = loadHealthPreference as jest.Mock;
 
 const checkpoint = (
@@ -71,7 +71,7 @@ const checkpoint = (
 describe('useBackfillRunner', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetActiveServerConfig.mockResolvedValue({ id: 'server-1' });
+    mockResolveSyncConfigId.mockResolvedValue('server-1');
     mockLoadCheckpoint.mockResolvedValue(null);
     mockLoadHealthPreference.mockImplementation((key: string) =>
       Promise.resolve(key === 'syncStepsEnabled')

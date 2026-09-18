@@ -29,6 +29,7 @@ import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import FoodSummary from '../components/FoodSummary';
 import MeasurementsSummary from '../components/MeasurementsSummary';
+import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import ServingAdjustSheet, {
   type ServingAdjustSheetRef,
 } from '../components/ServingAdjustSheet';
@@ -166,7 +167,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             : []),
           createNativeCartAction(
             () => navigation.navigate('Cart'),
-            t('cart.title', { defaultValue: 'Grocery List' })
+            t('cart.title', { defaultValue: 'Meals' })
           ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
@@ -250,6 +251,14 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     date: selectedDate,
     enabled: isConnected,
   });
+
+  // One range read behind the tiles: what each measurement was the day before,
+  // and the last value recorded for it, so a tile shows a real number on a day
+  // nothing was logged instead of a dash.
+  const { history: measurementHistory } = useMeasurementHistory(
+    selectedDate,
+    isConnected
+  );
   const { data: customMeasurements, refetch: refetchCustomMeasurements } =
     useCustomMeasurementsByDate(selectedDate, { enabled: isConnected });
   const { customNutrients, refetch: refetchCustomNutrients } =
@@ -411,6 +420,32 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             day={selectedDate}
             navigation={navigation}
           />
+          {/* Above the meal cards: the day's body numbers are what the user
+              comes to this screen to check, and the meal list is long enough
+              to push them off the first screenful. The photos stay directly
+              under them — both halves are one check-in, keyed on
+              (user_id, entry_date). */}
+          <MeasurementsSummary
+            measurements={measurements}
+            history={measurementHistory}
+            date={selectedDate}
+            customMeasurements={manualCustomMeasurements}
+            weightMode={weightMode}
+            bodyUnit={bodyUnit}
+            heightMode={heightMode}
+            onPress={() =>
+              navigation.navigate('MeasurementsAdd', { date: selectedDate })
+            }
+          />
+          {/* Below the measurements: both are the same check-in, keyed on
+              (user_id, entry_date) server-side. */}
+          <CheckInPhotosSummary
+            date={selectedDate}
+            photos={dayPhotos}
+            onPress={() =>
+              navigation.navigate('ProgressPhotos', { date: selectedDate })
+            }
+          />
           <FoodSummary
             foodEntries={summary.foodEntries}
             mealTypes={mealTypes}
@@ -437,25 +472,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             entry={bedTime}
             day={selectedDate}
             navigation={navigation}
-          />
-          <MeasurementsSummary
-            measurements={measurements}
-            customMeasurements={manualCustomMeasurements}
-            weightMode={weightMode}
-            bodyUnit={bodyUnit}
-            heightMode={heightMode}
-            onPress={() =>
-              navigation.navigate('MeasurementsAdd', { date: selectedDate })
-            }
-          />
-          {/* Below the measurements: both are the same check-in, keyed on
-              (user_id, entry_date) server-side. */}
-          <CheckInPhotosSummary
-            date={selectedDate}
-            photos={dayPhotos}
-            onPress={() =>
-              navigation.navigate('ProgressPhotos', { date: selectedDate })
-            }
           />
       </ScrollView>
     );
@@ -491,7 +507,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     <>
       {!isConnectionLoading && isConnected ? (
         <TabHeader
-          title={t('diary.title', { defaultValue: 'Nutrition' })}
+          title={t('diary.title', { defaultValue: 'Tracker' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
           onProfilePress={() => navigation.navigate('Profile')}
@@ -509,7 +525,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         !isConnectionLoading && (
           <View className="px-4 pb-5" style={{ paddingTop: insets.top + 16 }}>
             <Text className="text-2xl font-bold text-text-primary">
-              {t('diary.title', { defaultValue: 'Nutrition' })}
+              {t('diary.title', { defaultValue: 'Tracker' })}
             </Text>
           </View>
         )

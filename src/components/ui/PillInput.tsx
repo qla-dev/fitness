@@ -18,6 +18,15 @@ type PillInputProps = Omit<TextInputProps, 'value' | 'onChangeText'> & {
    */
   error?: string;
   reserveErrorSpace?: boolean;
+  /**
+   * Swap the underlying input, the way StepperInput does. Inside a bottom
+   * sheet this must be `BottomSheetTextInput`: a plain TextInput never tells
+   * the sheet to move out of the keyboard's way, so the field it focuses ends
+   * up underneath it.
+   */
+  // Same shape StepperInput uses: BottomSheetTextInput's ref type comes from
+  // gesture-handler and does not unify with RN's own TextInput.
+  InputComponent?: React.ComponentType<any>;
 };
 
 const ERROR_LINE_HEIGHT = 20;
@@ -35,6 +44,7 @@ export default function PillInput({
   reserveErrorSpace = false,
   editable = true,
   style,
+  InputComponent = TextInput,
   ...inputProps
 }: PillInputProps) {
   const { t } = useTranslation();
@@ -58,7 +68,7 @@ export default function PillInput({
         borderColor: error ? danger : 'transparent',
       }}
     >
-      <TextInput
+      <InputComponent
         ref={inputRef}
         value={value}
         onChangeText={onChangeText}

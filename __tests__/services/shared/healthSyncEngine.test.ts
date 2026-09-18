@@ -1,4 +1,9 @@
 import {
+  getSyncProgress,
+  subscribeSyncProgress,
+  type SyncProgress,
+} from '../../../src/services/shared/syncProgress';
+import {
   collectHealthData,
   runForegroundSync,
   type HealthReadProvider,
@@ -642,6 +647,36 @@ describe('runForegroundSync', () => {
       syncErrors: [],
     });
     expect(api.syncHealthData).not.toHaveBeenCalled();
+  });
+
+  // The sync button reports metrics-settled/metrics-enabled. A one-window
+  // foreground run has no window count of its own, so this is the only movement
+  // there is to show — and it used to show none, which is why a long sync read
+  // as a hung button.
+  test('publishes metric progress while it runs and leaves it complete', async () => {
+    const records = [{ date: '2026-07-02', value: 5000, type: 'step' }];
+    const provider = fakeProvider({
+      readCumulativeByDay: jest.fn().mockResolvedValue({ records }),
+    });
+    api.syncHealthData.mockResolvedValue({ processed: 1, recordErrors: [] });
+
+    const seen: (SyncProgress | null)[] = [];
+    const unsubscribe = subscribeSyncProgress(() =>
+      seen.push(getSyncProgress())
+    );
+    try {
+      await runForegroundSync(
+        provider,
+        'today',
+        { isStepsSyncEnabled: true },
+        opts
+      );
+    } finally {
+      unsubscribe();
+    }
+
+    expect(seen[0]).toEqual({ completed: 0, total: 1 });
+    expect(seen[seen.length - 1]).toEqual({ completed: 1, total: 1 });
   });
 
   test('uploads collected data and surfaces per-record server rejections as uploadErrors', async () => {

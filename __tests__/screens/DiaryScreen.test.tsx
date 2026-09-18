@@ -69,6 +69,13 @@ jest.mock('../../src/hooks/useMeasurements', () => ({
   useMeasurements: jest.fn(),
 }));
 
+// The tiles read one range query for yesterday's value and the last recorded
+// one; these tests render the screen without a QueryClientProvider.
+jest.mock('../../src/hooks/useMeasurementHistory', () => ({
+  useMeasurementHistory: () => ({ history: undefined, isLoading: false }),
+}));
+
+
 jest.mock('../../src/hooks/useCustomMeasurements', () => ({
   useCustomMeasurementsByDate: jest.fn(),
 }));
@@ -762,7 +769,10 @@ describe('DiaryScreen sleep cards', () => {
     expect(getByTestId('bed-time-card')).toBeTruthy();
   });
 
-  test('orders the day chronologically, with Bed Time last before the measurements', () => {
+  // The measurements lead: they are what the user opens this screen to check,
+  // and the meal list is long enough to push them off the first screenful. The
+  // sleep cards keep their chronological places around the food they bracket.
+  test('leads with the measurements, then the day in chronological order', () => {
     // A populated day so the food/exercise/measurements branch renders.
     mockUseDailySummary.mockReturnValue({
       summary: { ...baseSummary, foodEntries: [buildFoodEntry('f1')] },
@@ -775,10 +785,10 @@ describe('DiaryScreen sleep cards', () => {
 
     const order = [
       'wake-up-card',
+      'measurements-summary',
       'food-summary',
       'naps-card',
       'bed-time-card',
-      'measurements-summary',
     ];
     const positions = order.map((testID) => {
       const node = getByTestId(testID);

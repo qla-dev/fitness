@@ -3,6 +3,7 @@ import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
 import { syncHealthData as healthConnectSyncData } from '../services/healthConnectService';
 import { markSyncInFlight } from '../services/autoSyncCoordinator';
+import { endSyncProgress } from '../services/shared/syncProgress';
 import { saveLastSyncedTime } from '../services/storage';
 import { addLog } from '../services/LogService';
 import type { TimeRange } from '../services/storage';
@@ -53,6 +54,7 @@ export function useSyncHealthData(options?: {
         );
       } finally {
         syncDone();
+        endSyncProgress();
       }
     },
     onMutate: () => {

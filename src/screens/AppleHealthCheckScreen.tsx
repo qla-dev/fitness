@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   AppState,
   Linking,
   Pressable,
@@ -31,7 +32,6 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useSyncHealthData } from '../hooks';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
 import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
-import { useBackfillRunner } from '../hooks/useBackfillRunner';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   initHealthConnect,
@@ -64,6 +64,7 @@ import {
 } from '../HealthMetrics';
 import { WRITEBACK_METRICS } from '../WritebackMetrics';
 import { formatLocalizedNumber } from '../localization';
+import { useSyncProgress } from '../hooks/useSyncProgress';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /**
@@ -117,6 +118,8 @@ function HealthHeroIcon() {
   );
 }
 
+const FINISHING_ROTATION_MS = 4000;
+
 const metricsByCategory = CATEGORY_ORDER.map((category) => ({
   category,
   metrics: HEALTH_METRICS.filter(
@@ -164,7 +167,6 @@ export default function AppleHealthCheckScreen({
   const refreshData = () => setDataRefreshKey((key) => key + 1);
 
   const syncMutation = useSyncHealthData({ onSuccess: refreshData });
-  const backfill = useBackfillRunner();
   const { isAllMetricsEnabled, toggleMetric, toggleAllMetrics } =
     useHealthMetricToggles({
       healthMetricStates,
@@ -219,29 +221,39 @@ export default function AppleHealthCheckScreen({
     };
   }, [healthReady, timeRange, dataRefreshKey]);
 
-  const syncRange = async () => {
-    if (syncMutation.isPending || isSyncClaimed()) return;
-    syncMutation.mutate({
-      timeRange,
-      healthMetricStates: await loadHealthMetricStates(),
-    });
-  };
+  /**
+   * Set only by a deliberate Sync History Now press: the screen closes itself
+   * once that run has finished, so the wait happens against the button's
+   * spinner instead of leaving a modal the user has to dismiss by hand. The
+   * syncs that start on their own — returning from the Health app, a
+   * permission change — go through startSync() and never set it, so they can
+   * never pull the screen out from under the user.
+   */
+  const dismissAfterSyncRef = useRef(false);
 
-  // The history import stops at the start of today, so a finished import is
-  // followed by a normal sync that brings today in too.
-  const importWasRunning = useRef(false);
-  useEffect(() => {
-    if (backfill.status === 'running') {
-      importWasRunning.current = true;
+  const syncRange = async () => {
+    if (syncMutation.isPending || isSyncClaimed()) {
+      // Nothing was started, so nothing will arrive to close the screen.
+      dismissAfterSyncRef.current = false;
       return;
     }
-    if (!importWasRunning.current) return;
-    importWasRunning.current = false;
-    refreshData();
-    if (backfill.status === 'done') void syncRange();
-    // syncRange reads current state; only the status transition should fire it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backfill.status]);
+    syncMutation.mutate(
+      {
+        timeRange,
+        healthMetricStates: await loadHealthMetricStates(),
+      },
+      {
+        // Settled, not success: a failed sync has already reported itself in a
+        // toast, and holding the screen open on an error the user cannot act
+        // on here would strand the press.
+        onSettled: () => {
+          if (!dismissAfterSyncRef.current) return;
+          dismissAfterSyncRef.current = false;
+          navigation.goBack();
+        },
+      }
+    );
+  };
 
   // Turning everything on here also switches on both automatic syncs, so a
   // single tap leaves Health fully set up. Turning it off only touches metrics.
@@ -279,21 +291,29 @@ export default function AppleHealthCheckScreen({
   const isEverythingEnabled =
     isAllMetricsEnabled && backgroundSync && syncOnOpen;
 
-  const importing = backfill.status === 'running';
-  const busy = importing || syncMutation.isPending;
+  const syncProgress = useSyncProgress();
+  const [finishingIndex, setFinishingIndex] = useState(0);
+  const busy = syncMutation.isPending;
 
-  // Sync Now imports the full history until it has completed once (resuming an
-  // interrupted import), then syncs the chosen range like the Sync screen.
+  /**
+   * One sync over the History Sync Range set above, and nothing else. This
+   * button used to start the full-history backfill instead, which walks the
+   * whole HealthKit archive in 30-day windows — sixty-odd of them, minutes of
+   * work — for a press that reads as "sync now". A one-time import of
+   * everything is a deliberate act with its own screen; it does not belong
+   * behind the sync button at the foot of a settings screen.
+   */
   const startSync = () => {
-    if (busy || backfill.status === 'loading') return;
-    if (backfill.status === 'done') void syncRange();
-    else backfill.start();
+    if (busy) return;
+    void syncRange();
   };
 
   const syncNow = () => {
-    if (busy || backfill.status === 'loading') return;
+    if (busy) return;
     fireSelectionHaptic();
+    setFinishingIndex(0);
     void confirmHealthStartup();
+    dismissAfterSyncRef.current = true;
     startSync();
   };
 
@@ -318,23 +338,57 @@ export default function AppleHealthCheckScreen({
     return () => subscription.remove();
   }, []);
 
-  const progress = backfill.progress;
-  const syncLabel = importing
-    ? progress?.phase === 'importing' && progress.totalDays > 0
-      ? t('appleHealthCheck.importingPercent', {
-          defaultValue: 'Importing history… {{percent}}%',
-          percent: formatLocalizedNumber(
-            Math.round((progress.importedDays / progress.totalDays) * 100)
-          ),
-        })
-      : t('appleHealthCheck.preparingImport', {
-          defaultValue: 'Preparing import…',
-        })
-    : syncMutation.isPending
-      ? t('syncScreen.syncing', { defaultValue: 'Syncing…' })
-      : t('appleHealthCheck.syncHistoryNow', {
-          defaultValue: 'Sync History Now',
-        });
+  // Metrics settled out of metrics enabled. A one-window sync has no window
+  // count to report the way the history import did, and this is the movement
+  // the user can actually see: the run reads three metrics at a time.
+  const syncPercent =
+    syncProgress && syncProgress.total > 0
+      ? Math.round((syncProgress.completed / syncProgress.total) * 100)
+      : null;
+
+  // Every metric is in and the run is still going: it is saving and writing
+  // back now, neither of which reports a count of anything.
+  const finishing = syncMutation.isPending && syncPercent === 100;
+  useEffect(() => {
+    if (!finishing) return;
+    const timer = setInterval(
+      () => setFinishingIndex((index) => index + 1),
+      FINISHING_ROTATION_MS
+    );
+    return () => clearInterval(timer);
+  }, [finishing]);
+
+  /**
+   * The percentage counts metrics read, and the reads finish well before the
+   * run does — saving and the writeback come after them. Rather than leave the
+   * button parked on 100% looking hung, it cycles these while that tail runs.
+   * Each line is true of the whole tail, so it never claims a phase the run is
+   * not in.
+   */
+  const finishingMessages = [
+    t('appleHealthCheck.finishing.saving', {
+      defaultValue: 'Saving your health data…',
+    }),
+    t('appleHealthCheck.finishing.writeback', {
+      defaultValue: 'Updating your records…',
+    }),
+    t('appleHealthCheck.finishing.almost', {
+      defaultValue: 'Almost done…',
+    }),
+  ];
+  const finishingMessage =
+    finishingMessages[finishingIndex % finishingMessages.length];
+
+  const syncLabel = !syncMutation.isPending
+    ? t('appleHealthCheck.syncHistoryNow', { defaultValue: 'Sync History Now' })
+    : finishing
+      ? finishingMessage
+      : syncPercent === null
+        ? t('syncScreen.syncing', { defaultValue: 'Syncing…' })
+        : t('appleHealthCheck.syncingPercent', {
+            defaultValue: 'Syncing… {{percent}}%',
+            percent: formatLocalizedNumber(syncPercent),
+          });
 
   const header = useScreenHeader({
     title: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
@@ -414,7 +468,9 @@ export default function AppleHealthCheckScreen({
           <SettingsRow
             icon="calendar"
             iconColor={accentColor}
-            title={t('syncScreen.range.title', { defaultValue: 'Sync Range' })}
+            title={t('syncScreen.historyRange.title', {
+              defaultValue: 'History Sync Range',
+            })}
             subtitle={t('appleHealthCheck.rangeSubtitle', {
               defaultValue: 'How far back the next sync reaches',
             })}
@@ -422,8 +478,8 @@ export default function AppleHealthCheckScreen({
               <BottomSheetPicker
                 value={timeRange}
                 options={timeRangeOptions}
-                title={t('syncScreen.range.selectTitle', {
-                  defaultValue: 'Select Sync Range',
+                title={t('syncScreen.historyRange.selectTitle', {
+                  defaultValue: 'Select History Sync Range',
                 })}
                 onSelect={(value) => {
                   setTimeRange(value);
@@ -452,8 +508,8 @@ export default function AppleHealthCheckScreen({
           <SettingsRow
             icon="timer"
             iconColor={accentColor}
-            title={t('syncScreen.dailyRange.title', {
-              defaultValue: 'Daily Sync Range',
+            title={t('syncScreen.startupRange.title', {
+              defaultValue: 'Startup Sync Range',
             })}
             subtitle={t('appleHealthCheck.dailyRangeSubtitle', {
               defaultValue: 'How far back the automatic syncs reach',
@@ -462,8 +518,8 @@ export default function AppleHealthCheckScreen({
               <BottomSheetPicker
                 value={dailySyncRange}
                 options={timeRangeOptions}
-                title={t('syncScreen.dailyRange.selectTitle', {
-                  defaultValue: 'Select Daily Sync Range',
+                title={t('syncScreen.startupRange.selectTitle', {
+                  defaultValue: 'Select Startup Sync Range',
                 })}
                 onSelect={(value) => {
                   setDailySyncRange(value);
@@ -557,8 +613,21 @@ export default function AppleHealthCheckScreen({
         className="px-5 pt-3 bg-background border-t border-border"
         style={{ paddingBottom: Math.max(insets.bottom, 12) }}
       >
-        <Button loading={busy} disabled={!healthReady} onPress={syncNow}>
-          {syncLabel}
+        <Button disabled={!healthReady || busy} onPress={syncNow}>
+          {busy ? (
+            // Beside the label rather than Button's own `loading`, which
+            // replaces it: the label is where the import reports its progress,
+            // and a bare spinner would hide the percentage for the length of
+            // the longest wait the app has.
+            <View className="flex-row items-center gap-2">
+              <ActivityIndicator size="small" color="#fff" />
+              <Text className="text-base text-white font-semibold">
+                {syncLabel}
+              </Text>
+            </View>
+          ) : (
+            syncLabel
+          )}
         </Button>
       </View>
     </View>
