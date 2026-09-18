@@ -32,6 +32,7 @@ import RingCalendarSheet, {
 } from '../components/RingCalendarSheet';
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
 import Icon from '../components/Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import FoodSummary from '../components/FoodSummary';
@@ -41,6 +42,8 @@ import ServingAdjustSheet, {
   type ServingAdjustSheetRef,
 } from '../components/ServingAdjustSheet';
 import { NapsCard, SleepTile } from '../components/SleepCards';
+import WaterTile from '../components/WaterTile';
+import WaterRecordSheet from '../components/WaterRecordSheet';
 import StatusView from '../components/StatusView';
 import {
   useCustomNutrients,
@@ -128,6 +131,10 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // Held here rather than inside MeasurementsSummary: the button that opens the
   // full measurement list now sits in this screen's own header row.
   const [measurementsMoreOpen, setMeasurementsMoreOpen] = useState(false);
+  // Mounted only while open, the way the record sheets are: the tile renders on
+  // every diary day and a sheet mounted with it would build its modal and
+  // backdrop for a tap most days never get.
+  const [waterOpen, setWaterOpen] = useState(false);
   const { dates: photoDates } = useCheckInPhotoDates(calendarOpened);
   // Owned here rather than inside CheckInPhotosSummary: the empty-day predicate
   // below needs the same answer, and one subscription keeps refetch-on-focus
@@ -438,7 +445,10 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             })}
           </Text>
           <Pressable
-            onPress={() => setMeasurementsMoreOpen(true)}
+            onPress={() => {
+              fireSelectionHaptic();
+              setMeasurementsMoreOpen(true);
+            }}
             accessibilityRole="button"
             accessibilityLabel={t('measurements.more', {
               defaultValue: 'More',
@@ -485,10 +495,21 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           }
           moreOpen={measurementsMoreOpen}
           onMoreOpenChange={setMeasurementsMoreOpen}
-          // Under weight and body fat, in the same grid: the night is part of
-          // what the body did today, and as full-width cards it sat above and
-          // below everything else on the screen.
+          water={{
+            consumedMl: summary.waterConsumed,
+            goalMl: summary.waterGoal,
+          }}
+          onOpenWater={() => setWaterOpen(true)}
+          // Water, then the night, in the same grid: both are things the body
+          // did today, and as cards of their own they sat above and below
+          // everything else on the screen.
           trailingTiles={[
+            <WaterTile
+              key="water"
+              consumedMl={summary.waterConsumed}
+              goalMl={summary.waterGoal}
+              onPress={() => setWaterOpen(true)}
+            />,
             <SleepTile
               key="wake"
               kind="wake"
@@ -541,6 +562,15 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
 
   const renderedContent = renderContent();
 
+  const waterSheet = waterOpen ? (
+    <WaterRecordSheet
+      date={selectedDate}
+      consumedMl={summary?.waterConsumed ?? 0}
+      goalMl={summary?.waterGoal ?? 0}
+      onClose={() => setWaterOpen(false)}
+    />
+  ) : null;
+
   if (usesNativeTabs) {
     return (
       <>
@@ -561,6 +591,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             navigation.navigate('FoodEntryView', { entry })
           }
         />
+        {waterSheet}
       </>
     );
   }
@@ -593,6 +624,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         )
       )}
       {renderedContent}
+      {waterSheet}
       <RingCalendarSheet
         ref={calendarRef}
         selectedDate={selectedDate}

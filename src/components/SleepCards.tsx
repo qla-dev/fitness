@@ -15,6 +15,7 @@ import {
   resolveSleepZone,
 } from '../utils/sleepDay';
 import Icon, { type IconName } from './Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 import TileIconSlot from './TileIconSlot';
 import { SleepIcons } from './icons/sleep';
 
@@ -447,9 +448,10 @@ export const SleepTile: React.FC<SleepTileProps> = ({
       testID={kind === 'wake' ? 'wake-up-tile' : 'bedtime-tile'}
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={() =>
-        navigation.navigate('SleepDetail', { entryId: entry.id, day })
-      }
+      onPress={() => {
+        fireSelectionHaptic();
+        navigation.navigate('SleepDetail', { entryId: entry.id, day });
+      }}
     >
       {body}
     </Pressable>

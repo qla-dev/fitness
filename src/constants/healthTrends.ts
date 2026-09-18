@@ -8,7 +8,7 @@
  * The order deliberately matches the order the pager shipped with, so a user who never
  * opens the settings screen sees exactly what they saw before.
  */
-export const HEALTH_TREND_KEYS = ['steps', 'weight', 'sleep'] as const;
+export const HEALTH_TREND_KEYS = ['steps', 'weight', 'sleep', 'water'] as const;
 
 export type HealthTrendKey = (typeof HEALTH_TREND_KEYS)[number];
 
@@ -26,6 +26,7 @@ export const HEALTH_TREND_LABELS: Record<
   (t: Translator) => string
 > = {
   steps: (t) => t('charts.steps.title', { defaultValue: 'Steps' }),
+  water: (t) => t('charts.water.title', { defaultValue: 'Water' }),
   weight: (t) => t('charts.weight.title', { defaultValue: 'Weight' }),
   sleep: (t) => t('charts.sleep.title', { defaultValue: 'Sleep' }),
 };

@@ -144,16 +144,19 @@ test('the difference is reported in the unit the user reads', () => {
   });
 });
 
-test('the full list carries every field, valued or not — but not height', () => {
+test('the full list carries every field except the two kept off it', () => {
   const tiles = buildMeasurementTiles({
     measurements: { entry_date: '2026-09-18', weight: 80 },
     t,
     includeEmpty: true,
   });
 
-  expect(tiles).toHaveLength(10);
+  expect(tiles).toHaveLength(9);
   expect(tileById(tiles, 'bmr')?.value).toBeNull();
   expect(tileById(tiles, 'weight')?.value).toBe('80 kg');
+  // Steps are counted by the phone and already have their own Activities
+  // card, so the sheet does not offer a box to type one into.
+  expect(tileById(tiles, 'steps')).toBeUndefined();
   // Height is a standing fact about the person, so it is shown on the profile
   // rather than among the measurements recorded day by day.
   expect(tileById(tiles, 'height')).toBeUndefined();

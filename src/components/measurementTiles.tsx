@@ -7,7 +7,7 @@ import { MeasurementIcons } from './icons/measurements';
 import {
   MEASUREMENT_FIELDS,
   ALWAYS_SHOWN_FIELDS,
-  PROFILE_FIELDS,
+  FIELDS_OFF_THE_SHEET,
   DEFAULT_MEASUREMENT_UNITS,
   measurementValue,
   type MeasurementFieldId,
@@ -17,6 +17,7 @@ import type { MeasurementHistory } from '../hooks/useMeasurementHistory';
 import type { CheckInMeasurement } from '../types/measurements';
 import type { CustomMeasurementEntry } from '../types/customMeasurements';
 import { isManualSource } from '../utils/customMeasurementsForm';
+import { fireSelectionHaptic } from '../services/haptics';
 
 export type { MeasurementUnits };
 
@@ -91,8 +92,8 @@ export function buildMeasurementTiles({
   for (const field of MEASUREMENT_FIELDS) {
     if (restrictTo) {
       if (!restrictTo.includes(field.id)) continue;
-    } else if (PROFILE_FIELDS.includes(field.id)) {
-      // Shown on the profile instead; see PROFILE_FIELDS.
+    } else if (FIELDS_OFF_THE_SHEET.includes(field.id)) {
+      // Not offered for hand entry here; see FIELDS_OFF_THE_SHEET.
       continue;
     }
     const today = measurementValue(measurements, field.id);
@@ -345,7 +346,13 @@ export const MeasurementTileCard: React.FC<{
   if (!onPress) return body;
   return (
     <Pressable
-      onPress={onPress}
+      // Fired here rather than at each call site: this one card is every
+      // measurement card in the app — the tracker grid and the sheet behind
+      // More both render it — so a tap answers the same way wherever it lands.
+      onPress={() => {
+        fireSelectionHaptic();
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={tile.label}
     >

@@ -8,6 +8,7 @@ import Icon from '../components/Icon';
 import SegmentedControl from '../components/SegmentedControl';
 import SleepTimelineChart from '../components/SleepTimelineChart';
 import StepsBarChart from '../components/StepsBarChart';
+import WaterBarChart from '../components/WaterBarChart';
 import WeightLineChart from '../components/WeightLineChart';
 import {
   useDailySummary,
@@ -50,6 +51,7 @@ const TREND_CHROME: Record<HealthTrendKey, { icon: IconName; color: string }> =
     steps: { icon: 'exercise-walking', color: '#00BFCF' },
     weight: { icon: 'scale', color: '#D844ED' },
     sleep: { icon: 'sleep-bedtime', color: '#807AFF' },
+    water: { icon: 'hydration', color: '#2FA8F5' },
   };
 
 /**
@@ -287,6 +289,8 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
                   range={range}
                   unit={weightUnit}
                 />
+              ) : trend === 'water' ? (
+                <WaterBarChart {...trends.water} range={range} />
               ) : (
                 <SleepTimelineChart {...trends.sleep} range={range} />
               )}

@@ -21,11 +21,27 @@ import ChartTouchOverlay, {
   type ChartTouchLayout,
 } from './ChartTouchOverlay';
 
+/**
+ * The copy a daily-bar chart needs. Supplied by hydration, which is the same
+ * chart — one bar per day, a tooltip on touch, an empty state — differing only
+ * in what the bars are counting.
+ *
+ * The y-key stays `steps` whatever the caller is plotting: it names the axis
+ * the chart reads from its points, not the quantity.
+ */
+export type BarChartLabels = {
+  title: string;
+  loadFailed: string;
+  empty: string;
+  tooltip: (value: number) => string;
+};
+
 type StepsBarChartProps = {
   data: StepsDataPoint[];
   isLoading: boolean;
   isError: boolean;
   range: HealthTrendDateRange;
+  labels?: BarChartLabels;
 };
 
 const INNER_PADDING: Record<HealthTrendDateRange, number> = {
@@ -60,9 +76,12 @@ const StepsTooltip: React.FC<{ text: string }> = ({ text }) => (
  */
 export const buildTooltipText = (
   point: StepsDataPoint | undefined,
-  t: ReturnType<typeof useTranslation>['t']
+  t: ReturnType<typeof useTranslation>['t'],
+  labels?: BarChartLabels
 ): string => {
   if (!point) return DEFAULT_TOOLTIP;
+  if (labels)
+    return `${labels.tooltip(point.steps)} · ${formatTooltipDate(point.day)}`;
   const formattedCount = formatLocalizedNumber(point.steps);
   return `${t('charts.steps.tooltip', {
     count: point.steps,
@@ -74,6 +93,7 @@ export const buildTooltipText = (
 };
 
 const StepsBarChart: React.FC<StepsBarChartProps> = ({
+  labels,
   data,
   isLoading,
   isError,
@@ -105,7 +125,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   // Derive the presentation text from the selected point on every render, so
   // an already-visible tooltip reflects the current app language immediately.
   const selectedPoint = selectedIndex != null ? data[selectedIndex] : undefined;
-  const tooltipText = buildTooltipText(selectedPoint, t);
+  const tooltipText = buildTooltipText(selectedPoint, t, labels);
 
   const handleTouchLayoutChange = useCallback(
     (nextLayout: ChartTouchLayout) => {
@@ -143,7 +163,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   return (
     <View className="bg-surface rounded-xl p-4 my-2">
       <Text className="text-text-primary text-lg font-semibold mb-2">
-        {t('charts.steps.title', { defaultValue: 'Steps' })}
+        {labels?.title ?? t('charts.steps.title', { defaultValue: 'Steps' })}
       </Text>
 
       <StepsTooltip text={tooltipText} />
@@ -157,17 +177,19 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
       ) : isError ? (
         <View className="h-50 justify-center items-center">
           <Text className="text-text-muted text-sm">
-            {t('charts.steps.loadFailed', {
-              defaultValue: 'Failed to load step data',
-            })}
+            {labels?.loadFailed ??
+              t('charts.steps.loadFailed', {
+                defaultValue: 'Failed to load step data',
+              })}
           </Text>
         </View>
       ) : !hasData ? (
         <View className="h-50 justify-center items-center">
           <Text className="text-text-muted text-sm">
-            {t('charts.steps.empty', {
-              defaultValue: 'No step data for this period',
-            })}
+            {labels?.empty ??
+              t('charts.steps.empty', {
+                defaultValue: 'No step data for this period',
+              })}
           </Text>
         </View>
       ) : (

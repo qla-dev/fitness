@@ -120,14 +120,21 @@ export default function DashboardActivityDetails({
               />
             ) : null}
           </View>
-          <Text className="text-text-primary text-3xl font-semibold mt-1">
-            {formatLocalizedNumber(distance ?? 0, { maximumFractionDigits: 2 })}
-          </Text>
-          <Text className="text-text-muted text-sm">
-            {distanceUnit === 'km'
-              ? t('dashboard.activityKilometers', { defaultValue: 'km' })
-              : t('dashboard.activityMiles', { defaultValue: 'mi' })}
-          </Text>
+          {/* Unit on the value's own baseline, not stacked under it: the
+              Steps tile beside this one is a single line, and a second line
+              here made the pair sit at different heights. */}
+          <View className="flex-row items-end mt-1">
+            <Text className="text-text-primary text-3xl font-semibold">
+              {formatLocalizedNumber(distance ?? 0, {
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+            <Text className="text-text-muted text-sm ml-1 mb-1">
+              {distanceUnit === 'km'
+                ? t('dashboard.activityKilometers', { defaultValue: 'km' })
+                : t('dashboard.activityMiles', { defaultValue: 'mi' })}
+            </Text>
+          </View>
         </View>
       </View>
     </View>

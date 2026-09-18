@@ -46,6 +46,14 @@ const props = {
     averageTimeInBedSeconds: 28800,
     averageTimeAsleepSeconds: 21600,
   },
+  water: {
+    data: [
+      { day: yesterday, waterMl: 1500 },
+      { day: today, waterMl: 2500 },
+    ],
+    isLoading: false,
+    isError: false,
+  },
 };
 
 beforeEach(() => jest.clearAllMocks());
@@ -71,6 +79,7 @@ it('keeps empty data unavailable rather than claiming a zero average', () => {
     <DashboardTrendCards
       {...props}
       weight={{ data: [], isLoading: false, isError: false }}
+      water={{ data: [], isLoading: false, isError: false }}
       visibleTrends={['weight']}
     />
   );

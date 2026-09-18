@@ -18,6 +18,7 @@ describe('healthTrends registry', () => {
       steps: 'Steps',
       weight: 'Weight',
       sleep: 'Sleep',
+      water: 'Water',
     };
 
     for (const key of HEALTH_TREND_KEYS) {

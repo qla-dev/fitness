@@ -10,15 +10,25 @@ import {
 } from './measurementTiles';
 import type { MeasurementFieldId } from '../utils/measurementFields';
 import { CARD_GAP } from '../constants/layout';
+import WaterTile from './WaterTile';
+import { formatDottedDay } from '../utils/dateUtils';
 import type { MeasurementHistory } from '../hooks/useMeasurementHistory';
 import type { CheckInMeasurement } from '../types/measurements';
 import type { CustomMeasurementEntry } from '../types/customMeasurements';
 
 interface MoreMeasurementsSheetProps {
   measurements: CheckInMeasurement | undefined;
+  /** The day a pick will be recorded against; named outright in the hint. */
+  date: string;
   history?: MeasurementHistory;
   customMeasurements?: CustomMeasurementEntry[];
   units?: Partial<MeasurementUnits>;
+  /**
+   * The day's hydration. Water is not a check-in field, so it does not come out
+   * of the registry with the others — but it is a measurement the user records,
+   * so the full list would be lying by leaving it out.
+   */
+  water: { consumedMl: number; goalMl: number };
   /** Opens the full form, for the custom measurements this sheet cannot edit. */
   onOpenFullForm: () => void;
   /**
@@ -27,7 +37,7 @@ interface MoreMeasurementsSheetProps {
    * second sheet on top of this one: two bottom sheets open together flash and
    * fight for the same gesture.
    */
-  onClose: (picked: MeasurementFieldId | null) => void;
+  onClose: (picked: MeasurementFieldId | 'water' | null) => void;
 }
 
 /**
@@ -47,6 +57,8 @@ interface MoreMeasurementsSheetProps {
  */
 export default function MoreMeasurementsSheet({
   measurements,
+  date,
+  water,
   history,
   customMeasurements,
   units,
@@ -57,7 +69,7 @@ export default function MoreMeasurementsSheet({
   const { t } = useTranslation();
   // Read on the way out, in onDismiss: the pick has to survive the close
   // animation, and state set during it would re-render a sheet that is leaving.
-  const pickedRef = useRef<MeasurementFieldId | null>(null);
+  const pickedRef = useRef<MeasurementFieldId | 'water' | null>(null);
   const [accentPrimary, iconColor, mutedColor, dangerColor, successColor] =
     useCSSVariable([
       '--color-accent-primary',
@@ -84,25 +96,62 @@ export default function MoreMeasurementsSheet({
     [measurements, history, customMeasurements, units, t]
   );
 
+  const pick = (choice: MeasurementFieldId | 'water') => {
+    pickedRef.current = choice;
+    sheetRef.current?.dismiss();
+  };
+
   // Rows of two, the same shape the diary grid uses, so the gap between the
   // columns is the one between the rows rather than whatever is left over.
-  const rows = useMemo(() => {
-    const chunked: (typeof tiles)[] = [];
-    for (let index = 0; index < tiles.length; index += 2) {
-      chunked.push(tiles.slice(index, index + 2));
-    }
-    return chunked;
-  }, [tiles]);
+  // Water leads: it is the one here that changes several times a day.
+  const cells: React.ReactNode[] = [
+    <WaterTile
+      key="water"
+      consumedMl={water.consumedMl}
+      goalMl={water.goalMl}
+      onPress={() => pick('water')}
+    />,
+    ...tiles.map((tile) => (
+      <MeasurementTileCard
+        key={tile.id}
+        tile={tile}
+        iconColor={iconColor}
+        accentColor={accentPrimary}
+        mutedColor={mutedColor}
+        dangerColor={dangerColor}
+        successColor={successColor}
+        onSheet
+        t={t}
+        onPress={() => {
+          if (tile.fieldId) {
+            pick(tile.fieldId);
+            return;
+          }
+          // Custom measurements carry their own categories and data types;
+          // the full form owns them.
+          sheetRef.current?.dismiss();
+          onOpenFullForm();
+        }}
+      />
+    )),
+  ];
+  const rows: React.ReactNode[][] = [];
+  for (let index = 0; index < cells.length; index += 2) {
+    rows.push(cells.slice(index, index + 2));
+  }
 
   return (
     <CustomModal
       ref={sheetRef}
-      title={t('measurements.title', { defaultValue: 'Measurements' })}
+      // The day, not the word "Measurements": the sheet is already reached
+      // from a row that says so, and which day a pick lands on is the one
+      // thing the user cannot otherwise see from here.
+      title={formatDottedDay(date)}
       onDismiss={() => onClose(pickedRef.current)}
     >
       <Text className="px-5 pb-3 text-sm text-text-secondary">
-        {t('measurements.pickToRecord', {
-          defaultValue: 'Tap a measurement to record it.',
+        {t('measurements.pickInvitation', {
+          defaultValue: 'Please pick what you would like to record and track.',
         })}
       </Text>
       {/* No scrollable here, by design: the sheet sizes itself to its content
@@ -123,29 +172,9 @@ export default function MoreMeasurementsSheet({
             className="flex-row"
             style={{ gap: CARD_GAP }}
           >
-            {row.map((tile) => (
-              <View key={tile.id} className="flex-1">
-                <MeasurementTileCard
-                  tile={tile}
-                  iconColor={iconColor}
-                  accentColor={accentPrimary}
-                  mutedColor={mutedColor}
-                  dangerColor={dangerColor}
-                  successColor={successColor}
-                  onSheet
-                  t={t}
-                  onPress={() => {
-                    if (tile.fieldId) {
-                      pickedRef.current = tile.fieldId;
-                      sheetRef.current?.dismiss();
-                      return;
-                    }
-                    // Custom measurements carry their own categories and data
-                    // types; the full form owns them.
-                    sheetRef.current?.dismiss();
-                    onOpenFullForm();
-                  }}
-                />
+            {row.map((cell, cellIndex) => (
+              <View key={`cell-${cellIndex}`} className="flex-1">
+                {cell}
               </View>
             ))}
             {/* An odd last row keeps its tile at half width. */}

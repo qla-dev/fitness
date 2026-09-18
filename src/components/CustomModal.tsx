@@ -34,6 +34,13 @@ interface Props {
    * jumping up and down as an error line appears and clears.
    */
   fullHeight?: boolean;
+  /**
+   * Which token the sheet itself is filled with. The default surface is right
+   * for a sheet of rows, but a sheet carrying a form wants the page background
+   * — `PillInput` and every card in the app are `bg-surface`, so on a surface
+   * sheet they vanish into it and an input reads as bare text.
+   */
+  background?: 'surface' | 'background';
 }
 
 /**
@@ -45,19 +52,33 @@ const FULL_HEIGHT_SNAP_POINTS = ['100%'];
 /** Edge-attached, content-sized sheet with native-inspired header chrome. */
 const CustomModal = forwardRef<CustomModalRef, Props>(
   (
-    { title, titleStyle, children, onDismiss, onAnimate, onClose, fullHeight },
+    {
+      title,
+      titleStyle,
+      children,
+      onDismiss,
+      onAnimate,
+      onClose,
+      fullHeight,
+      background = 'surface',
+    },
     ref
   ) => {
     const sheet = useRef<BottomSheetModal>(null);
     const { t } = useTranslation();
+    const Container = fullHeight ? View : BottomSheetView;
+    const containerStyle = fullHeight ? { flex: 1 } : { paddingBottom: 16 };
     const backdrop = useSheetBackdrop();
     const insets = useSafeAreaInsets();
-    const [surface, raised, foreground, muted] = useCSSVariable([
-      '--color-surface',
-      '--color-raised',
-      '--color-text-primary',
-      '--color-text-muted',
-    ]) as [string, string, string, string];
+    const [surface, pageBackground, raised, foreground, muted] = useCSSVariable(
+      [
+        '--color-surface',
+        '--color-background',
+        '--color-raised',
+        '--color-text-primary',
+        '--color-text-muted',
+      ]
+    ) as [string, string, string, string, string];
     useImperativeHandle(
       ref,
       () => ({
@@ -82,17 +103,18 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
         onDismiss={onDismiss}
         onAnimate={onAnimate}
         backgroundStyle={{
-          backgroundColor: surface,
+          backgroundColor: background === 'surface' ? surface : pageBackground,
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
         }}
         handleIndicatorStyle={{ backgroundColor: muted, width: 36, height: 5 }}
       >
-        <BottomSheetView
-          style={
-            fullHeight ? { paddingBottom: 16, flex: 1 } : { paddingBottom: 16 }
-          }
-        >
+        {/* A fixed snap point needs a plain flex view. BottomSheetView exists
+            to measure its children for dynamic sizing, so it takes their
+            natural height and leaves the rest of the sheet empty underneath —
+            which stranded the footer well above the keyboard instead of
+            sitting against it. */}
+        <Container style={containerStyle}>
           <View
             collapsable={false}
             className="flex-row items-center px-4 pb-3 pt-1"
@@ -133,7 +155,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
             <View style={{ width: 36 }} />
           </View>
           {children}
-        </BottomSheetView>
+        </Container>
       </BottomSheetModal>
     );
   }

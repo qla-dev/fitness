@@ -11,6 +11,7 @@ import {
   type WeightDataPoint,
 } from './useMeasurementsRange';
 import { useSleepRange } from './useSleepRange';
+import { useWaterRange, type WaterDataPoint } from './useWaterRange';
 
 interface UseHealthTrendsOptions {
   range: HealthTrendDateRange;
@@ -30,6 +31,7 @@ interface HealthTrends {
   steps: HealthTrendSeries<StepsDataPoint>;
   weight: HealthTrendSeries<WeightDataPoint>;
   sleep: SleepTrendSeries;
+  water: HealthTrendSeries<WaterDataPoint>;
   refetch: () => Promise<void>;
 }
 
@@ -45,6 +47,7 @@ export function useHealthTrends({
     enabled &&
     (activeTrends.includes('steps') || activeTrends.includes('weight'));
   const isSleepEnabled = enabled && activeTrends.includes('sleep');
+  const isWaterEnabled = enabled && activeTrends.includes('water');
 
   const {
     stepsData,
@@ -61,16 +64,26 @@ export function useHealthTrends({
     refetch: refetchSleep,
   } = useSleepRange({ range, enabled: isSleepEnabled });
 
+  const {
+    waterData,
+    isLoading: isWaterLoading,
+    isError: isWaterError,
+    refetch: refetchWater,
+  } = useWaterRange({ range, enabled: isWaterEnabled });
+
   const refetch = useCallback(async () => {
     await Promise.all([
       isMeasurementsEnabled ? refetchMeasurements() : Promise.resolve(),
       isSleepEnabled ? refetchSleep() : Promise.resolve(),
+      isWaterEnabled ? refetchWater() : Promise.resolve(),
     ]);
   }, [
     isMeasurementsEnabled,
     isSleepEnabled,
+    isWaterEnabled,
     refetchMeasurements,
     refetchSleep,
+    refetchWater,
   ]);
 
   return {
@@ -92,6 +105,11 @@ export function useHealthTrends({
       nightsWithData: sleep.nightsWithData,
       isLoading: isSleepLoading,
       isError: isSleepError,
+    },
+    water: {
+      data: waterData,
+      isLoading: isWaterLoading,
+      isError: isWaterError,
     },
     refetch,
   };

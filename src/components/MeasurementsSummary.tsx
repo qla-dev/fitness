@@ -12,12 +12,17 @@ import {
 } from './measurementTiles';
 import {
   measurementValue,
-  ALWAYS_SHOWN_FIELDS,
   type MeasurementFieldId,
 } from '../utils/measurementFields';
+
 import type { MeasurementHistory } from '../hooks/useMeasurementHistory';
 import type { CheckInMeasurement } from '../types/measurements';
 import type { CustomMeasurementEntry } from '../types/customMeasurements';
+/**
+ * What the tracker grid draws from the measurement registry. The rest of its
+ * four tiles are supplied by the screen: hydration, then the night.
+ */
+const TRACKER_GRID_FIELDS: readonly MeasurementFieldId[] = ['weight'];
 
 interface MeasurementsSummaryProps extends Partial<MeasurementUnits> {
   measurements: CheckInMeasurement | undefined;
@@ -36,6 +41,17 @@ interface MeasurementsSummaryProps extends Partial<MeasurementUnits> {
    * component keeps knowing nothing about sleep; it only owns the grid.
    */
   trailingTiles?: React.ReactNode[];
+  /**
+   * The day's hydration, for the full list behind More. The grid's own water
+   * tile comes in through `trailingTiles`, but the sheet builds its own cards
+   * and needs the figures directly.
+   */
+  water: { consumedMl: number; goalMl: number };
+  /**
+   * Opens the hydration sheet. Water is not a check-in field, so it cannot go
+   * through `MeasurementRecordSheet` with the rest — the screen owns that one.
+   */
+  onOpenWater: () => void;
   /**
    * The full list is opened from the screen's own header, so its open state is
    * the screen's to hold. This component still owns the sheet itself, because
@@ -56,6 +72,8 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
   onPress,
   customMeasurements,
   trailingTiles,
+  water,
+  onOpenWater,
   moreOpen = false,
   onMoreOpenChange,
 }) => {
@@ -76,11 +94,11 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
     [weightMode, bodyUnit, heightMode]
   );
 
-  // Weight and body fat, and nothing else — not the fields that happen to hold
-  // a value today, and not the custom entries either. This card sits above the
-  // meal list, so its height has to be the same every day; letting it grow with
-  // whatever was logged pushed the meals down by an amount that changed daily.
-  // Everything it leaves out is one tap away behind More.
+  // Weight alone from the registry. Body fat moved behind More: the grid holds
+  // four tiles, and hydration earns one of them more than a number most people
+  // record once a month does. This card sits above the meal list, so its height
+  // has to be the same every day — letting it grow with whatever was logged
+  // pushed the meals down by an amount that changed daily.
   const tiles = useMemo(
     () =>
       buildMeasurementTiles({
@@ -89,7 +107,7 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
         units,
         t,
         includeEmpty: false,
-        restrictTo: ALWAYS_SHOWN_FIELDS,
+        restrictTo: TRACKER_GRID_FIELDS,
       }),
     [measurements, history, units, t]
   );
@@ -144,6 +162,8 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
       {moreOpen && (
         <MoreMeasurementsSheet
           measurements={measurements}
+          date={date}
+          water={water}
           history={history}
           customMeasurements={customMeasurements}
           units={units}
@@ -152,7 +172,8 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
           // two bottom sheets on screen together flash and share a gesture.
           onClose={(picked) => {
             onMoreOpenChange?.(false);
-            if (picked) setRecording(picked);
+            if (picked === 'water') onOpenWater();
+            else if (picked) setRecording(picked);
           }}
         />
       )}

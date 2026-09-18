@@ -252,6 +252,29 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     );
     return saveRecord(db, 'measurements', body, existing?.id);
   }
+  if (path.startsWith('/api/measurements/water-range/')) {
+    const [start, end] = [parts[4], parts[5]];
+    const manual = new Map<string, number>();
+    for (const row of table(db, 'water')) {
+      const day = String(row.entry_date);
+      if (day >= start && day <= end)
+        manual.set(day, Number(row.water_ml ?? 0));
+    }
+    // Imported hydration is per health record, so the days it covers are not
+    // necessarily the days a manual entry exists for.
+    const importedDays = new Set<string>();
+    for (const row of table(db, 'healthRecords')) {
+      const day = String(row.entry_date);
+      if (row.type === 'water' && day >= start && day <= end)
+        importedDays.add(day);
+    }
+    return [...new Set([...manual.keys(), ...importedDays])]
+      .sort()
+      .map((day) => ({
+        entry_date: day,
+        water_ml: (manual.get(day) ?? 0) + importedWater(db, day),
+      }));
+  }
   if (path.startsWith('/api/measurements/water-intake')) {
     const date = method === 'GET' ? parts[4] : body.entry_date;
     const existing = table(db, 'water').find((row) => row.entry_date === date);

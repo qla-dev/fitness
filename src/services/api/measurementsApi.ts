@@ -133,6 +133,29 @@ export const upsertCheckIn = async (params: {
   });
 };
 
+export interface WaterDayTotal {
+  entry_date: string;
+  water_ml: number;
+}
+
+/**
+ * Daily water totals across a range, for the hydration trend.
+ *
+ * Its own route rather than a fold over daily summaries: a summary is a whole
+ * day's food, exercise and goals, and asking for ninety of them to read one
+ * number from each is the kind of request this app's local layer is slowest at.
+ */
+export const fetchWaterRange = async (
+  startDate: string,
+  endDate: string
+): Promise<WaterDayTotal[]> => {
+  return apiFetch<WaterDayTotal[]>({
+    endpoint: `/api/measurements/water-range/${startDate}/${endDate}`,
+    serviceName: 'Measurements API',
+    operation: 'fetch water range',
+  });
+};
+
 export const fetchCustomCategories = async (): Promise<CustomCategory[]> => {
   return apiFetch<CustomCategory[]>({
     endpoint: '/api/measurements/custom-categories',

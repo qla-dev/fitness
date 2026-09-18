@@ -1,3 +1,4 @@
+import type { UpsertCheckInVars } from '../hooks/useUpsertCheckIn';
 import type { TFunction } from 'i18next';
 import type { CheckInMeasurement } from '../types/measurements';
 import type { MeasurementKind } from '../components/icons/measurements';
@@ -41,9 +42,22 @@ export const DEFAULT_MEASUREMENT_UNITS: MeasurementUnits = {
   heightMode: 'cm',
 };
 
+/**
+ * The name this field goes by on `upsertCheckIn`, which is camelCase while the
+ * stored column — and so this registry's `id` — is snake_case.
+ *
+ * Stated per field rather than derived, because the two only coincide for some
+ * of them. Writing the id straight into the mutation silently dropped every
+ * field where they differ: body fat, muscle mass, bone mass and body water were
+ * accepted by the form and never saved, while neck and waist worked, which is
+ * exactly how the bug hid.
+ */
+export type MeasurementApiKey = Exclude<keyof UpsertCheckInVars, 'entryDate'>;
+
 export interface MeasurementField {
   id: MeasurementFieldId;
-  /** Which drawn icon to use; ids without one fall back to a generic glyph. */
+  /** What `upsertCheckIn` calls this field. */
+  apiKey: MeasurementApiKey;
   /** Which drawn icon the tile uses. Every field has one — see MeasurementIcons. */
   kind: MeasurementKind;
   label: (t: TFunction) => string;
@@ -88,10 +102,12 @@ const massStorage = (input: number, units: MeasurementUnits) =>
 
 const percentField = (
   id: MeasurementFieldId,
+  apiKey: MeasurementApiKey,
   kind: MeasurementKind,
   label: (t: TFunction) => string
 ): MeasurementField => ({
   id,
+  apiKey,
   kind,
   label,
   unit: () => '%',
@@ -104,10 +120,12 @@ const percentField = (
 
 const lengthField = (
   id: MeasurementFieldId,
+  apiKey: MeasurementApiKey,
   kind: MeasurementKind,
   label: (t: TFunction) => string
 ): MeasurementField => ({
   id,
+  apiKey,
   kind,
   label,
   unit: lengthUnit,
@@ -121,10 +139,12 @@ const lengthField = (
 
 const massField = (
   id: MeasurementFieldId,
+  apiKey: MeasurementApiKey,
   kind: MeasurementKind,
   label: (t: TFunction) => string
 ): MeasurementField => ({
   id,
+  apiKey,
   kind,
   label,
   unit: massUnit,
@@ -138,6 +158,7 @@ const massField = (
 export const MEASUREMENT_FIELDS: MeasurementField[] = [
   {
     id: 'weight',
+    apiKey: 'weight',
     kind: 'weight',
     label: (t) => t('measurements.fields.weight', { defaultValue: 'Weight' }),
     // st/lbs reads as a compound value, but it is typed as one number: a
@@ -153,11 +174,16 @@ export const MEASUREMENT_FIELDS: MeasurementField[] = [
     max: 1000,
     deltaUnit: (units) => (units.weightMode === 'kg' ? 'kg' : 'lbs'),
   },
-  percentField('body_fat_percentage', 'body_fat_percentage', (t) =>
-    t('measurements.fields.bodyFatPercentage', { defaultValue: 'Body fat %' })
+  percentField(
+    'body_fat_percentage',
+    'bodyFatPercentage',
+    'body_fat_percentage',
+    (t) =>
+      t('measurements.fields.bodyFatPercentage', { defaultValue: 'Body fat %' })
   ),
   {
     id: 'height',
+    apiKey: 'height',
     kind: 'height',
     label: (t) => t('measurements.fields.height', { defaultValue: 'Height' }),
     // ft_in is two numbers in the full form; here the single input is inches.
@@ -180,17 +206,18 @@ export const MEASUREMENT_FIELDS: MeasurementField[] = [
     max: 300,
     deltaUnit: (units) => (units.heightMode === 'cm' ? 'cm' : 'in'),
   },
-  lengthField('neck', 'neck', (t) =>
+  lengthField('neck', 'neck', 'neck', (t) =>
     t('measurements.fields.neck', { defaultValue: 'Neck' })
   ),
-  lengthField('waist', 'waist', (t) =>
+  lengthField('waist', 'waist', 'waist', (t) =>
     t('measurements.fields.waist', { defaultValue: 'Waist' })
   ),
-  lengthField('hips', 'hips', (t) =>
+  lengthField('hips', 'hips', 'hips', (t) =>
     t('measurements.fields.hips', { defaultValue: 'Hips' })
   ),
   {
     id: 'steps',
+    apiKey: 'steps',
     kind: 'steps',
     label: (t) => t('measurements.fields.steps', { defaultValue: 'Steps' }),
     unit: () => '',
@@ -200,19 +227,24 @@ export const MEASUREMENT_FIELDS: MeasurementField[] = [
     max: 200000,
     deltaUnit: () => '',
   },
-  massField('muscle_mass_kg', 'muscle_mass', (t) =>
+  massField('muscle_mass_kg', 'muscleMassKg', 'muscle_mass', (t) =>
     t('measurements.fields.muscleMass', { defaultValue: 'Muscle mass' })
   ),
-  massField('bone_mass_kg', 'bone_mass', (t) =>
+  massField('bone_mass_kg', 'boneMassKg', 'bone_mass', (t) =>
     t('measurements.fields.boneMass', { defaultValue: 'Bone mass' })
   ),
-  percentField('body_water_percentage', 'body_water', (t) =>
-    t('measurements.fields.bodyWaterPercentage', {
-      defaultValue: 'Body water %',
-    })
+  percentField(
+    'body_water_percentage',
+    'bodyWaterPercentage',
+    'body_water',
+    (t) =>
+      t('measurements.fields.bodyWaterPercentage', {
+        defaultValue: 'Body water %',
+      })
   ),
   {
     id: 'bmr',
+    apiKey: 'bmr',
     kind: 'bmr',
     label: (t) => t('measurements.fields.bmr', { defaultValue: 'BMR' }),
     unit: () => 'kcal',
@@ -260,3 +292,19 @@ export const ALWAYS_SHOWN_FIELDS: readonly MeasurementFieldId[] = [
  * the daily list only ever read as clutter.
  */
 export const PROFILE_FIELDS: readonly MeasurementFieldId[] = ['height'];
+
+/**
+ * Fields the measurements sheet does not offer, and why.
+ *
+ * Height is a standing fact shown on the profile. Steps are counted by the
+ * phone rather than entered by hand, and they already have a card of their own
+ * on the Activities screen — offering a text box for them here invited a
+ * number that would be overwritten by the next sync.
+ *
+ * Both keep their icons: the field is still real, still stored, and still
+ * drawn wherever it is shown.
+ */
+export const FIELDS_OFF_THE_SHEET: readonly MeasurementFieldId[] = [
+  ...PROFILE_FIELDS,
+  'steps',
+];

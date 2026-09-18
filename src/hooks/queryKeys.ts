@@ -20,6 +20,8 @@ export const preferencesQueryKey = ['userPreferences'] as const;
 
 export const profileQueryKey = ['userProfile'] as const;
 
+export const waterRangeQueryKey = (startDate: string, endDate: string) =>
+  ['waterRange', startDate, endDate] as const;
 export const waterContainersQueryKey = ['waterContainers'] as const;
 
 export const foodsQueryKey = ['foods'] as const;

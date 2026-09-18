@@ -18,6 +18,20 @@ export const getDeviceTimezone = (): string =>
   Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 // Get today's date in YYYY-MM-DD format (local timezone)
+/**
+ * A `YYYY-MM-DD` day as `DD.MM.YYYY`.
+ *
+ * Split from the string rather than run through a `Date`: a calendar day has
+ * no time or zone, and parsing one into a Date to format it is how a day
+ * silently becomes the day before in a western timezone. Deliberately not the
+ * relative label `formatDateLabel` gives — this is for places that must name
+ * the day outright, including today.
+ */
+export const formatDottedDay = (day: string): string => {
+  const [year, month, date] = day.split('-');
+  return year && month && date ? `${date}.${month}.${year}` : day;
+};
+
 export const getTodayDate = (): string => {
   const now = new Date();
   const year = now.getFullYear();

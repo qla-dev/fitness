@@ -253,14 +253,31 @@ jest.mock('../../src/components/ExerciseSummary', () => {
   };
 });
 
-jest.mock('../../src/components/MeasurementsSummary', () => {
+jest.mock('../../src/components/WaterRecordSheet', () => {
   const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: () => <View testID="water-record-sheet" />,
+  };
+});
+
+jest.mock('../../src/components/MeasurementsSummary', () => {
+  const { Pressable, View } = require('react-native');
   // Renders the caller's trailing tiles, because wake and bedtime now live in
   // this grid and the screen's ordering test looks for them here.
   return {
     __esModule: true,
-    default: ({ trailingTiles }: { trailingTiles?: React.ReactNode[] }) => (
-      <View testID="measurements-summary">{trailingTiles}</View>
+    default: ({
+      trailingTiles,
+      onOpenWater,
+    }: {
+      trailingTiles?: React.ReactNode[];
+      onOpenWater?: () => void;
+    }) => (
+      <View testID="measurements-summary">
+        <Pressable testID="open-water" onPress={onOpenWater} />
+        {trailingTiles}
+      </View>
     ),
   };
 });
@@ -630,6 +647,19 @@ describe('DiaryScreen custom queries', () => {
   // because on iOS the name above it is a large title drawn outside this view.
   // The link went missing entirely once the "Measurements" heading it used to
   // sit beside was removed, so this holds it in place.
+  test.each([
+    ['native tabs', true],
+    ['the fallback path', false],
+  ])('opens the hydration sheet on %s', (_label, native) => {
+    mockUseNativeIOSTabsActive.mockReturnValue(native);
+
+    const { getByTestId, queryByTestId } = renderScreen();
+
+    expect(queryByTestId('water-record-sheet')).toBeNull();
+    fireEvent.press(getByTestId('open-water'));
+    expect(getByTestId('water-record-sheet')).toBeTruthy();
+  });
+
   test('offers a subtitle row carrying More', () => {
     const { getByTestId, getByText, getByLabelText } = renderScreen();
 

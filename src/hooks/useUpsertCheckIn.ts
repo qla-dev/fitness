@@ -7,7 +7,7 @@ import { refreshHealthSyncCache } from './refreshHealthSyncCache';
 import { addLog } from '../services/LogService';
 import type { CheckInMeasurement } from '../types/measurements';
 
-interface UpsertCheckInVars {
+export interface UpsertCheckInVars {
   entryDate: string;
   weight?: number | null;
   neck?: number | null;

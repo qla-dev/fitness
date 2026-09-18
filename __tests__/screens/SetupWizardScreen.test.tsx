@@ -13,8 +13,17 @@ jest.mock('../../src/services/haptics', () => ({
   fireSuccessHaptic: jest.fn(),
 }));
 
+// The footer reads the inset context directly rather than through the hook,
+// so that it can fall back to zero inside a bottom sheet, where there is no
+// provider. The mock has to carry the context for the same reason.
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  SafeAreaInsetsContext: require('react').createContext({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  }),
 }));
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({

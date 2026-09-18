@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import type { HealthTrendKey } from '../constants/healthTrends';
+import type { WaterDataPoint } from '../hooks/useWaterRange';
 import type { SleepTrendSeries } from '../hooks/useHealthTrends';
 import type {
   StepsDataPoint,
@@ -14,12 +15,14 @@ import type {
 } from '../types/healthTrends';
 import SleepTimelineChart from './SleepTimelineChart';
 import StepsBarChart from './StepsBarChart';
+import WaterBarChart from './WaterBarChart';
 import WeightLineChart from './WeightLineChart';
 
 type HealthTrendsPagerProps = {
   steps: HealthTrendSeries<StepsDataPoint>;
   weight: HealthTrendSeries<WeightDataPoint>;
   sleep: SleepTrendSeries;
+  water: HealthTrendSeries<WaterDataPoint>;
   range: HealthTrendDateRange;
   weightUnit: string;
   visibleTrends: readonly HealthTrendKey[];
@@ -46,6 +49,7 @@ const HealthTrendsPager: React.FC<HealthTrendsPagerProps> = ({
   steps,
   weight,
   sleep,
+  water,
   range,
   weightUnit,
   visibleTrends,
@@ -60,6 +64,7 @@ const HealthTrendsPager: React.FC<HealthTrendsPagerProps> = ({
       <WeightLineChart {...weight} range={range} unit={weightUnit} />
     ),
     sleep: () => <SleepTimelineChart {...sleep} range={range} />,
+    water: () => <WaterBarChart {...water} range={range} />,
   };
 
   const hasTrendData: Record<HealthTrendKey, () => boolean> = {
@@ -68,6 +73,12 @@ const HealthTrendsPager: React.FC<HealthTrendsPagerProps> = ({
     // Sleep cannot use `shouldShowTrend`: its `data` is padded to one entry per day in the
     // window, so it is never empty and the page would show for users with no sleep at all.
     sleep: () => sleep.isLoading || sleep.isError || sleep.nightsWithData > 0,
+    // Water pads to one point per day for the same reason sleep does, so an
+    // untouched window is all zeroes rather than an empty array.
+    water: () =>
+      water.isLoading ||
+      water.isError ||
+      water.data.some((point: WaterDataPoint) => point.waterMl > 0),
   };
 
   // A trend the user configured to show but that has no data for in this window still hides itself

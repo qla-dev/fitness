@@ -173,6 +173,7 @@ export default function TrendsScreen({ navigation }: Props) {
           steps={trends.steps}
           weight={weightSeries}
           sleep={trends.sleep}
+          water={trends.water}
           range={range}
           weightUnit={weightUnit}
           visibleTrends={visibleTrends}

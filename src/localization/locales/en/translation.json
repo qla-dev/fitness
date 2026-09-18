@@ -748,7 +748,8 @@
     "trendSleepSummary": "Your average recorded sleep was {{value}} per night.",
     "trendWeightSummary": "Your average recorded weight was {{value}}.",
     "trendStepsSummary": "Your daily step average for this period was {{value}}.",
-    "activitySync": "Sync health data"
+    "activitySync": "Sync health data",
+    "trendWaterSummary": "You drank {{value}} a day on average."
   },
   "syncScreen": {
     "healthConnectSettings": "Health Connect settings",
@@ -2119,12 +2120,23 @@
     "title": "Measurements",
     "more": "More",
     "notRecordedToday": "No today record",
-    "pickToRecord": "Tap a measurement to record it.",
-    "recordHint": "Saved against the day you are looking at.",
     "recordRange": "Enter a number up to {{max}}.",
     "edit": "Edit measurements",
     "previousValue": "Previous: {{value}}",
-    "noHistory": "No history data"
+    "noHistory": "No history data",
+    "recordHintFor": "This measurement is going to be logged for {{date}}",
+    "pickInvitation": "Please pick what you would like to record and track.",
+    "water": "Water",
+    "waterHintFor": "Logged for {{date}}. Tap to add or remove a serving.",
+    "waterOfGoal": "{{amount}} of {{goal}} ml",
+    "waterAmount": "{{amount}} ml",
+    "waterRemove": "Remove a serving",
+    "waterAdd": "Add a serving",
+    "waterServing": "{{amount}} {{unit}}",
+    "waterPerTap": "per tap",
+    "waterNoContainer": "Set up a water container to start tracking hydration.",
+    "waterGoal": "Goal {{goal}} ml",
+    "noGoal": "No goal set"
   },
   "foodScan": {
     "segment": {
@@ -4203,7 +4215,13 @@
       "tooltip": "Press the line for details",
       "empty": "Log daily temperature logs to view your BBT chart."
     },
-    "allTrendsHidden": "All graphs are hidden. Choose which to show in Activities Settings."
+    "allTrendsHidden": "All graphs are hidden. Choose which to show in Activities Settings.",
+    "water": {
+      "title": "Water",
+      "loadFailed": "Failed to load hydration data",
+      "empty": "No hydration data for this period",
+      "tooltip": "{{amount}} ml"
+    }
   },
   "exerciseLibrary": {
     "title": "Exercises",

@@ -25,6 +25,10 @@ jest.mock('../../src/components/MoreMeasurementsSheet', () => {
   };
 });
 
+// The grid's water tile needs the day's figures; none of these tests are
+// about hydration, so one set does for all of them.
+const WATER = { consumedMl: 0, goalMl: 2000 };
+
 const customEntry = (name: string, source: string, value: string) => ({
   id: `entry-${name}`,
   category_id: `cat-${name}`,
@@ -43,24 +47,33 @@ describe('MeasurementsSummary', () => {
   // A card that disappears on the days you have not weighed yourself hides the
   // prompt on exactly the day it is worth something, so weight and body fat
   // always render — with a placeholder where the value would be.
-  test('always renders weight and body fat, with a placeholder when unrecorded', () => {
-    const { getByText, getAllByText } = render(
-      <MeasurementsSummary measurements={undefined} date="2024-06-15" />
+  test('always renders weight, with a placeholder when unrecorded', () => {
+    const { getByText, getAllByText, queryByText } = render(
+      <MeasurementsSummary
+        measurements={undefined}
+        date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
+      />
     );
     expect(getByText('Weight')).toBeTruthy();
-    expect(getByText('Body fat %')).toBeTruthy();
-    expect(getAllByText('—')).toHaveLength(2);
+    // Body fat is behind More now: hydration earns the second tile, and the
+    // grid holds four.
+    expect(queryByText('Body fat %')).toBeNull();
+    expect(getAllByText('—')).toHaveLength(1);
   });
 
-  test('a day with no values still renders the two standing tiles', () => {
+  test('a day with no values still renders the standing tile', () => {
     const { getByText, getAllByText } = render(
       <MeasurementsSummary
         measurements={{ entry_date: '2024-06-15' }}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(getByText('Weight')).toBeTruthy();
-    expect(getAllByText('—')).toHaveLength(2);
+    expect(getAllByText('—')).toHaveLength(1);
   });
 
   // No heading of its own: the screen's title already names what this is, and
@@ -71,6 +84,8 @@ describe('MeasurementsSummary', () => {
         measurements={{ entry_date: '2024-06-15', weight: 75 }}
         customMeasurements={[]}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(queryByText('Measurements')).toBeNull();
@@ -82,6 +97,8 @@ describe('MeasurementsSummary', () => {
       <MeasurementsSummary
         measurements={undefined}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
         moreOpen
       />
     );
@@ -103,7 +120,7 @@ describe('MeasurementsSummary', () => {
   // The card sits above the meal list, so its height has to be the same every
   // day. Anything else the day happens to hold lives behind More, which is why
   // neither a recorded built-in nor a custom entry may add a tile here.
-  test('shows only weight and body fat, whatever else the day holds', () => {
+  test('shows only weight, whatever else the day holds', () => {
     const { getByText, queryByText } = render(
       <MeasurementsSummary
         measurements={{
@@ -121,10 +138,12 @@ describe('MeasurementsSummary', () => {
           >['customMeasurements']
         }
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(getByText('Weight')).toBeTruthy();
-    expect(getByText('Body fat %')).toBeTruthy();
+    expect(queryByText('Body fat %')).toBeNull();
     expect(queryByText('Steps')).toBeNull();
     expect(queryByText('Waist')).toBeNull();
     expect(queryByText('Blood Pressure')).toBeNull();
@@ -138,6 +157,8 @@ describe('MeasurementsSummary', () => {
       <MeasurementsSummary
         measurements={{ entry_date: '2024-06-15', weight: 75, height: 180 }}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(queryByText('Height')).toBeNull();
@@ -146,14 +167,15 @@ describe('MeasurementsSummary', () => {
 
   // The question the tile is asked every day is "did I measure this today",
   // and an empty tile has to answer it as plainly as a stale one does.
-  test('says when body fat was not recorded today', () => {
+  test('says when weight was not recorded today', () => {
     const { getAllByText } = render(
       <MeasurementsSummary
-        measurements={{ entry_date: '2024-06-15', weight: 75 }}
+        measurements={{ entry_date: '2024-06-15' }}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
-    // Weight was recorded, body fat was not, so exactly one tile says so.
     expect(getAllByText('No today record')).toHaveLength(1);
   });
 
@@ -174,6 +196,8 @@ describe('MeasurementsSummary', () => {
           } as React.ComponentProps<typeof MeasurementsSummary>['history']
         }
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(getByText('Previous: 79 kg')).toBeTruthy();
@@ -188,11 +212,14 @@ describe('MeasurementsSummary', () => {
           body_fat_percentage: 18,
         }}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
-    // Both tiles were recorded today and neither has a day-before reading.
+    // The one registry tile in the grid was recorded today and has no
+    // day-before reading.
     expect(getByText('Weight')).toBeTruthy();
-    expect(getAllByText('No history data')).toHaveLength(2);
+    expect(getAllByText('No history data')).toHaveLength(1);
   });
 
   test('a body fat reading on the day carries no such note', () => {
@@ -204,6 +231,8 @@ describe('MeasurementsSummary', () => {
           body_fat_percentage: 18,
         }}
         date="2024-06-15"
+        water={WATER}
+        onOpenWater={jest.fn()}
       />
     );
     expect(queryByText('No today record')).toBeNull();

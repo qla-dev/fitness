@@ -10,6 +10,7 @@ import type {
   StepsDataPoint,
   WeightDataPoint,
 } from '../hooks/useMeasurementsRange';
+import type { WaterDataPoint } from '../hooks/useWaterRange';
 import { formatLocalizedNumber } from '../localization';
 import {
   RANGE_DAYS,
@@ -21,6 +22,7 @@ import HealthTrendCard from './HealthTrendCard';
 
 interface DashboardTrendCardsProps {
   steps: HealthTrendSeries<StepsDataPoint>;
+  water: HealthTrendSeries<WaterDataPoint>;
   weight: HealthTrendSeries<WeightDataPoint>;
   sleep: SleepTrendSeries;
   range: HealthTrendDateRange;
@@ -41,6 +43,7 @@ const averageOf = (values: readonly (number | null)[]) => {
 
 export default function DashboardTrendCards({
   steps,
+  water,
   weight,
   sleep,
   range,
@@ -68,6 +71,10 @@ export default function DashboardTrendCards({
   const weightAverage = averageOf(weightValues);
   const sleepAverage = averageOf(sleepValues);
   const stepAverage = averageOf(stepValues);
+  const waterValues = dates.map(
+    (day) => water.data.find((point) => point.day === day)?.waterMl ?? null
+  );
+  const waterAverage = averageOf(waterValues);
   const format = (value: number | null, unit?: string, digits = 0) =>
     value == null
       ? '—'
@@ -93,6 +100,15 @@ export default function DashboardTrendCards({
       ? '—'
       : `${format(Math.floor(sleepMinutes / 60), 'hour')} ${format(sleepMinutes % 60, 'minute')}`;
   const stepLabel = format(stepAverage);
+  const waterLabel =
+    waterAverage == null
+      ? '—'
+      : t('charts.water.tooltip', {
+          defaultValue: '{{amount}} ml',
+          amount: formatLocalizedNumber(waterAverage, {
+            maximumFractionDigits: 0,
+          }),
+        });
   const cards: Record<HealthTrendKey, ReactElement> = {
     sleep: (
       <HealthTrendCard
@@ -148,6 +164,24 @@ export default function DashboardTrendCards({
         isLoading={steps.isLoading}
         isError={steps.isError}
         onOpen={() => onOpenTrend('steps')}
+      />
+    ),
+    water: (
+      <HealthTrendCard
+        title={HEALTH_TREND_LABELS.water(t)}
+        icon="hydration"
+        color="#2FA8F5"
+        days={days}
+        description={t('dashboard.trendWaterSummary', {
+          defaultValue: 'You drank {{value}} a day on average.',
+          value: waterLabel,
+        })}
+        average={waterAverage}
+        averageLabel={waterLabel}
+        values={waterValues}
+        isLoading={water.isLoading}
+        isError={water.isError}
+        onOpen={() => onOpenTrend('water')}
       />
     ),
   };

@@ -3,12 +3,11 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardProvider,
-  KeyboardStickyView,
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import Button from '../components/ui/Button';
+import FooterCTA, { footerCtaKeyboardTrim } from '../components/ui/FooterCTA';
 import PillInput from '../components/ui/PillInput';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
@@ -233,8 +232,9 @@ export default function SetupWizardScreen({
     nativeOptions: { headerBackVisible: false, gestureEnabled: false },
   });
 
-  // Footer bottom padding dropped while the keyboard is up (see below).
-  const keyboardTrim = Math.max(insets.bottom, 12) - 12;
+  // Footer bottom padding dropped while the keyboard is up; the scroll view
+  // below gives that space back so a focused field is not left riding high.
+  const keyboardTrim = footerCtaKeyboardTrim(insets.bottom);
 
   if (!session) return null;
 
@@ -425,41 +425,28 @@ export default function SetupWizardScreen({
             </Text>
           )}
         </KeyboardAwareScrollView>
-        {/* Rides the keyboard. Closed, it pads for the home indicator. Opened,
-          the offset trims that padding to 12 so Continue sits 12 above the
-          keyboard, matching the 12 above it (pt-3). */}
-        <KeyboardStickyView
-          offset={{ closed: 0, opened: keyboardTrim }}
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-        >
-          <View
-            className="px-5 pt-3 bg-background border-t border-border"
-            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
-            onLayout={(event) =>
-              setFooterHeight(event.nativeEvent.layout.height)
-            }
-          >
-            <Button
-              loading={busy}
-              disabled={!valid}
-              onPress={() => {
-                fireSelectionHaptic();
-                void persist(answers, !step, !step);
-              }}
-            >
-              {step
-                ? selectedCount > 0
-                  ? t('setup.continueCount', {
-                      defaultValue: 'Continue ({{count}})',
-                      defaultValue_one: 'Continue ({{count}})',
-                      defaultValue_other: 'Continue ({{count}})',
-                      count: selectedCount,
-                    })
-                  : t('common.continue', { defaultValue: 'Continue' })
-                : t('setup.finish', { defaultValue: 'Save and start' })}
-            </Button>
-          </View>
-        </KeyboardStickyView>
+        <FooterCTA
+          absolute
+          loading={busy}
+          disabled={!valid}
+          onHeightChange={setFooterHeight}
+          onPress={() => {
+            fireSelectionHaptic();
+            void persist(answers, !step, !step);
+          }}
+          label={
+            step
+              ? selectedCount > 0
+                ? t('setup.continueCount', {
+                    defaultValue: 'Continue ({{count}})',
+                    defaultValue_one: 'Continue ({{count}})',
+                    defaultValue_other: 'Continue ({{count}})',
+                    count: selectedCount,
+                  })
+                : t('common.continue', { defaultValue: 'Continue' })
+              : t('setup.finish', { defaultValue: 'Save and start' })
+          }
+        />
       </View>
     </KeyboardProvider>
   );

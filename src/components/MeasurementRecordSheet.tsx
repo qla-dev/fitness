@@ -4,12 +4,12 @@ import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import CustomModal, { type CustomModalRef } from './CustomModal';
-import TileIconSlot from './TileIconSlot';
 import { MeasurementIcons } from './icons/measurements';
 import PillInput from './ui/PillInput';
-import Button from './ui/Button';
+import FooterCTA from './ui/FooterCTA';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import { formatLocalizedNumber } from '../localization';
+import { formatDottedDay } from '../utils/dateUtils';
 import {
   measurementFieldById,
   DEFAULT_MEASUREMENT_UNITS,
@@ -45,6 +45,7 @@ export default function MeasurementRecordSheet({
 }: MeasurementRecordSheetProps) {
   const sheetRef = useRef<CustomModalRef>(null);
   const { t } = useTranslation();
+
   const upsert = useUpsertCheckIn();
   const [accentPrimary, iconDecorative] = useCSSVariable([
     '--color-accent-primary',
@@ -72,10 +73,13 @@ export default function MeasurementRecordSheet({
     upsert.mutate(
       {
         entryDate: date,
-        // An emptied input clears the value rather than leaving the old one:
-        // null is the check-in's explicit "no value", undefined means
-        // "unchanged", and the user emptying a field means the former.
-        [definition.id]: filled ? definition.toStorage(parsed, resolved) : null,
+        // Keyed by the field's API name, which is not always its storage id
+        // — see MeasurementApiKey. An emptied input clears the value rather
+        // than leaving the old one: null is the check-in's explicit "no value",
+        // undefined means "unchanged", and emptying a field means the former.
+        [definition.apiKey]: filled
+          ? definition.toStorage(parsed, resolved)
+          : null,
       },
       { onSuccess: () => sheetRef.current?.dismiss() }
     );
@@ -88,6 +92,9 @@ export default function MeasurementRecordSheet({
     <CustomModal
       ref={sheetRef}
       fullHeight
+      // The page background, so the input reads as the same pill the setup
+      // wizard shows. On the default surface it would sit on its own colour.
+      background="background"
       title={t('measurements.title', { defaultValue: 'Measurements' })}
       onDismiss={onClose}
     >
@@ -95,22 +102,24 @@ export default function MeasurementRecordSheet({
           icon, the field as the heading, one input, and the action at the
           foot. The sheet is full height so none of that moves when the error
           line under the input appears. */}
-      <View className="flex-1 px-5 pb-2">
-        <View className="items-center py-3">
-          <TileIconSlot>
-            <DrawnIcon
-              size={56}
-              color={iconDecorative}
-              accentColor={accentPrimary}
-            />
-          </TileIconSlot>
+      <View className="flex-1 px-5">
+        {/* Centred as a column: the measurement's own mark, its name, and
+            what recording it means, stacked over the one input. Drawn larger
+            than a tile's — here it is the subject rather than a label. */}
+        <View className="items-center py-4">
+          <DrawnIcon
+            size={96}
+            color={iconDecorative}
+            accentColor={accentPrimary}
+          />
         </View>
-        <Text className="text-text-primary text-3xl font-bold">
+        <Text className="text-text-primary text-3xl font-bold text-center">
           {definition.label(t)}
         </Text>
-        <Text className="text-text-secondary text-sm mt-2 mb-5">
-          {t('measurements.recordHint', {
-            defaultValue: 'Saved against the day you are looking at.',
+        <Text className="text-text-secondary text-sm mt-2 mb-5 text-center">
+          {t('measurements.recordHintFor', {
+            defaultValue: 'This measurement is going to be logged for {{date}}',
+            date: formatDottedDay(date),
           })}
         </Text>
         <PillInput
@@ -136,16 +145,15 @@ export default function MeasurementRecordSheet({
           editable={!upsert.isPending}
           onSubmitEditing={save}
         />
-        {/* Pushes the action to the foot, where the wizard keeps its own. */}
-        <View className="flex-1" />
-        <Button
-          onPress={save}
-          disabled={invalid || upsert.isPending}
-          loading={upsert.isPending}
-        >
-          {t('common.save', { defaultValue: 'Save' })}
-        </Button>
       </View>
+      <FooterCTA
+        // The sheet lifts for the keyboard on its own.
+        sticky={false}
+        label={t('common.save', { defaultValue: 'Save' })}
+        onPress={save}
+        disabled={invalid || upsert.isPending}
+        loading={upsert.isPending}
+      />
     </CustomModal>
   );
 }
