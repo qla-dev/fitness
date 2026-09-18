@@ -40,6 +40,17 @@ export default function DashboardActivityDetails({
   onOpenGoal,
 }: DashboardActivityDetailsProps) {
   const { t } = useTranslation();
+  // Apple prints a long exercise total as "6 h 20 m" rather than "380 min",
+  // and past an hour the minute count stops being readable at a glance.
+  const exerciseTotal = (minutes: number) => {
+    const whole = Math.round(minutes);
+    const hours = Math.floor(whole / 60);
+    const rest = whole % 60;
+    const minuteLabel = t('dashboard.activityMinutes', { defaultValue: 'min' });
+    if (hours <= 0) return `${formatLocalizedNumber(rest)} ${minuteLabel}`;
+    const hourLabel = t('dashboard.activityHours', { defaultValue: 'h' });
+    return `${formatLocalizedNumber(hours)} ${hourLabel} ${formatLocalizedNumber(rest)} ${minuteLabel}`;
+  };
   return (
     <View className="bg-surface rounded-2xl p-4 mb-3">
       <DashboardCardTitle className="mb-3">
@@ -63,6 +74,7 @@ export default function DashboardActivityDetails({
         goal={summary.exerciseMinutesGoal}
         unit={t('dashboard.activityMinutes', { defaultValue: 'min' })}
         hourlyValues={hourlyExercise}
+        formatTotal={exerciseTotal}
         onOpen={onOpenGoal ? () => onOpenGoal('exercise') : undefined}
       />
       <ActivityMetricChart

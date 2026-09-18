@@ -734,6 +734,7 @@
     "nutrientRings": "Nutrient Rings",
     "activityDetails": "Activity Details",
     "hourlyActivityUnavailable": "Hourly data unavailable",
+    "activityTotal": "Total {{amount}}",
     "activityStand": "Stand",
     "activityHours": "h",
     "activityDistance": "Distance",

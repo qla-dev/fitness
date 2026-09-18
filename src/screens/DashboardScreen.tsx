@@ -1,4 +1,5 @@
 import { isLocalDataMode } from '../services/dataMode';
+import { distanceFromKm } from '../utils/unitConversions';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -220,6 +221,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       navigation.navigate('GoalDetail', { metric, date: selectedDate }),
     [navigation, selectedDate]
   );
+  // Health providers aggregate distance in metres; the card and the goal
+  // screen both want it in the user's own unit.
+  const dayDistance = useMemo(() => {
+    const metres = measurements?.distance_m;
+    if (metres == null || !Number.isFinite(Number(metres))) return undefined;
+    return distanceFromKm(Number(metres) / 1000, distanceUnit);
+  }, [measurements?.distance_m, distanceUnit]);
   // The Exercise chart's 24 bars. Move and Stand have no hourly source in
   // the app, so they keep showing the unavailable note rather than a
   // fabricated series.
@@ -398,6 +406,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         <DashboardActivityDetails
           summary={summary}
           steps={measurements?.steps}
+          distance={dayDistance}
           hourlyExercise={hourlyExercise}
           distanceUnit={distanceUnit}
           standGoal={summary.goals.stand_hours}

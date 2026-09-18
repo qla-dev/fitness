@@ -30,7 +30,7 @@ import {
   HEALTH_TREND_KEYS,
   type HealthTrendKey,
 } from '../constants/healthTrends';
-import { weightFromKg } from '../utils/unitConversions';
+import { distanceFromKm, weightFromKg } from '../utils/unitConversions';
 import { buildHourlyExerciseMinutes } from '../utils/hourlyActivity';
 import { formatSleepDuration } from '../utils/sleepDay';
 import { formatDateLabel } from '../utils/dateUtils';
@@ -122,18 +122,26 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
    * sleep have no goal but still have a reading, and a screen that opened
    * straight onto a 90-day chart never answered "what about today".
    */
+  // Metres on the check-in row, the user's own unit on screen — the same
+  // conversion the Activities card makes, against the same stored field.
+  const distanceUnit =
+    (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km';
+  const dayDistance = (() => {
+    const metres = measurements?.distance_m;
+    if (metres == null || !Number.isFinite(Number(metres))) return undefined;
+    return distanceFromKm(Number(metres) / 1000, distanceUnit);
+  })();
+
   const today = (() => {
     if (activity && summary) {
       const inputs: ActivityGoalInputs = {
         summary,
         steps: measurements?.steps,
-        // No source on this side yet, the same as the Activities cards.
-        distance: undefined,
+        distance: dayDistance,
         standHours: undefined,
         standGoal: summary.goals.stand_hours,
         stepsGoal: summary.goals.steps,
-        distanceUnit:
-          (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km',
+        distanceUnit,
       };
       const value = activity.value(inputs);
       return {

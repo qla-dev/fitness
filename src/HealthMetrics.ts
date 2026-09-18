@@ -94,7 +94,11 @@ const ALL_HEALTH_METRICS: HealthMetric[] = [
     unit: 'kcal',
     icon: require('../assets/icons/health-metrics/calories.png'),
     permissions: [{ accessType: 'read', recordType: 'TotalCaloriesBurned' }],
-    type: 'Active Calories',
+    // Resting + active, which is NOT the Move ring. It used to say
+    // 'Active Calories', claiming the same per-day identity key as the
+    // `calories` metric above, so whichever landed second overwrote the
+    // other's synthetic entry. The reader already emits 'total_calories'.
+    type: 'total_calories',
     category: 'Common',
     backgroundDeliveryFrequency: 'hourly',
     readKind: 'cumulative-day',

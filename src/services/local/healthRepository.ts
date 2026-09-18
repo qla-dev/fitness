@@ -17,8 +17,81 @@ import {
 } from './database';
 import { workoutRepository } from './workoutRepository';
 
+/**
+ * Apple's own exercise-minutes record, which is a daily total rather than a
+ * session. It is keyed per day like Active Calories is, so a re-sync replaces
+ * the day's figure instead of stacking another copy on top of it.
+ */
+export const APPLE_EXERCISE_TIME = 'apple_exercise_time';
+
+/**
+ * The daily active-energy total, under every name a reader gives it.
+ *
+ * Android's Health Connect transform emits 'Active Calories'; the iOS
+ * statistics aggregator emits 'active_calories'. Only the first was recognised
+ * here, so on iOS the Move ring's own source fell through to the custom
+ * measurement branch and the ring read 0 — while the Apple Health screen,
+ * which queries HealthKit directly, showed the number the whole time.
+ */
+const ACTIVE_ENERGY_TYPES = new Set(['Active Calories', 'active_calories']);
+
+/** The name the rest of this importer, and every stored row, goes by. */
+const ACTIVE_ENERGY = 'Active Calories';
+/** The exercise this import files those minutes under. */
+export const APPLE_EXERCISE_TIME_NAME = 'Apple Exercise Time';
+
+/**
+ * Record types HealthKit answers with many small samples that mean nothing
+ * apart, and that this importer stores once per day.
+ *
+ * Apple exercise time arrives as a stream of short samples across the day —
+ * the Health app adds them up to get the ring's minutes. Stored under a
+ * per-day identity key without this, each sample overwrote the one before it
+ * and the day ended up holding whichever happened to land last: a couple of
+ * minutes where Apple showed twenty.
+ */
+const SUMMED_PER_DAY = new Set([APPLE_EXERCISE_TIME]);
+
+/**
+ * Collapses those samples to one record per source and day, carrying the sum.
+ *
+ * The first sample of each day keeps its place in the batch and takes the
+ * total; the rest drop out. Re-syncing a day therefore replaces its figure
+ * rather than adding to it, which is what the per-day key was always for.
+ */
+function sumDailyTotals(
+  db: LocalDatabase,
+  records: readonly LocalRecord[]
+): LocalRecord[] {
+  const firstOfDay = new Map<string, LocalRecord>();
+  const collapsed: LocalRecord[] = [];
+  for (const record of records) {
+    if (typeof record.type !== 'string' || !SUMMED_PER_DAY.has(record.type)) {
+      collapsed.push(record);
+      continue;
+    }
+    const item = record as HealthDataPayloadItem;
+    const key = `${item.source || 'Health'}|${recordDate(db, item)}|${item.type}`;
+    const running = firstOfDay.get(key);
+    if (running) {
+      running.value = Number(running.value ?? 0) + Number(record.value ?? 0);
+      continue;
+    }
+    // Copied rather than mutated in place: the caller's payload is not ours to
+    // rewrite, and the running total below does exactly that.
+    const seed = { ...record, value: Number(record.value ?? 0) };
+    firstOfDay.set(key, seed);
+    collapsed.push(seed);
+  }
+  return collapsed;
+}
+
 const measurementFields: Record<string, string> = {
   step: 'steps',
+  // Metres, as both providers aggregate it: one record per day, so the merge
+  // below replaces the day's figure rather than accumulating it the way steps
+  // do. Stored raw and converted at the edge, like every other metric here.
+  distance: 'distance_m',
   weight: 'weight',
   height: 'height',
   body_fat: 'body_fat_percentage',
@@ -111,10 +184,13 @@ export function importHealthData(
    */
   const touchedDays = new Set<string>();
 
-  for (const raw of records) {
+  for (const raw of sumDailyTotals(db, records)) {
     if (typeof raw.type !== 'string')
       throw new Error('Health record has no type.');
     const record = raw as HealthDataPayloadItem;
+    // Canonicalised once, so the branch below, the per-day identity key and
+    // the reconciliation pass all agree on what an active-energy row is.
+    if (ACTIVE_ENERGY_TYPES.has(record.type)) record.type = ACTIVE_ENERGY;
     if (
       record.value !== undefined &&
       (typeof record.value !== 'number' || !Number.isFinite(record.value))
@@ -126,7 +202,9 @@ export function importHealthData(
     const key = JSON.stringify([
       source,
       record.type,
-      record.type === 'step' || record.type === 'Active Calories'
+      record.type === 'step' ||
+      record.type === 'Active Calories' ||
+      record.type === APPLE_EXERCISE_TIME
         ? date
         : record.source_id || record.timestamp || date,
     ]);
@@ -145,12 +223,16 @@ export function importHealthData(
     if (
       record.type === 'ExerciseSession' ||
       record.type === 'Workout' ||
-      record.type === 'Active Calories'
+      record.type === 'Active Calories' ||
+      record.type === APPLE_EXERCISE_TIME
     ) {
       const active = record.type === 'Active Calories';
+      const exerciseTime = record.type === APPLE_EXERCISE_TIME;
       const name = active
         ? 'Active Calories'
-        : record.title || record.activityType || 'Health workout';
+        : exerciseTime
+          ? APPLE_EXERCISE_TIME_NAME
+          : record.title || record.activityType || 'Health workout';
       touchedDays.add(`${source}|${date}`);
       let exercise = exercisesByNameAndSource.get(exerciseKey(name, source));
       if (!exercise) {
@@ -170,10 +252,18 @@ export function importHealthData(
           exercise_id: exercise.id,
           entry_date: date,
           source,
-          duration_minutes: active ? 0 : Number(record.duration ?? 0) / 60,
-          calories_burned: Number(
-            active ? (record.value ?? 0) : (record.caloriesBurned ?? 0)
-          ),
+          // Apple reports exercise time in seconds against the day, with no
+          // calories of its own — the energy is already in Active Calories.
+          duration_minutes: exerciseTime
+            ? Number(record.value ?? 0) / 60
+            : active
+              ? 0
+              : Number(record.duration ?? 0) / 60,
+          calories_burned: exerciseTime
+            ? 0
+            : Number(
+                active ? (record.value ?? 0) : (record.caloriesBurned ?? 0)
+              ),
           distance: record.distance ?? null,
           notes: record.notes ?? null,
           sets: asRecords(record.sets).map(({ duration_seconds, ...set }) => ({
@@ -262,16 +352,24 @@ export function importHealthData(
   // every sync — including the one that runs each time the app is opened. Only
   // a touched day can have changed, so the rest was pure repetition.
   const workoutCaloriesByDay = new Map<string, number>();
+  const workoutMinutesByDay = new Map<string, number>();
   const activeEnergyTotals: LocalRecord[] = [];
+  const exerciseTimeTotals: LocalRecord[] = [];
   for (const row of table(db, 'healthRecords')) {
     const day = `${String(row.source)}|${String(row.entry_date)}`;
     if (!touchedDays.has(day)) continue;
     if (row.type === 'Active Calories') {
       activeEnergyTotals.push(row);
+    } else if (row.type === APPLE_EXERCISE_TIME) {
+      exerciseTimeTotals.push(row);
     } else if (row.type === 'ExerciseSession' || row.type === 'Workout') {
       workoutCaloriesByDay.set(
         day,
         (workoutCaloriesByDay.get(day) ?? 0) + Number(row.caloriesBurned ?? 0)
+      );
+      workoutMinutesByDay.set(
+        day,
+        (workoutMinutesByDay.get(day) ?? 0) + Number(row.duration ?? 0) / 60
       );
     }
   }
@@ -282,6 +380,18 @@ export function importHealthData(
     activity.calories_burned = Math.max(
       0,
       Number(total.value ?? 0) - (workoutCaloriesByDay.get(day) ?? 0)
+    );
+  }
+  // Apple's exercise minutes count the imported workouts too, so the same
+  // carve-out applies: the day's figure stays Apple's own, and a workout Apple
+  // never saw still adds its minutes on top.
+  for (const total of exerciseTimeTotals) {
+    const activity = byHealthKey('activities').get(String(total.health_key));
+    if (!activity) continue;
+    const day = `${String(total.source)}|${String(total.entry_date)}`;
+    activity.duration_minutes = Math.max(
+      0,
+      Number(total.value ?? 0) / 60 - (workoutMinutesByDay.get(day) ?? 0)
     );
   }
   return { recordsSent: records.length, recordErrors: [] };

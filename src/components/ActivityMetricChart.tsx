@@ -17,6 +17,12 @@ interface ActivityMetricChartProps {
   hourlyValues?: readonly (number | null)[];
   /** Standing uses full-height bars for hours with standing activity. */
   binary?: boolean;
+  /**
+   * Renders the charted day's total, under the hour axis, as Apple's detail
+   * charts do. Given the summed hourly value so a caller can print it as a
+   * duration; omitted entirely, the line falls back to "<sum> <unit>".
+   */
+  formatTotal?: (total: number) => string;
   /** Opens this metric's own screen. Omitted where there is nothing to open. */
   onOpen?: () => void;
 }
@@ -30,6 +36,7 @@ export default function ActivityMetricChart({
   unit,
   hourlyValues,
   binary = false,
+  formatTotal,
   onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
@@ -39,6 +46,15 @@ export default function ActivityMetricChart({
   const hasSamples =
     hourlyValues?.some((amount) => amount != null && Number.isFinite(amount)) ??
     false;
+  // The bars' own sum, not the headline figure above them: the headline is the
+  // ring's number, which for Move deliberately excludes what the day's tracked
+  // workouts already account for. A total under a chart has to add up to the
+  // chart.
+  const total = (hourlyValues ?? []).reduce<number>(
+    (sum, amount) =>
+      amount != null && Number.isFinite(amount) ? sum + amount : sum,
+    0
+  );
   const max = Math.max(
     1,
     ...(hourlyValues ?? []).filter(
@@ -121,6 +137,19 @@ export default function ActivityMetricChart({
           </Text>
         ))}
       </View>
+      {hasSamples ? (
+        <Text
+          style={{ color }}
+          className="text-xs font-semibold uppercase tracking-wider mt-1"
+        >
+          {t('dashboard.activityTotal', {
+            defaultValue: 'Total {{amount}}',
+            amount: formatTotal
+              ? formatTotal(total)
+              : `${number(total)} ${unit}`,
+          })}
+        </Text>
+      ) : null}
     </View>
   );
 }

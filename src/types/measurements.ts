@@ -5,6 +5,8 @@ export interface CheckInMeasurement {
   waist?: number | null;
   hips?: number | null;
   steps?: number | null;
+  /** Walking + running distance for the day, in metres as both providers report it. */
+  distance_m?: number | null;
   height?: number | null;
   body_fat_percentage?: number | null;
   muscle_mass_kg?: number | null;
@@ -22,6 +24,8 @@ export interface CheckInMeasurementRange {
   waist?: number | null;
   hips?: number | null;
   steps?: number | null;
+  /** Walking + running distance for the day, in metres as both providers report it. */
+  distance_m?: number | null;
   height?: number | null;
   body_fat_percentage?: number | null;
   muscle_mass_kg?: number | null;

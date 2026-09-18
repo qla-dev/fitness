@@ -194,8 +194,15 @@ export function calculateExerciseStats(
     } else {
       const isActiveCals =
         session.exercise_snapshot?.name === 'Active Calories';
+      // Apple's daily exercise minutes: time, and no energy of its own — the
+      // energy for those minutes is already inside Active Calories, so adding
+      // its (zero) calories anywhere would be the start of a double count.
+      const isAppleExerciseTime =
+        session.exercise_snapshot?.name === 'Apple Exercise Time';
       if (isActiveCals) {
         activeCalories += session.calories_burned || 0;
+      } else if (isAppleExerciseTime) {
+        durationMinutes += session.duration_minutes ?? 0;
       } else {
         otherExerciseCalories += sessionCals;
         durationMinutes += session.duration_minutes ?? 0;
