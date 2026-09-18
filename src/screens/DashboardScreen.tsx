@@ -35,6 +35,7 @@ import RingCalendarSheet, {
 import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
+import type { ActivityGoalKey } from '../constants/activityGoals';
 import { emptyDailySummary } from '../services/dailySummaryService';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
 import ExerciseSummary from '../components/ExerciseSummary';
@@ -212,6 +213,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const distanceUnit =
     (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km';
   const { getImageSource } = useExerciseImageSource();
+  // Every Activities card drills into the same screen, differing only in which
+  // metric it opens and which day it opens it for.
+  const openGoal = useCallback(
+    (metric: ActivityGoalKey) =>
+      navigation.navigate('GoalDetail', { metric, date: selectedDate }),
+    [navigation, selectedDate]
+  );
   // The Exercise chart's 24 bars. Move and Stand have no hourly source in
   // the app, so they keep showing the unavailable note rather than a
   // fabricated series.
@@ -366,6 +374,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           summary={summary}
           steps={measurements?.steps}
           loading={isLoading}
+          onOpenGoal={openGoal}
         />
 
         {/* Tap-to-open launcher for the Sparky chat. Styled like an input to
@@ -393,6 +402,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           distanceUnit={distanceUnit}
           standGoal={summary.goals.stand_hours}
           stepsGoal={summary.goals.steps}
+          onOpenGoal={openGoal}
         />
 
         {/* Goal-notification reconciliation is owned here (headless, always

@@ -4,7 +4,10 @@ import { Text, View } from 'react-native';
 import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import ActivityMetricChart from './ActivityMetricChart';
+import CardChevron from './CardChevron';
 import Icon from './Icon';
+import { formatCompactCount } from '../utils/compactNumber';
+import type { ActivityGoalKey } from '../constants/activityGoals';
 
 interface DashboardActivityDetailsProps {
   summary: DailySummary;
@@ -18,6 +21,8 @@ interface DashboardActivityDetailsProps {
   hourlyMove?: readonly (number | null)[];
   hourlyExercise?: readonly (number | null)[];
   hourlyStand?: readonly (number | null)[];
+  /** Opens one metric's own screen. Every block here drills into the same one. */
+  onOpenGoal?: (metric: ActivityGoalKey) => void;
 }
 
 /** Daily activity detail independent of the summary tab above Water. */
@@ -32,6 +37,7 @@ export default function DashboardActivityDetails({
   hourlyMove,
   hourlyExercise,
   hourlyStand,
+  onOpenGoal,
 }: DashboardActivityDetailsProps) {
   const { t } = useTranslation();
   return (
@@ -47,6 +53,7 @@ export default function DashboardActivityDetails({
         goal={summary.exerciseCaloriesGoal}
         unit={t('dashboard.activityKcal', { defaultValue: 'kcal' })}
         hourlyValues={hourlyMove}
+        onOpen={onOpenGoal ? () => onOpenGoal('move') : undefined}
       />
       <ActivityMetricChart
         title={t('dashboard.activityExercise', { defaultValue: 'Exercise' })}
@@ -56,6 +63,7 @@ export default function DashboardActivityDetails({
         goal={summary.exerciseMinutesGoal}
         unit={t('dashboard.activityMinutes', { defaultValue: 'min' })}
         hourlyValues={hourlyExercise}
+        onOpen={onOpenGoal ? () => onOpenGoal('exercise') : undefined}
       />
       <ActivityMetricChart
         title={t('dashboard.activityStand', { defaultValue: 'Stand' })}
@@ -66,6 +74,7 @@ export default function DashboardActivityDetails({
         unit={t('dashboard.activityHours', { defaultValue: 'h' })}
         hourlyValues={hourlyStand}
         binary
+        onOpen={onOpenGoal ? () => onOpenGoal('stand') : undefined}
       />
       {/* Both tiles read a missing value as 0 for the same reason the charts
           above do: an unrecorded step count is zero steps, not unknown. */}
@@ -76,13 +85,22 @@ export default function DashboardActivityDetails({
             <DashboardCardTitle>
               {t('dashboard.activitySteps', { defaultValue: 'Steps' })}
             </DashboardCardTitle>
+            <View className="flex-1" />
+            {onOpenGoal ? (
+              <CardChevron
+                accessibilityLabel={t('dashboard.activitySteps', {
+                  defaultValue: 'Steps',
+                })}
+                onPress={() => onOpenGoal('steps')}
+              />
+            ) : null}
           </View>
+          {/* Compact past a thousand: the value and its goal share half a row,
+              and two five-digit counts either wrapped or shrank the type. */}
           <Text className="text-text-primary text-3xl font-semibold mt-1">
-            {formatLocalizedNumber(steps ?? 0, { maximumFractionDigits: 0 })}
+            {formatCompactCount(steps ?? 0)}
             {stepsGoal && stepsGoal > 0
-              ? `/${formatLocalizedNumber(stepsGoal, {
-                  maximumFractionDigits: 0,
-                })}`
+              ? `/${formatCompactCount(stepsGoal)}`
               : ''}
           </Text>
         </View>
@@ -92,6 +110,15 @@ export default function DashboardActivityDetails({
             <DashboardCardTitle>
               {t('dashboard.activityDistance', { defaultValue: 'Distance' })}
             </DashboardCardTitle>
+            <View className="flex-1" />
+            {onOpenGoal ? (
+              <CardChevron
+                accessibilityLabel={t('dashboard.activityDistance', {
+                  defaultValue: 'Distance',
+                })}
+                onPress={() => onOpenGoal('distance')}
+              />
+            ) : null}
           </View>
           <Text className="text-text-primary text-3xl font-semibold mt-1">
             {formatLocalizedNumber(distance ?? 0, { maximumFractionDigits: 2 })}

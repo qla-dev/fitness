@@ -13,6 +13,9 @@ import { useEffect } from 'react';
 import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import { useManualHealthSync } from '../hooks/useManualHealthSync';
+import CardChevron from './CardChevron';
+import { formatCompactCount } from '../utils/compactNumber';
+import type { ActivityGoalKey } from '../constants/activityGoals';
 import Icon, { type IconName } from './Icon';
 import { ACTIVITY_RING_COLORS } from '../constants/activityRings';
 import ValueSkeleton from './ValueSkeleton';
@@ -73,11 +76,18 @@ export default function DashboardActivityCard({
   summary,
   steps,
   loading = false,
+  onOpenGoal,
 }: {
   summary: DailySummary;
   steps?: number | null;
   /** Only the numbers wait: the rings, icons and labels are already correct. */
   loading?: boolean;
+  /**
+   * Opens a metric's own screen, from the two tiles below the rings. The rings
+   * card itself carries no chevron: it is three metrics at once, so there is no
+   * single screen for it to open.
+   */
+  onOpenGoal?: (metric: ActivityGoalKey) => void;
 }) {
   const { t } = useTranslation();
   const { sync, isPending } = useManualHealthSync();
@@ -92,6 +102,7 @@ export default function DashboardActivityCard({
       goal: summary.exerciseCaloriesGoal,
       unit: t('dashboard.activityKcal', { defaultValue: 'kcal' }),
       color: ACTIVITY_RING_COLORS.move,
+      metric: 'move' as ActivityGoalKey,
     },
     {
       icon: 'exercise-running' as IconName,
@@ -100,6 +111,7 @@ export default function DashboardActivityCard({
       goal: summary.exerciseMinutesGoal,
       unit: t('dashboard.activityMinutes', { defaultValue: 'min' }),
       color: ACTIVITY_RING_COLORS.exercise,
+      metric: 'exercise' as ActivityGoalKey,
     },
     {
       icon: 'exercise-walking' as IconName,
@@ -108,6 +120,11 @@ export default function DashboardActivityCard({
       goal: summary.goals.steps ?? 0,
       unit: '',
       color: ACTIVITY_RING_COLORS.steps,
+      // Compacted in the tiles below, where the pair shares half a row with
+      // nowhere to grow. The legend beside the rings keeps the real figure —
+      // it has the width, and this is the one place the exact count is read.
+      compact: true,
+      metric: 'steps' as ActivityGoalKey,
     },
   ];
   return (
@@ -219,6 +236,13 @@ export default function DashboardActivityCard({
               <View className="flex-row items-center gap-2">
                 <Icon name={metric.icon} size={18} color={metric.color} />
                 <DashboardCardTitle>{metric.label}</DashboardCardTitle>
+                <View className="flex-1" />
+                {onOpenGoal ? (
+                  <CardChevron
+                    accessibilityLabel={metric.label}
+                    onPress={() => onOpenGoal(metric.metric)}
+                  />
+                ) : null}
               </View>
               {/* The tiles carry the same value/goal pair as the ring legend
                   above, so the two never disagree at a glance. */}
@@ -231,8 +255,16 @@ export default function DashboardActivityCard({
                   style={{ color: metric.color }}
                   className="text-3xl font-semibold mt-1"
                 >
-                  {number(metric.value ?? 0)}
-                  {metric.goal > 0 ? `/${number(metric.goal)}` : ''}
+                  {metric.compact
+                    ? formatCompactCount(metric.value ?? 0)
+                    : number(metric.value ?? 0)}
+                  {metric.goal > 0
+                    ? `/${
+                        metric.compact
+                          ? formatCompactCount(metric.goal)
+                          : number(metric.goal)
+                      }`
+                    : ''}
                 </Text>
               )}
               <Text className="text-text-muted text-sm mt-1">

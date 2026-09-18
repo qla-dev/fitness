@@ -142,8 +142,13 @@ describe('useSyncHealthData', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
+      // Its own variant, not 'info': this is the toast that reports a run
+      // still in progress, and it carries a spinner in place of the glyph.
       expect(mockToastShow).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'info', text1: 'Syncing health data…' })
+        expect.objectContaining({
+          type: 'syncing',
+          text1: 'Syncing health data…',
+        })
       );
       expect(mockToastShow).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'success', text1: 'Sync complete' })

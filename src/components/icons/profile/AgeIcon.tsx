@@ -8,55 +8,61 @@ interface Props {
 }
 
 /**
- * The same torso the waist icon uses, with the tape dropped to the widest
- * point instead of the narrowest.
+ * An hourglass, for the age shown on the profile card.
+ *
+ * Not the calendar this row used to borrow from the shared icon set: a
+ * calendar means a date, and a date is what the profile stores, but age is the
+ * time that has run since. The sand carries the accent.
  */
-const HipsIcon: React.FC<Props> = ({
+const AgeIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
 }) => (
   <Svg width={size} height={size} viewBox="0 0 512 512">
-    <Path
-      d="M164,74 C164,132 124,156 124,194 C124,230 170,244 170,276 C170,312 122,330 118,382 C116,414 128,432 138,446"
-      stroke={color}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-    <Path
-      d="M348,74 C348,132 388,156 388,194 C388,230 342,244 342,276 C342,312 390,330 394,382 C396,414 384,432 374,446"
-      stroke={color}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-    <Path
-      d="M104,378 C152,410 360,410 408,378"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
     <Line
-      x1="140"
-      y1="398"
-      x2="132"
-      y2="424"
-      stroke={accentColor}
+      x1="120"
+      y1="96"
+      x2="392"
+      y2="96"
+      stroke={color}
       strokeWidth={14}
       strokeLinecap="round"
       strokeMiterlimit={10}
       fill="none"
     />
     <Line
-      x1="196"
-      y1="410"
-      x2="192"
-      y2="438"
+      x1="120"
+      y1="416"
+      x2="392"
+      y2="416"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeMiterlimit={10}
+      fill="none"
+    />
+    <Path
+      d="M168,96 C168,180 256,214 256,256 C256,298 168,332 168,416"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Path
+      d="M344,96 C344,180 256,214 256,256 C256,298 344,332 344,416"
+      stroke={color}
+      strokeWidth={14}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Line
+      x1="198"
+      y1="148"
+      x2="314"
+      y2="148"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
@@ -65,38 +71,24 @@ const HipsIcon: React.FC<Props> = ({
     />
     <Line
       x1="256"
-      y1="414"
+      y1="262"
       x2="256"
-      y2="442"
+      y2="330"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
       strokeMiterlimit={10}
       fill="none"
     />
-    <Line
-      x1="316"
-      y1="410"
-      x2="320"
-      y2="438"
+    <Path
+      d="M204,392 C222,348 290,348 308,392"
       stroke={accentColor}
       strokeWidth={14}
       strokeLinecap="round"
-      strokeMiterlimit={10}
-      fill="none"
-    />
-    <Line
-      x1="372"
-      y1="398"
-      x2="380"
-      y2="424"
-      stroke={accentColor}
-      strokeWidth={14}
-      strokeLinecap="round"
-      strokeMiterlimit={10}
+      strokeLinejoin="round"
       fill="none"
     />
   </Svg>
 );
 
-export default HipsIcon;
+export default AgeIcon;

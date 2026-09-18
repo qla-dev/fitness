@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
+import { useCSSVariable } from 'uniwind';
 import CustomModal, { type CustomModalRef } from './CustomModal';
+import TileIconSlot from './TileIconSlot';
+import { MeasurementIcons } from './icons/measurements';
 import PillInput from './ui/PillInput';
 import Button from './ui/Button';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
@@ -43,6 +46,10 @@ export default function MeasurementRecordSheet({
   const sheetRef = useRef<CustomModalRef>(null);
   const { t } = useTranslation();
   const upsert = useUpsertCheckIn();
+  const [accentPrimary, iconDecorative] = useCSSVariable([
+    '--color-accent-primary',
+    '--color-icon-decorative',
+  ]) as [string, string];
   const resolved: MeasurementUnits = { ...DEFAULT_MEASUREMENT_UNITS, ...units };
   const definition = useMemo(() => measurementFieldById(field), [field]);
 
@@ -68,24 +75,40 @@ export default function MeasurementRecordSheet({
         // An emptied input clears the value rather than leaving the old one:
         // null is the check-in's explicit "no value", undefined means
         // "unchanged", and the user emptying a field means the former.
-        [definition.id]: filled
-          ? definition.toStorage(parsed, resolved)
-          : null,
+        [definition.id]: filled ? definition.toStorage(parsed, resolved) : null,
       },
       { onSuccess: () => sheetRef.current?.dismiss() }
     );
   };
 
   const unit = definition.unit(resolved);
+  const DrawnIcon = MeasurementIcons[definition.kind];
 
   return (
     <CustomModal
       ref={sheetRef}
-      title={definition.label(t)}
+      fullHeight
+      title={t('measurements.title', { defaultValue: 'Measurements' })}
       onDismiss={onClose}
     >
-      <View className="px-5 pb-2">
-        <Text className="text-text-secondary text-sm mb-3">
+      {/* The setup wizard's question step, as a sheet: the measurement's own
+          icon, the field as the heading, one input, and the action at the
+          foot. The sheet is full height so none of that moves when the error
+          line under the input appears. */}
+      <View className="flex-1 px-5 pb-2">
+        <View className="items-center py-3">
+          <TileIconSlot>
+            <DrawnIcon
+              size={56}
+              color={iconDecorative}
+              accentColor={accentPrimary}
+            />
+          </TileIconSlot>
+        </View>
+        <Text className="text-text-primary text-3xl font-bold">
+          {definition.label(t)}
+        </Text>
+        <Text className="text-text-secondary text-sm mt-2 mb-5">
           {t('measurements.recordHint', {
             defaultValue: 'Saved against the day you are looking at.',
           })}
@@ -113,6 +136,8 @@ export default function MeasurementRecordSheet({
           editable={!upsert.isPending}
           onSubmitEditing={save}
         />
+        {/* Pushes the action to the foot, where the wizard keeps its own. */}
+        <View className="flex-1" />
         <Button
           onPress={save}
           disabled={invalid || upsert.isPending}

@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import DashboardTrendCards from '../components/DashboardTrendCards';
+import { getTodayDate } from '../utils/dateUtils';
 import SegmentedControl from '../components/SegmentedControl';
 import TabHeader from '../components/TabHeader';
 import StatusView from '../components/StatusView';
@@ -163,6 +164,12 @@ export default function TrendsScreen({ navigation }: Props) {
           />
         )}
         <DashboardTrendCards
+          onOpenTrend={(trend) =>
+            navigation.navigate('GoalDetail', {
+              metric: trend,
+              date: getTodayDate(),
+            })
+          }
           steps={trends.steps}
           weight={weightSeries}
           sleep={trends.sleep}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { formatLocalizedNumber, useAppLocale } from '../localization';
+import CardChevron from './CardChevron';
 import Icon, { type IconName } from './Icon';
 
 interface ActivityMetricChartProps {
@@ -16,6 +17,8 @@ interface ActivityMetricChartProps {
   hourlyValues?: readonly (number | null)[];
   /** Standing uses full-height bars for hours with standing activity. */
   binary?: boolean;
+  /** Opens this metric's own screen. Omitted where there is nothing to open. */
+  onOpen?: () => void;
 }
 
 export default function ActivityMetricChart({
@@ -27,6 +30,7 @@ export default function ActivityMetricChart({
   unit,
   hourlyValues,
   binary = false,
+  onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
   const locale = useAppLocale();
@@ -50,6 +54,10 @@ export default function ActivityMetricChart({
       <View className="flex-row items-center gap-2">
         <Icon name={icon} size={20} color={color} />
         <DashboardCardTitle>{title}</DashboardCardTitle>
+        <View className="flex-1" />
+        {onOpen ? (
+          <CardChevron accessibilityLabel={title} onPress={onOpen} />
+        ) : null}
       </View>
       {/* Nothing recorded reads as a real zero rather than an em dash: the
           metric is a count of what you did today, and "0/30 min" says that far

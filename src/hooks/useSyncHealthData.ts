@@ -60,7 +60,10 @@ export function useSyncHealthData(options?: {
     onMutate: () => {
       if (showToasts) {
         Toast.show({
-          type: 'info',
+          // Its own variant, so the badge is a turning spinner rather than the
+          // static info glyph: this toast is the only one that reports
+          // something still running.
+          type: 'syncing',
           text1: t('syncHealth.syncing', {
             defaultValue: 'Syncing health data…',
           }),

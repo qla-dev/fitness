@@ -1,4 +1,3 @@
-import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Rect } from 'react-native-svg';
@@ -17,10 +16,19 @@ interface HealthTrendCardProps {
   line?: boolean;
   isLoading: boolean;
   isError: boolean;
-  children: ReactNode;
+  /** Opens this trend's own screen, where the full chart lives. */
+  onOpen: () => void;
 }
 
-/** Compact summary with the existing interactive chart available on expansion. */
+/**
+ * A trend's summary: its average, a sparkline, and a way through to the chart.
+ *
+ * It used to unfold in place. The interactive chart is a screenful on its own —
+ * scrubbable, with its own range — and opening one pushed every card below it
+ * off the screen, so reading two trends meant closing the first. It now sits on
+ * its own screen and this card is the link to it, which is also why the chevron
+ * points the way it does.
+ */
 export default function HealthTrendCard({
   title,
   icon,
@@ -33,10 +41,9 @@ export default function HealthTrendCard({
   line = false,
   isLoading,
   isError,
-  children,
+  onOpen,
 }: HealthTrendCardProps) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
   const valid = values.filter(
     (value): value is number => value != null && Number.isFinite(value)
   );
@@ -49,19 +56,15 @@ export default function HealthTrendCard({
     <View className="bg-surface rounded-3xl p-4 mb-3">
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        onPress={() => setExpanded(!expanded)}
+        accessibilityLabel={title}
+        onPress={onOpen}
       >
         <View className="flex-row items-center gap-2 mb-3">
           <Icon name={icon} size={20} color={color} />
           <View className="flex-1">
             <DashboardCardTitle>{title}</DashboardCardTitle>
           </View>
-          <Icon
-            name={expanded ? 'chevron-up' : 'chevron-forward'}
-            size={18}
-            color={color}
-          />
+          <Icon name="chevron-forward" size={18} color={color} />
         </View>
         {isLoading ? (
           <ActivityIndicator color={color} />
@@ -156,7 +159,6 @@ export default function HealthTrendCard({
           })}
         </Text>
       </Pressable>
-      {expanded && <View className="mt-3">{children}</View>}
     </View>
   );
 }

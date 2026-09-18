@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 
-import Icon, { type IconName } from './Icon';
+import TileIconSlot from './TileIconSlot';
+import { HeightIcon } from './icons/measurements';
+import { AgeIcon } from './icons/profile';
 import MeasurementRecordSheet from './MeasurementRecordSheet';
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
@@ -50,7 +52,10 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
   const [editingHeight, setEditingHeight] = useState(false);
   const today = getTodayDate();
-  const accentPrimary = useCSSVariable('--color-accent-primary') as string;
+  const [accentPrimary, iconDecorative] = useCSSVariable([
+    '--color-accent-primary',
+    '--color-icon-decorative',
+  ]) as [string, string];
 
   const { data: profile } = useQuery({
     queryKey: profileQueryKey,
@@ -67,19 +72,23 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const storedHeight = history?.height?.shown ?? null;
   const age = ageFromDateOfBirth(profile?.date_of_birth);
 
-  // The same icons the setup wizard puts on these two questions, so the answer
-  // is marked the way the question was — drawn bare and in the accent colour,
-  // the way the Library cards directly below this one draw theirs.
+  // Drawn icons rather than the shared symbol set, and the same two-tone pair
+  // the measurement tiles use — because that is what these two are. The height
+  // icon is literally the one its tile used before height moved up here.
   const stats: {
     key: string;
-    icon: IconName;
+    Icon: React.ComponentType<{
+      size?: number;
+      color?: string;
+      accentColor?: string;
+    }>;
     label: string;
     value: string;
     onPress?: () => void;
   }[] = [
     {
       key: 'age',
-      icon: 'calendar',
+      Icon: AgeIcon,
       label: t('profile.age', { defaultValue: 'Age' }),
       value:
         age === null
@@ -93,7 +102,7 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
     },
     {
       key: 'height',
-      icon: 'measurements',
+      Icon: HeightIcon,
       label: t('measurements.fields.height', { defaultValue: 'Height' }),
       value:
         storedHeight === null
@@ -116,8 +125,16 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
         {stats.map((stat, index) => {
           const body = (
             <View className="flex-row items-center px-3 py-3">
-              <Icon name={stat.icon} size={24} color={accentPrimary} />
-              <View className="flex-1 ml-4">
+              {/* The tracker tiles' slot and size, so a profile stat is drawn
+                  at exactly the scale its measurement siblings are. */}
+              <TileIconSlot>
+                <stat.Icon
+                  size={56}
+                  color={iconDecorative}
+                  accentColor={accentPrimary}
+                />
+              </TileIconSlot>
+              <View className="flex-1 ml-2">
                 <Text
                   className="text-text-secondary text-sm"
                   numberOfLines={1}

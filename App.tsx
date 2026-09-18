@@ -61,6 +61,7 @@ import {
   SafeWorkoutComplete,
   SafeActivityDetail,
   SafeFastingDetail,
+  SafeGoalDetail,
   SafeSleepDetail,
   SafeLogs,
   SafeSync,
@@ -658,6 +659,11 @@ function AppContent() {
             name="SleepDetail"
             component={SafeSleepDetail}
             options={createStackScreenOptions(t('screens.sleep', { defaultValue: 'Sleep' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="GoalDetail"
+            component={SafeGoalDetail}
+            options={createStackScreenOptions(t('screens.goalDetail', { defaultValue: 'Goal' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Logs"

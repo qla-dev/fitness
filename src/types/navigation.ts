@@ -1,3 +1,5 @@
+import type { ActivityGoalKey } from '../constants/activityGoals';
+import type { HealthTrendKey } from '../constants/healthTrends';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type {
@@ -290,6 +292,12 @@ export type RootStackParamList = {
   ActivityDetail: { session: IndividualSessionResponse };
   FastingDetail: undefined;
   SleepDetail: { entryId: string; day: string };
+  /**
+   * One goal on its own screen, reached from either list that shows goals.
+   * Steps is deliberately in both key sets: the Activities card and the Goals
+   * card open the same screen for it, which is the point.
+   */
+  GoalDetail: { metric: ActivityGoalKey | HealthTrendKey; date: string };
   Chat: undefined;
   Logs: undefined;
   Sync: undefined;

@@ -500,7 +500,8 @@
     "healthTrendsSettings": "Health Trends",
     "progressPhotos": "Progress Photos",
     "progressPhotoCompare": "Compare",
-    "progressPhotoTimelapse": "Time-lapse"
+    "progressPhotoTimelapse": "Time-lapse",
+    "goalDetail": "Goal"
   },
   "healthMetrics": {
     "steps": "Steps",
@@ -5453,5 +5454,12 @@
   },
   "ringCalendar": {
     "title": "Calendar"
+  },
+  "goalDetail": {
+    "today": "Today",
+    "ofGoal": "{{percent}}% of {{goal}} {{unit}}",
+    "noGoal": "No goal set",
+    "byHour": "By hour",
+    "history": "History"
   }
 }

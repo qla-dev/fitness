@@ -25,6 +25,14 @@ describe('isPopTransition', () => {
     expect(isPopTransition(state('a', 'b', 'c'), 'b')).toBe(false);
   });
 
+  // The tab stacks carry this listener too, and each holds a single route. A
+  // root push over the tabs marks that route closing, and it is trivially the
+  // last one — which used to read as a pop and fire a second haptic on top of
+  // the button's own.
+  it('does not treat a lone route as a pop when something pushes over it', () => {
+    expect(isPopTransition(state('a'), 'a')).toBe(false);
+  });
+
   it('ignores a missing target or empty state', () => {
     expect(isPopTransition(state('a'), undefined)).toBe(false);
     expect(isPopTransition({ routes: [] }, 'a')).toBe(false);

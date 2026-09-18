@@ -4,8 +4,9 @@ import type { ToastConfig } from 'react-native-toast-message';
 import Icon, { type IconName } from '../Icon';
 import MenuItem from '../MenuItem';
 import MenuItemIcon from '../MenuItemIcon';
+import ToastSpinner from './ToastSpinner';
 
-type ToastVariant = 'success' | 'error' | 'info';
+type ToastVariant = 'success' | 'error' | 'info' | 'syncing';
 
 // Tap actions ride in via Toast.show({ props: { onPress } }); the library's
 // own onPress option defaults to a noop, so an action passed there can't be
@@ -41,6 +42,15 @@ const variantTokens: Record<
     tile: '--color-bg-danger',
   },
   info: {
+    icon: 'info-circle',
+    // i18n-audit-ignore-next-line hardcoded-ui-text -- CSS variable identifier, not user-visible text.
+    tint: '--color-accent-primary',
+    tile: '--color-menu-icon-bg',
+  },
+  // Same tile and tint as info: a sync in progress is information, and the
+  // only thing that differs is that the badge turns. `icon` is unused on this
+  // variant but kept so the token table stays one shape.
+  syncing: {
     icon: 'info-circle',
     // i18n-audit-ignore-next-line hardcoded-ui-text -- CSS variable identifier, not user-visible text.
     tint: '--color-accent-primary',
@@ -82,9 +92,13 @@ function ToastContent({
     >
       <MenuItem
         leading={
-          <MenuItemIcon backgroundColor={tile}>
-            <Icon name={tokens.icon} size={20} color={tint} />
-          </MenuItemIcon>
+          variant === 'syncing' ? (
+            <ToastSpinner color={tint} backgroundColor={tile} />
+          ) : (
+            <MenuItemIcon backgroundColor={tile}>
+              <Icon name={tokens.icon} size={20} color={tint} />
+            </MenuItemIcon>
+          )
         }
       >
         {text1 ? (
@@ -136,6 +150,14 @@ export const toastConfig: ToastConfig = {
   info: ({ text1, text2, props }) => (
     <ToastContent
       variant="info"
+      text1={text1}
+      text2={text2}
+      onPress={(props as ToastTapProps | undefined)?.onPress}
+    />
+  ),
+  syncing: ({ text1, text2, props }) => (
+    <ToastContent
+      variant="syncing"
       text1={text1}
       text2={text2}
       onPress={(props as ToastTapProps | undefined)?.onPress}

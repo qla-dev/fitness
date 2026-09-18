@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import CustomModal, { type CustomModalRef } from './CustomModal';
@@ -10,6 +9,7 @@ import {
   type MeasurementUnits,
 } from './measurementTiles';
 import type { MeasurementFieldId } from '../utils/measurementFields';
+import { CARD_GAP } from '../constants/layout';
 import type { MeasurementHistory } from '../hooks/useMeasurementHistory';
 import type { CheckInMeasurement } from '../types/measurements';
 import type { CustomMeasurementEntry } from '../types/customMeasurements';
@@ -84,6 +84,16 @@ export default function MoreMeasurementsSheet({
     [measurements, history, customMeasurements, units, t]
   );
 
+  // Rows of two, the same shape the diary grid uses, so the gap between the
+  // columns is the one between the rows rather than whatever is left over.
+  const rows = useMemo(() => {
+    const chunked: (typeof tiles)[] = [];
+    for (let index = 0; index < tiles.length; index += 2) {
+      chunked.push(tiles.slice(index, index + 2));
+    }
+    return chunked;
+  }, [tiles]);
+
   return (
     <CustomModal
       ref={sheetRef}
@@ -95,42 +105,54 @@ export default function MoreMeasurementsSheet({
           defaultValue: 'Tap a measurement to record it.',
         })}
       </Text>
-      {/* BottomSheetScrollView, not the plain one: the sheet sizes itself to
-          its content, and an RN ScrollView inside that measures as a collapsed
-          box — the sheet flashed open and settled on nothing.
+      {/* No scrollable here, by design: the sheet sizes itself to its content
+          and a scrollable never reports a content height to it, so whatever
+          flex gave it became the sheet's height — a fixed box with the list cut
+          off inside. The ring calendar has always been plain views inside this
+          same modal for exactly this reason, and this is now the same.
 
-          No maxHeight on it: the sheet already caps itself at topInset and
-          scrolls past that, so a fixed cap here just reserved a tall box that
-          short lists left standing empty below the tiles. */}
-      <BottomSheetScrollView contentContainerClassName="px-4 pb-2">
-        <View className="flex-row flex-wrap justify-between">
-          {tiles.map((tile) => (
-            <View key={tile.id} className="w-[48%] mb-2">
-              <MeasurementTileCard
-                tile={tile}
-                iconColor={iconColor}
-                accentColor={accentPrimary}
-                mutedColor={mutedColor}
-                dangerColor={dangerColor}
-                successColor={successColor}
-                onSheet
-                t={t}
-                onPress={() => {
-                  if (tile.fieldId) {
-                    pickedRef.current = tile.fieldId;
+          Which means the list has to fit, and the registry is a fixed set of
+          ten that does. Manual custom measurements are the one thing that can
+          push past it — two of them still fit a tall phone, four will not, and
+          the sheet clips rather than scrolls. Worth a cap here if anyone starts
+          logging a lot of them. */}
+      <View className="px-4 pb-2" style={{ gap: CARD_GAP }}>
+        {rows.map((row, rowIndex) => (
+          <View
+            key={`row-${rowIndex}`}
+            className="flex-row"
+            style={{ gap: CARD_GAP }}
+          >
+            {row.map((tile) => (
+              <View key={tile.id} className="flex-1">
+                <MeasurementTileCard
+                  tile={tile}
+                  iconColor={iconColor}
+                  accentColor={accentPrimary}
+                  mutedColor={mutedColor}
+                  dangerColor={dangerColor}
+                  successColor={successColor}
+                  onSheet
+                  t={t}
+                  onPress={() => {
+                    if (tile.fieldId) {
+                      pickedRef.current = tile.fieldId;
+                      sheetRef.current?.dismiss();
+                      return;
+                    }
+                    // Custom measurements carry their own categories and data
+                    // types; the full form owns them.
                     sheetRef.current?.dismiss();
-                    return;
-                  }
-                  // Custom measurements carry their own categories and data
-                  // types; the full form owns them.
-                  sheetRef.current?.dismiss();
-                  onOpenFullForm();
-                }}
-              />
-            </View>
-          ))}
-        </View>
-      </BottomSheetScrollView>
+                    onOpenFullForm();
+                  }}
+                />
+              </View>
+            ))}
+            {/* An odd last row keeps its tile at half width. */}
+            {row.length === 1 && <View className="flex-1" />}
+          </View>
+        ))}
+      </View>
     </CustomModal>
   );
 }

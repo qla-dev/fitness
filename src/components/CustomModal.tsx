@@ -27,11 +27,27 @@ interface Props {
   onDismiss?: () => void;
   onAnimate?: (fromIndex: number, toIndex: number) => void;
   onClose?: () => void;
+  /**
+   * Fills the screen instead of sizing to content, for a sheet that is really
+   * a one-question form: the input then sits at a fixed place with its action
+   * pinned at the foot, the same shape the setup wizard uses, rather than
+   * jumping up and down as an error line appears and clears.
+   */
+  fullHeight?: boolean;
 }
+
+/**
+ * '100%' is of the space left under `topInset`, so this stops below the status
+ * bar rather than over it.
+ */
+const FULL_HEIGHT_SNAP_POINTS = ['100%'];
 
 /** Edge-attached, content-sized sheet with native-inspired header chrome. */
 const CustomModal = forwardRef<CustomModalRef, Props>(
-  ({ title, titleStyle, children, onDismiss, onAnimate, onClose }, ref) => {
+  (
+    { title, titleStyle, children, onDismiss, onAnimate, onClose, fullHeight },
+    ref
+  ) => {
     const sheet = useRef<BottomSheetModal>(null);
     const { t } = useTranslation();
     const backdrop = useSheetBackdrop();
@@ -53,7 +69,10 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
     return (
       <BottomSheetModal
         ref={sheet}
-        enableDynamicSizing
+        // Dynamic sizing and a fixed snap point are mutually exclusive: the
+        // first measures the content, the second ignores it.
+        enableDynamicSizing={!fullHeight}
+        snapPoints={fullHeight ? FULL_HEIGHT_SNAP_POINTS : undefined}
         detached={false}
         bottomInset={0}
         // Tall content caps below the status bar instead of snapping to the
@@ -69,7 +88,11 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
         }}
         handleIndicatorStyle={{ backgroundColor: muted, width: 36, height: 5 }}
       >
-        <BottomSheetView style={{ paddingBottom: 16 }}>
+        <BottomSheetView
+          style={
+            fullHeight ? { paddingBottom: 16, flex: 1 } : { paddingBottom: 16 }
+          }
+        >
           <View
             collapsable={false}
             className="flex-row items-center px-4 pb-3 pt-1"

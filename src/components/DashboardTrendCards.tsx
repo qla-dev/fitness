@@ -18,9 +18,6 @@ import {
 } from '../types/healthTrends';
 import { addDays, getTodayDate } from '../utils/dateUtils';
 import HealthTrendCard from './HealthTrendCard';
-import SleepTimelineChart from './SleepTimelineChart';
-import StepsBarChart from './StepsBarChart';
-import WeightLineChart from './WeightLineChart';
 
 interface DashboardTrendCardsProps {
   steps: HealthTrendSeries<StepsDataPoint>;
@@ -29,6 +26,8 @@ interface DashboardTrendCardsProps {
   range: HealthTrendDateRange;
   weightUnit: 'kg' | 'lbs';
   visibleTrends: readonly HealthTrendKey[];
+  /** Opens one trend's own screen, where its chart lives. */
+  onOpenTrend: (trend: HealthTrendKey) => void;
 }
 
 const averageOf = (values: readonly (number | null)[]) => {
@@ -47,6 +46,7 @@ export default function DashboardTrendCards({
   range,
   weightUnit,
   visibleTrends,
+  onOpenTrend,
 }: DashboardTrendCardsProps) {
   const { t } = useTranslation();
   const days = RANGE_DAYS[range];
@@ -109,9 +109,8 @@ export default function DashboardTrendCards({
         values={sleepValues}
         isLoading={sleep.isLoading}
         isError={sleep.isError}
-      >
-        <SleepTimelineChart {...sleep} range={range} />
-      </HealthTrendCard>
+        onOpen={() => onOpenTrend('sleep')}
+      />
     ),
     weight: (
       <HealthTrendCard
@@ -129,9 +128,8 @@ export default function DashboardTrendCards({
         line
         isLoading={weight.isLoading}
         isError={weight.isError}
-      >
-        <WeightLineChart {...weight} range={range} unit={weightUnit} />
-      </HealthTrendCard>
+        onOpen={() => onOpenTrend('weight')}
+      />
     ),
     steps: (
       <HealthTrendCard
@@ -149,9 +147,8 @@ export default function DashboardTrendCards({
         values={stepValues}
         isLoading={steps.isLoading}
         isError={steps.isError}
-      >
-        <StepsBarChart {...steps} range={range} />
-      </HealthTrendCard>
+        onOpen={() => onOpenTrend('steps')}
+      />
     ),
   };
   if (!visibleTrends.length)
