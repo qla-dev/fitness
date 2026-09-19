@@ -34,11 +34,20 @@ export interface ActivityGoalDefinition {
   precision: number;
 }
 
+/**
+ * The Move ring's red.
+ *
+ * Exported because the Tracker draws burned energy too, and it is the same
+ * reading — a second red chosen to match would drift the moment either was
+ * touched.
+ */
+export const MOVE_COLOR = '#FF375F';
+
 export const ACTIVITY_GOALS: ActivityGoalDefinition[] = [
   {
     key: 'move',
     icon: 'flame',
-    color: '#FF375F',
+    color: MOVE_COLOR,
     label: (t) => t('dashboard.activityMove', { defaultValue: 'Move' }),
     unit: (t) => t('dashboard.activityKcal', { defaultValue: 'kcal' }),
     value: ({ summary }) =>

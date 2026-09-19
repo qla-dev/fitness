@@ -74,6 +74,7 @@ import MedicationDetailScreen from '../screens/MedicationDetailScreen';
 import MedicationFormScreen from '../screens/MedicationFormScreen';
 import MedicationScheduleFormScreen from '../screens/MedicationScheduleFormScreen';
 import DailyNutritionDetailsScreen from '../screens/DailyNutritionDetailsScreen';
+import DayMealsScreen from '../screens/DayMealsScreen';
 import MacrosScreen from '../screens/MacrosScreen';
 import NutrientTrendsScreen from '../screens/NutrientTrendsScreen';
 import FamilyMembersScreen from '../screens/FamilyMembersScreen';
@@ -150,6 +151,7 @@ export const SafeNotificationSettings = withErrorBoundary(NotificationSettingsSc
 export const SafeAbout = withErrorBoundary(AboutScreen, 'About', { canGoBack: true });
 export const SafeWhatsNew = withErrorBoundary(WhatsNewScreen, 'WhatsNew', { canGoBack: true });
 export const SafeDailyNutritionDetails = withErrorBoundary(DailyNutritionDetailsScreen, 'DailyNutritionDetails', { canGoBack: true });
+export const SafeDayMeals = withErrorBoundary(DayMealsScreen, 'DayMeals', { canGoBack: true });
 export const SafeMacros = withErrorBoundary(MacrosScreen, 'Macros', { canGoBack: true });
 export const SafeNutrientTrends = withErrorBoundary(NutrientTrendsScreen, 'NutrientTrends', { canGoBack: true });
 export const SafeFamilyMembers = withErrorBoundary(FamilyMembersScreen, 'FamilyMembers', { canGoBack: true });

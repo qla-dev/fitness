@@ -75,7 +75,6 @@ jest.mock('../../src/hooks/useMeasurementHistory', () => ({
   useMeasurementHistory: () => ({ history: undefined, isLoading: false }),
 }));
 
-
 jest.mock('../../src/hooks/useCustomMeasurements', () => ({
   useCustomMeasurementsByDate: jest.fn(),
 }));
@@ -186,7 +185,10 @@ jest.mock('../../src/components/CalendarSheet', () => {
 // render no QueryClientProvider, so it is stubbed like the plain CalendarSheet.
 jest.mock('../../src/components/RingCalendarSheet', () => {
   const { View } = require('react-native');
-  return { __esModule: true, default: () => <View testID="ring-calendar-sheet" /> };
+  return {
+    __esModule: true,
+    default: () => <View testID="ring-calendar-sheet" />,
+  };
 });
 
 jest.mock('../../src/components/ServingAdjustSheet', () => {
@@ -671,7 +673,11 @@ describe('DiaryScreen custom queries', () => {
     expect(getByTestId('diary-intro')).toBeTruthy();
     expect(getByText('diary.subtitle')).toBeTruthy();
 
-    expect(getAllByLabelText('measurements.more')).toHaveLength(2);
+    expect(getByTestId('diary-meals-intro')).toBeTruthy();
+    expect(getByText('diary.mealsSubtitle')).toBeTruthy();
+
+    // One link per block: macros, measurements, meals.
+    expect(getAllByLabelText('measurements.more')).toHaveLength(3);
   });
 
   test('hides the native family diaries action while disconnected', () => {

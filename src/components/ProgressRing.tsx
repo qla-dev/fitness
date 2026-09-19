@@ -40,12 +40,31 @@ function useIsFocusedSafely(navigable: boolean): boolean {
   }
 }
 
+/** Where an arc starts and how far it runs, in Skia's degrees (0 = 3 o'clock). */
+const SWEEPS = {
+  full: { start: -90, total: 360 },
+  // The top half, opening downwards, so the figure it measures can sit in the
+  // gap rather than being ringed by it.
+  half: { start: 180, total: 180 },
+} as const;
+
+export type ProgressArc = keyof typeof SWEEPS;
+
+/** Canvas height for an arc of this shape — a half arc needs only its band. */
+export const progressArcHeight = (
+  size: number,
+  strokeWidth: number,
+  arc: ProgressArc = 'full'
+) => (arc === 'half' ? size / 2 + strokeWidth : size);
+
 interface ProgressRingProps {
   progress: number; // 0-1 value (capped at 1 for display)
   size: number;
   strokeWidth: number;
   color: string;
   backgroundColor: string;
+  /** A closed ring, or the top half of one. */
+  arc?: ProgressArc;
 }
 
 const ProgressRing: React.FC<ProgressRingProps> = ({
@@ -54,7 +73,9 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   strokeWidth,
   color,
   backgroundColor,
+  arc = 'full',
 }) => {
+  const { start, total } = SWEEPS[arc];
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
   const progressCapped = Math.min(Math.max(progress, 0), 1);
@@ -100,23 +121,43 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
 
   const progressPath = useDerivedValue(() => {
     const builder = Skia.PathBuilder.Make();
-    const sweepAngle = animatedProgress.value * 360;
+    const sweepAngle = animatedProgress.value * total;
     if (sweepAngle > 0) {
-      builder.addArc(oval, -90, sweepAngle);
+      builder.addArc(oval, start, sweepAngle);
     }
     return builder.build();
   });
 
+  // A closed ring's track is a circle; a half arc's has to be a path, or the
+  // unfilled remainder runs all the way round behind the gap.
+  const trackPath = useMemo(() => {
+    const builder = Skia.PathBuilder.Make();
+    builder.addArc(oval, start, total);
+    return builder.build();
+  }, [oval, start, total]);
+
   return (
-    <Canvas style={{ width: size, height: size }}>
-      <SkiaCircle
-        cx={center}
-        cy={center}
-        r={radius}
-        style="stroke"
-        strokeWidth={strokeWidth}
-        color={backgroundColor}
-      />
+    <Canvas
+      style={{ width: size, height: progressArcHeight(size, strokeWidth, arc) }}
+    >
+      {arc === 'full' ? (
+        <SkiaCircle
+          cx={center}
+          cy={center}
+          r={radius}
+          style="stroke"
+          strokeWidth={strokeWidth}
+          color={backgroundColor}
+        />
+      ) : (
+        <Path
+          path={trackPath}
+          style="stroke"
+          strokeWidth={strokeWidth}
+          color={backgroundColor}
+          strokeCap="round"
+        />
+      )}
       <Path
         path={progressPath}
         style="stroke"

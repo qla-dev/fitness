@@ -502,7 +502,8 @@
     "progressPhotoCompare": "Compare",
     "progressPhotoTimelapse": "Time-lapse",
     "goalDetail": "Goal",
-    "macros": "Macros"
+    "macros": "Macros",
+    "dayMeals": "Meals"
   },
   "healthMetrics": {
     "steps": "Steps",
@@ -1052,7 +1053,8 @@
     "addFood": "Add Food",
     "emptyDay": "No entries recorded for this day",
     "subtitle": "Keep a track of your habits",
-    "macrosSubtitle": "See all your macros in one place"
+    "macrosSubtitle": "See all your macros in one place",
+    "mealsSubtitle": "Log your every meal, fast"
   },
   "medications": {
     "title": "Medications",
@@ -5523,7 +5525,10 @@
     "title": "Nutrition",
     "ofGoal": "of {{goal}}",
     "grams": "g",
-    "ofGrams": "of {{goal}} g"
+    "eaten": "Eaten",
+    "burned": "Burned",
+    "kcalLeft": "kcal left",
+    "gramsLeft": "{{grams}}g left"
   },
   "trainingCard": {
     "details": "Details"

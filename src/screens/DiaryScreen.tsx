@@ -449,7 +449,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             and macros are the first thing this screen is asked for. Not gated
             on the Summary preference below it — that toggle hides a different
             card, and this one is the head of the screen. */}
-        <DiaryNutritionCard summary={summary} loading={isLoading} />
+        <DiaryNutritionCard
+          summary={summary}
+          showNetCarbs={preferences?.show_net_carbs === true}
+          loading={isLoading}
+        />
         {(summary.foodEntries.length > 0 ||
           hasSupplementNutrition(summary.supplementTotals) ||
           summary.exerciseEntries.length > 0 ||
@@ -530,6 +534,19 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           photos={dayPhotos}
           onPress={() =>
             navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+        />
+        {/* The third intro, over the meals. Its link opens the same list on a
+            screen of its own, headed by the day rather than by a meal — the
+            per-meal screen is what the three-dot menu already gives. */}
+        <SectionIntro
+          testID="diary-meals-intro"
+          subtitle={t('diary.mealsSubtitle', {
+            defaultValue: 'Log your every meal, fast',
+          })}
+          actionLabel={t('measurements.more', { defaultValue: 'More' })}
+          onPress={() =>
+            navigation.navigate('DayMeals', { date: selectedDate })
           }
         />
         <FoodSummary

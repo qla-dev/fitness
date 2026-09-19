@@ -94,6 +94,7 @@ import {
   SafeAbout,
   SafeWhatsNew,
   SafeDailyNutritionDetails,
+  SafeDayMeals,
   SafeMacros,
   SafeNutrientTrends,
   SafeFamilyMembers,
@@ -590,6 +591,11 @@ function AppContent() {
               headerBackButtonDisplayMode: 'minimal',
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),
             })}
+          />
+          <Stack.Screen
+            name="DayMeals"
+            component={SafeDayMeals}
+            options={createStackScreenOptions(t('screens.dayMeals', { defaultValue: 'Meals' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="Macros"

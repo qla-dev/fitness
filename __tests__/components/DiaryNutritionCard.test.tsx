@@ -27,11 +27,11 @@ describe('DiaryNutritionCard', () => {
     const { getByText } = render(<DiaryNutritionCard summary={summary} />);
 
     expect(getByText('62')).toBeTruthy();
-    expect(getByText('of 150 g')).toBeTruthy();
+    expect(getByText('88g left')).toBeTruthy();
     expect(getByText('145')).toBeTruthy();
-    expect(getByText('of 300 g')).toBeTruthy();
+    expect(getByText('155g left')).toBeTruthy();
     expect(getByText('38')).toBeTruthy();
-    expect(getByText('of 100 g')).toBeTruthy();
+    expect(getByText('62g left')).toBeTruthy();
   });
 
   // A day with no goals set still has numbers worth showing; only the lines
