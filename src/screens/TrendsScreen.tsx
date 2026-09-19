@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import DashboardTrendCards from '../components/DashboardTrendCards';
 import { getTodayDate } from '../utils/dateUtils';
-import SegmentedControl from '../components/SegmentedControl';
+import TrendRangeSelector from '../components/TrendRangeSelector';
 import TabHeader from '../components/TabHeader';
 import StatusView from '../components/StatusView';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
@@ -42,7 +42,7 @@ export default function TrendsScreen({ navigation }: Props) {
   const accent = useCSSVariable('--color-accent-primary') as string;
   const bottomPadding = useActiveWorkoutBarPadding();
   const scrollRef = useRef<ScrollView>(null);
-  const [range, setRange] = useState<HealthTrendDateRange>('7d');
+  const [range, setRange] = useState<HealthTrendDateRange>('w');
   const [refreshing, setRefreshing] = useState(false);
   const { isConnected, isLoading } = useServerConnection();
   const { preferences } = usePreferences({ enabled: isConnected });
@@ -153,15 +153,7 @@ export default function TrendsScreen({ navigation }: Props) {
         }
       >
         {visibleTrends.length > 0 && (
-          <SegmentedControl<HealthTrendDateRange>
-            segments={[
-              { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
-              { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
-              { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
-            ]}
-            activeKey={range}
-            onSelect={setRange}
-          />
+          <TrendRangeSelector range={range} onSelect={setRange} />
         )}
         <DashboardTrendCards
           onOpenTrend={(trend) =>

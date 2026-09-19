@@ -65,7 +65,7 @@ let queryClient: QueryClient;
 const ALL_TRENDS: readonly HealthTrendKey[] = [...HEALTH_TREND_KEYS];
 
 const renderTrends = (
-  range: '7d' | '30d' | '90d' = '7d',
+  range: 'w' | 'm' | 'y' = 'w',
   enabled = true,
   activeTrends: readonly HealthTrendKey[] = ALL_TRENDS
 ) =>
@@ -138,7 +138,7 @@ describe('useHealthTrends', () => {
   });
 
   test('requests both endpoints for the same window', async () => {
-    renderTrends('30d');
+    renderTrends('m');
 
     await waitFor(() => {
       expect(mockFetchMeasurementsRange).toHaveBeenCalled();
@@ -230,7 +230,7 @@ describe('useHealthTrends', () => {
   });
 
   test('makes no request when disabled', async () => {
-    renderTrends('7d', false);
+    renderTrends('w', false);
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -239,7 +239,7 @@ describe('useHealthTrends', () => {
   });
 
   test('issues no measurements request when neither steps nor weight is active', async () => {
-    const { result } = renderTrends('7d', true, ['sleep']);
+    const { result } = renderTrends('w', true, ['sleep']);
 
     await waitFor(() => {
       expect(mockFetchSleepEntries).toHaveBeenCalled();
@@ -253,7 +253,7 @@ describe('useHealthTrends', () => {
 
   test('still issues one measurements request when only weight is active', async () => {
     // Steps and weight share one request, so weight alone still has to make it.
-    renderTrends('7d', true, ['weight']);
+    renderTrends('w', true, ['weight']);
 
     await waitFor(() => {
       expect(mockFetchMeasurementsRange).toHaveBeenCalledTimes(1);
@@ -261,7 +261,7 @@ describe('useHealthTrends', () => {
   });
 
   test('refetch refreshes every active source', async () => {
-    const { result } = renderTrends('7d', true, ['steps', 'sleep']);
+    const { result } = renderTrends('w', true, ['steps', 'sleep']);
 
     await waitFor(() => {
       expect(mockFetchMeasurementsRange).toHaveBeenCalledTimes(1);
@@ -277,7 +277,7 @@ describe('useHealthTrends', () => {
   });
 
   test('refetch leaves a hidden trend alone', async () => {
-    const { result } = renderTrends('7d', true, ['steps']);
+    const { result } = renderTrends('w', true, ['steps']);
 
     await waitFor(() => {
       expect(mockFetchMeasurementsRange).toHaveBeenCalledTimes(1);

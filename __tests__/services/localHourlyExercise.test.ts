@@ -16,9 +16,25 @@ const request = <T = LocalRecord>(
 
 const date = '2026-09-09';
 
+/**
+ * The clock these rows are written against.
+ *
+ * `created_at` is "now", and the chart clamps an effort at midnight rather
+ * than wrapping it into tomorrow — so a 15-minute entry written at 23:56 landed
+ * as 4 and the suite failed every night in the last quarter of an hour. Pinned
+ * to the middle of the day, where nothing is near a boundary.
+ */
+const WRITTEN_AT = new Date(`${date}T09:00:00`);
+
 beforeEach(async () => {
+  jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
+  jest.setSystemTime(WRITTEN_AT);
   await AsyncStorage.clear();
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 const createExercise = () =>

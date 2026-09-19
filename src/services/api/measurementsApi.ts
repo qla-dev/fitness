@@ -91,6 +91,26 @@ export const fetchMeasurementsRange = async (
   });
 };
 
+/** One row per day of the four Activities metrics, for their history charts. */
+export interface ActivityRangeDay {
+  entry_date: string;
+  active_calories: number;
+  exercise_minutes: number;
+  stand_hours: number;
+  distance_m: number;
+}
+
+export const fetchActivityRange = async (
+  startDate: string,
+  endDate: string
+): Promise<ActivityRangeDay[]> => {
+  return apiFetch<ActivityRangeDay[]>({
+    endpoint: `/api/measurements/activity-range/${startDate}/${endDate}`,
+    serviceName: 'Measurements API',
+    operation: 'fetch activity range',
+  });
+};
+
 /**
  * Upserts a check-in measurement record for a given date.
  *

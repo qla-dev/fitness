@@ -62,7 +62,7 @@ describe('useNutritionTrends', () => {
       },
     ]);
 
-    const { result } = renderHook(() => useNutritionTrends({ range: '7d' }), {
+    const { result } = renderHook(() => useNutritionTrends({ range: 'w' }), {
       wrapper: createQueryWrapper(queryClient),
     });
 
@@ -91,7 +91,7 @@ describe('useNutritionTrends', () => {
     mockFetchNutritionTrends.mockResolvedValue([]);
 
     const { result: res30 } = renderHook(
-      () => useNutritionTrends({ range: '30d' }),
+      () => useNutritionTrends({ range: 'm' }),
       { wrapper: createQueryWrapper(queryClient) }
     );
 
@@ -102,7 +102,7 @@ describe('useNutritionTrends', () => {
     expect(res30.current.data).toHaveLength(30);
 
     const { result: res90 } = renderHook(
-      () => useNutritionTrends({ range: '90d' }),
+      () => useNutritionTrends({ range: 'y' }),
       { wrapper: createQueryWrapper(queryClient) }
     );
 
@@ -110,12 +110,12 @@ describe('useNutritionTrends', () => {
       expect(res90.current.isLoading).toBe(false);
     });
 
-    expect(res90.current.data).toHaveLength(90);
+    expect(res90.current.data).toHaveLength(365);
   });
 
   test('does not fetch when enabled is false', async () => {
     const { result } = renderHook(
-      () => useNutritionTrends({ range: '7d', enabled: false }),
+      () => useNutritionTrends({ range: 'w', enabled: false }),
       { wrapper: createQueryWrapper(queryClient) }
     );
 

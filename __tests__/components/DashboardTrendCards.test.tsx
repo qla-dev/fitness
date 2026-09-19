@@ -11,7 +11,7 @@ jest.mock('../../src/components/WeightLineChart', () => () => null);
 const today = getTodayDate();
 const yesterday = addDays(today, -1);
 const props = {
-  range: '7d' as const,
+  range: 'w' as const,
   weightUnit: 'kg' as const,
   visibleTrends: ['weight', 'sleep'] as const,
   steps: { data: [], isLoading: false, isError: false },

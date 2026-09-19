@@ -5,6 +5,7 @@ import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import ActivityMetricChart from './ActivityMetricChart';
 import CardChevron from './CardChevron';
+import CardPressable from './CardPressable';
 import Icon from './Icon';
 import { formatCompactCount } from '../utils/compactNumber';
 import type { ActivityGoalKey } from '../constants/activityGoals';
@@ -63,50 +64,61 @@ export default function DashboardActivityDetails({
       <DashboardCardTitle className="mb-3">
         {t('dashboard.activityDetails', { defaultValue: 'Activity Details' })}
       </DashboardCardTitle>
-      <ActivityMetricChart
-        title={t('dashboard.activityMove', { defaultValue: 'Move' })}
-        icon="flame"
-        color="#FF375F"
-        value={summary.activeCalories + summary.otherExerciseCalories}
-        goal={summary.exerciseCaloriesGoal}
-        unit={t('dashboard.activityKcal', { defaultValue: 'kcal' })}
-        hourlyValues={hourlyMove}
-        formatTotal={
-          totalCaloriesBurned != null
-            ? () =>
-                `${formatLocalizedNumber(totalCaloriesBurned, {
-                  maximumFractionDigits: 0,
-                })} ${t('dashboard.activityKcal', { defaultValue: 'kcal' })}`
-            : undefined
-        }
-        onOpen={onOpenGoal ? () => onOpenGoal('move') : undefined}
-      />
-      <ActivityMetricChart
-        title={t('dashboard.activityExercise', { defaultValue: 'Exercise' })}
-        icon="exercise-running"
-        color="#A8EF00"
-        value={summary.exerciseMinutes}
-        goal={summary.exerciseMinutesGoal}
-        unit={t('dashboard.activityMinutes', { defaultValue: 'min' })}
-        hourlyValues={hourlyExercise}
-        formatTotal={exerciseTotal}
-        onOpen={onOpenGoal ? () => onOpenGoal('exercise') : undefined}
-      />
-      <ActivityMetricChart
-        title={t('dashboard.activityStand', { defaultValue: 'Stand' })}
-        icon="exercise-walking"
-        color="#00D8EB"
-        value={standHours}
-        goal={standGoal}
-        unit={t('dashboard.activityHours', { defaultValue: 'h' })}
-        hourlyValues={hourlyStand}
-        binary
-        onOpen={onOpenGoal ? () => onOpenGoal('stand') : undefined}
-      />
+      {/* The spacing between the three lives here rather than on each chart:
+          on a detail screen one of them sits alone inside a card, where a
+          bottom margin of its own is just dead surface under the total. */}
+      <View className="gap-6 mb-6">
+        <ActivityMetricChart
+          title={t('dashboard.activityMove', { defaultValue: 'Move' })}
+          icon="flame"
+          color="#FF375F"
+          value={summary.activeCalories + summary.otherExerciseCalories}
+          goal={summary.exerciseCaloriesGoal}
+          unit={t('dashboard.activityKcal', { defaultValue: 'kcal' })}
+          hourlyValues={hourlyMove}
+          formatTotal={
+            totalCaloriesBurned != null
+              ? () =>
+                  `${formatLocalizedNumber(totalCaloriesBurned, {
+                    maximumFractionDigits: 0,
+                  })} ${t('dashboard.activityKcal', { defaultValue: 'kcal' })}`
+              : undefined
+          }
+          onOpen={onOpenGoal ? () => onOpenGoal('move') : undefined}
+        />
+        <ActivityMetricChart
+          title={t('dashboard.activityExercise', { defaultValue: 'Exercise' })}
+          icon="exercise-running"
+          color="#A8EF00"
+          value={summary.exerciseMinutes}
+          goal={summary.exerciseMinutesGoal}
+          unit={t('dashboard.activityMinutes', { defaultValue: 'min' })}
+          hourlyValues={hourlyExercise}
+          formatTotal={exerciseTotal}
+          onOpen={onOpenGoal ? () => onOpenGoal('exercise') : undefined}
+        />
+        <ActivityMetricChart
+          title={t('dashboard.activityStand', { defaultValue: 'Stand' })}
+          icon="exercise-walking"
+          color="#00D8EB"
+          value={standHours}
+          goal={standGoal}
+          unit={t('dashboard.activityHours', { defaultValue: 'h' })}
+          hourlyValues={hourlyStand}
+          binary
+          onOpen={onOpenGoal ? () => onOpenGoal('stand') : undefined}
+        />
+      </View>
       {/* Both tiles read a missing value as 0 for the same reason the charts
           above do: an unrecorded step count is zero steps, not unknown. */}
       <View className="flex-row gap-4">
-        <View className="flex-1">
+        <CardPressable
+          className="flex-1"
+          accessibilityLabel={t('dashboard.activitySteps', {
+            defaultValue: 'Steps',
+          })}
+          onPress={onOpenGoal ? () => onOpenGoal('steps') : undefined}
+        >
           <View className="flex-row items-center gap-2">
             <Icon name="exercise-walking" size={18} color="#00D8EB" />
             <DashboardCardTitle>
@@ -118,7 +130,6 @@ export default function DashboardActivityDetails({
                 accessibilityLabel={t('dashboard.activitySteps', {
                   defaultValue: 'Steps',
                 })}
-                onPress={() => onOpenGoal('steps')}
               />
             ) : null}
           </View>
@@ -130,8 +141,14 @@ export default function DashboardActivityDetails({
               ? `/${formatCompactCount(stepsGoal)}`
               : ''}
           </Text>
-        </View>
-        <View className="flex-1">
+        </CardPressable>
+        <CardPressable
+          className="flex-1"
+          accessibilityLabel={t('dashboard.activityDistance', {
+            defaultValue: 'Distance',
+          })}
+          onPress={onOpenGoal ? () => onOpenGoal('distance') : undefined}
+        >
           <View className="flex-row items-center gap-2">
             <Icon name="measurements" size={18} color="#00D8EB" />
             <DashboardCardTitle>
@@ -143,7 +160,6 @@ export default function DashboardActivityDetails({
                 accessibilityLabel={t('dashboard.activityDistance', {
                   defaultValue: 'Distance',
                 })}
-                onPress={() => onOpenGoal('distance')}
               />
             ) : null}
           </View>
@@ -162,7 +178,7 @@ export default function DashboardActivityDetails({
                 : t('dashboard.activityMiles', { defaultValue: 'mi' })}
             </Text>
           </View>
-        </View>
+        </CardPressable>
       </View>
     </View>
   );

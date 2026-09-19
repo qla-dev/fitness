@@ -4223,6 +4223,31 @@
       "loadFailed": "Failed to load hydration data",
       "empty": "No hydration data for this period",
       "tooltip": "{{amount}} ml"
+    },
+    "move": {
+      "title": "Move",
+      "loadFailed": "Failed to load move data",
+      "empty": "No move data for this period",
+      "tooltip": "{{amount}} kcal"
+    },
+    "exercise": {
+      "title": "Exercise",
+      "loadFailed": "Failed to load exercise data",
+      "empty": "No exercise data for this period",
+      "tooltip": "{{amount}} min"
+    },
+    "stand": {
+      "title": "Stand",
+      "loadFailed": "Failed to load stand data",
+      "empty": "No stand data for this period",
+      "tooltip": "{{amount}} h"
+    },
+    "distance": {
+      "title": "Distance",
+      "loadFailed": "Failed to load distance data",
+      "empty": "No distance data for this period",
+      "tooltipKm": "{{amount}} km",
+      "tooltipMiles": "{{amount}} mi"
     }
   },
   "exerciseLibrary": {
@@ -4453,7 +4478,12 @@
   "ranges": {
     "7d": "7d",
     "30d": "30d",
-    "90d": "90d"
+    "90d": "90d",
+    "d": "D",
+    "w": "W",
+    "m": "M",
+    "6m": "6M",
+    "y": "Y"
   },
   "foodEntryMeal": {
     "failed": "Failed to add meal"
@@ -5480,6 +5510,7 @@
     "ofGoal": "{{percent}}% of {{goal}} {{unit}}",
     "noGoal": "No goal set",
     "byHour": "By hour",
-    "history": "History"
+    "history": "History",
+    "rangeLabel": "Range"
   }
 }

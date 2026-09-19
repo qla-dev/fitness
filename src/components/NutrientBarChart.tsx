@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import ChartSurface from './ChartSurface';
 import { useTranslation } from 'react-i18next';
 import { View, Text } from 'react-native';
 import { CartesianChart, Bar } from 'victory-native';
@@ -13,6 +14,11 @@ import {
 } from './charts/chartFormatting';
 import { formatLocalizedNumber } from '../localization';
 import type { TrendRange } from '../hooks/useNutritionTrends';
+import {
+  RANGE_INNER_PADDING,
+  RANGE_X_TICKS,
+  RANGE_LABELS_WEEKDAYS,
+} from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -30,21 +36,14 @@ type NutrientBarChartProps = {
   isLoading: boolean;
   isError: boolean;
   range: TrendRange;
+  /**
+   * Drops the card this chart normally draws itself on, for a screen where
+   * the chart is the content rather than one card among several.
+   */
+  bare?: boolean;
   nutrientLabel: string;
   unit: string;
   goal?: number;
-};
-
-const INNER_PADDING: Record<TrendRange, number> = {
-  '7d': 0.3,
-  '30d': 0.2,
-  '90d': 0.1,
-};
-
-const X_TICK_COUNT: Record<TrendRange, number> = {
-  '7d': 7,
-  '30d': 6,
-  '90d': 5,
 };
 
 const font = makeChartFont(11);
@@ -95,6 +94,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
   isLoading,
   isError,
   range,
+  bare,
   nutrientLabel,
   unit,
   goal,
@@ -119,7 +119,9 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
     return undefined;
   }, [data, goal]);
 
-  const formatXLabel = range === '7d' ? formatXLabel7d : formatXLabel30d90d;
+  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
+    ? formatXLabel7d
+    : formatXLabel30d90d;
 
   const [tooltipResetKey, setTooltipResetKey] = useState({ data, range });
   if (tooltipResetKey.data !== data || tooltipResetKey.range !== range) {
@@ -166,7 +168,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2">
+    <ChartSurface bare={bare}>
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {nutrientLabel} ({unit})
       </Text>
@@ -205,7 +207,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
             domainPadding={{ left: 25, right: 25 }}
             xAxis={{
               font,
-              tickCount: X_TICK_COUNT[range],
+              tickCount: RANGE_X_TICKS[range],
               labelColor: textMuted,
               formatXLabel,
             }}
@@ -244,7 +246,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
                     points={points.value}
                     chartBounds={chartBounds}
                     color={accentColor}
-                    innerPadding={INNER_PADDING[range]}
+                    innerPadding={RANGE_INNER_PADDING[range]}
                     animate={{ type: 'timing', duration: 300 }}
                     roundedCorners={{ topLeft: 6, topRight: 6 }}
                   />
@@ -268,7 +270,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
           />
         </View>
       )}
-    </View>
+    </ChartSurface>
   );
 };
 

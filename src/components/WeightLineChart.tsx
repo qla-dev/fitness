@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import ChartSurface from './ChartSurface';
 import { useTranslation } from 'react-i18next';
 import { View, Text } from 'react-native';
 import { CartesianChart } from 'victory-native';
@@ -14,6 +15,7 @@ import {
 import LineSeriesMark from './charts/LineSeriesMark';
 import type { WeightDataPoint } from '../hooks/useMeasurementsRange';
 import type { HealthTrendDateRange } from '../types/healthTrends';
+import { RANGE_X_TICKS, RANGE_LABELS_WEEKDAYS } from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -26,13 +28,12 @@ type WeightLineChartProps = {
   isLoading: boolean;
   isError: boolean;
   range: HealthTrendDateRange;
+  /**
+   * Drops the card this chart normally draws itself on, for a screen where
+   * the chart is the content rather than one card among several.
+   */
+  bare?: boolean;
   unit: string;
-};
-
-const X_TICK_COUNT: Record<HealthTrendDateRange, number> = {
-  '7d': 7,
-  '30d': 6,
-  '90d': 5,
 };
 
 const font = makeChartFont(CHART_LABEL_FONT_SIZE);
@@ -68,6 +69,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   isLoading,
   isError,
   range,
+  bare,
   unit,
 }) => {
   const { t } = useTranslation();
@@ -82,7 +84,9 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
 
   const hasData = useMemo(() => data.length > 0, [data]);
 
-  const formatXLabel = range === '7d' ? formatXLabel7d : formatXLabel30d90d;
+  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
+    ? formatXLabel7d
+    : formatXLabel30d90d;
 
   // Reset a lingering selection when the dataset, range, or unit changes. Done
   // during render (instead of in an effect) so the tooltip is already cleared on
@@ -136,7 +140,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2">
+    <ChartSurface bare={bare}>
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {t('charts.weight.title', { defaultValue: 'Weight' })}
       </Text>
@@ -174,7 +178,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
             domainPadding={{ left: 25, right: 25 }}
             xAxis={{
               font,
-              tickCount: X_TICK_COUNT[range],
+              tickCount: RANGE_X_TICKS[range],
               labelColor: textMuted,
               formatXLabel,
             }}
@@ -212,7 +216,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
           />
         </View>
       )}
-    </View>
+    </ChartSurface>
   );
 };
 

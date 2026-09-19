@@ -30,3 +30,18 @@ export const HEALTH_TREND_LABELS: Record<
   weight: (t) => t('charts.weight.title', { defaultValue: 'Weight' }),
   sleep: (t) => t('charts.sleep.title', { defaultValue: 'Sleep' }),
 };
+
+/**
+ * The colour a graph is drawn in, wherever it is drawn.
+ *
+ * Stated once so a metric looks the same on the dashboard pager and on its own
+ * detail screen: a history that changes colour between the card you tapped and
+ * the screen it opened reads as a different measurement. Total, so registering
+ * a graph without giving it a colour is a compile error.
+ */
+export const HEALTH_TREND_COLORS: Record<HealthTrendKey, string> = {
+  steps: '#00BFCF',
+  water: '#2FA8F5',
+  weight: '#D844ED',
+  sleep: '#807AFF',
+};

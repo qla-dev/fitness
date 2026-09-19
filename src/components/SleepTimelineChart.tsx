@@ -1,4 +1,5 @@
 import { Canvas, Rect } from '@shopify/react-native-skia';
+import ChartSurface from './ChartSurface';
 import type { TFunction } from 'i18next';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,11 @@ import { usePreferences } from '../hooks/usePreferences';
 import type {
   HealthTrendDateRange,
   HealthTrendSeries,
+} from '../types/healthTrends';
+import {
+  RANGE_INNER_PADDING,
+  RANGE_X_TICKS,
+  RANGE_LABELS_WEEKDAYS,
 } from '../types/healthTrends';
 import {
   SLEEP_STAGE_LANES,
@@ -43,6 +49,11 @@ type SleepTimelineAggregates = Omit<SleepTimelineSummary, 'days'>;
 type SleepTimelineChartProps = SleepTimelineAggregates &
   HealthTrendSeries<SleepTimelineDay> & {
     range: HealthTrendDateRange;
+    /**
+     * Drops the card this chart normally draws itself on, for a screen where
+     * the chart is the content rather than one card among several.
+     */
+    bare?: boolean;
   };
 
 const PLOT_HEIGHT = 150;
@@ -58,18 +69,6 @@ const TICK_LABEL_WIDTH = 44;
 const X_LABEL_WIDTH = 56;
 
 const MINUTES_PER_HOUR = 60;
-
-const INNER_PADDING: Record<HealthTrendDateRange, number> = {
-  '7d': 0.3,
-  '30d': 0.2,
-  '90d': 0.1,
-};
-
-const X_TICK_COUNT: Record<HealthTrendDateRange, number> = {
-  '7d': 7,
-  '30d': 6,
-  '90d': 5,
-};
 
 /**
  * Stage colours, matched to the Sleep Details hypnogram's lanes so a stage is the same
@@ -245,6 +244,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
   isLoading,
   isError,
   range,
+  bare,
 }) => {
   const { t } = useTranslation();
   const { preferences } = usePreferences();
@@ -266,7 +266,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
         width: plotWidth,
         height: PLOT_HEIGHT,
         anchorMinutes,
-        innerPadding: INNER_PADDING[range],
+        innerPadding: RANGE_INNER_PADDING[range],
       }),
     [data, plotWidth, anchorMinutes, range]
   );
@@ -342,8 +342,10 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
         })
       : '';
 
-  const formatXLabel = range === '7d' ? formatXLabel7d : formatXLabel30d90d;
-  const xLabelIndices = buildXLabelIndices(data.length, X_TICK_COUNT[range]);
+  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
+    ? formatXLabel7d
+    : formatXLabel30d90d;
+  const xLabelIndices = buildXLabelIndices(data.length, RANGE_X_TICKS[range]);
 
   const renderPlaceholder = (message: string) => (
     <View className="h-50 justify-center items-center">
@@ -352,7 +354,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
   );
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2">
+    <ChartSurface bare={bare}>
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {t('charts.sleep.title', { defaultValue: 'Sleep' })}
       </Text>
@@ -481,7 +483,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
           ) : null}
         </>
       )}
-    </View>
+    </ChartSurface>
   );
 };
 

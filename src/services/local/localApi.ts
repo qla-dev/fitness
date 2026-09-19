@@ -246,6 +246,45 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
         };
       });
   }
+  // One day per row for the four activity metrics, so their detail screens can
+  // draw a history the way steps and weight already do. Stand and distance sit
+  // on the check-in row; move and exercise are the day's sessions folded
+  // through the same stats the ring uses, so a history can never tell a
+  // different story from the number it sits under.
+  if (path.startsWith('/api/measurements/activity-range/')) {
+    const [start, end] = [parts[4], parts[5]];
+    const byDay = new Map<string, Record<string, number>>();
+    for (const row of localMeasurements(db, { start, end })) {
+      byDay.set(String(row.entry_date), {
+        stand_hours: Number(row.stand_hours ?? 0),
+        distance_m: Number(row.distance_m ?? 0),
+        active_calories: 0,
+        exercise_minutes: 0,
+      });
+    }
+    const sessionsByDay = new Map<string, ExerciseSessionResponse[]>();
+    for (const session of localSessions(db, undefined, { start, end })) {
+      const day = String(session.entry_date);
+      const list = sessionsByDay.get(day) ?? [];
+      list.push(session as unknown as ExerciseSessionResponse);
+      sessionsByDay.set(day, list);
+    }
+    for (const [day, sessions] of sessionsByDay) {
+      const stats = calculateExerciseStats(sessions);
+      const row = byDay.get(day) ?? {
+        stand_hours: 0,
+        distance_m: 0,
+        active_calories: 0,
+        exercise_minutes: 0,
+      };
+      row.active_calories = stats.activeCalories + stats.otherExerciseCalories;
+      row.exercise_minutes = stats.durationMinutes;
+      byDay.set(day, row);
+    }
+    return [...byDay.entries()]
+      .map(([entry_date, values]) => ({ entry_date, ...values }))
+      .sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+  }
   if (path.startsWith('/api/measurements/check-in-measurements-range/'))
     return localMeasurements(db, { start: parts[4], end: parts[5] }).sort(
       (a, b) => String(a.entry_date).localeCompare(String(b.entry_date))

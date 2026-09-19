@@ -14,6 +14,7 @@ import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import { useManualHealthSync } from '../hooks/useManualHealthSync';
 import CardChevron from './CardChevron';
+import CardPressable from './CardPressable';
 import { formatCompactCount } from '../utils/compactNumber';
 import type { ActivityGoalKey } from '../constants/activityGoals';
 import Icon, { type IconName } from './Icon';
@@ -229,19 +230,18 @@ export default function DashboardActivityCard({
           .slice(1)
           .reverse()
           .map((metric) => (
-            <View
+            <CardPressable
               key={metric.label}
               className="flex-1 bg-surface rounded-2xl p-4"
+              accessibilityLabel={metric.label}
+              onPress={onOpenGoal ? () => onOpenGoal(metric.metric) : undefined}
             >
               <View className="flex-row items-center gap-2">
                 <Icon name={metric.icon} size={18} color={metric.color} />
                 <DashboardCardTitle>{metric.label}</DashboardCardTitle>
                 <View className="flex-1" />
                 {onOpenGoal ? (
-                  <CardChevron
-                    accessibilityLabel={metric.label}
-                    onPress={() => onOpenGoal(metric.metric)}
-                  />
+                  <CardChevron accessibilityLabel={metric.label} />
                 ) : null}
               </View>
               {/* The tiles carry the same value/goal pair as the ring legend
@@ -275,7 +275,7 @@ export default function DashboardActivityCard({
                         defaultValue: 'No step goal set',
                       }))}
               </Text>
-            </View>
+            </CardPressable>
           ))}
       </View>
     </View>

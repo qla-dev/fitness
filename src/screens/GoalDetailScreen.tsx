@@ -4,8 +4,9 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActivityMetricChart from '../components/ActivityMetricChart';
+import ActivityTrendChart from '../components/ActivityTrendChart';
 import Icon from '../components/Icon';
-import SegmentedControl from '../components/SegmentedControl';
+import TrendRangeSelector from '../components/TrendRangeSelector';
 import SleepTimelineChart from '../components/SleepTimelineChart';
 import StepsBarChart from '../components/StepsBarChart';
 import WaterBarChart from '../components/WaterBarChart';
@@ -17,6 +18,10 @@ import {
   usePreferences,
 } from '../hooks';
 import { useSleepDay } from '../hooks/useSleepDay';
+import {
+  useActivityRange,
+  hasActivityHistory,
+} from '../hooks/useActivityRange';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { formatLocalizedNumber, getAppLocale } from '../localization';
 import {
@@ -28,6 +33,7 @@ import {
 import {
   HEALTH_TREND_LABELS,
   HEALTH_TREND_KEYS,
+  HEALTH_TREND_COLORS,
   type HealthTrendKey,
 } from '../constants/healthTrends';
 import { distanceFromKm, weightFromKg } from '../utils/unitConversions';
@@ -48,10 +54,10 @@ const isTrendKey = (metric: string): metric is HealthTrendKey =>
 /** Chrome for the two metrics that exist only as trends. */
 const TREND_CHROME: Record<HealthTrendKey, { icon: IconName; color: string }> =
   {
-    steps: { icon: 'exercise-walking', color: '#00BFCF' },
-    weight: { icon: 'scale', color: '#D844ED' },
-    sleep: { icon: 'sleep-bedtime', color: '#807AFF' },
-    water: { icon: 'hydration', color: '#2FA8F5' },
+    steps: { icon: 'exercise-walking', color: HEALTH_TREND_COLORS.steps },
+    weight: { icon: 'scale', color: HEALTH_TREND_COLORS.weight },
+    sleep: { icon: 'sleep-bedtime', color: HEALTH_TREND_COLORS.sleep },
+    water: { icon: 'hydration', color: HEALTH_TREND_COLORS.water },
   };
 
 /**
@@ -68,10 +74,19 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { metric, date } = route.params;
-  const [range, setRange] = useState<HealthTrendDateRange>('7d');
+  const [range, setRange] = useState<HealthTrendDateRange>('w');
 
   const activity = isActivityKey(metric) ? activityGoalByKey(metric) : null;
   const trend = isTrendKey(metric) ? metric : null;
+
+  // Steps keeps its long-standing measurements-range history; the other four
+  // Activities metrics read theirs from the day rows the local layer folds for
+  // them, so a history can never disagree with the number above it.
+  const activityHistory = useActivityRange({
+    metric: metric as ActivityGoalKey,
+    range,
+    enabled: activity != null && hasActivityHistory(metric as ActivityGoalKey),
+  });
 
   const { summary, isLoading } = useDailySummary({ date });
   const { measurements } = useMeasurements({ date });
@@ -104,6 +119,9 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
     () => buildHourlyExerciseMinutes(summary?.exerciseEntries),
     [summary?.exerciseEntries]
   );
+
+  const showActivityHistory =
+    activity != null && hasActivityHistory(metric as ActivityGoalKey);
 
   const chrome = activity
     ? { icon: activity.icon, color: activity.color }
@@ -214,12 +232,15 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
               {title}
             </Text>
           </View>
-          <Text
-            testID="goal-detail-subtitle"
-            className="text-text-secondary text-base mt-1"
-          >
-            {formatDateLabel(date, t, getAppLocale())}
-          </Text>
+          {/* The picker sits where the date used to, the way the Health app
+              puts its own under the title. The date has not been dropped — it
+              moved into the summary card below, which is the thing that is
+              actually about one day. */}
+          {trend || showActivityHistory ? (
+            <View className="mt-3">
+              <TrendRangeSelector range={range} onSelect={setRange} />
+            </View>
+          ) : null}
         </View>
 
         {isLoading && !today ? (
@@ -229,8 +250,14 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
             testID="goal-detail-summary"
             className="bg-surface rounded-xl p-4 mb-3"
           >
-            <Text className="text-sm text-text-muted">
-              {t('goalDetail.today', { defaultValue: 'Today' })}
+            {/* The date, not the word "Today": this screen opens on whichever
+                day you came from, so a fixed label contradicted the header on
+                every day but one. */}
+            <Text
+              testID="goal-detail-subtitle"
+              className="text-sm text-text-muted"
+            >
+              {formatDateLabel(date, t, getAppLocale())}
             </Text>
             <View className="flex-row items-end gap-2 mt-1">
               <Text className="text-4xl font-bold text-text-primary">
@@ -283,39 +310,51 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
               unit={today?.unit ?? ''}
               hourlyValues={hourlyForMetric}
               binary={metric === 'stand'}
+              showValue={false}
             />
           </View>
         ) : null}
 
-        {trend ? (
+        {trend || showActivityHistory ? (
           <>
-            <Text className="text-sm text-text-muted mb-2">
-              {t('goalDetail.history', { defaultValue: 'History' })}
-            </Text>
-            <SegmentedControl<HealthTrendDateRange>
-              segments={[
-                { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
-                { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
-                { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
-              ]}
-              activeKey={range}
-              onSelect={setRange}
-            />
-            <View className="bg-surface rounded-3xl p-4 mt-3">
-              {trend === 'steps' ? (
-                <StepsBarChart {...trends.steps} range={range} />
-              ) : trend === 'weight' ? (
-                <WeightLineChart
-                  {...weightSeries}
-                  range={range}
-                  unit={weightUnit}
-                />
-              ) : trend === 'water' ? (
-                <WaterBarChart {...trends.water} range={range} />
-              ) : (
-                <SleepTimelineChart {...trends.sleep} range={range} />
-              )}
-            </View>
+            {/* Bare: on this screen the chart is the content, so it sits in
+                the body under the screen's own padding rather than inside a
+                card of its own. The dashboard still boxes them, where a chart
+                is one card among several. */}
+            {showActivityHistory ? (
+              <ActivityTrendChart
+                metric={metric as ActivityGoalKey}
+                data={activityHistory.data}
+                isLoading={activityHistory.isLoading}
+                isError={activityHistory.isError}
+                range={range}
+                distanceUnit={distanceUnit}
+                bare
+              />
+            ) : trend === 'steps' ? (
+              <StepsBarChart
+                {...trends.steps}
+                range={range}
+                color={HEALTH_TREND_COLORS.steps}
+                bare
+              />
+            ) : trend === 'weight' ? (
+              <WeightLineChart
+                {...weightSeries}
+                range={range}
+                unit={weightUnit}
+                bare
+              />
+            ) : trend === 'water' ? (
+              <WaterBarChart
+                {...trends.water}
+                range={range}
+                color={HEALTH_TREND_COLORS.water}
+                bare
+              />
+            ) : (
+              <SleepTimelineChart {...trends.sleep} range={range} bare />
+            )}
           </>
         ) : null}
       </ScrollView>

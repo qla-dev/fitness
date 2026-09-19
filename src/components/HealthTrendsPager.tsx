@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import PagerView from 'react-native-pager-view';
-import type { HealthTrendKey } from '../constants/healthTrends';
+import {
+  HEALTH_TREND_COLORS,
+  type HealthTrendKey,
+} from '../constants/healthTrends';
 import type { WaterDataPoint } from '../hooks/useWaterRange';
 import type { SleepTrendSeries } from '../hooks/useHealthTrends';
 import type {
@@ -59,12 +62,24 @@ const HealthTrendsPager: React.FC<HealthTrendsPagerProps> = ({
   const { t } = useTranslation();
 
   const renderTrend: Record<HealthTrendKey, () => React.ReactElement> = {
-    steps: () => <StepsBarChart {...steps} range={range} />,
+    steps: () => (
+      <StepsBarChart
+        {...steps}
+        range={range}
+        color={HEALTH_TREND_COLORS.steps}
+      />
+    ),
     weight: () => (
       <WeightLineChart {...weight} range={range} unit={weightUnit} />
     ),
     sleep: () => <SleepTimelineChart {...sleep} range={range} />,
-    water: () => <WaterBarChart {...water} range={range} />,
+    water: () => (
+      <WaterBarChart
+        {...water}
+        range={range}
+        color={HEALTH_TREND_COLORS.water}
+      />
+    ),
   };
 
   const hasTrendData: Record<HealthTrendKey, () => boolean> = {

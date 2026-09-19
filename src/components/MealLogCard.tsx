@@ -52,8 +52,11 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
   const header = (
     <>
       <Icon name={icon} size={18} color={accentPrimary} />
+      {/* The same type as a measurement tile's value above it: both are the
+          headline of their card, and a meal sitting a size smaller and a shade
+          lighter read as secondary to the tiles rather than beside them. */}
       <Text
-        className="text-base font-bold text-text-secondary flex-1"
+        className="text-lg font-bold text-text-primary flex-1"
         numberOfLines={1}
       >
         {label}

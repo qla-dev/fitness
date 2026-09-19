@@ -336,34 +336,34 @@ describe('useSleepRange', () => {
   });
 
   describe('data transformation', () => {
-    test('returns 7 / 30 / 90 columns for the matching range', async () => {
+    test('returns 7 / 30 / 365 columns for the matching range', async () => {
       mockFetchSleepEntries.mockResolvedValue([]);
       const wrapper = createQueryWrapper(queryClient);
 
-      const seven = renderHook(() => useSleepRange({ range: '7d' }), {
+      const seven = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper,
       });
       await waitFor(() => expect(seven.result.current.isLoading).toBe(false));
       expect(seven.result.current.sleep.days).toHaveLength(7);
 
-      const thirty = renderHook(() => useSleepRange({ range: '30d' }), {
+      const thirty = renderHook(() => useSleepRange({ range: 'm' }), {
         wrapper,
       });
       await waitFor(() => expect(thirty.result.current.isLoading).toBe(false));
       expect(thirty.result.current.sleep.days).toHaveLength(30);
 
-      const ninety = renderHook(() => useSleepRange({ range: '90d' }), {
+      const ninety = renderHook(() => useSleepRange({ range: 'y' }), {
         wrapper,
       });
       await waitFor(() => expect(ninety.result.current.isLoading).toBe(false));
-      expect(ninety.result.current.sleep.days).toHaveLength(90);
+      expect(ninety.result.current.sleep.days).toHaveLength(365);
     });
 
     test('maps the server’s sessions onto the window', async () => {
       const today = getTodayDate();
       mockFetchSleepEntries.mockResolvedValue([nightOn(today)]);
 
-      const { result } = renderHook(() => useSleepRange({ range: '7d' }), {
+      const { result } = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -385,7 +385,7 @@ describe('useSleepRange', () => {
         })
       );
 
-      const { result } = renderHook(() => useSleepRange({ range: '7d' }), {
+      const { result } = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -404,7 +404,7 @@ describe('useSleepRange', () => {
       mockFetchSleepEntries.mockResolvedValue([]);
       const today = getTodayDate();
 
-      renderHook(() => useSleepRange({ range: '7d' }), {
+      renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -416,12 +416,12 @@ describe('useSleepRange', () => {
       });
     });
 
-    test('requests the 30d and 90d windows', async () => {
+    test('requests the month and year windows', async () => {
       mockFetchSleepEntries.mockResolvedValue([]);
       const today = getTodayDate();
       const wrapper = createQueryWrapper(queryClient);
 
-      renderHook(() => useSleepRange({ range: '30d' }), { wrapper });
+      renderHook(() => useSleepRange({ range: 'm' }), { wrapper });
       await waitFor(() => {
         expect(mockFetchSleepEntries).toHaveBeenCalledWith(
           addDays(today, -29),
@@ -429,10 +429,10 @@ describe('useSleepRange', () => {
         );
       });
 
-      renderHook(() => useSleepRange({ range: '90d' }), { wrapper });
+      renderHook(() => useSleepRange({ range: 'y' }), { wrapper });
       await waitFor(() => {
         expect(mockFetchSleepEntries).toHaveBeenCalledWith(
-          addDays(today, -89),
+          addDays(today, -364),
           today
         );
       });
@@ -447,7 +447,7 @@ describe('useSleepRange', () => {
         configureTimezone(timezone);
         const expectedToday = todayIn(timezone);
 
-        const { result } = renderHook(() => useSleepRange({ range: '7d' }), {
+        const { result } = renderHook(() => useSleepRange({ range: 'w' }), {
           wrapper: createQueryWrapper(queryClient),
         });
 
@@ -470,7 +470,7 @@ describe('useSleepRange', () => {
       for (const timezone of [null, '', 'Not/AZone']) {
         configureTimezone(timezone);
 
-        renderHook(() => useSleepRange({ range: '7d' }), {
+        renderHook(() => useSleepRange({ range: 'w' }), {
           wrapper: createQueryWrapper(queryClient),
         });
 
@@ -488,7 +488,7 @@ describe('useSleepRange', () => {
     test('respects enabled=false', async () => {
       mockFetchSleepEntries.mockResolvedValue([]);
 
-      renderHook(() => useSleepRange({ range: '7d', enabled: false }), {
+      renderHook(() => useSleepRange({ range: 'w', enabled: false }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -500,7 +500,7 @@ describe('useSleepRange', () => {
     test('enabled defaults to true', async () => {
       mockFetchSleepEntries.mockResolvedValue([]);
 
-      renderHook(() => useSleepRange({ range: '7d' }), {
+      renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -510,7 +510,7 @@ describe('useSleepRange', () => {
     test('refetches on focus when enabled', async () => {
       mockFetchSleepEntries.mockResolvedValue([]);
 
-      const enabled = renderHook(() => useSleepRange({ range: '7d' }), {
+      const enabled = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
       await waitFor(() =>
@@ -531,7 +531,7 @@ describe('useSleepRange', () => {
       mockFocusCallbacks.length = 0;
       const disabledClient = createTestQueryClient();
 
-      renderHook(() => useSleepRange({ range: '7d', enabled: false }), {
+      renderHook(() => useSleepRange({ range: 'w', enabled: false }), {
         wrapper: createQueryWrapper(disabledClient),
       });
       await act(async () => {
@@ -550,7 +550,7 @@ describe('useSleepRange', () => {
         new Error('Network request failed')
       );
 
-      const { result } = renderHook(() => useSleepRange({ range: '7d' }), {
+      const { result } = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -563,7 +563,7 @@ describe('useSleepRange', () => {
         new ApiError('Server error: 403 - Forbidden', 403, 'Forbidden')
       );
 
-      const { result } = renderHook(() => useSleepRange({ range: '7d' }), {
+      const { result } = renderHook(() => useSleepRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 

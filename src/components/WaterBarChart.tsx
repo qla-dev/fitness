@@ -18,11 +18,15 @@ export default function WaterBarChart({
   isLoading,
   isError,
   range,
+  color,
+  bare,
 }: {
   data: WaterDataPoint[];
   isLoading: boolean;
   isError: boolean;
   range: HealthTrendDateRange;
+  color?: string;
+  bare?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -57,6 +61,8 @@ export default function WaterBarChart({
       isError={isError}
       range={range}
       labels={labels}
+      color={color}
+      bare={bare}
     />
   );
 }

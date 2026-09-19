@@ -47,9 +47,11 @@ test('shows the independent Trends tab, switches range and opens Profile', () =>
   );
   expect(screen.getByText('Trends')).toBeTruthy();
   expect(screen.queryByText('Activity')).toBeNull();
-  fireEvent.press(screen.getByText('30d'));
+  // The ranges are periods now — D / W / M / 6M / Y, as the Health app spells
+  // them — rather than day counts.
+  fireEvent.press(screen.getByText('M'));
   expect(useHealthTrends).toHaveBeenLastCalledWith(
-    expect.objectContaining({ range: '30d', enabled: true })
+    expect.objectContaining({ range: 'm', enabled: true })
   );
   const props = (DashboardTrendCards as jest.Mock).mock.calls.at(-1)[0];
   expect(props.weightUnit).toBe('lbs');

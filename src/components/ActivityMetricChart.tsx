@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { formatLocalizedNumber, useAppLocale } from '../localization';
 import CardChevron from './CardChevron';
+import CardPressable from './CardPressable';
 import Icon, { type IconName } from './Icon';
 
 interface ActivityMetricChartProps {
@@ -23,6 +24,14 @@ interface ActivityMetricChartProps {
    * duration; omitted entirely, the line falls back to "<sum> <unit>".
    */
   formatTotal?: (total: number) => string;
+  /**
+   * Whether the headline figure is drawn above the chart.
+   *
+   * False on a screen whose summary card already states it: the same
+   * "361/500 kcal" twice, a finger apart, reads as two different numbers that
+   * happen to agree.
+   */
+  showValue?: boolean;
   /** Opens this metric's own screen. Omitted where there is nothing to open. */
   onOpen?: () => void;
 }
@@ -37,6 +46,7 @@ export default function ActivityMetricChart({
   hourlyValues,
   binary = false,
   formatTotal,
+  showValue = true,
   onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
@@ -66,22 +76,24 @@ export default function ActivityMetricChart({
     minute: '2-digit',
   });
   return (
-    <View className="mb-6">
+    <CardPressable accessibilityLabel={title} onPress={onOpen}>
       <View className="flex-row items-center gap-2">
         <Icon name={icon} size={20} color={color} />
         <DashboardCardTitle>{title}</DashboardCardTitle>
         <View className="flex-1" />
-        {onOpen ? (
-          <CardChevron accessibilityLabel={title} onPress={onOpen} />
-        ) : null}
+        {onOpen ? <CardChevron accessibilityLabel={title} /> : null}
       </View>
       {/* Nothing recorded reads as a real zero rather than an em dash: the
           metric is a count of what you did today, and "0/30 min" says that far
           more plainly than "— min". */}
-      <Text style={{ color }} className="text-3xl font-semibold mt-1 mb-3">
-        {number(value ?? 0)}
-        {goal && goal > 0 ? `/${number(goal)}` : ''} {unit}
-      </Text>
+      {showValue ? (
+        <Text style={{ color }} className="text-3xl font-semibold mt-1 mb-3">
+          {number(value ?? 0)}
+          {goal && goal > 0 ? `/${number(goal)}` : ''} {unit}
+        </Text>
+      ) : (
+        <View className="mb-3" />
+      )}
       <View style={{ height: 88 }}>
         <Svg
           width="100%"
@@ -150,6 +162,6 @@ export default function ActivityMetricChart({
           })}
         </Text>
       ) : null}
-    </View>
+    </CardPressable>
   );
 }

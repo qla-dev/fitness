@@ -96,7 +96,7 @@ const baseProps = (): PagerProps => ({
   steps: stepsSeries,
   weight: emptySeries(),
   sleep: sleepTrend(),
-  range: '7d',
+  range: 'w',
   weightUnit: 'kg',
   visibleTrends: ['steps', 'weight', 'sleep'],
   activePage: 0,

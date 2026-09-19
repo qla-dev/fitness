@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import ChartSurface from './ChartSurface';
 import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedNumber } from '../localization/i18n';
@@ -14,6 +15,11 @@ import {
 } from './charts/chartFormatting';
 import type { StepsDataPoint } from '../hooks/useMeasurementsRange';
 import type { HealthTrendDateRange } from '../types/healthTrends';
+import {
+  RANGE_INNER_PADDING,
+  RANGE_X_TICKS,
+  RANGE_LABELS_WEEKDAYS,
+} from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -42,18 +48,18 @@ type StepsBarChartProps = {
   isError: boolean;
   range: HealthTrendDateRange;
   labels?: BarChartLabels;
-};
-
-const INNER_PADDING: Record<HealthTrendDateRange, number> = {
-  '7d': 0.3,
-  '30d': 0.2,
-  '90d': 0.1,
-};
-
-const X_TICK_COUNT: Record<HealthTrendDateRange, number> = {
-  '7d': 7,
-  '30d': 6,
-  '90d': 5,
+  /**
+   * Drops the card this chart normally draws itself on, for a screen where
+   * the chart is the content rather than one card among several.
+   */
+  bare?: boolean;
+  /**
+   * Bar fill, for a metric that owns a colour elsewhere in the app — Move's
+   * red, Exercise's green. Defaults to the accent, which is what steps and
+   * hydration have always drawn. A history that changed colour on the way down
+   * from the ring it belongs to would read as a different measurement.
+   */
+  color?: string;
 };
 
 const font = makeChartFont(CHART_LABEL_FONT_SIZE);
@@ -62,8 +68,14 @@ const formatYLabel = (value: number) => formatChartYLabel(value);
 
 const DEFAULT_TOOLTIP = '';
 
+/**
+ * Reserved whether or not a bar is selected, so picking one cannot shift the
+ * chart. Its margins are even: it used to sit 12 below the title and 4 above
+ * the chart, which read as a gap under the heading rather than as a line of
+ * its own — obvious once the surrounding card came off.
+ */
 const StepsTooltip: React.FC<{ text: string }> = ({ text }) => (
-  <View className="h-6 justify-center mt-3 mb-1">
+  <View className="h-6 justify-center my-1">
     <Text className="text-text-secondary text-sm text-center">{text}</Text>
   </View>
 );
@@ -94,10 +106,12 @@ export const buildTooltipText = (
 
 const StepsBarChart: React.FC<StepsBarChartProps> = ({
   labels,
+  color,
   data,
   isLoading,
   isError,
   range,
+  bare,
 }) => {
   const { t } = useTranslation();
   const [accentColor, textMuted] = useCSSVariable([
@@ -111,7 +125,9 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
 
   const hasData = useMemo(() => data.some((d) => d.steps > 0), [data]);
 
-  const formatXLabel = range === '7d' ? formatXLabel7d : formatXLabel30d90d;
+  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
+    ? formatXLabel7d
+    : formatXLabel30d90d;
 
   // Reset a lingering selection when the dataset or range changes. Done during
   // render (instead of in an effect) so the tooltip is already cleared on the
@@ -161,7 +177,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   }, []);
 
   return (
-    <View className="bg-surface rounded-xl p-4 my-2">
+    <ChartSurface bare={bare}>
       <Text className="text-text-primary text-lg font-semibold mb-2">
         {labels?.title ?? t('charts.steps.title', { defaultValue: 'Steps' })}
       </Text>
@@ -202,7 +218,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
             domainPadding={{ left: 25, right: 25 }}
             xAxis={{
               font,
-              tickCount: X_TICK_COUNT[range],
+              tickCount: RANGE_X_TICKS[range],
               labelColor: textMuted,
               formatXLabel,
             }}
@@ -225,8 +241,8 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
                 <Bar
                   points={points.steps}
                   chartBounds={chartBounds}
-                  color={accentColor}
-                  innerPadding={INNER_PADDING[range]}
+                  color={color ?? accentColor}
+                  innerPadding={RANGE_INNER_PADDING[range]}
                   animate={{ type: 'timing', duration: 300 }}
                   roundedCorners={{ topLeft: 6, topRight: 6 }}
                 />
@@ -241,7 +257,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
           />
         </View>
       )}
-    </View>
+    </ChartSurface>
   );
 };
 

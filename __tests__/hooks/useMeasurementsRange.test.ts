@@ -51,7 +51,7 @@ describe('useMeasurementsRange', () => {
       mockFetchMeasurementsRange.mockResolvedValue([]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '7d' }),
+        () => useMeasurementsRange({ range: 'w' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -66,7 +66,7 @@ describe('useMeasurementsRange', () => {
       mockFetchMeasurementsRange.mockResolvedValue([]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '30d' }),
+        () => useMeasurementsRange({ range: 'm' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -77,11 +77,11 @@ describe('useMeasurementsRange', () => {
       expect(result.current.stepsData).toHaveLength(30);
     });
 
-    test('returns correct number of data points for 90d range', async () => {
+    test('returns correct number of data points for the year range', async () => {
       mockFetchMeasurementsRange.mockResolvedValue([]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '90d' }),
+        () => useMeasurementsRange({ range: 'y' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -89,7 +89,7 @@ describe('useMeasurementsRange', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.stepsData).toHaveLength(90);
+      expect(result.current.stepsData).toHaveLength(365);
     });
 
     test('fills missing days with 0 steps', async () => {
@@ -99,7 +99,7 @@ describe('useMeasurementsRange', () => {
       ]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '7d' }),
+        () => useMeasurementsRange({ range: 'w' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -125,7 +125,7 @@ describe('useMeasurementsRange', () => {
       ]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '7d' }),
+        () => useMeasurementsRange({ range: 'w' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -146,7 +146,7 @@ describe('useMeasurementsRange', () => {
       ]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '7d' }),
+        () => useMeasurementsRange({ range: 'w' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -172,7 +172,7 @@ describe('useMeasurementsRange', () => {
       ]);
 
       const { result } = renderHook(
-        () => useMeasurementsRange({ range: '7d' }),
+        () => useMeasurementsRange({ range: 'w' }),
         { wrapper: createQueryWrapper(queryClient) }
       );
 
@@ -191,7 +191,7 @@ describe('useMeasurementsRange', () => {
       const today = getTodayDate();
       const startDate = addDays(today, -6);
 
-      renderHook(() => useMeasurementsRange({ range: '7d' }), {
+      renderHook(() => useMeasurementsRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -208,7 +208,7 @@ describe('useMeasurementsRange', () => {
       const today = getTodayDate();
       const startDate = addDays(today, -29);
 
-      renderHook(() => useMeasurementsRange({ range: '30d' }), {
+      renderHook(() => useMeasurementsRange({ range: 'm' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -225,7 +225,7 @@ describe('useMeasurementsRange', () => {
     test('respects enabled=false', async () => {
       mockFetchMeasurementsRange.mockResolvedValue([]);
 
-      renderHook(() => useMeasurementsRange({ range: '7d', enabled: false }), {
+      renderHook(() => useMeasurementsRange({ range: 'w', enabled: false }), {
         wrapper: createQueryWrapper(queryClient),
       });
 
@@ -237,7 +237,7 @@ describe('useMeasurementsRange', () => {
     test('enabled defaults to true', async () => {
       mockFetchMeasurementsRange.mockResolvedValue([]);
 
-      renderHook(() => useMeasurementsRange({ range: '7d' }), {
+      renderHook(() => useMeasurementsRange({ range: 'w' }), {
         wrapper: createQueryWrapper(queryClient),
       });
 

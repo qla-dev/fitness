@@ -101,6 +101,9 @@ export const foodVariantsQueryKey = (foodId: string) =>
 export const measurementsRangeQueryKey = (startDate: string, endDate: string) =>
   ['measurementsRange', startDate, endDate] as const;
 
+export const activityRangeQueryKey = (startDate: string, endDate: string) =>
+  ['activityRange', startDate, endDate] as const;
+
 export const sleepRangeQueryKey = (startDate: string, endDate: string) =>
   ['sleepRange', startDate, endDate] as const;
 

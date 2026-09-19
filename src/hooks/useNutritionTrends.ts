@@ -6,14 +6,14 @@ import {
 import { useRefetchOnFocus } from './useRefetchOnFocus';
 import { nutritionTrendsQueryKey } from './queryKeys';
 import { getTodayDate, addDays } from '../utils/dateUtils';
+import { RANGE_DAYS, type HealthTrendDateRange } from '../types/healthTrends';
 
-export type TrendRange = '7d' | '30d' | '90d';
-
-const RANGE_DAYS: Record<TrendRange, number> = {
-  '7d': 7,
-  '30d': 30,
-  '90d': 90,
-};
+/**
+ * Nutrition plots the same windows as every other trend, so it uses the same
+ * vocabulary rather than a parallel one that happened to hold the same values.
+ * Kept as an alias because the name is used widely across the nutrient screens.
+ */
+export type TrendRange = HealthTrendDateRange;
 
 const DEFAULT_NUTRIENT_VALUES = {
   calories: 0,

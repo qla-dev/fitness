@@ -174,8 +174,7 @@ jest.mock('expo-location', () => ({
 jest.mock('expo-crypto', () => {
   let counter = 0;
   const randomUUID = jest.fn(
-    () =>
-      `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`
+    () => `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`
   );
   return { randomUUID, default: { randomUUID } };
 });
@@ -757,6 +756,73 @@ if (!testI18n.isInitialized) {
     interpolation: { escapeValue: false },
   });
 }
+
+// `@expo/ui/swift-ui` bridges to SwiftUI and has nothing to run under Jest.
+//
+// The segmented control is the system Picker on iOS, so the mock renders the
+// shape the React Native fallback renders — one pressable per option, tagged
+// and marked selected — and the same queries hold for both paths. Everything
+// else falls through the Proxy as a passthrough view, so a module that merely
+// imports from here (the Live Activity layout) still loads.
+jest.mock('@expo/ui/swift-ui', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  const passthrough = (name) => {
+    const Component = ({ children }) =>
+      React.createElement(View, null, children);
+    Component.displayName = `Mock(${String(name)})`;
+    return Component;
+  };
+  const tagOf = (modifiers) => {
+    const found = (modifiers || []).find(
+      (modifier) => modifier && modifier.__tag !== undefined
+    );
+    return found ? found.__tag : undefined;
+  };
+  const known = {
+    Host: passthrough('Host'),
+    Text: ({ children }) => React.createElement(Text, null, children),
+    Picker: ({ selection, onSelectionChange, children }) =>
+      React.createElement(
+        View,
+        null,
+        React.Children.map(children, (child) => {
+          const value = tagOf(child && child.props && child.props.modifiers);
+          return React.createElement(
+            TouchableOpacity,
+            {
+              accessibilityRole: 'tab',
+              accessibilityState: { selected: value === selection },
+              onPress: () => onSelectionChange && onSelectionChange(value),
+            },
+            React.createElement(
+              Text,
+              null,
+              child && child.props ? child.props.children : null
+            )
+          );
+        })
+      ),
+  };
+  return new Proxy(known, {
+    get: (target, name) =>
+      name in target
+        ? target[name]
+        : typeof name === 'string'
+          ? passthrough(name)
+          : undefined,
+  });
+});
+
+jest.mock('@expo/ui/swift-ui/modifiers', () => {
+  const identity = () => ({});
+  return new Proxy(
+    { tag: (value) => ({ __tag: value }) },
+    {
+      get: (target, name) => (name in target ? target[name] : identity),
+    }
+  );
+});
 
 // The local database keeps its parsed copy in memory between transactions, so
 // a suite that clears AsyncStorage between tests would otherwise carry the

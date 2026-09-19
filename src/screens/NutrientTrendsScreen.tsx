@@ -11,20 +11,12 @@ import {
 } from '../hooks/useNutritionTrends';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import SegmentedControl, { type Segment } from '../components/SegmentedControl';
+import TrendRangeSelector from '../components/TrendRangeSelector';
 import StatusView from '../components/StatusView';
 import NutrientBarChart from '../components/NutrientBarChart';
 import type { RootStackScreenProps } from '../types/navigation';
 
 type NutrientTrendsScreenProps = RootStackScreenProps<'NutrientTrends'>;
-
-const RANGE_SEGMENTS = (
-  t: (key: string, options: { defaultValue: string }) => string
-): Segment<TrendRange>[] => [
-  { key: '7d', label: t('ranges.7d', { defaultValue: '7d' }) },
-  { key: '30d', label: t('ranges.30d', { defaultValue: '30d' }) },
-  { key: '90d', label: t('ranges.90d', { defaultValue: '90d' }) },
-];
 
 const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
   route,
@@ -34,7 +26,7 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const [range, setRange] = useState<TrendRange>('7d');
+  const [range, setRange] = useState<TrendRange>('w');
 
   const header = useScreenHeader({
     title: t('nutrientTrends.title', {
@@ -127,14 +119,12 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
       >
         {/* Segmented Range Control */}
         <View className="mb-4">
-          <SegmentedControl
-            segments={RANGE_SEGMENTS(t)}
-            activeKey={range}
-            onSelect={setRange}
-          />
+          <TrendRangeSelector range={range} onSelect={setRange} />
         </View>
 
-        {/* Nutrient Intake Chart */}
+        {/* The chart is this screen's content, so it sits in the body rather
+            than in a card of its own — same as the trend charts on the goal
+            detail screen. */}
         <NutrientBarChart
           data={chartData}
           isLoading={isLoading}
@@ -143,6 +133,7 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
           nutrientLabel={nutrientLabel}
           unit={unit}
           goal={goal}
+          bare
         />
 
         {/* Statistics Summary Card */}
