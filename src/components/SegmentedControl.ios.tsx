@@ -17,7 +17,8 @@ export type { Segment } from '../types/segmentedControl';
  * behind it only stacked a second sheet of glass under the one the control
  * already draws, and the padding that wrapper added left the picker's own glass
  * squeezed inside a pill it did not fill. Nothing wraps it and nothing frames
- * it — the control keeps its intrinsic height and `Host` matches it.
+ * it: the control keeps the intrinsic height of its `controlSize` and `Host`
+ * matches it, rather than a hardcoded frame it has to draw its glass inside.
  */
 export default function SegmentedControl<T extends string>({
   segments,
@@ -41,7 +42,7 @@ export default function SegmentedControl<T extends string>({
         label={label ?? 'Options'}
         selection={activeKey}
         onSelectionChange={onSelect}
-        modifiers={[pickerStyle('segmented'), controlSize('large')]}
+        modifiers={[pickerStyle('segmented'), controlSize('small')]}
       >
         {segments.map((segment) => (
           <Text
