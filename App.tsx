@@ -94,6 +94,7 @@ import {
   SafeAbout,
   SafeWhatsNew,
   SafeDailyNutritionDetails,
+  SafeMacros,
   SafeNutrientTrends,
   SafeFamilyMembers,
   SafeFamilyDiary,
@@ -591,6 +592,11 @@ function AppContent() {
             })}
           />
           <Stack.Screen
+            name="Macros"
+            component={SafeMacros}
+            options={createStackScreenOptions(t('screens.macros', { defaultValue: 'Macros' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
             name="NutrientTrends"
             component={SafeNutrientTrends}
             options={createStackScreenOptions(t('screens.trends', { defaultValue: 'Trends' }), { headerBackButtonDisplayMode: 'minimal' })}
@@ -938,7 +944,10 @@ function AppContent() {
 
 function SafeAreaToast() {
   const insets = useSafeAreaInsets();
-  const toast = <Toast config={toastConfig} topOffset={insets.top + 5} />;
+  // Flush with the safe area rather than 5 below it: the toast sits closest
+  // to the status bar of anything on screen, and the gap read as a misalignment
+  // against the header beside it.
+  const toast = <Toast config={toastConfig} topOffset={insets.top} />;
   // On iOS a plain Toast renders in the normal view tree, so it appears *under*
   // native modals (rename dialogs, form sheets, anchored menus). A
   // FullWindowOverlay hoists it above every window — matching how the app's

@@ -12,13 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import {
   Directions,
   Gesture,
@@ -31,12 +25,13 @@ import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
 import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
-import Icon from '../components/Icon';
-import { fireSelectionHaptic } from '../services/haptics';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
+import DiaryNutritionCard from '../components/DiaryNutritionCard';
 import FoodSummary from '../components/FoodSummary';
 import MeasurementsSummary from '../components/MeasurementsSummary';
+import { emptyDailySummary } from '../services/dailySummaryService';
+import SectionIntro from '../components/SectionIntro';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import ServingAdjustSheet, {
   type ServingAdjustSheetRef,
@@ -261,10 +256,22 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     preferences?.default_measurement_unit === 'inches' ? 'inches' : 'cm';
   const heightMode = preferences?.default_measurement_unit ?? 'cm';
 
-  const { summary, isLoading, isError, refetch } = useDailySummary({
+  const {
+    summary: loadedSummary,
+    isLoading,
+    isError,
+    refetch,
+  } = useDailySummary({
     date: selectedDate,
     enabled: isConnected,
   });
+
+  // The chrome is identical whether or not the day has landed — same cards,
+  // same icons, same ring track — so an empty day stands in and only the
+  // numbers wait. Holding the whole screen behind "Loading diary..." meant
+  // every open rebuilt it from nothing, which is what Activities stopped
+  // doing and why it opens instantly.
+  const summary = loadedSummary ?? emptyDailySummary(selectedDate);
   const { measurements, refetch: refetchMeasurements } = useMeasurements({
     date: selectedDate,
     enabled: isConnected,
@@ -365,14 +372,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     // Sleep is deliberately not part of this gate: the cards render nothing until their
     // entries arrive, so a slow `/api/sleep` fills them in late instead of holding the
     // food and exercise that already loaded behind "Loading diary...".
-    if (isLoading || isConnectionLoading) {
-      return (
-        <StatusView
-          loading
-          title={t('diary.loading', { defaultValue: 'Loading diary...' })}
-        />
-      );
-    }
 
     if (isError) {
       return (
@@ -434,34 +433,23 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             overlay would have had to be nudged into place by hand and would
             still have sat wrong at other text sizes. This just follows the
             title, on every header path, and scrolls with the content. */}
-        <View className="flex-row items-center" testID="diary-intro">
-          <Text
-            className="flex-1 text-sm text-text-secondary"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {t('diary.subtitle', {
-              defaultValue: 'Keep a track of your habits',
-            })}
-          </Text>
-          <Pressable
-            onPress={() => {
-              fireSelectionHaptic();
-              setMeasurementsMoreOpen(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t('measurements.more', {
-              defaultValue: 'More',
-            })}
-            hitSlop={12}
-            className="flex-row items-center gap-1"
-          >
-            <Text className="text-sm font-semibold text-accent-primary">
-              {t('measurements.more', { defaultValue: 'More' })}
-            </Text>
-            <Icon name="chevron-forward" size={12} color={accentColor} />
-          </Pressable>
-        </View>
+        {/* Each intro introduces the block under it, so this one belongs to
+            the nutrition card rather than to the screen as a whole. The
+            habits line moved down to sit over the measurement tiles it was
+            always describing. */}
+        <SectionIntro
+          testID="diary-macros-intro"
+          subtitle={t('diary.macrosSubtitle', {
+            defaultValue: 'See all your macros in one place',
+          })}
+          actionLabel={t('measurements.more', { defaultValue: 'More' })}
+          onPress={() => navigation.navigate('Macros')}
+        />
+        {/* Directly under the intro, above the body tiles: the day's calories
+            and macros are the first thing this screen is asked for. Not gated
+            on the Summary preference below it — that toggle hides a different
+            card, and this one is the head of the screen. */}
+        <DiaryNutritionCard summary={summary} loading={isLoading} />
         {(summary.foodEntries.length > 0 ||
           hasSupplementNutrition(summary.supplementTotals) ||
           summary.exerciseEntries.length > 0 ||
@@ -482,6 +470,14 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
               to push them off the first screenful. The photos stay directly
               under them — both halves are one check-in, keyed on
               (user_id, entry_date). */}
+        <SectionIntro
+          testID="diary-intro"
+          subtitle={t('diary.subtitle', {
+            defaultValue: 'Keep a track of your habits',
+          })}
+          actionLabel={t('measurements.more', { defaultValue: 'More' })}
+          onPress={() => setMeasurementsMoreOpen(true)}
+        />
         <MeasurementsSummary
           measurements={measurements}
           history={measurementHistory}

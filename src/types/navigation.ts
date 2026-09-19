@@ -168,6 +168,7 @@ export type RootStackParamList = {
     mealLabel?: string;
   };
   DailyNutritionDetails: { date: string };
+  Macros: undefined;
   NutrientTrends: {
     nutrientKey: string;
     nutrientLabel: string;

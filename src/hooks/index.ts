@@ -57,7 +57,6 @@ export {
   useDeleteExerciseLibrary,
 } from './useExerciseMutations';
 export { useWorkoutPresets } from './useWorkoutPresets';
-export { useWorkoutPresetSearch } from './useWorkoutPresetSearch';
 export { useWorkoutPresetsLibrary } from './useWorkoutPresetsLibrary';
 export {
   useCreateWorkoutPreset,

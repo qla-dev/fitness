@@ -501,7 +501,8 @@
     "progressPhotos": "Progress Photos",
     "progressPhotoCompare": "Compare",
     "progressPhotoTimelapse": "Time-lapse",
-    "goalDetail": "Goal"
+    "goalDetail": "Goal",
+    "macros": "Macros"
   },
   "healthMetrics": {
     "steps": "Steps",
@@ -751,7 +752,8 @@
     "trendWeightSummary": "Your average recorded weight was {{value}}.",
     "trendStepsSummary": "Your daily step average for this period was {{value}}.",
     "activitySync": "Sync health data",
-    "trendWaterSummary": "You drank {{value}} a day on average."
+    "trendWaterSummary": "You drank {{value}} a day on average.",
+    "subtitle": "Your rings, steps and workouts"
   },
   "syncScreen": {
     "healthConnectSettings": "Health Connect settings",
@@ -1049,7 +1051,8 @@
     "title": "Tracker",
     "addFood": "Add Food",
     "emptyDay": "No entries recorded for this day",
-    "subtitle": "Keep a track of your habits"
+    "subtitle": "Keep a track of your habits",
+    "macrosSubtitle": "See all your macros in one place"
   },
   "medications": {
     "title": "Medications",
@@ -5258,7 +5261,10 @@
       "confirm": "Add to my programs",
       "added_one": "{{count}} workout added to Programs",
       "added_other": "{{count}} workouts added to Programs"
-    }
+    },
+    "searchResults": "Programs",
+    "searchEmpty": "No programs match that search",
+    "searchPlaceholder": "Search programs..."
   },
   "trends": {
     "loading": "Loading goals..."
@@ -5512,5 +5518,27 @@
     "byHour": "By hour",
     "history": "History",
     "rangeLabel": "Range"
+  },
+  "diaryNutrition": {
+    "title": "Nutrition",
+    "ofGoal": "of {{goal}}",
+    "grams": "g",
+    "ofGrams": "of {{goal}} g"
+  },
+  "trainingCard": {
+    "details": "Details"
+  },
+  "startWorkout": {
+    "loadFailed": "Failed to load exercises",
+    "noMatches": "No exercises found",
+    "noExercises": "No exercises yet",
+    "noExercisesMessage": "Add an exercise to your library to start here",
+    "exercisesHeading": "Exercises",
+    "programsHeading": "Programs"
+  },
+  "macros": {
+    "title": "Macros",
+    "empty": "Macros are coming here",
+    "emptyMessage": "Every macro for the day, in one place."
   }
 }

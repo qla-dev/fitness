@@ -60,7 +60,7 @@ export default function DashboardActivityDetails({
     return `${formatLocalizedNumber(hours)} ${hourLabel} ${formatLocalizedNumber(rest)} ${minuteLabel}`;
   };
   return (
-    <View className="bg-surface rounded-2xl p-4 mb-3">
+    <View className="bg-surface rounded-2xl px-4 pt-3 pb-4 mb-3">
       <DashboardCardTitle className="mb-3">
         {t('dashboard.activityDetails', { defaultValue: 'Activity Details' })}
       </DashboardCardTitle>

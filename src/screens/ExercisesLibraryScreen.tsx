@@ -4,6 +4,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -452,6 +453,32 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       );
     }
 
+    // The store is a shop, and the only thing in it is programs. Exercises
+    // belong to workouts — the local list on Start Workout, and this screen's
+    // other self, the library you reach from Library. So the tab root shows
+    // the catalogue and searches it; the drill-in is unchanged.
+    if (isTabRoot) {
+      // The store's own scrollers all run sideways — the shelves and the chip
+      // row. Standing in for the list it used to be a header of, it needs a
+      // vertical one of its own or the page cannot move at all.
+      return (
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
+        >
+          <ProgramStore
+            searchText={searchText}
+            onSelectProgram={(program) =>
+              navigation.navigate('ExerciseProgram', { programId: program.id })
+            }
+            onStartProgram={setPurchasing}
+          />
+        </ScrollView>
+      );
+    }
+
     return (
       <FlatList
         data={rows}
@@ -464,14 +491,6 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         ListHeaderComponent={
           searchText.trim().length > 0 ? null : (
             <>
-              <ProgramStore
-                onSelectProgram={(program) =>
-                  navigation.navigate('ExerciseProgram', {
-                    programId: program.id,
-                  })
-                }
-                onStartProgram={setPurchasing}
-              />
               <View className="px-4 pt-6 pb-2">
                 <Text className="text-lg font-bold text-text-primary">
                   {t('exerciseLibrary.savedSection', {
@@ -611,9 +630,15 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         <LibrarySearchBar
           value={searchText}
           onChangeText={setSearchText}
-          placeholder={t('exerciseLibrary.search', {
-            defaultValue: 'Search exercises...',
-          })}
+          placeholder={
+            isTabRoot
+              ? t('programs.searchPlaceholder', {
+                  defaultValue: 'Search programs...',
+                })
+              : t('exerciseLibrary.search', {
+                  defaultValue: 'Search exercises...',
+                })
+          }
           isSearching={isSearching}
         />
       ) : null}

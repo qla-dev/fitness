@@ -118,7 +118,7 @@ export default function DashboardNutrientCard({
       <Pressable
         accessibilityRole="button"
         onPress={onDetails}
-        className="bg-surface rounded-2xl p-4 mb-3"
+        className="bg-surface rounded-2xl px-4 pt-3 pb-4 mb-3"
       >
         <View className="flex-row justify-between items-center mb-3">
           <DashboardCardTitle>
@@ -173,7 +173,10 @@ export default function DashboardNutrientCard({
             value: burned,
           },
         ].map((stat) => (
-          <View key={stat.key} className="flex-1 bg-surface rounded-2xl p-4">
+          <View
+            key={stat.key}
+            className="flex-1 bg-surface rounded-2xl px-4 pt-3 pb-4"
+          >
             <View className="flex-row items-center gap-2">
               <Icon
                 name={stat.key === 'burned' ? 'flame' : 'clock'}
@@ -198,7 +201,7 @@ export default function DashboardNutrientCard({
             accessibilityRole="button"
             onPress={onDetails}
             style={{ width: '48%' }}
-            className="bg-surface rounded-2xl p-4 mb-3 items-center"
+            className="bg-surface rounded-2xl px-4 pt-3 pb-4 mb-3 items-center"
           >
             <View className="mb-3">{metricLabel(metric)}</View>
             <Rings metrics={[metric]} size={80} />

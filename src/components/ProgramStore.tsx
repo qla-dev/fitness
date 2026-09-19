@@ -11,6 +11,7 @@ import {
 import { useCSSVariable } from 'uniwind';
 
 import Icon from './Icon';
+import LiquidGlassSurface from './LiquidGlassSurface';
 import SafeImage from './SafeImage';
 import { useProgramThumbnails } from '../hooks';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
@@ -54,6 +55,12 @@ const ACCENT_VARS = [
   '--color-wellness-pregnant',
 ] as const;
 
+/** Pill height, matching the system's own filter chips. */
+const CHIP_HEIGHT = 40;
+
+/** The Start pill on a program row and on the featured card. */
+const START_HEIGHT = 30;
+
 /** A shelf page holds at most this many rows before it pages sideways. */
 export const SHELF_PAGE_SIZE = 4;
 const GUTTER = 16;
@@ -87,6 +94,11 @@ interface ProgramStoreProps {
   onSelectProgram: (program: ExerciseProgram) => void;
   /** Start opens the add sheet; the rest of the row opens the detail page. */
   onStartProgram: (program: ExerciseProgram) => void;
+  /**
+   * Narrows the catalogue to matching programs, replacing the featured
+   * carousel and the shelves with one list of hits. Empty shows the store.
+   */
+  searchText?: string;
 }
 
 /**
@@ -97,14 +109,16 @@ interface ProgramStoreProps {
 const ProgramStore: React.FC<ProgramStoreProps> = ({
   onSelectProgram,
   onStartProgram,
+  searchText = '',
 }) => {
   const { t } = useTranslation();
   const accents = useProgramAccents();
   const { width } = useWindowDimensions();
   const [category, setCategory] = useState<ProgramCategoryId | null>(null);
-  const [textSecondary] = useCSSVariable(['--color-text-secondary']) as [
-    string,
-  ];
+  const [textSecondary, accentPrimary] = useCSSVariable([
+    '--color-text-secondary',
+    '--color-accent-primary',
+  ]) as [string, string];
 
   // Covers are resolved for the whole catalogue rather than per shelf: the
   // shelves overlap and the chips re-filter in place, so a per-view list
@@ -158,6 +172,23 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
     [category]
   );
 
+  // Matched on the name and the tagline, which is everything a row shows: a
+  // search that only read names would miss "Build the shelf" while the row
+  // carrying it is on screen.
+  const query = searchText.trim().toLowerCase();
+  const searching = query.length > 0;
+  const matches = useMemo(
+    () =>
+      !searching
+        ? []
+        : EXERCISE_PROGRAMS.filter(
+            (program) =>
+              program.name.toLowerCase().includes(query) ||
+              (program.tagline ?? '').toLowerCase().includes(query)
+          ),
+    [searching, query]
+  );
+
   const meta = (program: ExerciseProgram) =>
     t('programs.rowMeta', {
       defaultValue: '{{category}} · {{weeks}} weeks · {{days}}×/week',
@@ -201,22 +232,36 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
           </Text>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={t('programs.startProgram', {
-          defaultValue: 'Start {{name}}',
-          name: program.name,
-        })}
-        onPress={() => {
-          fireSelectionHaptic();
-          onStartProgram(program);
+      {/* `isInteractive` is what gives the glass its press: the material
+          bends under the finger rather than the button just dimming. */}
+      <LiquidGlassSurface
+        isInteractive
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: 20,
+          height: START_HEIGHT,
+          borderRadius: START_HEIGHT / 2,
+          overflow: 'hidden',
         }}
-        className="absolute right-2 top-5 px-4 py-1.5 rounded-full bg-raised"
       >
-        <Text className="text-accent-primary text-sm font-bold">
-          {t('programs.start', { defaultValue: 'Start' })}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('programs.startProgram', {
+            defaultValue: 'Start {{name}}',
+            name: program.name,
+          })}
+          onPress={() => {
+            fireSelectionHaptic();
+            onStartProgram(program);
+          }}
+          className="h-full px-4 items-center justify-center"
+        >
+          <Text className="text-accent-primary text-sm font-bold">
+            {t('programs.start', { defaultValue: 'Start' })}
+          </Text>
+        </TouchableOpacity>
+      </LiquidGlassSurface>
       {!isLast && <View className="h-px bg-border-subtle ml-[68px]" />}
     </View>
   );
@@ -291,52 +336,85 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
     );
   };
 
-  return (
-    <View className="mb-2">
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 8 }}
-        className="py-3"
+  /**
+   * One category pill, as Liquid Glass.
+   *
+   * Selection is a tint on the material rather than a solid fill swapped in
+   * behind it, so a chosen chip is still the same piece of glass as the ones
+   * beside it. Off iOS 26 the tint becomes that flat fill, which is the look
+   * these had everywhere before.
+   */
+  const chip = (id: ProgramCategoryId | null, label: string) => {
+    const selected = category === id;
+    return (
+      <LiquidGlassSurface
+        key={id ?? 'all'}
+        isInteractive
+        tintColor={selected ? accentPrimary : undefined}
+        style={{
+          height: CHIP_HEIGHT,
+          borderRadius: CHIP_HEIGHT / 2,
+          overflow: 'hidden',
+        }}
       >
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityState={{ selected: category === null }}
-          onPress={() => setCategory(null)}
-          className={`px-4 py-2 rounded-full ${
-            category === null ? 'bg-accent-primary' : 'bg-surface'
-          }`}
+          accessibilityState={{ selected }}
+          onPress={() => setCategory(selected && id !== null ? null : id)}
+          className="h-full px-4 items-center justify-center"
         >
           <Text
             className={`text-sm font-semibold ${
-              category === null ? 'text-accent-text' : 'text-text-primary'
+              selected ? 'text-accent-text' : 'text-text-primary'
             }`}
           >
-            {t('programs.allCategories', { defaultValue: 'All' })}
+            {label}
           </Text>
         </TouchableOpacity>
-        {PROGRAM_CATEGORIES.map((id) => (
-          <TouchableOpacity
-            key={id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: category === id }}
-            onPress={() => setCategory(category === id ? null : id)}
-            className={`px-4 py-2 rounded-full ${
-              category === id ? 'bg-accent-primary' : 'bg-surface'
-            }`}
-          >
-            <Text
-              className={`text-sm font-semibold ${
-                category === id ? 'text-accent-text' : 'text-text-primary'
-              }`}
-            >
-              {getProgramCategoryLabel(t, id)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      </LiquidGlassSurface>
+    );
+  };
 
-      {category === null ? (
+  // The chips browse the catalogue; a search has already narrowed it, so
+  // leaving them up offers a second, conflicting filter over the same list.
+  const chips = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 8 }}
+      // Tight under the search field, which is what they filter — the row used
+      // to float midway between the field and the list it belongs to.
+      className="pt-1 pb-3"
+    >
+      {chip(null, t('programs.allCategories', { defaultValue: 'All' }))}
+      {PROGRAM_CATEGORIES.map((id) => chip(id, getProgramCategoryLabel(t, id)))}
+    </ScrollView>
+  );
+
+  return (
+    <View className="mb-2">
+      {searching ? null : chips}
+
+      {searching ? (
+        matches.length > 0 ? (
+          renderShelf(
+            'search',
+            t('programs.searchResults', { defaultValue: 'Programs' }),
+            t('programs.listSubtitle', {
+              defaultValue: 'Pick one, follow the sessions, eat to match.',
+            }),
+            matches
+          )
+        ) : (
+          <View className="px-4 py-10 items-center">
+            <Text className="text-text-muted text-base text-center">
+              {t('programs.searchEmpty', {
+                defaultValue: 'No programs match that search',
+              })}
+            </Text>
+          </View>
+        )
+      ) : category === null ? (
         <>
           <Text className="px-4 text-xs font-bold uppercase tracking-wider mb-2 text-accent-primary">
             {t('programs.featured', { defaultValue: 'Featured' })}
@@ -393,22 +471,35 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                       bottom: FEATURED_CARD_PADDING,
                     }}
                   >
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={t('programs.startProgram', {
-                        defaultValue: 'Start {{name}}',
-                        name: program.name,
-                      })}
-                      onPress={() => {
-                        fireSelectionHaptic();
-                        onStartProgram(program);
+                    {/* Over artwork, so the glass is forced dark rather than
+                        left to follow the theme — a light pill on a bright
+                        photo loses its edge entirely. */}
+                    <LiquidGlassSurface
+                      isInteractive
+                      colorScheme="dark"
+                      style={{
+                        height: START_HEIGHT,
+                        borderRadius: START_HEIGHT / 2,
+                        overflow: 'hidden',
                       }}
-                      className="px-4 py-1.5 rounded-full bg-white/25"
                     >
-                      <Text className="text-white text-sm font-bold">
-                        {t('programs.start', { defaultValue: 'Start' })}
-                      </Text>
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={t('programs.startProgram', {
+                          defaultValue: 'Start {{name}}',
+                          name: program.name,
+                        })}
+                        onPress={() => {
+                          fireSelectionHaptic();
+                          onStartProgram(program);
+                        }}
+                        className="h-full px-4 items-center justify-center"
+                      >
+                        <Text className="text-white text-sm font-bold">
+                          {t('programs.start', { defaultValue: 'Start' })}
+                        </Text>
+                      </TouchableOpacity>
+                    </LiquidGlassSurface>
                     <Text className="text-white text-xs ml-3 opacity-90">
                       {t('programs.featuredMeta', {
                         count: countProgramExercises(program),

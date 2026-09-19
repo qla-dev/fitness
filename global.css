@@ -17,8 +17,8 @@
       --color-background: hsl(220, 25%, 96%);
       --color-surface: hsl(220, 20%, 98%);
       --color-raised: hsl(0, 0%, 100%);
-      --color-menu-icon-bg: #F2F2F7;
-      --color-menu-muted: #8E8E93;
+      --color-menu-icon-bg: #f2f2f7;
+      --color-menu-muted: #8e8e93;
       --color-chrome: hsl(0, 0%, 100%);
 
       --color-border: hsl(213, 16%, 90%);
@@ -44,9 +44,9 @@
       --color-form-disabled: hsl(220, 12%, 82%);
 
       --color-calories: hsl(230, 91%, 64%);
-      --color-macro-protein: hsl(35, 90%, 64%);
-      --color-macro-carbs: hsl(124, 53%, 66%);
-      --color-macro-fat: hsl(195, 74%, 67%);
+      --color-macro-protein: hsl(124, 53%, 66%);
+      --color-macro-carbs: hsl(195, 74%, 67%);
+      --color-macro-fat: hsl(35, 90%, 64%);
       --color-macro-fiber: hsl(126, 35%, 43%);
 
       --color-hydration: hsl(200, 40%, 60%);
@@ -100,8 +100,8 @@
       --color-background: hsl(0, 0%, 0%);
       --color-surface: hsl(220, 18%, 4%);
       --color-raised: hsl(220, 16%, 8%);
-      --color-menu-icon-bg: #2C2C2E;
-      --color-menu-muted: #8E8E93;
+      --color-menu-icon-bg: #2c2c2e;
+      --color-menu-muted: #8e8e93;
       --color-chrome: hsla(0, 0%, 0%, 0.9);
 
       --color-border-subtle: hsl(220, 15%, 10%);
@@ -126,9 +126,9 @@
       --color-form-disabled: hsl(220, 12%, 18%);
 
       --color-calories: hsl(233, 62%, 71%);
-      --color-macro-protein: hsl(35, 70%, 64%);
-      --color-macro-carbs: hsl(124, 36%, 66%);
-      --color-macro-fat: hsl(195, 60%, 67%);
+      --color-macro-protein: hsl(124, 36%, 66%);
+      --color-macro-carbs: hsl(195, 60%, 67%);
+      --color-macro-fat: hsl(35, 70%, 64%);
       --color-macro-fiber: hsl(126, 25%, 45%);
 
       --color-hydration: hsl(200, 50%, 52%);

@@ -33,12 +33,19 @@ type LiquidGlassSurfaceProps = ViewProps & {
   colorScheme?: GlassViewProps['colorScheme'];
   glassEffectStyle?: GlassViewProps['glassEffectStyle'];
   isInteractive?: GlassViewProps['isInteractive'];
+  /**
+   * Colours the glass — how a selected pill is marked without losing the
+   * material. Where there is no glass it becomes the flat fill, so the same
+   * prop expresses "this one is chosen" on both paths.
+   */
+  tintColor?: GlassViewProps['tintColor'];
 };
 
 const LiquidGlassSurface: React.FC<LiquidGlassSurfaceProps> = ({
   colorScheme = 'auto',
   glassEffectStyle = 'regular',
   isInteractive = false,
+  tintColor,
   style,
   ...props
 }) => {
@@ -48,7 +55,7 @@ const LiquidGlassSurface: React.FC<LiquidGlassSurfaceProps> = ({
     return (
       <View
         {...props}
-        style={[{ backgroundColor: fallbackBackground }, style]}
+        style={[{ backgroundColor: tintColor ?? fallbackBackground }, style]}
       />
     );
   }
@@ -60,6 +67,7 @@ const LiquidGlassSurface: React.FC<LiquidGlassSurfaceProps> = ({
       colorScheme={colorScheme}
       glassEffectStyle={glassEffectStyle}
       isInteractive={isInteractive}
+      tintColor={tintColor}
     />
   );
 };

@@ -1,366 +1,184 @@
 import React from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import PresetSearchScreen from '../../src/screens/PresetSearchScreen';
-import {
-  useWorkoutPresets,
-  useWorkoutPresetSearch,
-  useProfile,
-} from '../../src/hooks';
-import {
-  useAppPreferencesStore,
-  __resetAppPreferencesStoreForTests,
-} from '../../src/stores/appPreferencesStore';
 import { useNavigationActionGuard } from '../../src/hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../../src/hooks/useScreenHeader';
 import { useStartLiveWorkout } from '../../src/hooks/useStartLiveWorkout';
-import {
-  buildPresetStartExercisesPayload,
-  buildSingleExerciseStartPayload,
-} from '../../src/utils/workoutSession';
+import { useSuggestedExercises } from '../../src/hooks/useSuggestedExercises';
+import { useExerciseSearch } from '../../src/hooks/useExerciseSearch';
+import { buildSingleExerciseStartPayload } from '../../src/utils/workoutSession';
 import type { Exercise } from '../../src/types/exercise';
-import type { WorkoutPreset } from '../../src/types/workoutPresets';
-
-jest.mock('../../src/hooks', () => ({
-  useWorkoutPresets: jest.fn(),
-  useWorkoutPresetSearch: jest.fn(),
-  useRefetchOnFocus: jest.fn(),
-  useProfile: jest.fn(() => ({ profile: undefined, isLoading: false })),
-}));
 
 jest.mock('../../src/hooks/useNavigationActionGuard', () => ({
   useNavigationActionGuard: jest.fn(),
 }));
-
+jest.mock('../../src/hooks/useScreenHeader', () => ({
+  useScreenHeader: jest.fn(() => null),
+}));
+jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
+  useStartLiveWorkout: jest.fn(),
+}));
+jest.mock('../../src/hooks/useSuggestedExercises', () => ({
+  useSuggestedExercises: jest.fn(),
+}));
+jest.mock('../../src/hooks/useExerciseSearch', () => ({
+  useExerciseSearch: jest.fn(),
+}));
 jest.mock('../../src/hooks/useExerciseImageSource', () => ({
   useExerciseImageSource: jest.fn(() => ({
     getImageSource: jest.fn((path: string) => ({ uri: path, headers: {} })),
   })),
 }));
-
-jest.mock('../../src/hooks/useScreenHeader', () => ({
-  useScreenHeader: jest.fn(() => null),
-}));
-
-jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
-  useStartLiveWorkout: jest.fn(),
-}));
-
-jest.mock('../../src/components/ActiveWorkoutBar', () => ({
-  useActiveWorkoutBarPadding: jest.fn(() => 0),
-}));
-
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));
 
-const mockUseWorkoutPresets = useWorkoutPresets as jest.MockedFunction<
-  typeof useWorkoutPresets
+const mockGuard = useNavigationActionGuard as jest.MockedFunction<
+  typeof useNavigationActionGuard
 >;
-const mockUseProfile = useProfile as jest.MockedFunction<typeof useProfile>;
-const mockUseNavigationActionGuard =
-  useNavigationActionGuard as jest.MockedFunction<
-    typeof useNavigationActionGuard
-  >;
-const mockUseWorkoutPresetSearch =
-  useWorkoutPresetSearch as jest.MockedFunction<typeof useWorkoutPresetSearch>;
-const mockUseScreenHeader = useScreenHeader as jest.MockedFunction<
+const mockHeader = useScreenHeader as jest.MockedFunction<
   typeof useScreenHeader
 >;
-const mockUseStartLiveWorkout = useStartLiveWorkout as jest.MockedFunction<
+const mockStart = useStartLiveWorkout as jest.MockedFunction<
   typeof useStartLiveWorkout
 >;
+const mockSuggested = useSuggestedExercises as jest.MockedFunction<
+  typeof useSuggestedExercises
+>;
+const mockSearch = useExerciseSearch as jest.MockedFunction<
+  typeof useExerciseSearch
+>;
 
-const insets = { top: 0, bottom: 0, left: 0, right: 0 };
-const frame = { x: 0, y: 0, width: 390, height: 844 };
-
-function buildPreset(overrides: Partial<WorkoutPreset> = {}): WorkoutPreset {
-  return {
-    id: 7,
-    user_id: 'user-1',
-    name: 'Push Day',
-    description: null,
-    is_public: false,
-    created_at: '2026-04-01T00:00:00.000Z',
-    updated_at: '2026-04-01T00:00:00.000Z',
-    exercises: [
-      {
-        id: 'pe-1',
-        exercise_id: 'ex-1',
-        exercise_name: 'Bench Press',
-        image_url: null,
-        sets: [],
-      },
-    ],
-    ...overrides,
-  };
-}
-
-function buildExercise(overrides: Partial<Exercise> = {}): Exercise {
-  return {
-    id: 'ex-9',
-    name: 'Squat',
+const exercise = (id: string, name: string): Exercise =>
+  ({
+    id,
+    name,
     category: 'Strength',
+    equipment: [],
+    primary_muscles: [],
+    secondary_muscles: [],
+    calories_per_hour: 0,
+    source: 'local',
     images: [],
-    ...overrides,
-  } as Exercise;
-}
+    tags: [],
+  }) as unknown as Exercise;
 
-const navigation = {
-  navigate: jest.fn(),
-  goBack: jest.fn(),
-  replace: jest.fn(),
-  isFocused: jest.fn(() => true),
-  setOptions: jest.fn(),
-} as any;
+const bench = exercise('e1', 'Bench Press');
+const squat = exercise('e2', 'Squat');
 
-type RouteParams =
-  { selectedExercise?: Exercise; selectionNonce?: number } | undefined;
+let startLiveWorkout: jest.Mock;
+let navigation: { goBack: jest.Mock; navigate: jest.Mock };
 
-function makeRoute(params?: RouteParams) {
-  return { key: 'PresetSearch-key', name: 'PresetSearch' as const, params };
-}
+beforeEach(() => {
+  jest.clearAllMocks();
+  startLiveWorkout = jest.fn();
+  navigation = { goBack: jest.fn(), navigate: jest.fn() };
+  mockStart.mockReturnValue({
+    startLiveWorkout,
+    isStarting: false,
+  } as unknown as ReturnType<typeof useStartLiveWorkout>);
+  mockGuard.mockReturnValue({
+    isNavigationLocked: false,
+    runNavigationAction: (fn: () => void) => fn(),
+  } as unknown as ReturnType<typeof useNavigationActionGuard>);
+  mockHeader.mockReturnValue(null);
+  mockSuggested.mockReturnValue({
+    recentExercises: [bench],
+    topExercises: [squat],
+    isLoading: false,
+    isError: false,
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof useSuggestedExercises>);
+  mockSearch.mockReturnValue({
+    searchResults: [],
+    isSearching: false,
+    isSearchActive: false,
+    isSearchError: false,
+  } as unknown as ReturnType<typeof useExerciseSearch>);
+});
 
-function renderScreen(params?: RouteParams) {
-  return render(
-    <SafeAreaProvider initialMetrics={{ insets, frame }}>
-      <PresetSearchScreen navigation={navigation} route={makeRoute(params)} />
+const renderScreen = () =>
+  render(
+    <SafeAreaProvider
+      initialMetrics={{
+        insets: { top: 0, left: 0, right: 0, bottom: 0 },
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+      }}
+    >
+      <PresetSearchScreen
+        navigation={navigation as never}
+        route={{ key: 'k', name: 'PresetSearch', params: undefined } as never}
+      />
     </SafeAreaProvider>
   );
-}
 
 /**
- * useScreenHeader is mocked out, so drive the ownership filter through the
- * menu descriptor the screen passed to it (Show section → option onPress).
+ * Start Workout lists the local exercises and nothing else.
+ *
+ * Saved programs are deliberately absent: they are opened from the profile and
+ * started from their own detail screen, so having them here made one screen
+ * answer two different questions with a layout that changed depending on
+ * whether any were saved.
  */
-function pressHeaderFilterOption(label: string) {
-  const config = mockUseScreenHeader.mock.calls.at(-1)?.[0] as {
-    right?: {
-      items?: { items?: { label: string; onPress: () => void }[] }[];
-    }[];
-  };
-  const option = config?.right?.[0]?.items?.[0]?.items?.find(
-    (item) => item.label === label
-  );
-  if (!option) {
-    throw new Error(
-      `pressHeaderFilterOption: no filter option labelled "${label}"`
-    );
-  }
-  act(() => {
-    option.onPress();
-  });
-}
-
 describe('PresetSearchScreen', () => {
-  const startLiveWorkout = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    __resetAppPreferencesStoreForTests();
-    mockUseProfile.mockReturnValue({
-      profile: { id: 'user-1' },
-      isLoading: false,
-    } as any);
-    mockUseWorkoutPresets.mockReturnValue({
-      presets: [buildPreset()],
-      isLoading: false,
-      isError: false,
-      refetch: jest.fn(),
-    } as any);
-    mockUseWorkoutPresetSearch.mockReturnValue({
-      searchResults: [],
-      isSearching: false,
-      isSearchActive: false,
-      isSearchError: false,
-    } as any);
-    mockUseStartLiveWorkout.mockReturnValue({
-      startLiveWorkout,
-      isStarting: false,
-    });
-    mockUseNavigationActionGuard.mockReturnValue({
-      isNavigationLocked: false,
-      runNavigationAction: (action: () => void) => action(),
-    } as any);
-  });
-
-  it('opens program creation from the header plus action', () => {
+  test('titles itself Start Workout and offers a way out', () => {
     renderScreen();
-    const config = mockUseScreenHeader.mock.calls.at(-1)?.[0];
-    const actions = Array.isArray(config?.right) ? config.right : [];
-    const create = actions.find((item) => item.kind === 'icon');
-    if (!create || create.kind !== 'icon')
-      throw new Error('Missing create action');
-    act(() => create.onPress());
-    expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetForm', {
-      mode: 'create-preset',
-    });
+
+    const config = mockHeader.mock.calls[0][0];
+    expect(config.title).toBe('Start Workout');
+    expect(config.left).toMatchObject({ kind: 'dismiss' });
   });
 
-  it('titles the header "Start Workout" and renders the pinned empty-workout row', () => {
-    const screen = renderScreen();
+  test('lists the local exercises, recent before popular', () => {
+    const { getByText } = renderScreen();
 
-    expect(mockUseScreenHeader).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Start Workout' })
-    );
-    expect(screen.getByText('Empty workout')).toBeTruthy();
-    expect(screen.getByText('Pick your first exercise')).toBeTruthy();
+    expect(getByText('Bench Press')).toBeTruthy();
+    expect(getByText('Squat')).toBeTruthy();
   });
 
-  it('persists an ownership filter chosen from the header menu and filters the list', () => {
-    mockUseWorkoutPresets.mockReturnValue({
-      presets: [
-        buildPreset(),
-        buildPreset({
-          id: 8,
-          name: 'Community Pull',
-          user_id: 'user-2',
-          is_public: true,
-        }),
-      ],
-      isLoading: false,
-      isError: false,
-      refetch: jest.fn(),
-    } as any);
+  // One tap, not two: the card is the workout, with its first movement chosen.
+  test('a card starts a workout built from that one exercise', () => {
+    const { getByLabelText } = renderScreen();
 
-    const screen = renderScreen();
-    expect(screen.getByText('Community Pull')).toBeTruthy();
-
-    pressHeaderFilterOption('Mine');
-
-    expect(useAppPreferencesStore.getState().presetSearchOwnershipFilter).toBe(
-      'mine'
-    );
-    expect(screen.getByText('Push Day')).toBeTruthy();
-    expect(screen.queryByText('Community Pull')).toBeNull();
-  });
-
-  it('names the filter and offers Show All when it empties the list', () => {
-    useAppPreferencesStore.setState({ presetSearchOwnershipFilter: 'public' });
-
-    const screen = renderScreen();
-
-    expect(screen.getByText('No programs in Public')).toBeTruthy();
-
-    fireEvent.press(screen.getByText('Show All'));
-
-    expect(useAppPreferencesStore.getState().presetSearchOwnershipFilter).toBe(
-      'all'
-    );
-    expect(screen.getByText('Push Day')).toBeTruthy();
-  });
-
-  it('starts a live workout from a tapped program with the program-built payload and source link', () => {
-    const preset = buildPreset();
-    const screen = renderScreen();
-
-    fireEvent.press(screen.getByText('Push Day'));
+    fireEvent.press(getByLabelText('Bench Press'));
 
     expect(startLiveWorkout).toHaveBeenCalledWith({
-      name: 'Push Day',
-      exercises: buildPresetStartExercisesPayload(preset),
-      sourcePresetId: 7,
+      exercises: buildSingleExerciseStartPayload(bench),
     });
-    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('opens the program preview from the thumbnail without starting', () => {
-    const screen = renderScreen();
+  test('the details pill opens the exercise without starting anything', () => {
+    const { getAllByLabelText } = renderScreen();
 
-    fireEvent.press(screen.getByTestId('preset-thumbnail'));
+    fireEvent.press(getAllByLabelText('Details')[0]);
 
-    expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetDetail', {
-      preset: expect.objectContaining({ id: 7 }),
+    expect(navigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
+      item: bench,
+      hideWorkoutActions: true,
     });
     expect(startLiveWorkout).not.toHaveBeenCalled();
   });
 
-  it('opens the program preview from the info button without starting', () => {
-    const screen = renderScreen();
+  test('typing searches exercises rather than programs', () => {
+    mockSearch.mockReturnValue({
+      searchResults: [squat],
+      isSearching: false,
+      isSearchActive: true,
+      isSearchError: false,
+    } as unknown as ReturnType<typeof useExerciseSearch>);
 
-    fireEvent.press(screen.getByLabelText('View program details'));
+    const { getByTestId, getByText, queryByText } = renderScreen();
+    fireEvent.changeText(getByTestId('start-workout-search'), 'squ');
 
-    expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetDetail', {
-      preset: expect.objectContaining({ id: 7 }),
-    });
-    expect(startLiveWorkout).not.toHaveBeenCalled();
+    expect(getByText('Squat')).toBeTruthy();
+    expect(queryByText('Bench Press')).toBeNull();
   });
 
-  it('does not open the preview while navigation is locked', () => {
-    mockUseNavigationActionGuard.mockReturnValue({
-      isNavigationLocked: true,
-      runNavigationAction: jest.fn(),
-    } as any);
-    const screen = renderScreen();
+  // The row that used to sit above the list only led to another screen.
+  test('carries no empty-workout row', () => {
+    const { queryByTestId } = renderScreen();
 
-    fireEvent.press(screen.getByTestId('preset-thumbnail'));
-    fireEvent.press(screen.getByLabelText('View program details'));
-
-    expect(navigation.navigate).not.toHaveBeenCalled();
-  });
-
-  it('routes the empty-workout row to ExerciseSearch with this screen as return target', () => {
-    const screen = renderScreen();
-
-    fireEvent.press(screen.getByText('Empty workout'));
-
-    expect(navigation.navigate).toHaveBeenCalledWith('ExerciseSearch', {
-      returnKey: 'PresetSearch-key',
-    });
-    expect(startLiveWorkout).not.toHaveBeenCalled();
-  });
-
-  it('starts a single-exercise workout when ExerciseSearch returns a pick', () => {
-    const exercise = buildExercise();
-    const screen = renderScreen();
-
-    screen.rerender(
-      <SafeAreaProvider initialMetrics={{ insets, frame }}>
-        <PresetSearchScreen
-          navigation={navigation}
-          route={makeRoute({ selectedExercise: exercise, selectionNonce: 1 })}
-        />
-      </SafeAreaProvider>
-    );
-
-    expect(startLiveWorkout).toHaveBeenCalledTimes(1);
-    expect(startLiveWorkout).toHaveBeenCalledWith({
-      exercises: buildSingleExerciseStartPayload(exercise),
-    });
-  });
-
-  it('does not re-fire the start for the same selection nonce', () => {
-    const exercise = buildExercise();
-    const screen = renderScreen({
-      selectedExercise: exercise,
-      selectionNonce: 1,
-    });
-
-    expect(startLiveWorkout).toHaveBeenCalledTimes(1);
-
-    screen.rerender(
-      <SafeAreaProvider initialMetrics={{ insets, frame }}>
-        <PresetSearchScreen
-          navigation={navigation}
-          route={makeRoute({ selectedExercise: exercise, selectionNonce: 1 })}
-        />
-      </SafeAreaProvider>
-    );
-
-    expect(startLiveWorkout).toHaveBeenCalledTimes(1);
-  });
-
-  it('disables program rows and the empty row while a start is in flight', () => {
-    mockUseStartLiveWorkout.mockReturnValue({
-      startLiveWorkout,
-      isStarting: true,
-    });
-    const screen = renderScreen();
-
-    fireEvent.press(screen.getByText('Push Day'));
-    fireEvent.press(screen.getByText('Empty workout'));
-
-    expect(startLiveWorkout).not.toHaveBeenCalled();
-    expect(navigation.navigate).not.toHaveBeenCalled();
+    expect(queryByTestId('empty-workout-row')).toBeNull();
   });
 });

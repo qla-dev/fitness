@@ -130,7 +130,7 @@ export default function DashboardActivityCard({
   ];
   return (
     <View>
-      <View className="bg-surface rounded-2xl p-4 mb-3">
+      <View className="bg-surface rounded-2xl px-4 pt-3 pb-4 mb-3">
         <View className="flex-row items-center justify-between mb-3">
           <DashboardCardTitle>
             {t('dashboard.activityRings', { defaultValue: 'Activity Rings' })}
@@ -232,7 +232,7 @@ export default function DashboardActivityCard({
           .map((metric) => (
             <CardPressable
               key={metric.label}
-              className="flex-1 bg-surface rounded-2xl p-4"
+              className="flex-1 bg-surface rounded-2xl px-4 pt-3 pb-4"
               accessibilityLabel={metric.label}
               onPress={onOpenGoal ? () => onOpenGoal(metric.metric) : undefined}
             >

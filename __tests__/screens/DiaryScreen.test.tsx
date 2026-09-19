@@ -660,12 +660,18 @@ describe('DiaryScreen custom queries', () => {
     expect(getByTestId('water-record-sheet')).toBeTruthy();
   });
 
-  test('offers a subtitle row carrying More', () => {
-    const { getByTestId, getByText, getByLabelText } = renderScreen();
+  // Two intros, each introducing the block beneath it: the macros under the
+  // title, the body measurements further down over their own tiles.
+  test('offers a subtitle row over each block it introduces', () => {
+    const { getByTestId, getByText, getAllByLabelText } = renderScreen();
+
+    expect(getByTestId('diary-macros-intro')).toBeTruthy();
+    expect(getByText('diary.macrosSubtitle')).toBeTruthy();
 
     expect(getByTestId('diary-intro')).toBeTruthy();
     expect(getByText('diary.subtitle')).toBeTruthy();
-    expect(getByLabelText('measurements.more')).toBeTruthy();
+
+    expect(getAllByLabelText('measurements.more')).toHaveLength(2);
   });
 
   test('hides the native family diaries action while disconnected', () => {

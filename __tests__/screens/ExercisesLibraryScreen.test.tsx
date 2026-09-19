@@ -265,14 +265,20 @@ describe('ExercisesLibraryScreen online search', () => {
     typeof importExercise
   >;
 
-  const renderScreen = () => {
+  // The screen is two things depending on the route it is mounted under: the
+  // Store tab, which sells programs, and the library drilled into from
+  // Library, which lists exercises.
+  const renderScreen = (name: string = 'ExercisesLibrary') => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     return render(
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider initialMetrics={{ insets, frame }}>
-          <ExercisesLibraryScreen navigation={navigation} route={route} />
+          <ExercisesLibraryScreen
+            navigation={navigation}
+            route={{ ...route, name } as typeof route}
+          />
         </SafeAreaProvider>
       </QueryClientProvider>
     );
@@ -361,12 +367,26 @@ describe('ExercisesLibraryScreen online search', () => {
 
     const screen = renderScreen();
 
-    // The store sits above the library, and the library keeps its heading —
-    // but nothing from the provider shows until the user actually searches.
-    expect(screen.getByText('Featured')).toBeTruthy();
-    expect(screen.getByText('Build Serious Muscle')).toBeTruthy();
+    // The library keeps its heading, and nothing from the provider shows
+    // until the user actually searches.
     expect(screen.getByText('My exercises')).toBeTruthy();
     expect(screen.queryByText('Online')).toBeNull();
     expect(screen.queryByText('Incline Bench')).toBeNull();
+  });
+
+  // A shop sells one kind of thing. Exercises belong to workouts — the local
+  // list on Start Workout, and this screen's other self.
+  it('sells programs on the Store tab and lists no exercises there', () => {
+    mockUseExercisesLibrary.mockReturnValue(
+      buildHookReturn({ exercises: [createExercise('1', 'Bench Press')] })
+    );
+    configureOnline([{ id: 'w2', name: 'Incline Bench' }]);
+
+    const screen = renderScreen('Exercises');
+
+    expect(screen.getByText('Featured')).toBeTruthy();
+    expect(screen.getByText('Build Serious Muscle')).toBeTruthy();
+    expect(screen.queryByText('My exercises')).toBeNull();
+    expect(screen.queryByText('Bench Press')).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import { isLocalDataMode } from '../services/dataMode';
+import SectionIntro from '../components/SectionIntro';
 import { distanceFromKm } from '../utils/unitConversions';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -383,6 +384,18 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           />
         }
       >
+        {/* The same line the Tracker carries under its title, for the same
+            reason: the screen name alone says what you are looking at but not
+            what it is for. */}
+        {/* No link: everything this line names is already on the screen
+            under it, so a "More" would only lead back to what you can see. */}
+        <SectionIntro
+          className="mb-3"
+          testID="dashboard-intro"
+          subtitle={t('dashboard.subtitle', {
+            defaultValue: 'Your rings, steps and workouts',
+          })}
+        />
         <DashboardActivityCard
           summary={summary}
           steps={measurements?.steps}

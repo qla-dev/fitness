@@ -11,7 +11,34 @@ import {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { NavigationContext, useIsFocused } from '@react-navigation/native';
+
+/**
+ * Whether the screen holding this ring is showing, or `true` where there is no
+ * navigator to ask.
+ *
+ * `useIsFocused` throws outside a navigation container, which turned this
+ * presentational ring into something a caller could only render inside one —
+ * and a card that draws a ring should not drag a NavigationContainer into
+ * every test that mounts it. Nothing is on top of a ring with no navigator
+ * above it, so "focused" is the honest answer.
+ */
+function useIsFocusedWhenNavigable(): boolean {
+  const navigable = React.useContext(NavigationContext) != null;
+  // Both hooks run on every render: the context decides which answer is used,
+  // never whether a hook is called.
+  const focused = useIsFocusedSafely(navigable);
+  return navigable ? focused : true;
+}
+
+/** `useIsFocused`, but only consulted where a navigator exists to consult. */
+function useIsFocusedSafely(navigable: boolean): boolean {
+  try {
+    return useIsFocused();
+  } catch {
+    return !navigable;
+  }
+}
 
 interface ProgressRingProps {
   progress: number; // 0-1 value (capped at 1 for display)
@@ -40,7 +67,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
   // a single effect (React's compiler can't optimize a shared value mutated
   // across two effects); `wasFocused` distinguishes a fresh focus — which resets
   // to zero first — from an in-place value change.
-  const isFocused = useIsFocused();
+  const isFocused = useIsFocusedWhenNavigable();
   const wasFocused = useRef(false);
   useEffect(() => {
     // Skip animating while blurred so a mounted-but-hidden ring (e.g. the
