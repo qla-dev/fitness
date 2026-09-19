@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Sugar: a cube, its lit top face in `accentColor`.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +20,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const SugarsIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +33,19 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 75.683 168.558 L 256.204 268.848 L 256.204 444.355 L 75.683 344.065 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
+        d="M 436.726 168.558 L 436.726 344.065 L 256.204 444.355 L 256.204 268.848 Z"
+        stroke={color}
+      />
+      <Path
+        d="M 256.204 68.269 L 436.726 168.558 L 256.204 268.848 L 75.683 168.558 Z"
         stroke={accentColor}
       />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default SugarsIcon;

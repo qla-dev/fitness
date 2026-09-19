@@ -188,7 +188,7 @@ export const calculateCaloriesConsumed = (entries: FoodEntry[]): number => {
  * Calculates a macro nutrient total from food entries.
  * Uses same formula as calories: (value * quantity) / serving_size
  */
-const calculateMacro = (
+export const calculateMacro = (
   entries: FoodEntry[],
   field: keyof FoodEntry
 ): number => {
@@ -212,6 +212,19 @@ export const calculateFat = (entries: FoodEntry[]): number =>
   calculateMacro(entries, 'fat');
 export const calculateFiber = (entries: FoodEntry[]): number =>
   calculateMacro(entries, 'dietary_fiber');
+
+/**
+ * The day's total for any snapshotted nutrient field.
+ *
+ * The named helpers above cover the four the daily summary carries as typed
+ * figures; everything else on the Tracker's macro row (the fat breakdown, the
+ * minerals, the vitamins) has no summary field and is summed from the entries
+ * on demand.
+ */
+export const calculateNutrientTotal = (
+  entries: FoodEntry[],
+  field: keyof FoodEntry
+): number => calculateMacro(entries, field);
 
 /**
  * Aggregates all custom nutrient values across food entries.

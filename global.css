@@ -17,7 +17,7 @@
       --color-background: hsl(220, 25%, 96%);
       --color-surface: hsl(220, 20%, 98%);
       --color-raised: hsl(0, 0%, 100%);
-      --color-menu-icon-bg: #f2f2f7;
+      --color-menu-icon-bg: hsl(240, 20%, 96%);
       --color-menu-muted: #8e8e93;
       --color-chrome: hsl(0, 0%, 100%);
 
@@ -47,7 +47,19 @@
       --color-macro-protein: hsl(124, 53%, 66%);
       --color-macro-carbs: hsl(270, 70%, 68%);
       --color-macro-fat: hsl(35, 90%, 64%);
-      --color-macro-fiber: hsl(126, 35%, 43%);
+      --color-macro-fiber: hsl(158, 60%, 42%);
+      --color-macro-sugars: hsl(30, 8%, 62%);
+      --color-macro-saturated-fat: hsl(6, 55%, 42%);
+      --color-macro-mono-fat: hsl(70, 68%, 38%);
+      --color-macro-poly-fat: hsl(24, 48%, 50%);
+      --color-macro-trans-fat: hsl(318, 75%, 64%);
+      --color-macro-cholesterol: hsl(255, 50%, 60%);
+      --color-macro-sodium: hsl(190, 70%, 44%);
+      --color-macro-potassium: hsl(50, 88%, 42%);
+      --color-macro-calcium: hsl(228, 70%, 60%);
+      --color-macro-iron: hsl(352, 52%, 46%);
+      --color-macro-vitamin-a: hsl(28, 92%, 48%);
+      --color-macro-vitamin-c: hsl(0, 72%, 54%);
 
       --color-hydration: hsl(200, 40%, 60%);
       --color-exercise: hsl(146, 68%, 66%);
@@ -100,7 +112,7 @@
       --color-background: hsl(0, 0%, 0%);
       --color-surface: hsl(220, 18%, 4%);
       --color-raised: hsl(220, 16%, 8%);
-      --color-menu-icon-bg: #2c2c2e;
+      --color-menu-icon-bg: hsl(220, 14%, 8%);
       --color-menu-muted: #8e8e93;
       --color-chrome: hsla(0, 0%, 0%, 0.9);
 
@@ -129,7 +141,19 @@
       --color-macro-protein: hsl(124, 36%, 66%);
       --color-macro-carbs: hsl(270, 55%, 70%);
       --color-macro-fat: hsl(35, 70%, 64%);
-      --color-macro-fiber: hsl(126, 25%, 45%);
+      --color-macro-fiber: hsl(158, 45%, 52%);
+      --color-macro-sugars: hsl(0, 0%, 94%);
+      --color-macro-saturated-fat: hsl(6, 45%, 44%);
+      --color-macro-mono-fat: hsl(70, 55%, 58%);
+      --color-macro-poly-fat: hsl(24, 42%, 62%);
+      --color-macro-trans-fat: hsl(318, 62%, 72%);
+      --color-macro-cholesterol: hsl(255, 35%, 62%);
+      --color-macro-sodium: hsl(190, 55%, 62%);
+      --color-macro-potassium: hsl(50, 75%, 52%);
+      --color-macro-calcium: hsl(228, 58%, 68%);
+      --color-macro-iron: hsl(352, 38%, 48%);
+      --color-macro-vitamin-a: hsl(28, 92%, 56%);
+      --color-macro-vitamin-c: hsl(0, 68%, 64%);
 
       --color-hydration: hsl(200, 50%, 52%);
       --color-exercise: hsl(158, 49%, 48%);

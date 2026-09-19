@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Vitamin C: a citrus slice, the segment walls in `accentColor`.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +20,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const VitaminCIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +33,21 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 256.165 68.117 C 360.145 68.117 444.214 152.186 444.214 256.165 C 444.214 360.145 360.145 444.214 256.165 444.214 C 152.186 444.214 68.117 360.145 68.117 256.165 C 68.117 152.186 152.186 68.117 256.165 68.117 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
-        stroke={accentColor}
+        d="M 256.165 116.788 C 333.597 116.788 395.542 178.734 395.542 256.165 C 395.542 333.597 333.597 395.542 256.165 395.542 C 178.734 395.542 116.788 333.597 116.788 256.165 C 116.788 178.734 178.734 116.788 256.165 116.788 Z"
+        stroke={color}
       />
+      <Path d="M 256.165 256.165 L 256.165 125.638" stroke={accentColor} />
+      <Path d="M 256.165 256.165 L 368.994 190.901" stroke={accentColor} />
+      <Path d="M 256.165 256.165 L 368.994 321.429" stroke={accentColor} />
+      <Path d="M 256.165 256.165 L 256.165 386.693" stroke={accentColor} />
+      <Path d="M 256.165 256.165 L 143.336 321.429" stroke={accentColor} />
+      <Path d="M 256.165 256.165 L 143.336 190.901" stroke={accentColor} />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default VitaminCIcon;

@@ -11,51 +11,11 @@ import {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { NavigationContext, useIsFocused } from '@react-navigation/native';
+import { useIsFocusedWhenNavigable } from '../hooks/useIsFocusedWhenNavigable';
 
-/**
- * Whether the screen holding this ring is showing, or `true` where there is no
- * navigator to ask.
- *
- * `useIsFocused` throws outside a navigation container, which turned this
- * presentational ring into something a caller could only render inside one —
- * and a card that draws a ring should not drag a NavigationContainer into
- * every test that mounts it. Nothing is on top of a ring with no navigator
- * above it, so "focused" is the honest answer.
- */
-function useIsFocusedWhenNavigable(): boolean {
-  const navigable = React.useContext(NavigationContext) != null;
-  // Both hooks run on every render: the context decides which answer is used,
-  // never whether a hook is called.
-  const focused = useIsFocusedSafely(navigable);
-  return navigable ? focused : true;
-}
-
-/** `useIsFocused`, but only consulted where a navigator exists to consult. */
-function useIsFocusedSafely(navigable: boolean): boolean {
-  try {
-    return useIsFocused();
-  } catch {
-    return !navigable;
-  }
-}
-
-/** Where an arc starts and how far it runs, in Skia's degrees (0 = 3 o'clock). */
-const SWEEPS = {
-  full: { start: -90, total: 360 },
-  // The top half, opening downwards, so the figure it measures can sit in the
-  // gap rather than being ringed by it.
-  half: { start: 180, total: 180 },
-} as const;
-
-export type ProgressArc = keyof typeof SWEEPS;
-
-/** Canvas height for an arc of this shape — a half arc needs only its band. */
-export const progressArcHeight = (
-  size: number,
-  strokeWidth: number,
-  arc: ProgressArc = 'full'
-) => (arc === 'half' ? size / 2 + strokeWidth : size);
+/** Where the sweep starts and how far it runs, in Skia's degrees (0 = 3 o'clock). */
+const START = -90;
+const TOTAL = 360;
 
 interface ProgressRingProps {
   progress: number; // 0-1 value (capped at 1 for display)
@@ -63,19 +23,24 @@ interface ProgressRingProps {
   strokeWidth: number;
   color: string;
   backgroundColor: string;
-  /** A closed ring, or the top half of one. */
-  arc?: ProgressArc;
 }
 
+/**
+ * A closed ring that fills clockwise from twelve o'clock, drawn in Skia.
+ *
+ * It once also drew a half arc, for the Tracker's calorie gauge. That moved to
+ * [`ArcGauge`] in SVG, along with the Tracker's nutrient rings: a Skia canvas
+ * allocates a native surface, and a screen carrying eighteen of them arrived
+ * about a second late with the arcs visibly last. What is left here is the
+ * single-ring case, where one canvas costs nothing worth avoiding.
+ */
 const ProgressRing: React.FC<ProgressRingProps> = ({
   progress,
   size,
   strokeWidth,
   color,
   backgroundColor,
-  arc = 'full',
 }) => {
-  const { start, total } = SWEEPS[arc];
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
   const progressCapped = Math.min(Math.max(progress, 0), 1);
@@ -121,43 +86,23 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
 
   const progressPath = useDerivedValue(() => {
     const builder = Skia.PathBuilder.Make();
-    const sweepAngle = animatedProgress.value * total;
+    const sweepAngle = animatedProgress.value * TOTAL;
     if (sweepAngle > 0) {
-      builder.addArc(oval, start, sweepAngle);
+      builder.addArc(oval, START, sweepAngle);
     }
     return builder.build();
   });
 
-  // A closed ring's track is a circle; a half arc's has to be a path, or the
-  // unfilled remainder runs all the way round behind the gap.
-  const trackPath = useMemo(() => {
-    const builder = Skia.PathBuilder.Make();
-    builder.addArc(oval, start, total);
-    return builder.build();
-  }, [oval, start, total]);
-
   return (
-    <Canvas
-      style={{ width: size, height: progressArcHeight(size, strokeWidth, arc) }}
-    >
-      {arc === 'full' ? (
-        <SkiaCircle
-          cx={center}
-          cy={center}
-          r={radius}
-          style="stroke"
-          strokeWidth={strokeWidth}
-          color={backgroundColor}
-        />
-      ) : (
-        <Path
-          path={trackPath}
-          style="stroke"
-          strokeWidth={strokeWidth}
-          color={backgroundColor}
-          strokeCap="round"
-        />
-      )}
+    <Canvas style={{ width: size, height: size }}>
+      <SkiaCircle
+        cx={center}
+        cy={center}
+        r={radius}
+        style="stroke"
+        strokeWidth={strokeWidth}
+        color={backgroundColor}
+      />
       <Path
         path={progressPath}
         style="stroke"

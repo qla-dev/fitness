@@ -8,7 +8,11 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Saturated fat: a rasher of bacon, the marbling running down it.
+
+ * A cheese wedge was the first attempt and is the wrong shape for this set: at
+ * 300x244 it is far wider than tall, so matching its height to the others
+ * would have stretched it to 496 wide. Bacon runs vertically.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +24,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const SaturatedFatIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +37,15 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 180.013 68.084 C 132.2 136.686 231.984 203.209 184.171 271.811 C 136.358 340.412 231.984 396.541 188.329 444.354 L 333.848 444.354 C 377.503 396.541 281.877 340.412 329.69 271.811 C 377.503 203.209 277.719 136.686 325.532 68.084 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
+        d="M 254.852 105.503 C 213.275 167.868 300.586 230.234 259.009 292.599 C 229.906 336.255 269.404 381.989 256.931 409.014"
         stroke={accentColor}
       />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default SaturatedFatIcon;

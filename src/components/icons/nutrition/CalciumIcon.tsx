@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Calcium: a glass of milk, the fill line in `accentColor`.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +20,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const CalciumIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +33,12 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 148.193 67.955 L 364.454 67.955 L 330.663 408.115 C 328.411 428.389 312.642 444.158 292.367 444.158 L 220.28 444.158 C 200.006 444.158 184.237 428.389 181.984 408.115 Z"
         stroke={color}
       />
-      <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
-        stroke={accentColor}
-      />
+      <Path d="M 168.468 185.096 L 344.18 185.096" stroke={accentColor} />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default CalciumIcon;

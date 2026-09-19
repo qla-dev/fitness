@@ -5522,13 +5522,13 @@
     "rangeLabel": "Range"
   },
   "diaryNutrition": {
+    "allMacros": "All macros",
     "title": "Nutrition",
-    "ofGoal": "of {{goal}}",
-    "grams": "g",
     "eaten": "Eaten",
     "burned": "Burned",
     "kcalLeft": "kcal left",
-    "gramsLeft": "{{grams}}g left"
+    "kcalLeftOfGoal": "kcal left of {{goal}}",
+    "amountLeft": "{{amount}} left"
   },
   "trainingCard": {
     "details": "Details"

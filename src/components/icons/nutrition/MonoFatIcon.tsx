@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Monounsaturated fat: half an avocado, the stone in `accentColor`.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +20,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const MonoFatIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +33,15 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 256.249 68.313 C 305.465 68.313 334.547 122.003 339.021 177.93 C 386 211.487 408.371 278.599 408.371 323.341 C 408.371 394.928 341.258 444.144 256.249 444.144 C 171.24 444.144 104.127 394.928 104.127 323.341 C 104.127 278.599 126.498 211.487 173.477 177.93 C 177.951 122.003 207.033 68.313 256.249 68.313 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
+        d="M 256.249 258.465 C 294.279 258.465 325.599 289.785 325.599 327.815 C 325.599 365.846 294.279 397.165 256.249 397.165 C 218.218 397.165 186.899 365.846 186.899 327.815 C 186.899 289.785 218.218 258.465 256.249 258.465 Z"
         stroke={accentColor}
       />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default MonoFatIcon;

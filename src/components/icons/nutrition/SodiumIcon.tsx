@@ -8,7 +8,10 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Sodium: a salt shaker, its holes in `accentColor`.
+
+ * The holes are zero-length strokes; the round cap is what draws them, so they
+ * stay a fixed size however the rest of the glyph is scaled.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +23,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const SodiumIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +36,18 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 172.302 204.301 C 172.302 186.293 186.308 172.287 204.316 172.287 L 308.361 172.287 C 326.369 172.287 340.375 186.293 340.375 204.301 L 356.381 406.388 C 358.382 428.397 342.375 444.404 322.367 444.404 L 190.31 444.404 C 170.301 444.404 154.295 428.397 156.295 406.388 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
-        stroke={accentColor}
+        d="M 194.312 172.287 C 194.312 108.259 222.324 68.242 256.338 68.242 C 290.353 68.242 318.365 108.259 318.365 172.287"
+        stroke={color}
       />
+      <Path d="M 224.325 120.265 L 224.325 120.265" stroke={accentColor} />
+      <Path d="M 256.338 102.257 L 256.338 102.257" stroke={accentColor} />
+      <Path d="M 288.352 120.265 L 288.352 120.265" stroke={accentColor} />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default SodiumIcon;

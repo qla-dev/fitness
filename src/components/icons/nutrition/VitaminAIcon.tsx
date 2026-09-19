@@ -8,7 +8,10 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Vitamin A: a carrot, its crown in `accentColor`.
+
+ * The leaves splay outward. Curved inward they converged into a single blob
+ * above the root.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +23,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const VitaminAIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +36,25 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 153.26 219.137 C 153.26 199.44 170.768 184.121 190.464 184.121 L 321.774 184.121 C 341.47 184.121 358.978 199.44 358.978 219.137 L 291.135 424.855 C 282.381 451.117 229.857 451.117 221.103 424.855 Z"
         stroke={color}
       />
+      <Path d="M 190.464 278.226 L 321.774 278.226" stroke={color} />
+      <Path d="M 210.16 346.069 L 302.077 346.069" stroke={color} />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
+        d="M 256.119 184.121 C 256.119 138.162 256.119 107.523 256.119 68.13"
+        stroke={accentColor}
+      />
+      <Path
+        d="M 207.972 186.309 C 183.898 144.728 164.202 118.466 137.94 94.392"
+        stroke={accentColor}
+      />
+      <Path
+        d="M 304.266 186.309 C 328.339 144.728 348.036 118.466 374.298 94.392"
         stroke={accentColor}
       />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default VitaminAIcon;

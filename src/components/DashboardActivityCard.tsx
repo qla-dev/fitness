@@ -9,7 +9,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useIsFocusedWhenNavigable } from '../hooks/useIsFocusedWhenNavigable';
 import { formatLocalizedNumber } from '../localization';
 import type { DailySummary } from '../types/dailySummary';
 import { useManualHealthSync } from '../hooks/useManualHealthSync';
@@ -28,6 +29,11 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
  * on screen with its tracks and labels before the day's numbers arrive and
  * then fill in place — no skeleton standing in for it.
  *
+ * It empties and refills on every visit to the screen, not only on the first
+ * one, matching the Tracker's rings: a cached day would otherwise be sitting
+ * there already filled, so whether the rings played depended on whether the
+ * data happened to be warm.
+ *
  * Drawn with a full dasharray and an animated offset rather than an animated
  * dasharray: the offset is a single number, so it interpolates on the UI
  * thread instead of rebuilding a string every frame.
@@ -45,12 +51,31 @@ function ProgressRing({
   const reducedMotion = useReducedMotion();
   const offset = useSharedValue(length);
 
+  // One effect, because React's compiler cannot optimize a shared value
+  // written from two. `wasFocused` is what separates a fresh visit — which
+  // rewinds to empty first — from the value simply changing while on screen,
+  // which animates from wherever it already is.
+  const isFocused = useIsFocusedWhenNavigable();
+  const wasFocused = useRef(false);
   useEffect(() => {
+    if (!isFocused) {
+      wasFocused.current = false;
+      return;
+    }
+    const justFocused = !wasFocused.current;
+    wasFocused.current = true;
     const target = length * (1 - progress);
-    offset.value = reducedMotion
-      ? target
-      : withTiming(target, { duration: 650 });
-  }, [length, progress, reducedMotion, offset]);
+    // Reduced motion never replays: the point of the setting is to arrive at
+    // the answer without the journey.
+    if (reducedMotion) {
+      offset.value = target;
+      return;
+    }
+    if (justFocused) {
+      offset.value = length;
+    }
+    offset.value = withTiming(target, { duration: 650 });
+  }, [isFocused, length, progress, reducedMotion, offset]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: offset.value,

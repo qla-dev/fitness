@@ -8,7 +8,11 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Trans fat: a droplet struck through.
+
+ * Deliberately the fat droplet plus a bar rather than a shape of its own: the
+ * point of the glyph is that this is the fat to avoid, and the relationship to
+ * [`FatIcon`] is the message.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +24,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const TransFatIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -36,12 +40,9 @@ const FatIcon: React.FC<Props> = ({
         d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
         stroke={color}
       />
-      <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
-        stroke={accentColor}
-      />
+      <Path d="M 146.576 421.874 L 366.102 155.306" stroke={accentColor} />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default TransFatIcon;

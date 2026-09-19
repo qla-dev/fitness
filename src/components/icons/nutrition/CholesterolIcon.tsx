@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Fat: a droplet, with the inner highlight an oil drop catches.
+ * Cholesterol: a heart with a trace across it.
  *
  * House rules for this set — a 512 box, a 24-wide round-capped stroke, the
  * structure in `color` and the marking in `accentColor`.
@@ -20,7 +20,7 @@ interface Props {
  * scaled-up glyph would otherwise carry a heavier line than its neighbours.
  * Re-run the normaliser if a path changes; do not nudge these by hand.
  */
-const FatIcon: React.FC<Props> = ({
+const CholesterolIcon: React.FC<Props> = ({
   size = 24,
   color = '#464b53',
   accentColor = '#518df1',
@@ -33,15 +33,15 @@ const FatIcon: React.FC<Props> = ({
       fill="none"
     >
       <Path
-        d="M 256.339 67.944 C 256.339 67.944 390.743 215.788 390.743 309.871 C 390.743 386.033 330.261 444.274 256.339 444.274 C 182.417 444.274 121.935 386.033 121.935 309.871 C 121.935 215.788 256.339 67.944 256.339 67.944 Z"
+        d="M 256.419 444.321 C 102.362 337.84 61.582 247.218 61.582 179.251 C 61.582 111.284 113.689 68.239 177.125 68.239 C 215.639 68.239 242.826 86.363 256.419 113.55 C 270.013 86.363 297.199 68.239 335.714 68.239 C 399.149 68.239 451.257 111.284 451.257 179.251 C 451.257 247.218 410.477 337.84 256.419 444.321 Z"
         stroke={color}
       />
       <Path
-        d="M 198.097 314.351 C 198.097 278.51 220.498 247.149 251.859 233.708"
+        d="M 109.158 206.438 L 188.453 206.438 L 217.905 149.799 L 270.013 274.404 L 301.731 206.438 L 403.681 206.438"
         stroke={accentColor}
       />
     </G>
   </Svg>
 );
 
-export default FatIcon;
+export default CholesterolIcon;
