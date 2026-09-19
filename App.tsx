@@ -600,7 +600,7 @@ function AppContent() {
           <Stack.Screen
             name="Macros"
             component={SafeMacros}
-            options={createStackScreenOptions(t('screens.macros', { defaultValue: 'Macros' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.macros', { defaultValue: 'AI' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="NutrientTrends"

@@ -502,7 +502,7 @@
     "progressPhotoCompare": "Compare",
     "progressPhotoTimelapse": "Time-lapse",
     "goalDetail": "Goal",
-    "macros": "Macros",
+    "macros": "AI",
     "dayMeals": "Meals"
   },
   "healthMetrics": {
@@ -1053,7 +1053,8 @@
     "addFood": "Add Food",
     "emptyDay": "No entries recorded for this day",
     "subtitle": "Keep a track of your habits",
-    "macrosSubtitle": "See all your macros in one place",
+    "macrosSubtitle": "Need help in your optimal metrics?",
+    "askAI": "Ask AI",
     "mealsSubtitle": "Log your every meal, fast"
   },
   "medications": {
@@ -5542,7 +5543,14 @@
     "programsHeading": "Programs"
   },
   "macros": {
-    "title": "Macros",
+    "title": "AI",
+    "welcome": "Let’s talk about your goals",
+    "preview": "Chat preview — AI replies are not connected yet.",
+    "proteinPrompt": "Help me with my protein goal",
+    "metricsPrompt": "Explain my daily metrics",
+    "demoReply": "This is a demo reply. Once connected, AI will help you explore your nutrition goals and daily metrics.",
+    "placeholder": "Ask about your metrics…",
+    "send": "Send message",
     "empty": "Macros are coming here",
     "emptyMessage": "Every macro for the day, in one place."
   }

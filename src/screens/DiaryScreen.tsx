@@ -440,9 +440,9 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         <SectionIntro
           testID="diary-macros-intro"
           subtitle={t('diary.macrosSubtitle', {
-            defaultValue: 'See all your macros in one place',
+            defaultValue: 'Need help in your optimal metrics?',
           })}
-          actionLabel={t('measurements.more', { defaultValue: 'More' })}
+          actionLabel={t('diary.askAI', { defaultValue: 'Ask AI' })}
           onPress={() => navigation.navigate('Macros')}
         />
         {/* Directly under the intro, above the body tiles: the day's calories

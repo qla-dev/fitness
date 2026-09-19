@@ -676,8 +676,9 @@ describe('DiaryScreen custom queries', () => {
     expect(getByTestId('diary-meals-intro')).toBeTruthy();
     expect(getByText('diary.mealsSubtitle')).toBeTruthy();
 
-    // One link per block: macros, measurements, meals.
-    expect(getAllByLabelText('measurements.more')).toHaveLength(3);
+    // AI has its own action; measurements and meals keep More.
+    expect(getAllByLabelText('diary.askAI')).toHaveLength(1);
+    expect(getAllByLabelText('measurements.more')).toHaveLength(2);
   });
 
   test('hides the native family diaries action while disconnected', () => {
