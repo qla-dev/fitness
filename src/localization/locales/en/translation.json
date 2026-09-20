@@ -63,7 +63,9 @@
     "requestTimedOut": "Request timed out. Check your server connection.",
     "nextStep": "Next step",
     "notNow": "Not now",
-    "skip": "Skip"
+    "skip": "Skip",
+    "more": "More",
+    "all": "All"
   },
   "fitPass": {
     "title": "FitPass",
@@ -503,7 +505,8 @@
     "progressPhotoTimelapse": "Time-lapse",
     "goalDetail": "Goal",
     "macros": "AI",
-    "dayMeals": "Meals"
+    "dayMeals": "Meals",
+    "activityHistory": "Activities"
   },
   "healthMetrics": {
     "steps": "Steps",
@@ -800,7 +803,7 @@
       "partialMessage": "Some records couldn't be deleted from {{store}}.",
       "errorMessage": "Could not remove data from {{store}}.",
       "confirmTitle": "Remove all {{store}} data",
-      "confirmMessage": "Delete every nutrition and hydration record qla.fit wrote to {{store}}, and turn writeback off? Your qla.fit diary and records from other apps are not affected."
+      "confirmMessage": "Delete every nutrition, hydration and workout record qla.fit wrote to {{store}}, and turn writeback off? Your qla.fit diary and records from other apps are not affected."
     },
     "range": {
       "title": "Sync Range",
@@ -5509,7 +5512,9 @@
       "almost": "Almost done…"
     },
     "importingPercent": "Importing history… {{percent}}%",
-    "preparingImport": "Preparing import…"
+    "preparingImport": "Preparing import…",
+    "writebackHeading": "Write to {{store}}",
+    "writebackHint": "Sends what you log in qla.fit out to {{store}}. Entries imported from {{store}} are never sent back."
   },
   "ringCalendar": {
     "title": "Calendar"
@@ -5553,5 +5558,14 @@
     "send": "Send message",
     "empty": "Macros are coming here",
     "emptyMessage": "Every macro for the day, in one place."
+  },
+  "units": {
+    "miles": "mi",
+    "kilometers": "km",
+    "kcal": "kcal"
+  },
+  "activityHistory": {
+    "title": "Activities",
+    "empty": "No activities logged yet."
   }
 }

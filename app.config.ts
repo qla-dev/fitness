@@ -62,10 +62,12 @@ const androidPermissions = [
   'android.permission.health.READ_WHEELCHAIR_PUSHES',
   'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
   'android.permission.health.READ_HEALTH_DATA_HISTORY',
-  // Writeback (qla.fit → Health Connect): nutrition + water. Production feature,
-  // so these live in the base list (not the dev-only writes below).
+  // Writeback (qla.fit → Health Connect): nutrition, water and logged workouts.
+  // Production feature, so these live in the base list (not the dev-only writes
+  // below).
   'android.permission.health.WRITE_NUTRITION',
   'android.permission.health.WRITE_HYDRATION',
+  'android.permission.health.WRITE_EXERCISE',
   // Exact rest-complete alerts: without this special access (user-granted via
   // "Alarms & reminders" on Android 13+), expo-notifications falls back to
   // inexact alarms that the OS batches ~15s late.
@@ -83,7 +85,7 @@ const devAndroidPermissions = [
   'android.permission.health.WRITE_BONE_MASS',
   'android.permission.health.WRITE_CERVICAL_MUCUS',
   'android.permission.health.WRITE_CYCLING_PEDALING_CADENCE',
-  'android.permission.health.WRITE_EXERCISE',
+  // WRITE_EXERCISE moved to the base androidPermissions list (writeback feature).
   'android.permission.health.WRITE_EXERCISE_ROUTE',
   'android.permission.health.WRITE_DISTANCE',
   'android.permission.health.WRITE_ELEVATION_GAINED',

@@ -16,7 +16,11 @@ import {
   saveHealthPreference,
   setupBackgroundDeliveryForEnabledMetrics,
 } from '../services/healthConnectService';
-import { enabledWritebackPermissions } from '../services/shared/healthPermissionSets';
+import { WRITEBACK_METRICS } from '../WritebackMetrics';
+import {
+  allWritebackPermissions,
+  enabledWritebackPermissions,
+} from '../services/shared/healthPermissionSets';
 import { addLog } from '../services/LogService';
 
 type MetricStates = Record<string, boolean>;
@@ -25,8 +29,9 @@ interface HealthMetricTogglesArgs {
   healthMetricStates: MetricStates;
   setHealthMetricStates: Dispatch<SetStateAction<MetricStates>>;
   /** Writeback toggles; their write permissions ride along so a read request
-   *  cannot switch them off. */
+   *  cannot switch them off, and "Enable All" covers them too. */
   writebackStates: Record<string, boolean>;
+  setWritebackStates: Dispatch<SetStateAction<Record<string, boolean>>>;
   /** Called after any change, e.g. to reload the displayed values. */
   onChanged?: () => void;
 }
@@ -34,13 +39,17 @@ interface HealthMetricTogglesArgs {
 /**
  * Per-metric and "enable all" health sync switches: saves the preference,
  * requests the platform permission when turning on (reverting with an alert
- * when it is refused), and keeps background delivery in step. Shared by the
- * Sync screen and the startup AppleHealthCheck screen.
+ * when it is refused), and keeps background delivery in step.
+ *
+ * "Enable All" covers the writeback switches too, so one row turns the whole
+ * health integration on in both directions; per-metric writeback toggling lives
+ * in useWritebackToggles beside it.
  */
 export function useHealthMetricToggles({
   healthMetricStates,
   setHealthMetricStates,
   writebackStates,
+  setWritebackStates,
   onChanged,
 }: HealthMetricTogglesArgs) {
   const { t } = useTranslation();
@@ -53,9 +62,12 @@ export function useHealthMetricToggles({
           defaultValue: 'Health app settings',
         });
 
-  const isAllMetricsEnabled = HEALTH_METRICS.every(
-    (metric) => healthMetricStates[metric.stateKey]
-  );
+  // "Enable All" covers both directions, so it is only "all" when the writeback
+  // switches are on too — otherwise the row would read as fully on while the
+  // diary was still not reaching the health store.
+  const isAllMetricsEnabled =
+    HEALTH_METRICS.every((metric) => healthMetricStates[metric.stateKey]) &&
+    WRITEBACK_METRICS.every((metric) => writebackStates[metric.id]);
 
   const toggleMetric = async (
     metric: HealthMetric,
@@ -142,11 +154,17 @@ export function useHealthMetricToggles({
     HEALTH_METRICS.forEach((metric) => {
       newHealthMetricStates[metric.stateKey] = newValue;
     });
+    const newWritebackStates: Record<string, boolean> = {};
+    WRITEBACK_METRICS.forEach((metric) => {
+      newWritebackStates[metric.id] = newValue;
+    });
 
     if (newValue) {
+      // Every writeback write permission, not just the enabled ones: this is
+      // turning them all on, so all of them need asking for in the one sheet.
       const allPermissions = [
         ...HEALTH_METRICS.flatMap((metric) => metric.permissions),
-        ...enabledWritebackPermissions(writebackStates),
+        ...allWritebackPermissions(),
       ];
       addLog(
         `[HealthMetricToggles] Requesting permissions for all ${HEALTH_METRICS.length} metrics`,
@@ -169,6 +187,9 @@ export function useHealthMetricToggles({
           );
           HEALTH_METRICS.forEach((metric) => {
             newHealthMetricStates[metric.stateKey] = false;
+          });
+          WRITEBACK_METRICS.forEach((metric) => {
+            newWritebackStates[metric.id] = false;
           });
           addLog(
             '[HealthMetricToggles] Not all permissions were granted. Reverting "Enable All".',
@@ -198,6 +219,9 @@ export function useHealthMetricToggles({
         HEALTH_METRICS.forEach((metric) => {
           newHealthMetricStates[metric.stateKey] = false;
         });
+        WRITEBACK_METRICS.forEach((metric) => {
+          newWritebackStates[metric.id] = false;
+        });
         addLog(
           `[HealthMetricToggles] Error requesting all permissions: ${errorMessage}`,
           'ERROR'
@@ -213,6 +237,7 @@ export function useHealthMetricToggles({
     }
 
     setHealthMetricStates(newHealthMetricStates);
+    setWritebackStates(newWritebackStates);
 
     const saveErrors: string[] = [];
     for (const metric of HEALTH_METRICS) {
@@ -220,6 +245,18 @@ export function useHealthMetricToggles({
         await saveHealthPreference(
           metric.preferenceKey,
           newHealthMetricStates[metric.stateKey]
+        );
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        saveErrors.push(`${metric.id}: ${errorMessage}`);
+      }
+    }
+    for (const metric of WRITEBACK_METRICS) {
+      try {
+        await saveHealthPreference(
+          metric.preferenceKey,
+          newWritebackStates[metric.id]
         );
       } catch (error) {
         const errorMessage =

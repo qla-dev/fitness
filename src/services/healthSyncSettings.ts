@@ -23,7 +23,7 @@ import {
 import { saveBackgroundSyncEnabled } from './storage';
 import { addLog } from './LogService';
 import { getErrorMessage } from '../utils/errors';
-import { enabledWritebackPermissions } from './shared/healthPermissionSets';
+import { allWritebackPermissions } from './shared/healthPermissionSets';
 
 /** Every read metric's sync preference, keyed like the Sync screen's state. */
 export async function loadHealthMetricStates(): Promise<
@@ -37,9 +37,24 @@ export async function loadHealthMetricStates(): Promise<
   return states;
 }
 
+/**
+ * Whether the health integration is fully on — both directions.
+ *
+ * The startup protocol treats a false here as "not set up yet" and re-offers the
+ * Apple Health screen, so the writeback switches are included deliberately: a
+ * user whose diary is not reaching Apple Health has the same half-configured
+ * integration as one who is not reading from it, and should be shown the screen
+ * that fixes it.
+ */
 export async function areAllHealthMetricsEnabled(): Promise<boolean> {
   const states = await loadHealthMetricStates();
-  return HEALTH_METRICS.every((metric) => states[metric.stateKey]);
+  if (!HEALTH_METRICS.every((metric) => states[metric.stateKey])) return false;
+  for (const metric of WRITEBACK_METRICS) {
+    if ((await loadHealthPreference<boolean>(metric.preferenceKey)) !== true) {
+      return false;
+    }
+  }
+  return true;
 }
 
 const HEALTH_STARTUP_CONFIRMED_KEY = '@HealthKit:startupHealthConfirmed';
@@ -59,21 +74,26 @@ export async function confirmHealthStartup(): Promise<void> {
 }
 
 /**
- * Asks for every read metric's permission without changing which metrics sync.
- * On iOS this presents the system Health access sheet for any data type the
- * user has not answered yet (and nothing otherwise). Writeback permissions
- * already on are carried so the sheet cannot switch them off.
+ * Asks for every read metric's permission AND every writeback metric's write
+ * permission, without changing which metrics sync or write. On iOS this presents
+ * the system Health access sheet for any data type the user has not answered yet
+ * (and nothing otherwise).
+ *
+ * Both directions go in this one request because the sheet is the only chance to
+ * ask: it shows a row per unanswered type, and once the user confirms it, every
+ * type it displayed counts as answered. Asking for reads alone left writing
+ * unasked and unaskable — the later per-metric request in the Sync screen is a
+ * second sheet the user has to find, and until they do, writeback is authorized
+ * for nothing and quietly writes nothing.
+ *
+ * Asking is not enabling: the writeback opt-in preferences are not touched here
+ * and still default to off.
  */
 export async function requestAllHealthPermissions(): Promise<boolean> {
-  const writebackStates: Record<string, boolean> = {};
-  for (const metric of WRITEBACK_METRICS) {
-    writebackStates[metric.id] =
-      (await loadHealthPreference<boolean>(metric.preferenceKey)) === true;
-  }
   try {
     return await requestHealthPermissions([
       ...HEALTH_METRICS.flatMap((metric) => metric.permissions),
-      ...enabledWritebackPermissions(writebackStates),
+      ...allWritebackPermissions(),
     ]);
   } catch (error) {
     addLog(
@@ -85,8 +105,16 @@ export async function requestAllHealthPermissions(): Promise<boolean> {
 }
 
 /**
- * Turns on every read metric. Mirrors the Sync screen's "Enable All": metrics
- * are saved on only when the permission request reports success.
+ * Turns on every read metric AND every writeback metric. Mirrors the Apple
+ * Health screen's "Enable All": preferences are saved on only when the
+ * permission request above reports success.
+ *
+ * Writeback is included because the startup protocol sets up the app's health
+ * data flow, and it is only half set up if it can read: a workout logged in the
+ * diary would never reach Apple Health until the user went looking for a switch.
+ * Turning one off on the Apple Health screen means the integration is no longer
+ * fully on, so the startup protocol offers that screen again next launch — the
+ * same treatment a switched-off read metric already gets.
  */
 export async function enableAllHealthMetrics(): Promise<boolean> {
   const granted = await requestAllHealthPermissions();
@@ -99,6 +127,9 @@ export async function enableAllHealthMetrics(): Promise<boolean> {
   }
 
   for (const metric of HEALTH_METRICS) {
+    await saveHealthPreference(metric.preferenceKey, true);
+  }
+  for (const metric of WRITEBACK_METRICS) {
     await saveHealthPreference(metric.preferenceKey, true);
   }
   setupBackgroundDeliveryForEnabledMetrics().catch(() => {});

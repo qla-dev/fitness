@@ -20,6 +20,23 @@ import type {
  * direction that is switched off is never requested for.
  */
 
+/**
+ * Write permissions for EVERY writeback metric, enabled or not.
+ *
+ * The startup protocol asks with this rather than the enabled-only set below.
+ * Writeback metrics are off by default, so asking only for the enabled ones
+ * meant the startup sheet contained read rows and nothing else — iOS then had
+ * an answer for every type it had shown, so it never asked about writing again,
+ * and turning a writeback toggle on later hit `authorizationStatusFor` returning
+ * "not authorized" and silently wrote nothing.
+ *
+ * Asking for write access is not the same as enabling writeback: the per-metric
+ * opt-in preferences are untouched and still default to off. This only makes
+ * sure the permission exists by the time the user asks for the feature.
+ */
+export const allWritebackPermissions = (): PermissionRequest[] =>
+  WRITEBACK_METRICS.map((metric) => metric.permission);
+
 /** Write permissions for writeback metrics that are enabled, optionally scoped to record types. */
 export const enabledWritebackPermissions = (
   writebackStates: Record<string, boolean>,

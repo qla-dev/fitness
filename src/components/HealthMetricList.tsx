@@ -7,10 +7,25 @@ import MenuItem, { MenuItemDivider } from './MenuItem';
 import MenuItemIcon from './MenuItemIcon';
 import Switch from './ui/Switch';
 
-interface HealthMetricListProps {
-  metrics: HealthMetric[];
+/**
+ * What a row needs to draw itself and find its switch state.
+ *
+ * `HealthMetric` satisfies this as-is. Writeback metrics have no `stateKey` of
+ * their own — their preferences are keyed by `id` — so their caller spreads one
+ * in, which is why this is a structural type rather than `HealthMetric`.
+ */
+export interface ToggleableMetric {
+  id: string;
+  defaultLabel: string;
+  icon: HealthMetric['icon'];
+  /** Key into the states record passed alongside. */
+  stateKey: string;
+}
+
+interface HealthMetricListProps<T extends ToggleableMetric> {
+  metrics: T[];
   healthMetricStates: Record<string, boolean>;
-  onToggle: (metric: HealthMetric, newValue: boolean) => void;
+  onToggle: (metric: T, newValue: boolean) => void;
   /** Latest value per metric id, shown before the switch. */
   healthData?: Record<string, string>;
   isLoadingHealthData?: boolean;
@@ -22,14 +37,14 @@ interface HealthMetricListProps {
  * Health metrics as menu item rows: icon tile, name, latest value and the sync
  * switch, with the standard dividers between rows.
  */
-export default function HealthMetricList({
+export default function HealthMetricList<T extends ToggleableMetric>({
   metrics,
   healthMetricStates,
   onToggle,
   healthData,
   isLoadingHealthData,
   card = false,
-}: HealthMetricListProps) {
+}: HealthMetricListProps<T>) {
   const { t } = useTranslation();
 
   return (

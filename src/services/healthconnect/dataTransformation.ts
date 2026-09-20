@@ -720,6 +720,13 @@ const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
   },
 
   ExerciseSession: (rec, record, _metricConfig, output) => {
+    // Don't re-import a session qla.fit wrote. Exercise writeback inserts the
+    // diary's own sessions as ExerciseSessionRecords, and without this the next
+    // inbound sync reads them straight back as a second copy of every logged
+    // workout — the same feedback loop the Hydration and Nutrition transformers
+    // guard against. Worse than those two, because a writeback re-insert mints a
+    // fresh clientRecordId, so the import would add another row per edit.
+    if (isOwnRecord(rec)) return;
     if (!rec.startTime || !rec.endTime) return;
 
     const start = new Date(rec.startTime as string).getTime();

@@ -267,6 +267,11 @@ describe('removeWrittenData (cleanup)', () => {
       'Hydration',
       expect.objectContaining({ operator: 'before' })
     );
+    // Written workouts are ours too, so a purge has to reach them.
+    expect(mockDeleteByRange).toHaveBeenCalledWith(
+      'ExerciseSession',
+      expect.objectContaining({ operator: 'before' })
+    );
 
     const remaining = await AsyncStorage.getAllKeys();
     expect(remaining).not.toContain(
@@ -326,5 +331,141 @@ describe('removeWrittenData (cleanup)', () => {
     mockDeleteByRange.mockRejectedValueOnce(new Error('permission revoked'));
     const result = await removeWrittenData(null);
     expect(result).toEqual({ ok: false });
+  });
+});
+
+describe('exercise writeback', () => {
+  const session = {
+    type: 'individual',
+    id: 'ex1',
+    name: 'Morning Run',
+    exercise_id: 'x1',
+    duration_minutes: 20,
+    calories_burned: 180,
+    entry_date: '2026-06-01',
+    entry_time: '07:00',
+    distance: 4,
+    source: 'manual',
+    sets: [],
+    exercise_snapshot: null,
+    activity_details: [],
+    superset_group: null,
+  };
+
+  beforeEach(() => {
+    // jest.clearAllMocks() clears call history but NOT implementations, and the
+    // cursor suite above leaves insertRecords permanently rejecting with a quota
+    // error (mockRejectedValue, not ...Once) and isQuotaExceededError stuck at
+    // true. This is the first suite after it that actually inserts, so both are
+    // restored here rather than left to leak in.
+    mockInsert.mockResolvedValue([]);
+    const { isQuotaExceededError } = jest.requireMock(
+      '../../../src/services/healthconnect/index'
+    );
+    (isQuotaExceededError as jest.Mock).mockReturnValue(false);
+    mockGranted.mockResolvedValue([
+      { recordType: 'ExerciseSession', accessType: 'write' },
+    ]);
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [session],
+    });
+  });
+
+  it('writes a logged activity as an ExerciseSession record', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    await writebackPhase(['2026-06-01']);
+
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    const [record] = mockInsert.mock.calls[0][0];
+    expect(record).toMatchObject({
+      recordType: 'ExerciseSession',
+      exerciseType: 56, // Health Connect EXERCISE_TYPE_RUNNING
+      title: 'Morning Run',
+    });
+    expect(new Date(record.startTime)).toEqual(new Date(2026, 5, 1, 7, 0, 0, 0));
+    expect(new Date(record.endTime)).toEqual(new Date(2026, 5, 1, 7, 20, 0, 0));
+    expect(record.metadata.clientRecordId).toContain('sparky-exercise-ex1-');
+    expect(store['writebackExerciseSessionIds:2026-06-01']).toEqual([
+      record.metadata.clientRecordId,
+    ]);
+  });
+
+  it('writes a grouped strength workout as one strength-training session', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [
+        {
+          type: 'preset',
+          id: 'p1',
+          name: 'Leg Day',
+          entry_date: '2026-06-01',
+          source: 'manual',
+          total_duration_minutes: 50,
+          exercises: [
+            { calories_burned: 200, distance: null, entry_time: '17:00' },
+          ],
+          activity_details: [],
+        },
+      ],
+    });
+    await writebackPhase(['2026-06-01']);
+
+    const [record] = mockInsert.mock.calls[0][0];
+    expect(record).toMatchObject({
+      exerciseType: 70, // EXERCISE_TYPE_STRENGTH_TRAINING
+      title: 'Leg Day',
+    });
+  });
+
+  it('skips sessions that came in from a provider, so sync does not echo', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [{ ...session, source: 'HealthConnect' }],
+    });
+    await writebackPhase(['2026-06-01']);
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('skips the metric when exercise write permission is not granted', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockGranted.mockResolvedValue([
+      { recordType: 'Nutrition', accessType: 'write' },
+    ]);
+    await writebackPhase(['2026-06-01']);
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it("deletes the previous run's session ids before inserting fresh ones", async () => {
+    prefs({
+      writebackExerciseEnabled: true,
+      'writebackExerciseSessionIds:2026-06-01': ['old-id'],
+    });
+    await writebackPhase(['2026-06-01']);
+    expect(mockDelete).toHaveBeenCalledWith(
+      'ExerciseSession',
+      [],
+      ['old-id']
+    );
+  });
+
+  it('skips an unchanged day on the next run', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    await writebackPhase(['2026-06-01']);
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    await writebackPhase(['2026-06-01']);
+    expect(mockInsert).toHaveBeenCalledTimes(1); // content signature matched
+  });
+
+  it('tolerates a summary with no exerciseSessions array', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({ foodEntries: [], waterIntake: 0 });
+    await expect(writebackPhase(['2026-06-01'])).resolves.toBe(true);
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 });

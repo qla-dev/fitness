@@ -17,6 +17,15 @@ interface UseExerciseHistoryOptions {
   enabled?: boolean;
   /** Only sessions containing this exercise (server-side filter). */
   exerciseId?: string;
+  /**
+   * Refetch when the screen regains focus. On by default, but this hook's
+   * refetch is a `resetQueries`, which throws away every page loaded so far and
+   * refetches page 1 — and the focus cooldown starts elapsed, so it fires on the
+   * FIRST focus too, right after the initial fetch. A screen that exists to page
+   * through the whole history pays for that twice over and loses the user's
+   * scroll position, so it opts out.
+   */
+  refetchOnFocus?: boolean;
 }
 
 interface UseExerciseHistoryReturn {
@@ -33,7 +42,7 @@ interface UseExerciseHistoryReturn {
 export function useExerciseHistory(
   options: UseExerciseHistoryOptions = {}
 ): UseExerciseHistoryReturn {
-  const { enabled = true, exerciseId } = options;
+  const { enabled = true, exerciseId, refetchOnFocus = true } = options;
   const queryClient = useQueryClient();
   const lastResetTokenRef = useRef(0);
 
@@ -91,7 +100,7 @@ export function useExerciseHistory(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- spreading `query` causes infinite re-renders; stable sub-properties are sufficient
   }, [query.fetchNextPage, query.hasNextPage, query.isFetching]);
 
-  useRefetchOnFocus(refetch, enabled);
+  useRefetchOnFocus(refetch, enabled && refetchOnFocus);
 
   return {
     sessions,

@@ -82,7 +82,9 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
       },
     ],
   }),
-  saveWorkoutSample: jest.fn().mockResolvedValue({}),
+  // Returns the saved workout proxy: exercise writeback reads .uuid off it to
+  // track what it wrote, and a bare {} would make those assertions test nothing.
+  saveWorkoutSample: jest.fn().mockResolvedValue({ uuid: 'hk-workout-uuid' }),
   deleteObjects: jest.fn().mockResolvedValue(0),
   // Default sharingAuthorized (2) so unrelated suites touching the healthkit module
   // don't change behavior; the writeback partial-auth test overrides per-type.

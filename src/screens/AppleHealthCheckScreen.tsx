@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -27,8 +30,12 @@ import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import BottomSheetPicker from '../components/BottomSheetPicker';
+import DateRangeSheet, {
+  type DateRangeSheetRef,
+} from '../components/DateRangeSheet';
 import HealthMetricList from '../components/HealthMetricList';
 import { useScreenHeader } from '../hooks/useScreenHeader';
+import { useWritebackToggles } from '../hooks/useWritebackToggles';
 import { useSyncHealthData } from '../hooks';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
 import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
@@ -61,7 +68,12 @@ import {
   HEALTH_METRICS,
   getHealthCategoryLabel,
 } from '../HealthMetrics';
-import { WRITEBACK_METRICS } from '../WritebackMetrics';
+import {
+  WRITEBACK_METRICS,
+  type WritebackDateRange,
+} from '../WritebackMetrics';
+import { removeWrittenData } from '../services/writeback';
+import { addLog } from '../services/LogService';
 import { formatLocalizedNumber } from '../localization';
 import { useSyncProgress } from '../hooks/useSyncProgress';
 import type { RootStackScreenProps } from '../types/navigation';
@@ -119,6 +131,9 @@ function HealthHeroIcon() {
 
 const FINISHING_ROTATION_MS = 4000;
 
+/** Remove-scope choices in the writeback section's bottom-sheet menu. */
+type RemoveScope = 'all' | 'range';
+
 const metricsByCategory = CATEGORY_ORDER.map((category) => ({
   category,
   metrics: HEALTH_METRICS.filter(
@@ -169,6 +184,7 @@ export default function AppleHealthCheckScreen({
   const [isLoadingHealthData, setIsLoadingHealthData] = useState(true);
   const [dataRefreshKey, setDataRefreshKey] = useState(0);
   const refreshData = () => setDataRefreshKey((key) => key + 1);
+  const dateRangeSheetRef = useRef<DateRangeSheetRef>(null);
 
   const syncMutation = useSyncHealthData({ onSuccess: refreshData });
   const { isAllMetricsEnabled, toggleMetric, toggleAllMetrics } =
@@ -176,8 +192,98 @@ export default function AppleHealthCheckScreen({
       healthMetricStates,
       setHealthMetricStates,
       writebackStates,
+      setWritebackStates,
       onChanged: refreshData,
     });
+  const { toggleWriteback } = useWritebackToggles({
+    healthMetricStates,
+    setWritebackStates,
+  });
+
+  // HealthMetricList keys each row's switch by `stateKey`; writeback preferences
+  // are keyed by `id`, so the rows carry one pointing at themselves. The spread
+  // keeps every WritebackMetric field, so onToggle still hands the hook a whole
+  // metric (permission and preferenceKey included).
+  const writebackRows = WRITEBACK_METRICS.map((metric) => ({
+    ...metric,
+    stateKey: metric.id,
+  }));
+
+  const writebackStoreName =
+    Platform.OS === 'android'
+      ? t('healthSync.healthConnect', { defaultValue: 'Health Connect' })
+      : t('healthSync.appleHealth', { defaultValue: 'Apple Health' });
+
+  // Delete written data, then surface the outcome honestly: success, a warning when
+  // some records couldn't be deleted (partial), or an error if it threw. A full purge
+  // (range === null) is a rollback, so reset the toggles locally to match the prefs.
+  const doRemoveWritebackData = async (
+    range: WritebackDateRange | null
+  ): Promise<void> => {
+    try {
+      const { ok } = await removeWrittenData(range);
+      if (range === null) setWritebackStates({});
+      Toast.show({
+        type: ok ? 'success' : 'error',
+        text1: ok
+          ? t('syncScreen.removal.removed', { defaultValue: 'Removed' })
+          : t('syncScreen.removal.partial', {
+              defaultValue: 'Partially removed',
+            }),
+        text2: ok
+          ? t('syncScreen.removal.deleted', {
+              defaultValue: 'Deleted qla.fit data from {{store}}.',
+              store: writebackStoreName,
+            })
+          : t('syncScreen.removal.partialMessage', {
+              defaultValue: "Some records couldn't be deleted from {{store}}.",
+              store: writebackStoreName,
+            }),
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      addLog(
+        `[AppleHealthCheck] Failed to remove writeback data: ${errorMessage}`,
+        'ERROR'
+      );
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', { defaultValue: 'Error' }),
+        text2: t('syncScreen.removal.errorMessage', {
+          defaultValue: 'Could not remove data from {{store}}.',
+          store: writebackStoreName,
+        }),
+      });
+    }
+  };
+
+  // Full purge → confirm (it's destructive and turns writeback off).
+  const handleRemoveAllData = (): void => {
+    Alert.alert(
+      t('syncScreen.removal.confirmTitle', {
+        defaultValue: 'Remove all {{store}} data',
+        store: writebackStoreName,
+      }),
+      t('syncScreen.removal.confirmMessage', {
+        defaultValue:
+          'Delete every nutrition, hydration and workout record qla.fit wrote to {{store}}, and turn writeback off? Your qla.fit diary and records from other apps are not affected.',
+        store: writebackStoreName,
+      }),
+      [
+        {
+          text: t('common.cancel', { defaultValue: 'Cancel' }),
+          style: 'cancel',
+        },
+        {
+          text: t('common.delete', { defaultValue: 'Delete' }),
+          style: 'destructive',
+          onPress: () => void doRemoveWritebackData(null),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -609,7 +715,77 @@ export default function AppleHealthCheckScreen({
             />
           </View>
         ))}
+
+        {/* Writeback closes the loop the groups above open: everything before
+            this reads FROM the health store, these three write back TO it. One
+            heading rather than the metrics' own Nutrition/Activity categories,
+            which would print section names the read half already used and give
+            no clue the direction had flipped. */}
+        <View className="mb-4">
+          <Text className="px-4 pb-2 text-xs font-bold text-text-secondary uppercase tracking-wider">
+            {t('appleHealthCheck.writebackHeading', {
+              defaultValue: 'Write to {{store}}',
+              store: writebackStoreName,
+            })}
+          </Text>
+          <HealthMetricList
+            card
+            metrics={writebackRows}
+            healthMetricStates={writebackStates}
+            onToggle={(metric, value) => void toggleWriteback(metric, value)}
+          />
+          <Text className="px-4 pt-2 text-xs text-text-muted">
+            {t('appleHealthCheck.writebackHint', {
+              defaultValue:
+                'Sends what you log in qla.fit out to {{store}}. Entries imported from {{store}} are never sent back.',
+              store: writebackStoreName,
+            })}
+          </Text>
+          <BottomSheetPicker<RemoveScope>
+            value={'' as RemoveScope}
+            title={t('healthSync.removeFrom', {
+              defaultValue: 'Remove from {{store}}',
+              store: writebackStoreName,
+            })}
+            options={[
+              {
+                label: t('healthSync.allTime', { defaultValue: 'All time' }),
+                value: 'all',
+              },
+              {
+                label: t('healthSync.pickDateRange', {
+                  defaultValue: 'Pick a date range…',
+                }),
+                value: 'range',
+              },
+            ]}
+            onSelect={(scope) =>
+              scope === 'all'
+                ? handleRemoveAllData()
+                : dateRangeSheetRef.current?.present()
+            }
+            renderTrigger={({ onPress }) => (
+              <Button
+                variant="ghost"
+                onPress={onPress}
+                className="mt-1 py-1 px-4 self-start"
+              >
+                <Text className="text-sm font-medium text-text-danger-subtle">
+                  {t('healthSync.removeData', {
+                    defaultValue: 'Remove qla.fit data from {{store}}',
+                    store: writebackStoreName,
+                  })}
+                </Text>
+              </Button>
+            )}
+          />
+        </View>
       </ScrollView>
+
+      <DateRangeSheet
+        ref={dateRangeSheetRef}
+        onConfirm={(from, to) => void doRemoveWritebackData({ from, to })}
+      />
 
       <View
         className="px-5 pt-3 bg-background border-t border-border"

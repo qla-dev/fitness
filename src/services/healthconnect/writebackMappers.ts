@@ -2,6 +2,7 @@ import {
   RecordingMethod,
   type NutritionRecord,
   type HydrationRecord,
+  type ExerciseSessionRecord,
 } from 'react-native-health-connect';
 import type { FoodEntry } from '../../types/foodEntries';
 import {
@@ -11,6 +12,8 @@ import {
   tidyNumber,
 } from './dataTransformation';
 import { toLocalDateString, addDays } from '../../utils/dateUtils';
+import type { WritebackActivityKind } from '../shared/writebackActivityTypes';
+import type { WritebackWorkout } from '../shared/writebackExercise';
 
 // HC Mass units we emit (subset of the library's Mass['unit']).
 type MassUnit = 'grams' | 'milligrams' | 'micrograms';
@@ -228,3 +231,70 @@ export const computeWritebackDates = (
   }
   return dates;
 };
+
+// --- Exercise ---
+
+/**
+ * Platform-neutral activity kind → Health Connect ExerciseType.
+ *
+ * The inverse of the read side's EXERCISE_MAP. Health Connect's vocabulary is
+ * movement-flavoured where HealthKit's is sport-flavoured, so two kinds take the
+ * nearest session-level category rather than a literal match: core work is
+ * filed as Calisthenics (HC's only body-weight *session* type — Plank and
+ * Crunch are single movements), and a generic swim as Swimming (Pool), the
+ * safer of HC's two swims for an entry that never said it was open water.
+ */
+export const EXERCISE_TYPE_BY_KIND: Record<WritebackActivityKind, number> = {
+  running: 56,
+  walking: 79,
+  hiking: 37,
+  cycling: 8, // Biking
+  swimming: 74, // Swimming (Pool)
+  rowing: 53,
+  elliptical: 25,
+  stairClimbing: 68,
+  jumpRope: 41,
+  hiit: 36,
+  boxing: 11,
+  martialArts: 44,
+  dancing: 16,
+  yoga: 83,
+  pilates: 48,
+  stretching: 71,
+  coreTraining: 13, // Calisthenics
+  strengthTraining: 70,
+  other: 0, // Other Workout — HC shows the title instead
+};
+
+/** Per-session id for one write run (session id + version → unique per run). */
+export const exerciseClientRecordId = (
+  sessionId: string,
+  version: number
+): string =>
+  `${SPARKY_CLIENT_RECORD_PREFIX}exercise-${sessionId}-${version}`;
+
+/**
+ * Diary session descriptor → an ExerciseSessionRecord.
+ *
+ * Health Connect models a session as a typed time window with a title and
+ * nothing else — calories and distance are separate record types there, not
+ * fields on the session (HealthKit carries them as workout totals, which is why
+ * only that side writes them). Writing them here would need two more write
+ * permissions and would double-count against the phone's own distance and
+ * active-energy data, so the session record is deliberately all we write.
+ */
+export const workoutToExerciseRecord = (
+  workout: WritebackWorkout,
+  clientRecordVersion: number
+): ExerciseSessionRecord => ({
+  recordType: 'ExerciseSession',
+  exerciseType: EXERCISE_TYPE_BY_KIND[workout.kind],
+  title: workout.title,
+  startTime: workout.start.toISOString(),
+  endTime: workout.end.toISOString(),
+  metadata: {
+    clientRecordId: exerciseClientRecordId(workout.id, clientRecordVersion),
+    clientRecordVersion,
+    recordingMethod: RecordingMethod.RECORDING_METHOD_MANUAL_ENTRY,
+  },
+});

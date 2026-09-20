@@ -301,8 +301,8 @@ export type RootStackParamList = {
    */
   GoalDetail: { metric: ActivityGoalKey | HealthTrendKey; date: string };
   Chat: undefined;
+  ActivityHistory: undefined;
   Logs: undefined;
-  Sync: undefined;
   ImportHistory: undefined;
   MeasurementsAdd: { date?: string } | undefined;
   /**

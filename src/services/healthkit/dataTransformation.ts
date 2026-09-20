@@ -481,6 +481,11 @@ const ACTIVITY_MAP: Record<number, string> = {
   82: 'Swim Bike Run',
   83: 'Transition',
   84: 'Underwater Diving',
+  // HKWorkoutActivityTypeOther. Not a small ordinal like the rest, and not
+  // optional: any app may file a workout under it (qla.fit's own writeback does,
+  // for an activity whose sport it could not identify), and without an entry
+  // here every one of them reads back as "Workout type 3000".
+  3000: 'Other',
 } as const;
 
 // Food correlations carry only an instant, not a meal label, so we infer the meal type
@@ -578,6 +583,13 @@ const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
   },
 
   Workout: (rec, record, _metricConfig, output) => {
+    // Don't re-import a workout qla.fit wrote. Exercise writeback saves the
+    // diary's own sessions as HKWorkouts, and without this the next inbound sync
+    // reads them straight back as a second copy of every logged workout — the
+    // same feedback loop the Hydration and Nutrition transformers guard against.
+    // Worse than those two, because a writeback re-save allocates a fresh UUID,
+    // so the import (which keys on source_id) would add another row per edit.
+    if (isOwnRecord(rec)) return;
     if (!rec.startTime || !rec.endTime) return;
 
     const activityType = rec.activityType as number | undefined;

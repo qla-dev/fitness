@@ -1,4 +1,3 @@
-import SyncScreen from '../screens/SyncScreen';
 import ImportHistoryScreen from '../screens/ImportHistoryScreen';
 import LogScreen from '../screens/LogScreen';
 import FoodSearchScreen from '../screens/FoodSearchScreen';
@@ -65,6 +64,7 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import CycleSettingsScreen from '../screens/CycleSettingsScreen';
 import CycleOnboardingScreen from '../screens/CycleOnboardingScreen';
 import SetupWizardScreen from '../screens/SetupWizardScreen';
+import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
 import AppleHealthCheckScreen from '../screens/AppleHealthCheckScreen';
 import CycleHubScreen from '../screens/CycleHubScreen';
 import CycleLogModalScreen from '../screens/CycleLogModalScreen';
@@ -121,7 +121,6 @@ export const SafeFastingDetail = withErrorBoundary(FastingDetailScreen, 'Fasting
 export const SafeSleepDetail = withErrorBoundary(SleepDetailScreen, 'SleepDetail', { canGoBack: true });
 export const SafeGoalDetail = withErrorBoundary(GoalDetailScreen, 'GoalDetail', { canGoBack: true });
 export const SafeLogs = withErrorBoundary(LogScreen, 'Logs', { canGoBack: true });
-export const SafeSync = withErrorBoundary(SyncScreen, 'Sync', { canGoBack: true });
 export const SafeImportHistory = withErrorBoundary(ImportHistoryScreen, 'ImportHistory', { canGoBack: true });
 export const SafeMeasurementsAdd = withErrorBoundary(MeasurementsAddScreen, 'MeasurementsAdd', { canGoBack: true });
 export const SafeProgressPhotos = withErrorBoundary(ProgressPhotosScreen, 'ProgressPhotos', { canGoBack: true });
@@ -162,6 +161,7 @@ export const SafeFamilyCopyReview = withErrorBoundary(FamilyCopyReviewScreen, 'F
 export const SafeCycleSettings = withErrorBoundary(CycleSettingsScreen, 'CycleSettings', { canGoBack: true });
 export const SafeCycleOnboarding = withErrorBoundary(CycleOnboardingScreen, 'CycleOnboarding', { canGoBack: true });
 export const SafeSetupWizard = withErrorBoundary(SetupWizardScreen, 'SetupWizard', { canGoBack: true });
+export const SafeActivityHistory = withErrorBoundary(ActivityHistoryScreen, 'ActivityHistory', { canGoBack: true });
 export const SafeAppleHealthCheck = withErrorBoundary(AppleHealthCheckScreen, 'AppleHealthCheck', { canGoBack: true });
 export const SafeCycleHub = withErrorBoundary(CycleHubScreen, 'CycleHub', { canGoBack: true });
 export const SafeCycleLogModal = withErrorBoundary(CycleLogModalScreen, 'CycleLogModal', { canGoBack: true });

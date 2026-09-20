@@ -32,6 +32,13 @@ interface SwipeableExerciseRowProps {
   getImageSource?: GetImageSource;
   weightUnit?: 'kg' | 'lbs';
   distanceUnit?: 'km' | 'miles';
+  /**
+   * Row content to render in place of the built-in thumbnail-and-subtitle
+   * layout, keeping this component's swipe-to-delete and long-press. The Home
+   * card passes its compact row through so that changing how an activity LOOKS
+   * never costs the user the gesture for deleting one.
+   */
+  children?: React.ReactNode;
 }
 
 const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
@@ -41,6 +48,7 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
   getImageSource,
   weightUnit = 'kg',
   distanceUnit = 'km',
+  children,
 }) => {
   const { t } = useTranslation();
   const swipeableRef = useRef<SwipeableMethods | null>(null);
@@ -131,6 +139,7 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
           onPress={onPress}
           onLongPress={handleLongPress}
         >
+          {children ?? (
           <View className="flex-row items-center">
             {/* Kept in step with the food row's thumbnail so the two diary
                 row types line up rather than differing by a few pixels. */}
@@ -181,6 +190,7 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
               </Text>
             </View>
           </View>
+          )}
         </Pressable>
       </ReanimatedSwipeable>
     </Animated.View>

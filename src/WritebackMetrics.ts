@@ -7,11 +7,13 @@ import type { ImageSourcePropType } from 'react-native';
 // (healthkit/writeback.ts), resolved via the top-level ./writeback shim. Off by default.
 //
 // Mirrors the read metrics' shape (icon + category) so the UI can group them in
-// the same accordion style. We start with Nutrition + Hydration; a follow-up PR
-// will extend writeback to the other readable metrics (which is why this is a
-// category-grouped list rather than a flat pair).
+// the same accordion style.
 
-export type WritebackMetricId = 'nutrition' | 'hydration';
+export type WritebackMetricId = 'nutrition' | 'hydration' | 'exerciseSession';
+
+/** OS health-store record types writeback creates. Each is also the delete scope
+ *  used by removeWrittenData, so a new id must bring its record type with it. */
+export type WritebackRecordType = 'Nutrition' | 'Hydration' | 'ExerciseSession';
 
 /** Inclusive local-calendar-day range (YYYY-MM-DD) for a targeted writeback removal.
  *  `null` removal means "all time" (full purge). */
@@ -33,8 +35,8 @@ export interface WritebackMetric {
   /** loadHealthPreference/saveHealthPreference key (under the @HealthConnect prefix on
    *  Android, @HealthKit on iOS — the platform-resolved preferences module owns it). */
   preferenceKey: string;
-  recordType: 'Nutrition' | 'Hydration';
-  permission: { accessType: 'write'; recordType: 'Nutrition' | 'Hydration' };
+  recordType: WritebackRecordType;
+  permission: { accessType: 'write'; recordType: WritebackRecordType };
   icon: ImageSourcePropType;
   category: string;
 }
@@ -60,7 +62,17 @@ export const WRITEBACK_METRICS: WritebackMetric[] = [
     icon: require('../assets/icons/health-metrics/hydration.png'),
     category: 'Nutrition',
   },
+  {
+    // Shares the read metric's id so getHealthMetricLabel resolves the same
+    // "Exercise Session" label for both directions — the user sees one name for
+    // one thing, read or written. The preference keys stay distinct.
+    id: 'exerciseSession',
+    labelKey: 'healthMetrics.exerciseSession',
+    defaultLabel: 'Exercise Session',
+    preferenceKey: 'writebackExerciseEnabled',
+    recordType: 'ExerciseSession',
+    permission: { accessType: 'write', recordType: 'ExerciseSession' },
+    icon: require('../assets/icons/health-metrics/exercise_session.png'),
+    category: 'Activity',
+  },
 ];
-
-/** Order categories render in (mirrors the read section's grouping). */
-export const WRITEBACK_CATEGORY_ORDER: string[] = ['Nutrition'];

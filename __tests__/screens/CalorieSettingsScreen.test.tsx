@@ -50,11 +50,6 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));
 
-jest.mock('../../src/components/HealthSourceLabel', () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: () => false,
 }));

@@ -10,6 +10,8 @@ import {
   tidyNumber,
 } from '../shared/dataTransformation';
 import { toLocalDateString, addDays } from '../../utils/dateUtils';
+import type { WritebackActivityKind } from '../shared/writebackActivityTypes';
+import type { WritebackWorkout } from '../shared/writebackExercise';
 
 // Pure mappers: qla.fit diary data → HealthKit write descriptors. No HealthKit
 // I/O here so this stays unit-testable. The orchestrator (writeback.ts) performs the
@@ -280,3 +282,79 @@ export const computeWritebackDates = (
   }
   return dates;
 };
+
+// --- Exercise ---
+
+/**
+ * Platform-neutral activity kind → HKWorkoutActivityType.
+ *
+ * The inverse of the read side's ACTIVITY_MAP, restricted to the kinds
+ * writebackActivityTypes resolves. `other` is HKWorkoutActivityTypeOther (3000,
+ * not a small ordinal like the rest) — Apple Health renders it as a plain
+ * workout carrying our title, which is the honest answer for an activity whose
+ * sport we could not identify.
+ *
+ * Literals rather than the library's WorkoutActivityType enum, matching the
+ * read-side ACTIVITY_MAP and the Health Connect mapper: the enum is a runtime
+ * VALUE, so naming it here would make this module — and everything that pulls
+ * it in, including healthkit/index — fail to load wherever the HealthKit module
+ * is mocked without it. The values are fixed by Apple and cannot drift.
+ */
+export const WORKOUT_ACTIVITY_TYPE_BY_KIND: Record<
+  WritebackActivityKind,
+  number
+> = {
+  running: 37,
+  walking: 52,
+  hiking: 24,
+  cycling: 13,
+  swimming: 46,
+  rowing: 35,
+  elliptical: 16,
+  stairClimbing: 44,
+  jumpRope: 64,
+  hiit: 63, // highIntensityIntervalTraining
+  boxing: 8,
+  martialArts: 28,
+  dancing: 14, // dance
+  yoga: 57,
+  pilates: 66,
+  stretching: 62, // flexibility
+  coreTraining: 59,
+  strengthTraining: 50, // traditionalStrengthTraining
+  other: 3000,
+};
+
+/** HKWorkout's own sample type — the delete scope for everything we write here. */
+export const WORKOUT_TYPE_IDENTIFIER = 'HKWorkoutTypeIdentifier' as const;
+
+export interface WorkoutSampleDescriptor {
+  /** Diary session id, for the content signature and the log line. */
+  sessionId: string;
+  /** HKWorkoutActivityType raw value (see WORKOUT_ACTIVITY_TYPE_BY_KIND). */
+  activityType: number;
+  title: string;
+  start: Date;
+  end: Date;
+  /** WorkoutTotals.energyBurned — kcal, the unit HealthKit reads it in. */
+  energyBurned?: number;
+  /** WorkoutTotals.distance — metres. */
+  distance?: number;
+}
+
+/** Diary session descriptor → the arguments saveWorkoutSample takes. */
+export const workoutToSampleDescriptor = (
+  workout: WritebackWorkout
+): WorkoutSampleDescriptor => ({
+  sessionId: workout.id,
+  activityType: WORKOUT_ACTIVITY_TYPE_BY_KIND[workout.kind],
+  title: workout.title,
+  start: workout.start,
+  end: workout.end,
+  ...(workout.energyKcal !== undefined
+    ? { energyBurned: tidyNumber(workout.energyKcal) }
+    : {}),
+  ...(workout.distanceMeters !== undefined
+    ? { distance: tidyNumber(workout.distanceMeters) }
+    : {}),
+});

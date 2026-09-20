@@ -163,11 +163,14 @@ npx expo prebuild --clean
 
 ## Health Writeback
 
-- Writeback sends Sparky diary nutrition and hydration back to Apple Health on iOS and Health Connect on Android.
+- Writeback sends Sparky diary nutrition, hydration and logged workouts back to Apple Health on iOS and Health Connect on Android.
 - Platform split: `services/writeback.ios.ts` re-exports `healthkit/writeback.ts`; `services/writeback.ts` re-exports `healthconnect/writeback.ts`.
 - `runWriteback()` runs after inbound sync in its own try/catch. Writeback failures must not block inbound sync results.
-- Writeback is opt-in per metric and gated on write permissions. Android production permissions include `WRITE_NUTRITION` and `WRITE_HYDRATION`; other write permissions are dev-only.
-- Imported health entries are skipped to avoid echo loops. iOS sets the app bundle id as the own-source guard; Android relies on source metadata.
+- Writeback is opt-in per metric and gated on write permissions. Android production permissions include `WRITE_NUTRITION`, `WRITE_HYDRATION` and `WRITE_EXERCISE`; other write permissions are dev-only.
+- Imported health entries are skipped to avoid echo loops. iOS sets the app bundle id as the own-source guard; Android relies on source metadata. Exercise sessions use `canEditGroupedWorkout(session.source)` — the app's existing "is this ours" test (manual / sparky / workout plan / legacy null) — so the guard cannot drift from it.
+- Exercise writeback reduces a day's sessions in `services/shared/writebackExercise.ts` (echo guard, duration, totals, clock window) and resolves a platform-neutral activity kind in `services/shared/writebackActivityTypes.ts`; each platform's `writebackMappers` turns that kind into its own enum. Both enum tables are numeric literals, never the library enum imported as a value — `healthkit/index` pulls the mapper in, so a value import breaks every suite that mocks the HealthKit module without it.
+- A grouped preset session writes as ONE workout, typed from its own name and defaulting to strength training; an individual entry is typed from its name then its category. Sessions with no duration are dropped, and a window that would end in the future is slid back to end at `now` — both stores reject a future-dated workout.
+- iOS carries calories and distance as HKWorkout totals. Health Connect models those as separate record types rather than fields on `ExerciseSessionRecord`, so Android writes the session only; adding them there would need `WRITE_ACTIVE_CALORIES_BURNED` / `WRITE_DISTANCE` and would double-count against the phone's own totals.
 - Per-day content-signature hashing skips unchanged days. Each run deletes prior tracked UUIDs then saves fresh records; failed deletes are retried next run.
 - `HealthDataWriteback` on `SyncScreen` owns the remove flow. `BottomSheetPicker` offers all-time purge or date range through `DateRangeSheet`; both call `removeWrittenData(range)` and clear tracking.
 - Inbound iOS nutrition sync reads food correlations with a rolling nutrition lookback and upserts by `(source, source_id)` server-side.
@@ -341,7 +344,7 @@ const androidService = require('../../src/services/healthConnectService.ts');
 ```
 
 - Health sync changes: rerun `useSyncHealthData`, `backgroundSyncService`, `healthDataApi`, `healthConnectService`, `healthConnectService.ios`, and relevant `services/healthconnect` / `services/healthkit` tests.
-- Health writeback changes: rerun `healthconnect/writeback`, `healthkit/writeback`, writeback mapper tests, `HealthDataWriteback`, `backgroundSyncService`, notifications where relevant, and sync tests.
+- Health writeback changes: rerun `healthconnect/writeback`, `healthkit/writeback`, writeback mapper tests, `shared/writebackExercise`, `shared/writebackActivityTypes`, `HealthDataWriteback`, `backgroundSyncService`, notifications where relevant, and sync tests.
 - Food library/form/unit/barcode changes: rerun `FoodForm`, `FoodUnitSelectorSheet`, `LibraryScreen`, `FoodDetailScreen`, `FoodFormScreen`, `EditBarcodeScreen`, `useFoodsLibrary`, `useFoodVariants`, `useDeleteFood`, `foodsApi`, `foodDetails`, and unit conversion tests.
 - Meal template/logged-meal changes: rerun meals library/detail/add/edit screens, `MealTypeDetailScreen`, copy meal tests, food search/entry picker tests, meal hooks/API tests, and meal builder/nutrition utils.
 - Exercise/workout/preset changes: rerun exercise/preset library/detail/form/search/mutation tests, workout/activity form and draft tests, active workout store tests, rest-period tests, and `workoutSession` tests.

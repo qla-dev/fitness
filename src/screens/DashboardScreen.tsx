@@ -40,7 +40,7 @@ import DashboardActivityCard from '../components/DashboardActivityCard';
 import type { ActivityGoalKey } from '../constants/activityGoals';
 import { emptyDailySummary } from '../services/dailySummaryService';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
-import ExerciseSummary from '../components/ExerciseSummary';
+import CompactActivityCard from '../components/CompactActivityCard';
 import FastingCard from '../components/FastingCard';
 import FastingGoalReconciler from '../components/FastingGoalReconciler';
 import Icon from '../components/Icon';
@@ -59,7 +59,6 @@ import {
   useWidgetSync,
 } from '../hooks';
 import { useCheckInPhotoDates } from '../hooks/useCheckInPhotos';
-import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useActiveWorkoutStore } from '../stores/activeWorkoutStore';
@@ -211,10 +210,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
 
   // Units and exercise thumbnails for the logged-workout card at the foot of
   // the screen; the same values the Diary used to resolve for it.
-  const weightUnit = (preferences?.default_weight_unit as 'kg' | 'lbs') ?? 'kg';
   const distanceUnit =
     (preferences?.default_distance_unit as 'km' | 'miles') ?? 'km';
-  const { getImageSource } = useExerciseImageSource();
   // Every Activities card drills into the same screen, differing only in which
   // metric it opens and which day it opens it for.
   const openGoal = useCallback(
@@ -462,16 +459,14 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             This is the same card the Diary used to carry, with the same
             rows, swipe-to-delete and tap targets — exercise is an activity,
             so it is logged here rather than on the Nutrition tab. */}
-        <ExerciseSummary
-          exerciseEntries={summary.exerciseEntries}
-          entryDate={selectedDate}
-          getImageSource={getImageSource}
-          weightUnit={weightUnit}
+        <CompactActivityCard
+          sessions={summary.exerciseEntries}
           distanceUnit={distanceUnit}
           onAddExercise={() =>
             addSheetRef.current?.present({ initialMenu: 'exercise' })
           }
-          onPressWorkout={(session) => {
+          onPressMore={() => navigation.navigate('ActivityHistory')}
+          onPressSession={(session) => {
             if (session.type === 'preset') {
               // The live workout's surface is the active screen; detail is
               // for reviewing past or planned sessions.

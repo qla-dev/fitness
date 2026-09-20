@@ -2441,3 +2441,41 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
     expect(result).toHaveLength(1);
   });
 });
+
+describe('own-app exclusion for exercise sessions (writeback loop guard)', () => {
+  const OWN = 'com.sparky.app';
+  afterEach(() => setOwnPackageName(null));
+
+  const session = (dataOrigin: string, id: string) => ({
+    startTime: '2024-01-15T08:00:00Z',
+    endTime: '2024-01-15T08:30:00Z',
+    exerciseType: 56, // running
+    title: 'Morning Run',
+    metadata: { id, dataOrigin },
+  });
+
+  test('drops a session this app wrote, keeps another app\u2019s', () => {
+    // Without this, exercise writeback would hand every logged workout straight
+    // back to the diary as a second, provider-sourced copy on the next sync.
+    setOwnPackageName(OWN);
+    const result = transformHealthRecords(
+      [session(OWN, 'ours'), session('com.other.app', 'theirs')],
+      {
+        recordType: 'ExerciseSession',
+        unit: 'min',
+        type: 'exercise_session',
+      }
+    );
+    expect(result).toHaveLength(1);
+    expect((result[0] as { source_id?: string }).source_id).toBe('theirs');
+  });
+
+  test('keeps our own sessions when no package name was injected', () => {
+    const result = transformHealthRecords([session(OWN, 'ours')], {
+      recordType: 'ExerciseSession',
+      unit: 'min',
+      type: 'exercise_session',
+    });
+    expect(result).toHaveLength(1);
+  });
+});

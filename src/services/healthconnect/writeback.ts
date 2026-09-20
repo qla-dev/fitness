@@ -19,11 +19,14 @@ import { loadLastWritebackTime, saveLastWritebackTime } from '../storage';
 import {
   foodEntryToNutritionRecord,
   waterMlToHydrationRecord,
+  workoutToExerciseRecord,
   computeWritebackDates,
 } from './writebackMappers';
+import { sessionsToWorkouts } from '../shared/writebackExercise';
 import {
   WRITEBACK_METRICS,
   type WritebackMetric,
+  type WritebackRecordType,
   type WritebackDateRange,
   type WritebackRemovalResult,
 } from '../../WritebackMetrics';
@@ -85,7 +88,7 @@ const saveWrittenSignature = (
 // Fresh ids each run sidestep both. Mirrors the read/Garmin provider pattern.
 const replaceTrackedRecords = async (
   previousIds: string[],
-  recordType: 'Nutrition' | 'Hydration',
+  recordType: WritebackRecordType,
   records: HealthConnectRecord[]
 ): Promise<void> => {
   if (previousIds.length > 0) {
@@ -145,6 +148,37 @@ const writableMetrics = async (
       );
     return ok;
   });
+};
+
+const writeExerciseForDate = async (
+  date: string,
+  summary: DailySummary,
+  version: number
+): Promise<void> => {
+  // sessionsToWorkouts drops provider-imported sessions (the echo guard), sessions
+  // with no duration, and anything that would land in the future.
+  const records = sessionsToWorkouts(
+    date,
+    summary.exerciseSessions ?? []
+  ).map((workout) => workoutToExerciseRecord(workout, version));
+
+  const signature = recordsSignature(records);
+  if (signature === (await loadWrittenSignature('ExerciseSession', date))) {
+    addLog(`[Writeback] Exercise ${date}: unchanged — skipped`, 'DEBUG');
+    return;
+  }
+
+  await replaceTrackedRecords(
+    await loadWrittenIds('ExerciseSession', date),
+    'ExerciseSession',
+    records
+  );
+  await saveWrittenIds('ExerciseSession', date, recordIds(records));
+  await saveWrittenSignature('ExerciseSession', date, signature);
+  addLog(
+    `[Writeback] Exercise ${date}: wrote ${records.length} workout(s)`,
+    'INFO'
+  );
 };
 
 const writeNutritionForDate = async (
@@ -258,6 +292,8 @@ export const writebackPhase = async (dates: string[]): Promise<boolean> => {
       try {
         if (metric.id === 'nutrition') {
           await writeNutritionForDate(date, summary, version);
+        } else if (metric.id === 'exerciseSession') {
+          await writeExerciseForDate(date, summary, version);
         } else {
           await writeHydrationForDate(date, summary, version);
         }

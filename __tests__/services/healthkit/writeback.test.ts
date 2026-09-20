@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   saveCorrelationSample,
   saveQuantitySample,
+  saveWorkoutSample,
   deleteObjects,
   authorizationStatusFor,
 } from '@kingstinct/react-native-healthkit';
@@ -40,6 +41,7 @@ jest.mock('../../../src/services/LogService', () => ({ addLog: jest.fn() }));
 // configure deterministic returns per test.
 const mockSaveCorrelation = saveCorrelationSample as jest.Mock;
 const mockSaveQuantity = saveQuantitySample as jest.Mock;
+const mockSaveWorkout = saveWorkoutSample as jest.Mock;
 const mockDeleteObjects = deleteObjects as jest.Mock;
 const mockAuthStatus = authorizationStatusFor as jest.Mock;
 const mockSummary = fetchDailySummary as jest.Mock;
@@ -51,6 +53,7 @@ const PROTEIN = 'HKQuantityTypeIdentifierDietaryProtein';
 const SODIUM = 'HKQuantityTypeIdentifierDietarySodium';
 const WATER = 'HKQuantityTypeIdentifierDietaryWater';
 const FOOD_CORRELATION = 'HKCorrelationTypeIdentifierFood';
+const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier';
 const SHARING_AUTHORIZED = 2;
 const SHARING_DENIED = 1;
 
@@ -371,6 +374,8 @@ describe('removeWrittenData (cleanup)', () => {
     };
     expect(mockDeleteObjects).toHaveBeenCalledWith(ENERGY, allTime);
     expect(mockDeleteObjects).toHaveBeenCalledWith(WATER, allTime);
+    // Written workouts are ours too, so a purge has to reach them.
+    expect(mockDeleteObjects).toHaveBeenCalledWith(WORKOUT_TYPE, allTime);
     expect(mockDeleteObjects).toHaveBeenCalledWith(FOOD_CORRELATION, allTime);
 
     const remaining = await AsyncStorage.getAllKeys();
@@ -433,5 +438,150 @@ describe('removeWrittenData (cleanup)', () => {
     mockDeleteObjects.mockRejectedValueOnce(new Error('denied'));
     const result = await removeWrittenData(null);
     expect(result).toEqual({ ok: false });
+  });
+});
+
+describe('exercise writeback', () => {
+  const session = {
+    type: 'individual',
+    id: 'ex1',
+    name: 'Morning Run',
+    exercise_id: 'x1',
+    duration_minutes: 20,
+    calories_burned: 180,
+    entry_date: '2026-06-01',
+    entry_time: '07:00',
+    distance: 4,
+    source: 'manual',
+    sets: [],
+    exercise_snapshot: null,
+    activity_details: [],
+    superset_group: null,
+  };
+
+  beforeEach(() => {
+    mockSaveWorkout.mockResolvedValue({ uuid: 'workout-1' });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [session],
+    });
+  });
+
+  it('writes a logged activity as an HKWorkout and tracks its UUID', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    await writebackPhase(['2026-06-01']);
+
+    expect(mockSaveWorkout).toHaveBeenCalledTimes(1);
+    const [activityType, quantities, start, end, totals, metadata] =
+      mockSaveWorkout.mock.calls[0];
+    expect(activityType).toBe(37); // HKWorkoutActivityType.running
+    expect(quantities).toEqual([]);
+    expect(start).toEqual(new Date(2026, 5, 1, 7, 0, 0, 0));
+    expect(end).toEqual(new Date(2026, 5, 1, 7, 20, 0, 0));
+    expect(totals).toEqual({ energyBurned: 180, distance: 4000 });
+    // The diary name reaches Apple Health's UI only through HKWorkoutBrandName.
+    expect(metadata).toMatchObject({ HKWorkoutBrandName: 'Morning Run' });
+    expect(store['writebackExerciseUuids:2026-06-01']).toEqual(['workout-1']);
+  });
+
+  it('writes a grouped strength workout as one traditional-strength HKWorkout', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [
+        {
+          type: 'preset',
+          id: 'p1',
+          name: 'Leg Day',
+          entry_date: '2026-06-01',
+          source: 'manual',
+          total_duration_minutes: 50,
+          exercises: [
+            { calories_burned: 200, distance: null, entry_time: '17:00' },
+          ],
+          activity_details: [],
+        },
+      ],
+    });
+    await writebackPhase(['2026-06-01']);
+
+    expect(mockSaveWorkout).toHaveBeenCalledTimes(1);
+    expect(mockSaveWorkout.mock.calls[0][0]).toBe(50); // traditionalStrengthTraining
+    expect(mockSaveWorkout.mock.calls[0][4]).toEqual({ energyBurned: 200 });
+    expect(mockSaveWorkout.mock.calls[0][5]).toMatchObject({
+      HKWorkoutBrandName: 'Leg Day',
+    });
+  });
+
+  it('skips sessions that came in from a provider, so sync does not echo', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [{ ...session, source: 'HealthKit' }],
+    });
+    await writebackPhase(['2026-06-01']);
+    expect(mockSaveWorkout).not.toHaveBeenCalled();
+  });
+
+  it('skips the metric when workout write permission is not granted', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockAuthStatus.mockImplementation((type: string) =>
+      type === WORKOUT_TYPE ? SHARING_DENIED : SHARING_AUTHORIZED
+    );
+    await writebackPhase(['2026-06-01']);
+    expect(mockSaveWorkout).not.toHaveBeenCalled();
+  });
+
+  it('replaces the previous run\u2019s workouts rather than piling duplicates up', async () => {
+    prefs({
+      writebackExerciseEnabled: true,
+      'writebackExerciseUuids:2026-06-01': ['old-workout'],
+    });
+    await writebackPhase(['2026-06-01']);
+    expect(mockDeleteObjects).toHaveBeenCalledWith(WORKOUT_TYPE, {
+      uuids: ['old-workout'],
+    });
+    expect(store['writebackExerciseUuids:2026-06-01']).toEqual(['workout-1']);
+  });
+
+  it('skips an unchanged day on the next run', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    await writebackPhase(['2026-06-01']);
+    expect(mockSaveWorkout).toHaveBeenCalledTimes(1);
+    await writebackPhase(['2026-06-01']); // same diary content
+    expect(mockSaveWorkout).toHaveBeenCalledTimes(1); // signature matched
+  });
+
+  it('withholds the signature when a save fails, so the next run retries', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSaveWorkout.mockResolvedValueOnce(undefined);
+    await writebackPhase(['2026-06-01']);
+    expect(store['writebackExerciseSig:2026-06-01']).toBeUndefined();
+    await writebackPhase(['2026-06-01']);
+    expect(mockSaveWorkout).toHaveBeenCalledTimes(2);
+  });
+
+  it('carries undeleted UUIDs forward so a workout is never orphaned', async () => {
+    prefs({
+      writebackExerciseEnabled: true,
+      'writebackExerciseUuids:2026-06-01': ['stuck'],
+    });
+    mockDeleteObjects.mockRejectedValueOnce(new Error('denied'));
+    await writebackPhase(['2026-06-01']);
+    expect(store['writebackExerciseUuids:2026-06-01']).toEqual([
+      'stuck',
+      'workout-1',
+    ]);
+    expect(store['writebackExerciseSig:2026-06-01']).toBeUndefined();
+  });
+
+  it('tolerates a summary with no exerciseSessions array', async () => {
+    prefs({ writebackExerciseEnabled: true });
+    mockSummary.mockResolvedValue({ foodEntries: [], waterIntake: 0 });
+    await expect(writebackPhase(['2026-06-01'])).resolves.toBe(true);
+    expect(mockSaveWorkout).not.toHaveBeenCalled();
   });
 });

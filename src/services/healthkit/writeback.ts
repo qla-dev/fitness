@@ -1,11 +1,11 @@
 import {
   saveCorrelationSample,
   saveQuantitySample,
+  saveWorkoutSample,
   deleteObjects,
   authorizationStatusFor,
   type CorrelationSample,
   type QuantitySample,
-  type QuantityTypeIdentifierWriteable,
   type ObjectTypeIdentifier,
   type SampleTypeIdentifierWriteable,
 } from '@kingstinct/react-native-healthkit';
@@ -22,13 +22,17 @@ import { loadLastWritebackTime, saveLastWritebackTime } from '../storage';
 import {
   foodEntryToNutrientSamples,
   waterMlToSample,
+  workoutToSampleDescriptor,
   computeWritebackDates,
   DIETARY_WRITE_IDENTIFIERS,
   DIETARY_ENERGY_IDENTIFIER,
   DIETARY_WATER_IDENTIFIER,
+  WORKOUT_TYPE_IDENTIFIER,
   type NutrientSampleDescriptor,
   type WaterSampleDescriptor,
+  type WorkoutSampleDescriptor,
 } from './writebackMappers';
+import { sessionsToWorkouts } from '../shared/writebackExercise';
 import {
   WRITEBACK_METRICS,
   type WritebackMetric,
@@ -82,6 +86,10 @@ const nutritionSigKey = (date: string): string =>
   `writebackNutritionSig:${date}`;
 const hydrationSigKey = (date: string): string =>
   `writebackHydrationSig:${date}`;
+const exerciseUuidsKey = (date: string): string =>
+  `writebackExerciseUuids:${date}`;
+const exerciseSigKey = (date: string): string =>
+  `writebackExerciseSig:${date}`;
 
 // Order-independent djb2 content signature (shared formula with Android), so an
 // unchanged day can be skipped without any HealthKit writes. Excludes UUID/version —
@@ -120,6 +128,29 @@ const nutritionSignature = (
     )
     .sort();
   return hashString([NUTRITION_WRITE_SCHEMA, ...projections].join('|'));
+};
+
+// Same role as NUTRITION_WRITE_SCHEMA: bump on any change to the shape of what a
+// workout write puts into HealthKit, to force a one-time rewrite of written days.
+const EXERCISE_WRITE_SCHEMA = 'workout-v1';
+
+const exerciseSignature = (
+  descriptors: WorkoutSampleDescriptor[]
+): string => {
+  const projections = descriptors
+    .map((d) =>
+      JSON.stringify({
+        sessionId: d.sessionId,
+        activityType: d.activityType,
+        title: d.title,
+        start: d.start.toISOString(),
+        end: d.end.toISOString(),
+        energyBurned: d.energyBurned ?? null,
+        distance: d.distance ?? null,
+      })
+    )
+    .sort();
+  return hashString([EXERCISE_WRITE_SCHEMA, ...projections].join('|'));
 };
 
 const hydrationSignature = (
@@ -244,6 +275,107 @@ const saveWaterSample = async (
     addLog(`[Writeback] Failed to save water: ${message(error)}`, 'ERROR');
     return undefined;
   }
+};
+
+// Save one HKWorkout. Returns its UUID, or undefined on failure — the caller treats
+// undefined as a failed write and withholds the day's signature so the next run retries.
+const saveWorkout = async (
+  descriptor: WorkoutSampleDescriptor,
+  version: number
+): Promise<string | undefined> => {
+  // HKWorkoutBrandName is the only standard metadata key Apple Health renders as a
+  // workout's name, so the session's diary name reaches the UI through it; without
+  // it a "Leg Day" would show only as "Traditional Strength Training". The version
+  // is the same traceability marker the nutrition writer stamps (no clientRecordId
+  // on iOS).
+  const metadata: Record<string, string | number> = {
+    HKWorkoutBrandName: descriptor.title,
+    QlaFitWritebackVersion: version,
+  };
+  try {
+    const saved = await saveWorkoutSample(
+      descriptor.activityType,
+      [], // no per-sample quantities: the totals below are what the diary knows
+      descriptor.start,
+      descriptor.end,
+      {
+        ...(descriptor.energyBurned !== undefined
+          ? { energyBurned: descriptor.energyBurned }
+          : {}),
+        ...(descriptor.distance !== undefined
+          ? { distance: descriptor.distance }
+          : {}),
+      },
+      metadata
+    );
+    if (!saved) {
+      addLog(
+        `[Writeback] saveWorkoutSample returned undefined for "${descriptor.title}"`,
+        'WARNING'
+      );
+      return undefined;
+    }
+    return saved.uuid;
+  } catch (error) {
+    addLog(
+      `[Writeback] Failed to save workout "${descriptor.title}": ${message(error)}`,
+      'ERROR'
+    );
+    return undefined;
+  }
+};
+
+const writeExerciseForDate = async (
+  date: string,
+  summary: DailySummary,
+  version: number
+): Promise<void> => {
+  // sessionsToWorkouts drops provider-imported sessions (the echo guard), sessions
+  // with no duration, and anything that would land in the future.
+  const descriptors = sessionsToWorkouts(
+    date,
+    summary.exerciseSessions ?? []
+  ).map(workoutToSampleDescriptor);
+
+  const signature = exerciseSignature(descriptors);
+  if (signature === (await loadHealthPreference<string>(exerciseSigKey(date)))) {
+    addLog(`[Writeback] Exercise ${date}: unchanged — skipped`, 'DEBUG');
+    return;
+  }
+
+  const previous =
+    (await loadHealthPreference<string[]>(exerciseUuidsKey(date))) ?? [];
+  const tracked: string[] = [];
+  let allSucceeded = true;
+  if (previous.length > 0) {
+    try {
+      await deleteObjects(WORKOUT_TYPE_IDENTIFIER, { uuids: previous });
+    } catch (error) {
+      addLog(
+        `[Writeback] Failed to delete previous workouts for ${date}: ${message(error)}`,
+        'WARNING'
+      );
+      // Keep the undeleted UUIDs and withhold the signature so a later run retries
+      // them instead of orphaning the workout in HealthKit.
+      tracked.push(...previous);
+      allSucceeded = false;
+    }
+  }
+
+  for (const descriptor of descriptors) {
+    const uuid = await saveWorkout(descriptor, version);
+    if (uuid) tracked.push(uuid);
+    else allSucceeded = false;
+  }
+
+  await saveHealthPreference(exerciseUuidsKey(date), tracked);
+  if (allSucceeded) {
+    await saveHealthPreference(exerciseSigKey(date), signature);
+  }
+  addLog(
+    `[Writeback] Exercise ${date}: wrote ${descriptors.length} workout(s)`,
+    'INFO'
+  );
 };
 
 const writeNutritionForDate = async (
@@ -389,16 +521,19 @@ const writeHydrationForDate = async (
 };
 
 // Active metrics that also hold a granted write permission. Hydration gates on
-// DietaryWater; nutrition gates on DietaryEnergyConsumed (individual denied nutrients
-// are handled by the per-type filter in writeNutritionForDate, not by gating here). A
-// metric the user hasn't granted is skipped WITHOUT holding the cursor — exactly as
-// Android does — so it doesn't retry forever.
+// DietaryWater, exercise on the workout type, and nutrition on DietaryEnergyConsumed
+// (individual denied nutrients are handled by the per-type filter in
+// writeNutritionForDate, not by gating here). A metric the user hasn't granted is
+// skipped WITHOUT holding the cursor — exactly as Android does — so it doesn't retry
+// forever.
 const writableMetrics = (metrics: WritebackMetric[]): WritebackMetric[] =>
   metrics.filter((m) => {
-    const gate: QuantityTypeIdentifierWriteable =
+    const gate: ObjectTypeIdentifier =
       m.id === 'hydration'
         ? DIETARY_WATER_IDENTIFIER
-        : DIETARY_ENERGY_IDENTIFIER;
+        : m.id === 'exerciseSession'
+          ? WORKOUT_TYPE_IDENTIFIER
+          : DIETARY_ENERGY_IDENTIFIER;
     const ok = isAuthorized(gate);
     if (!ok)
       addLog(
@@ -448,6 +583,8 @@ export const writebackPhase = async (dates: string[]): Promise<boolean> => {
       try {
         if (metric.id === 'nutrition') {
           await writeNutritionForDate(date, summary, version);
+        } else if (metric.id === 'exerciseSession') {
+          await writeExerciseForDate(date, summary, version);
         } else {
           await writeHydrationForDate(date, summary, version);
         }
@@ -476,12 +613,14 @@ export const runWriteback = async (): Promise<void> => {
 };
 
 // Every HealthKit sample type writeback creates: the nutrient quantity types, water,
-// and the food correlation itself (deleteObjects is scoped to one type per call).
+// the food correlation itself, and the workout type (deleteObjects is scoped to one
+// type per call).
 const WRITEBACK_DELETE_TYPES: SampleTypeIdentifierWriteable[] = [
   ...new Set<SampleTypeIdentifierWriteable>([
     ...DIETARY_WRITE_IDENTIFIERS,
     DIETARY_WATER_IDENTIFIER,
     FOOD_CORRELATION_TYPE as SampleTypeIdentifierWriteable,
+    WORKOUT_TYPE_IDENTIFIER,
   ]),
 ];
 

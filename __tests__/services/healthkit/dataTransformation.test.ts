@@ -1377,3 +1377,45 @@ describe('Nutrition correlation transformer', () => {
     expect(result[0].record_timezone).toBeUndefined();
   });
 });
+
+describe('own-app exclusion for workouts (exercise writeback loop guard)', () => {
+  afterEach(() => setOwnBundleId(null));
+
+  const workout = (sourceBundleId: string, uuid: string) => ({
+    startTime: '2024-01-15T08:00:00Z',
+    endTime: '2024-01-15T08:30:00Z',
+    activityType: 37, // running
+    duration: { unit: 's', quantity: 1800 },
+    totalEnergyBurned: 300,
+    totalDistance: 5000,
+    uuid,
+    sourceBundleId,
+  });
+
+  test('skips a workout this app wrote, keeps another app\u2019s', () => {
+    // Without this, exercise writeback would hand every logged workout straight
+    // back to the diary as a second, provider-sourced copy on the next sync.
+    setOwnBundleId('com.sparky.app');
+    const result = transformHealthRecords(
+      [
+        workout('com.sparky.app', 'ours'),
+        workout('com.other.app', 'theirs'),
+      ],
+      { recordType: 'Workout', unit: 'min', type: 'exercise_session' }
+    );
+    expect(result).toHaveLength(1);
+    expect((result[0] as TransformOutput & { source_id: string }).source_id)
+      .toBe('theirs');
+  });
+
+  test('keeps our own workouts when no bundle id was injected', () => {
+    // currentAppSource() can throw on an unsupported device; the guard is then
+    // off and reading must still work rather than silently dropping everything.
+    const result = transformHealthRecords([workout('com.sparky.app', 'ours')], {
+      recordType: 'Workout',
+      unit: 'min',
+      type: 'exercise_session',
+    });
+    expect(result).toHaveLength(1);
+  });
+});

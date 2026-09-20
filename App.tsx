@@ -64,7 +64,6 @@ import {
   SafeGoalDetail,
   SafeSleepDetail,
   SafeLogs,
-  SafeSync,
   SafeImportHistory,
   SafeMeasurementsAdd,
   SafeProgressPhotos,
@@ -104,6 +103,7 @@ import {
   SafeCycleSettings,
   SafeCycleOnboarding,
   SafeSetupWizard,
+  SafeActivityHistory,
   SafeAppleHealthCheck,
   SafeCycleHub,
   SafeCycleLogModal,
@@ -683,9 +683,9 @@ function AppContent() {
             options={createStackScreenOptions(t('screens.logs', { defaultValue: 'Logs' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
-            name="Sync"
-            component={SafeSync}
-            options={createStackScreenOptions(t('screens.healthSync', { defaultValue: 'Health Sync' }), { headerBackButtonDisplayMode: 'minimal' })}
+            name="ActivityHistory"
+            component={SafeActivityHistory}
+            options={createStackScreenOptions(t('screens.activityHistory', { defaultValue: 'Activities' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ImportHistory"

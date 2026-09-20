@@ -171,20 +171,65 @@ export function workoutRepository(
     };
   }
   if (path === '/api/v2/exercise-entries/history') {
-    const rows = localSessions(db)
-      .filter(
-        (row) =>
-          !query.get('exerciseId') ||
-          row.exercise_id === query.get('exerciseId') ||
-          asRecords(row.exercises).some(
-            (ex) => ex.exercise_id === query.get('exerciseId')
-          )
-      )
-      .sort((a, b) => String(b.entry_date).localeCompare(String(a.entry_date)));
+    // Narrow BEFORE parsing, the rule the rest of this layer follows. Building
+    // every session first meant Zod-parsing the whole activities and workouts
+    // tables to hand back twenty rows — and paying it again for every page, so
+    // scrolling the history cost the full table once per screenful.
+    //
+    // The raw rows carry everything the filter and the sort need (entry_date,
+    // exercise_id), so both run on unparsed records and only the page that is
+    // actually returned is turned into sessions.
+    const exerciseId = query.get('exerciseId');
+    const matches = (row: LocalRecord): boolean =>
+      !exerciseId ||
+      row.exercise_id === exerciseId ||
+      asRecords(row.exercises).some((ex) => ex.exercise_id === exerciseId);
+
+    // Tagged with their source table on the way in: the two are merged to sort
+    // them together, and a raw row does not otherwise say which it came from.
+    const raw: { from: 'activities' | 'workouts'; row: LocalRecord }[] = [
+      ...table(db, 'activities')
+        .filter(matches)
+        .map((row) => ({ from: 'activities' as const, row })),
+      ...table(db, 'workouts')
+        .filter(matches)
+        .map((row) => ({ from: 'workouts' as const, row })),
+    ].sort((a, b) =>
+      String(b.row.entry_date).localeCompare(String(a.row.entry_date))
+    );
+
+    const pageRows = raw.slice((page - 1) * size, page * size);
+    // One parse pass, over the page only. Re-uses localSessions so the shape
+    // stays identical to every other session read, by handing it a database
+    // view whose two session tables hold just this page. The rest of `tables`
+    // is carried through because localSessions also reads `exercises`.
+    const sessions = localSessions({
+      ...db,
+      tables: {
+        ...db.tables,
+        activities: pageRows
+          .filter((entry) => entry.from === 'activities')
+          .map((entry) => entry.row),
+        workouts: pageRows
+          .filter((entry) => entry.from === 'workouts')
+          .map((entry) => entry.row),
+      },
+    });
+
     return {
       value: {
-        sessions: rows.slice((page - 1) * size, page * size),
-        pagination: paginate(rows),
+        // localSessions returns activities then workouts, so the page is
+        // re-sorted to the newest-first order the slice was taken in.
+        sessions: sessions.sort((a, b) =>
+          String(b.entry_date).localeCompare(String(a.entry_date))
+        ),
+        pagination: {
+          page,
+          pageSize: size,
+          totalCount: raw.length,
+          totalPages: Math.ceil(raw.length / size),
+          hasMore: page * size < raw.length,
+        },
       },
     };
   }
