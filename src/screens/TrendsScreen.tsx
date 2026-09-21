@@ -104,18 +104,13 @@ export default function TrendsScreen({ navigation }: Props) {
   // the scroll view a direct, full-height child of the screen root is what lets
   // the iOS large title collapse into the header on scroll.
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <StatusView
-          loading
-          title={t('trends.loading', {
-            defaultValue: 'Loading goals...',
-          })}
-        />
-      );
-    }
-
-    if (!isConnected) {
+    // No full-screen spinner while the connection resolves. The cards do not
+    // need it to draw themselves — they render flat with skeletoned numbers and
+    // fill in — and replacing the screen with a spinner meant every visit began
+    // with the layout being thrown away and rebuilt. `isConnected` is only
+    // trusted once loading has settled, so a slow check reads as "still
+    // loading" rather than briefly as "no server".
+    if (!isConnected && !isLoading) {
       return (
         <StatusView
           icon="cloud-offline"

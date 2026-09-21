@@ -11,6 +11,7 @@ import {
 } from '../utils/workoutSession';
 import { distanceFromKm } from '../utils/unitConversions';
 import { formatLocalizedNumber, getAppLocale } from '../localization';
+import { fireSelectionHaptic } from '../services/haptics';
 
 /**
  * Total distance in km for a session, summing a grouped workout's exercises.
@@ -96,7 +97,16 @@ const CompactActivityRow: React.FC<CompactActivityRowProps> = ({
 
   return (
     <Pressable
-      onPress={onPress}
+      // Opening an activity is a navigation, so it ticks the way every other
+      // card in the app does rather than being the one that opens silently.
+      onPress={
+        onPress
+          ? () => {
+              fireSelectionHaptic();
+              onPress();
+            }
+          : undefined
+      }
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={[name, `${value} ${unit}`.trim(), date]

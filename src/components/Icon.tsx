@@ -195,6 +195,12 @@ const ICON_MAP = {
   'sleep-score': { sf: 'star.fill', ion: 'star' },
   spo2: { sf: 'lungs.fill', ion: 'pulse' },
   'heart-rate': { sf: 'heart.fill', ion: 'heart' },
+  // Where a session was measured, and whether it carries a track. Named for
+  // what they mean here rather than for the hardware, so a future Android
+  // wearable does not need a second entry.
+  'device-watch': { sf: 'applewatch', ion: 'watch' },
+  'device-phone': { sf: 'iphone', ion: 'phone-portrait' },
+  'gps-track': { sf: 'location.fill', ion: 'location' },
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;

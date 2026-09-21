@@ -5,11 +5,14 @@ import { useCSSVariable } from 'uniwind';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import DashboardCardTitle from './DashboardCardTitle';
 import CompactActivityRow from './CompactActivityRow';
+import SwipeableExerciseRow from './SwipeableExerciseRow';
 import Icon from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
 
 interface CompactActivityCardProps {
   sessions: ExerciseSessionResponse[];
+  /** The day these cards belong to, which delete-by-swipe needs. */
+  entryDate: string;
   onPressSession?: (session: ExerciseSessionResponse) => void;
   onAddExercise?: () => void;
   /** Opens the full history. Omit to drop the "More" link. */
@@ -27,6 +30,7 @@ interface CompactActivityCardProps {
  */
 const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
   sessions,
+  entryDate,
   onPressSession,
   onAddExercise,
   onPressMore,
@@ -95,13 +99,22 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
   return (
     <View className="mb-1">
       {header}
+      {/* Wrapped so the new look does not cost the swipe-to-delete and
+          long-press these rows have always had. SwipeableExerciseRow renders
+          whatever it is given and keeps its own gesture and delete. */}
       {sessions.map((session, index) => (
-        <CompactActivityRow
+        <SwipeableExerciseRow
           key={session.id || index}
           session={session}
+          entryDate={entryDate}
           onPress={() => onPressSession?.(session)}
           distanceUnit={distanceUnit}
-        />
+        >
+          <CompactActivityRow
+            session={session}
+            distanceUnit={distanceUnit}
+          />
+        </SwipeableExerciseRow>
       ))}
     </View>
   );

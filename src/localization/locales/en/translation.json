@@ -3394,7 +3394,18 @@
     "accessibility": {
       "save": "Save",
       "edit": "Edit activity"
-    }
+    },
+    "sourceWatch": "Recorded on watch",
+    "sourceApp": "Recorded in qla.fit",
+    "sourcePhone": "Recorded on phone",
+    "hasTrack": "GPS track",
+    "workoutDetails": "Workout details",
+    "heartRate": "Heart rate",
+    "bpm": "bpm",
+    "zone": "Zone {{n}}",
+    "zoneFrom": "{{bpm}}+ bpm",
+    "zoneLow": "low",
+    "map": "Map"
   },
   "foodSettings": {
     "title": "Food Settings",
@@ -5567,5 +5578,19 @@
   "activityHistory": {
     "title": "Activities",
     "empty": "No activities logged yet."
+  },
+  "activityExtras": {
+    "heatmap": "Position heatmap",
+    "sprints": "Sprints & speed",
+    "sprintCount": "Sprints",
+    "topSpeed": "Top speed",
+    "avgSpeed": "Average speed",
+    "sprintDistance": "Sprint distance",
+    "shooting": "Shooting",
+    "madeOf": "{{made}} of {{attempted}} shots",
+    "zonePaint": "Paint",
+    "zoneMid": "Mid-range",
+    "zoneThree": "Three",
+    "zoneFree": "Free throws"
   }
 }

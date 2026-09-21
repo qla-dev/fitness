@@ -935,6 +935,33 @@ describe('readHealthRecords', () => {
       );
     });
 
+    test('forwards the workout source bundle id, so the own-app guard can fire', async () => {
+      // Regression: this record is built field by field, and the library nests
+      // the bundle id under sourceRevision.source. Leaving it out made the read
+      // transformer's isOwnRecord check read undefined every time, silently
+      // disabling it — exercise writeback then re-imported every workout it had
+      // just written, one fresh duplicate per sync.
+      await initHealthConnect();
+      mockQueryWorkoutSamples.mockResolvedValue([
+        {
+          startDate: '2024-01-15T08:00:00Z',
+          endDate: '2024-01-15T09:00:00Z',
+          workoutActivityType: 37,
+          duration: 3600,
+          sourceRevision: { source: { bundleIdentifier: 'com.qla.fit' } },
+          getStatistic: jest.fn().mockResolvedValue(undefined),
+        },
+      ]);
+
+      const result = await readHealthRecords(
+        'Workout',
+        new Date('2024-01-15T00:00:00Z'),
+        new Date('2024-01-15T23:59:59Z')
+      );
+
+      expect(result[0]).toMatchObject({ sourceBundleId: 'com.qla.fit' });
+    });
+
     test('sets telemetry.elapsed_time_seconds from an object-shaped duration (regression: real HealthKit workouts report duration as {unit, quantity}, not a bare number)', async () => {
       await initHealthConnect();
 

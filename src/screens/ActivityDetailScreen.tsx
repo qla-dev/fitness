@@ -1,9 +1,25 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity } from 'react-native';
 import FadeView from '../components/FadeView';
 import EditableSetList from '../components/EditableSetList';
 import RecordingSummary from '../components/recording/RecordingSummary';
+import WorkoutDetailsCard, {
+  DetailSectionHeading,
+  METRIC_COLORS,
+  type DetailStat,
+} from '../components/WorkoutDetailsCard';
+import WorkoutHeartRateSection from '../components/WorkoutHeartRateSection';
+import WorkoutRouteSection from '../components/WorkoutRouteSection';
+import ActivityExtras, {
+  RecordingSourceBadge,
+} from '../components/ActivityExtras';
+import { activityExtras } from '../constants/activityExtras';
+import {
+  hasRoute,
+  resolveRecordingSource,
+} from '../utils/activityRecordingSource';
+import { RECORDING_DETAIL_TYPE } from '../services/recording/types';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +39,7 @@ import {
   buildActivitySetsPayload,
   effectiveSetDurationSec,
   getSourceLabel,
+  getWorkoutIcon,
   getWorkoutSummary,
   isCardioModality,
   isDurationModality,
@@ -49,6 +66,10 @@ import Toast from 'react-native-toast-message';
 import { addLog } from '../services/LogService';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { WorkoutDraftSet } from '../types/drafts';
+import type {
+  WorkoutGpsPoint,
+  WorkoutHrSample,
+} from '../types/healthRecords';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
 
@@ -86,6 +107,61 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const entryDate = session.entry_date ?? '';
   const normalizedDate = normalizeDate(entryDate);
   const { name, duration, calories } = getWorkoutSummary(session, t);
+
+  // Derived from what the session was stored with, so an imported workout and
+  // one this app recorded are both answered by the same two helpers.
+  const recordingSource = resolveRecordingSource(
+    session.activity_details,
+    RECORDING_DETAIL_TYPE
+  );
+  const sessionHasRoute = hasRoute(
+    session.activity_details,
+    RECORDING_DETAIL_TYPE
+  );
+  const extras = useMemo(
+    () =>
+      activityExtras(
+        session,
+        t,
+        name,
+        session.type === 'individual'
+          ? (session.category ?? session.exercise_snapshot?.category)
+          : null
+      ),
+    [session, t, name]
+  );
+
+  // "21:49–23:02", when the session says when it started. Apple leads with the
+  // clock window because that is what identifies one session among several of
+  // the same activity on the same day; a bare date cannot.
+  const timeRange = (() => {
+    const start = session.type === 'individual' ? session.entry_time : null;
+    if (!start || duration <= 0) return null;
+    const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(start);
+    if (!match) return null;
+    const from = new Date(2000, 0, 1, Number(match[1]), Number(match[2]));
+    const to = new Date(from.getTime() + duration * 60000);
+    const fmt = new Intl.DateTimeFormat(dateLocale, {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${fmt.format(from)}–${fmt.format(to)}`;
+  })();
+
+  // Telemetry an imported workout arrived with. Read off the health-import
+  // detail rather than a dedicated column: importHealthData stores the
+  // provider's whole record there, so it is already persisted.
+  const importedTelemetry = useMemo(() => {
+    const raw = session.activity_details?.find(
+      (detail) => detail.detail_type === 'health_import'
+    )?.detail_data as
+      | { gps_points?: WorkoutGpsPoint[]; hr_samples?: WorkoutHrSample[] }
+      | undefined;
+    return {
+      gps: Array.isArray(raw?.gps_points) ? raw.gps_points : [],
+      hr: Array.isArray(raw?.hr_samples) ? raw.hr_samples : [],
+    };
+  }, [session.activity_details]);
 
   const firstImage = session.exercise_snapshot?.images?.[0];
   const firstImageSource = firstImage ? getImageSource(firstImage) : null;
@@ -550,6 +626,36 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   };
 
+  // The view-mode readout: the same stats the editable grid builds, given the
+  // metric colour they carry everywhere else in the app. Active energy is
+  // marked wide because it has no natural partner between duration and total
+  // energy, and a half-empty row reads as a missing number.
+  const buildDetailStats = (): DetailStat[] => {
+    const colorFor = (editKey?: string): string => {
+      switch (editKey) {
+        case 'duration':
+          return METRIC_COLORS.duration;
+        case 'calories':
+          return METRIC_COLORS.calories;
+        case 'distance':
+          return METRIC_COLORS.distance;
+        case 'avgHeartRate':
+          return METRIC_COLORS.heartRate;
+        default:
+          return METRIC_COLORS.pace;
+      }
+    };
+    return buildStats().map((stat) => ({
+      label: stat.label,
+      value: stat.value,
+      unit: stat.editSuffix,
+      color: colorFor(stat.editKey),
+    }));
+    // A map over at most six items, re-derived each render rather than
+    // memoized: buildStats already reads most of this component's state, so a
+    // dependency list would have to repeat all of it to stay correct.
+  };
+
   const renderStatsGrid = () => {
     const stats = buildStats();
     if (stats.length === 0) return null;
@@ -632,19 +738,34 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         bottomOffset={20}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Title area */}
-        <View className="flex-row items-start mb-4 mt-4">
-          {firstImageSource && (
-            <SafeImage
-              source={firstImageSource}
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 10,
-                marginRight: 12,
-              }}
-            />
-          )}
+        {/* Title area. The avatar is a tinted disc carrying the activity's own
+            icon, with the exercise image inside it when there is one — a
+            session is identifiable at a glance by what it was, and most
+            activities have no image at all, which used to leave the row
+            starting with nothing. */}
+        <View className="flex-row items-center mb-4 mt-4">
+          <View
+            className="items-center justify-center mr-3 overflow-hidden"
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: `${accentPrimary}26`,
+            }}
+          >
+            {firstImageSource ? (
+              <SafeImage
+                source={firstImageSource}
+                style={{ width: 64, height: 64 }}
+              />
+            ) : (
+              <Icon
+                name={getWorkoutIcon(session)}
+                size={30}
+                color={accentPrimary}
+              />
+            )}
+          </View>
           <View className="flex-1">
             {isEditing ? (
               <FadeView key="edit-title">
@@ -684,6 +805,13 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Text className="text-xl font-bold text-text-primary mb-0.5">
                   {name}
                 </Text>
+                {/* The clock window, which is what tells two of the same
+                    activity on one day apart. Only shown when the session
+                    recorded a start — inventing one would be a lie about when
+                    you trained. */}
+                {timeRange ? (
+                  <Text className="text-base text-text-muted">{timeRange}</Text>
+                ) : null}
               </FadeView>
             )}
             <View className="flex-row items-center">
@@ -711,12 +839,43 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 </Text>
               ) : null}
             </View>
+            {/* Under the source line, because it qualifies the same thing: not
+                just which app the session came from, but which hardware took
+                the measurements. */}
+            {!isEditing && (
+              <RecordingSourceBadge
+                source={recordingSource}
+                hasTrack={sessionHasRoute}
+              />
+            )}
           </View>
         </View>
 
-        {/* Stats grid */}
-        {renderStatsGrid()}
-        {!isEditing && <RecordingSummary details={session.activity_details} />}
+        {/* Editing keeps the tappable tile grid — each tile is a field.
+            Viewing gets the paired summary card, which is a readout. */}
+        {isEditing ? (
+          renderStatsGrid()
+        ) : (
+          <View className="py-4">
+            <DetailSectionHeading
+              title={t('activityDetail.workoutDetails', {
+                defaultValue: 'Workout details',
+              })}
+            />
+            <WorkoutDetailsCard stats={buildDetailStats()} />
+          </View>
+        )}
+        {!isEditing && (
+          <>
+            <RecordingSummary details={session.activity_details} />
+            <WorkoutHeartRateSection
+              samples={importedTelemetry.hr}
+              average={session.avg_heart_rate}
+            />
+            <WorkoutRouteSection points={importedTelemetry.gps} />
+            <ActivityExtras blocks={extras} />
+          </>
+        )}
 
         {/* Sets section */}
         {isEditing ? (

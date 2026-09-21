@@ -126,7 +126,12 @@ export function localSessions(
   const workouts = table(db, 'workouts')
     .filter(keep)
     .map((row) => presetSessionResponseSchema.strip().parse(row));
-  return [...individual, ...workouts];
+  // Newest first. Concatenating the two tables put every standalone activity
+  // above every grouped workout regardless of when either happened, so a
+  // session logged a minute ago could sit below one from the morning.
+  return [...individual, ...workouts].sort((a, b) =>
+    String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))
+  );
 }
 
 export function workoutRepository(
@@ -194,9 +199,18 @@ export function workoutRepository(
       ...table(db, 'workouts')
         .filter(matches)
         .map((row) => ({ from: 'workouts' as const, row })),
-    ].sort((a, b) =>
-      String(b.row.entry_date).localeCompare(String(a.row.entry_date))
-    );
+    ].sort((a, b) => {
+      const byDay = String(b.row.entry_date).localeCompare(
+        String(a.row.entry_date)
+      );
+      if (byDay !== 0) return byDay;
+      // Same day: the one logged most recently comes first. Without this the
+      // order within a day was whatever order the two tables happened to hold,
+      // so a just-logged session could appear below ones from hours earlier.
+      return String(b.row.created_at ?? '').localeCompare(
+        String(a.row.created_at ?? '')
+      );
+    });
 
     const pageRows = raw.slice((page - 1) * size, page * size);
     // One parse pass, over the page only. Re-uses localSessions so the shape
@@ -220,9 +234,17 @@ export function workoutRepository(
       value: {
         // localSessions returns activities then workouts, so the page is
         // re-sorted to the newest-first order the slice was taken in.
-        sessions: sessions.sort((a, b) =>
-          String(b.entry_date).localeCompare(String(a.entry_date))
-        ),
+        // Re-sorted with the SAME tiebreak the slice used, or a page would
+        // come back in a different order than it was cut in.
+        sessions: sessions.sort((a, b) => {
+          const byDay = String(b.entry_date).localeCompare(
+            String(a.entry_date)
+          );
+          if (byDay !== 0) return byDay;
+          return String(b.created_at ?? '').localeCompare(
+            String(a.created_at ?? '')
+          );
+        }),
         pagination: {
           page,
           pageSize: size,

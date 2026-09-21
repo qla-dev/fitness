@@ -6,13 +6,30 @@ import type {
 
 export function createIOSNativeHeaderOptions(
   actionTintColor: string,
-  titleColor: string = actionTintColor
+  titleColor: string = actionTintColor,
+  /**
+   * Opaque header fill. iOS 26 renders a native header as Liquid Glass by
+   * default, so it takes a tint from whatever scrolls beneath it and shifts
+   * colour as the user moves — on a themed app that reads as the header being
+   * the wrong colour. Naming a background (and clearing the blur) keeps it the
+   * app's own surface. Omit it to get the system default back.
+   */
+  backgroundColor?: string
 ): NativeStackNavigationOptions {
   return {
     headerShown: true,
     headerLargeTitleEnabled: true,
     headerLargeTitleShadowVisible: false,
     headerTintColor: actionTintColor,
+    ...(backgroundColor
+      ? {
+          headerTransparent: false,
+          headerBlurEffect: undefined,
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor },
+          headerLargeStyle: { backgroundColor },
+        }
+      : {}),
     headerTitleStyle: {
       color: titleColor,
       fontWeight: '600',
@@ -27,10 +44,11 @@ export function createIOSNativeHeaderOptions(
 
 export function createIOSSmallNativeHeaderOptions(
   actionTintColor: string,
-  titleColor: string = actionTintColor
+  titleColor: string = actionTintColor,
+  backgroundColor?: string
 ): NativeStackNavigationOptions {
   return {
-    ...createIOSNativeHeaderOptions(actionTintColor, titleColor),
+    ...createIOSNativeHeaderOptions(actionTintColor, titleColor, backgroundColor),
     headerLargeTitleEnabled: false,
   };
 }

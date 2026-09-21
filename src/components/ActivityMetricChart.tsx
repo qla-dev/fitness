@@ -1,11 +1,66 @@
+import { useEffect } from 'react';
 import DashboardCardTitle from './DashboardCardTitle';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { formatLocalizedNumber, useAppLocale } from '../localization';
 import CardChevron from './CardChevron';
 import CardPressable from './CardPressable';
 import Icon, { type IconName } from './Icon';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+/** The foot of the plot: where every bar starts and a flat day stays. */
+const BAR_BASELINE = 80;
+const GROW_MS = 650;
+
+/**
+ * One hour's bar, growing out of the baseline.
+ *
+ * Its own component because each bar animates its own height, and hooks cannot
+ * be called from the render loop above. They all read the one progress value
+ * the chart owns, so the twenty-four rise together rather than drifting apart.
+ * A path would have been one node instead of twenty-four, but it cannot carry
+ * the rounded cap these bars have — and twenty-four is small enough that the
+ * trade goes the other way here than it does on the 90-day trend sparkline.
+ */
+function HourBar({
+  x,
+  height,
+  rx,
+  color,
+  progress,
+}: {
+  x: number;
+  height: number;
+  rx: number;
+  color: string;
+  progress: SharedValue<number>;
+}) {
+  const animatedProps = useAnimatedProps(() => {
+    'worklet';
+    const grown = height * progress.value;
+    return { y: BAR_BASELINE - grown, height: grown };
+  });
+  return (
+    <AnimatedRect
+      animatedProps={animatedProps}
+      x={x}
+      width={8}
+      rx={rx}
+      fill={color}
+    />
+  );
+}
 
 interface ActivityMetricChartProps {
   title: string;
@@ -75,6 +130,32 @@ export default function ActivityMetricChart({
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // 0 = flat on the baseline, 1 = the day as recorded. Reset and replayed each
+  // time the screen is focused, so the bars rise on every visit rather than
+  // only the first — and so the chart has something to show from the first
+  // frame instead of appearing when the hourly data lands.
+  const isFocused = useIsFocused();
+  const reducedMotion = useReducedMotion();
+  const progress = useSharedValue(0);
+  const shapeKey = `${total}:${max}:${hasSamples}`;
+
+  useEffect(() => {
+    if (!hasSamples) {
+      progress.value = 0;
+      return;
+    }
+    if (!isFocused) return;
+    if (reducedMotion) {
+      progress.value = 1;
+      return;
+    }
+    progress.value = 0;
+    progress.value = withTiming(1, {
+      duration: GROW_MS,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [isFocused, hasSamples, reducedMotion, shapeKey, progress]);
   return (
     <CardPressable accessibilityLabel={title} onPress={onOpen}>
       <View className="flex-row items-center gap-2">
@@ -120,14 +201,13 @@ export default function ActivityMetricChart({
               return null;
             const height = binary ? 72 : Math.max(2, (amount / max) * 72);
             return (
-              <Rect
+              <HourBar
                 key={hour}
                 x={hour * 12 + 2}
-                y={80 - height}
-                width={8}
                 height={height}
                 rx={binary ? 4 : 1}
-                fill={color}
+                color={color}
+                progress={progress}
               />
             );
           })}

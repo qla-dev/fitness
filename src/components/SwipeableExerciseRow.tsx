@@ -134,8 +134,10 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
         overshootRight={false}
         rightThreshold={40}
       >
+        {/* Custom content brings its own surface and spacing — the built-in
+            row's padding and fill would sit behind it as a second card. */}
         <Pressable
-          className="py-2.5 bg-surface"
+          className={children ? '' : 'py-2.5 bg-surface'}
           onPress={onPress}
           onLongPress={handleLongPress}
         >

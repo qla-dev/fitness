@@ -461,6 +461,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             so it is logged here rather than on the Nutrition tab. */}
         <CompactActivityCard
           sessions={summary.exerciseEntries}
+          entryDate={selectedDate}
           distanceUnit={distanceUnit}
           onAddExercise={() =>
             addSheetRef.current?.present({ initialMenu: 'exercise' })

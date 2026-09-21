@@ -9,18 +9,24 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCSSVariable } from 'uniwind';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import CompactActivityRow from '../components/CompactActivityRow';
+import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useExerciseHistory } from '../hooks/useExerciseHistory';
 import { usePreferences } from '../hooks/usePreferences';
 import { useServerConnection } from '../hooks/useServerConnection';
 import { getWorkoutSummary } from '../utils/workoutSession';
 import { getAppLocale } from '../localization';
+import { fireSelectionHaptic } from '../services/haptics';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /** Every session the filter chips can stand for, plus the always-present All. */
 const ALL = '__all__';
+
+/** Pill height, matching the Store's category chips. */
+const CHIP_HEIGHT = 40;
 
 /**
  * Month heading for a section, in the app's locale.
@@ -51,6 +57,7 @@ export default function ActivityHistoryScreen({
 }: RootStackScreenProps<'ActivityHistory'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const accentPrimary = useCSSVariable('--color-accent-primary') as string;
   const { isConnected } = useServerConnection();
   const { preferences } = usePreferences({ enabled: isConnected });
   const distanceUnit =
@@ -122,35 +129,52 @@ export default function ActivityHistoryScreen({
     <View className="flex-1 bg-background">
       {/* Horizontal chips rather than a SegmentedControl: the set is open —
           one per activity the user has logged — and a segmented control with a
-          dozen segments is unreadable and untappable. */}
+          dozen segments is unreadable and untappable.
+
+          Liquid Glass, exactly as the Store's category pills: selection is a
+          tint ON the material rather than a solid fill swapped in behind it, so
+          a chosen chip is still the same piece of glass as the ones beside it.
+          Off iOS 26 the tint becomes that flat fill. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-4 py-3 gap-2"
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+        className="pt-1 pb-3"
       >
         {[{ value: ALL, label: t('common.all', { defaultValue: 'All' }) }]
           .concat(filters)
           .map((chip) => {
             const selected = chip.value === filter;
             return (
-              <Pressable
+              <LiquidGlassSurface
                 key={chip.value}
-                onPress={() => setFilter(chip.value)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected }}
-                className={`px-4 py-2 rounded-full ${
-                  selected ? 'bg-accent-primary/15' : 'bg-surface'
-                }`}
+                isInteractive
+                tintColor={selected ? accentPrimary : undefined}
+                style={{
+                  height: CHIP_HEIGHT,
+                  borderRadius: CHIP_HEIGHT / 2,
+                  overflow: 'hidden',
+                }}
               >
-                <Text
-                  className={`text-sm font-semibold ${
-                    selected ? 'text-accent-primary' : 'text-text-primary'
-                  }`}
-                  numberOfLines={1}
+                <Pressable
+                  onPress={() => {
+                    fireSelectionHaptic();
+                    setFilter(chip.value);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  className="h-full px-4 items-center justify-center"
                 >
-                  {chip.label}
-                </Text>
-              </Pressable>
+                  <Text
+                    className={`text-sm font-semibold ${
+                      selected ? 'text-accent-text' : 'text-text-primary'
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              </LiquidGlassSurface>
             );
           })}
       </ScrollView>

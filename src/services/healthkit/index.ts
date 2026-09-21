@@ -1388,6 +1388,26 @@ const handleWorkout: RecordHandler = async (
         totalEnergyBurned,
         totalDistance,
         uuid: (w as unknown as { uuid?: string }).uuid,
+        // Flattened for the transformer's own-app guard, which skips workouts
+        // qla.fit itself wrote. The library nests it under
+        // sourceRevision.source, and this record is built field by field — so
+        // leaving it out silently disabled that guard and let exercise
+        // writeback re-import every workout it had just written.
+        sourceBundleId: (
+          w as unknown as {
+            sourceRevision?: { source?: { bundleIdentifier?: string } };
+          }
+        ).sourceRevision?.source?.bundleIdentifier,
+        // Which hardware recorded this — "Apple Watch" vs the phone. Carried so
+        // the detail screen can say where a track came from; a route logged by a
+        // watch on your wrist and one logged by a phone in a bag are not the
+        // same measurement, and the user is the only one who can judge that.
+        // It rides into activity_details.detail_data with the rest of the
+        // record, so nothing else needs a new field to store it.
+        device: (w as unknown as { device?: Record<string, unknown> }).device,
+        sourceName: (
+          w as unknown as { sourceRevision?: { source?: { name?: string } } }
+        ).sourceRevision?.source?.name,
       };
       if (totalSteps !== undefined) record.totalSteps = totalSteps;
       // Forward timezone metadata so the transform layer can attach it to output records
