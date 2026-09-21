@@ -42,14 +42,14 @@ interface TabHeaderProps {
    */
   onPreviousDay?: () => void;
   onNextDay?: () => void;
-  /** Extra action placed left of the cart button (e.g. family diaries). */
+  /** Extra action placed left of the workouts button (e.g. family diaries). */
   action?: TabHeaderAction;
   /**
-   * Opens the store cart. Sits immediately left of the profile button, so
+   * Opens the workouts list. Sits immediately left of the profile button, so
    * profile keeps the corner position it holds on every tab. Omitted by
    * headers that are not a tab root, the same way the profile button is.
    */
-  onCartPress?: () => void;
+  onWorkoutsPress?: () => void;
   /**
    * Opens the profile screen. Passed in rather than resolved from navigation
    * context so the bar stays a plain presentational component; headers that
@@ -80,7 +80,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
   onPreviousDay,
   onNextDay,
   action,
-  onCartPress,
+  onWorkoutsPress,
   onProfilePress,
   skipTopInset,
   dateControls,
@@ -105,9 +105,9 @@ const TabHeader: React.FC<TabHeaderProps> = ({
       : undefined;
   // Both slots share one width so the title stays centred, and it only grows
   // past the base when a header actually carries more buttons than that fits
-  // (the family-diary bar: action + cart + profile).
+  // (the family-diary bar: action + workouts + profile).
   const buttonCount =
-    (action ? 1 : 0) + (onCartPress ? 1 : 0) + (onProfilePress ? 1 : 0);
+    (action ? 1 : 0) + (onWorkoutsPress ? 1 : 0) + (onProfilePress ? 1 : 0);
   const slotWidth = Math.max(
     SLOT_WIDTH,
     buttonCount * BUTTON_SIZE + Math.max(buttonCount - 1, 0) * BUTTON_GAP
@@ -237,15 +237,21 @@ const TabHeader: React.FC<TabHeaderProps> = ({
             <Icon name={action.icon} size={22} color={primaryTextColor} />
           </TouchableOpacity>
         ) : null}
-        {onCartPress && (
+        {onWorkoutsPress && (
           <TouchableOpacity
-            onPress={withHaptic(onCartPress)}
+            onPress={withHaptic(onWorkoutsPress)}
             accessibilityRole="button"
-            accessibilityLabel={t('cart.title', { defaultValue: 'Meals' })}
+            accessibilityLabel={t('presetSearch.title', {
+              defaultValue: 'Start Workout',
+            })}
             className="items-center justify-center"
             style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
-            <Icon name="food" size={22} color={primaryTextColor} />
+            <Icon
+              name="exercise-running-filled"
+              size={22}
+              color={primaryTextColor}
+            />
           </TouchableOpacity>
         )}
         {onProfilePress && (

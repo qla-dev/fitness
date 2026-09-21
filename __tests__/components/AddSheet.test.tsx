@@ -6,13 +6,6 @@ import AddSheet, { type AddSheetRef } from '../../src/components/AddSheet';
 import * as dataMode from '../../src/services/dataMode';
 jest.mock('expo-font', () => ({ useFonts: () => [true, null] }));
 
-jest.mock('../../src/components/HydrationSheet', () => {
-  const React = require('react');
-  const { Text } = require('react-native');
-  return ({ date }: { date: string }) =>
-    React.createElement(Text, null, `Hydration sheet ${date}`);
-});
-
 const mockBottomSheetControls = {
   openCount: 0,
   isPresentBlocked: false,
@@ -69,9 +62,9 @@ function renderAddSheet(
     onLogWorkout: jest.fn(),
     onSyncHealthData: jest.fn(),
     onBarcodeScan: jest.fn(),
-    onAddMeasurements: jest.fn(),
+    onAiMealScan: jest.fn(),
+    onGroceryList: jest.fn(),
     onAddProgressPhotos: jest.fn(),
-    onRunOrRide: jest.fn(),
     onAskSparky: jest.fn(),
     ...overrides,
   };
@@ -90,24 +83,25 @@ function renderAddSheet(
 
 describe('AddSheet', () => {
   const originalPlatform = Platform.OS;
-  it('shows the header and keeps AI meal scan inactive', () => {
+  it('offers the three ways into a meal, and the exercise menu behind none of them', () => {
     const screen = renderAddSheet();
     // The title mixes faces: the lead-in stays in the UI font while the
     // wordmark carries the brand face and the accent on ".fit", so the two
     // halves are separate Text nodes.
     expect(screen.getByText('Log data into qla.fit')).toBeTruthy();
-    fireEvent.press(screen.getByText('AI meal scan'));
-    expect(mockBottomSheetControls.dismiss).not.toHaveBeenCalled();
-    expect(screen.getByText('Hydration')).toBeTruthy();
+    expect(screen.getByText('Log Food')).toBeTruthy();
+    expect(screen.getByText('Scan Barcode')).toBeTruthy();
+    expect(screen.getByText('AI meal')).toBeTruthy();
+    // Workouts moved to the tab header; nothing here opens them.
     expect(screen.queryByText('Live sets & reps')).toBeNull();
   });
 
-  it('opens hydration for the selected date after the Add sheet dismisses', () => {
-    const screen = renderAddSheet({ getHydrationDate: () => '2026-09-08' });
-    fireEvent.press(screen.getByText('Hydration'));
-    expect(screen.queryByText('Hydration sheet 2026-09-08')).toBeNull();
-    act(() => mockBottomSheetControls.onDismiss?.());
-    expect(screen.getByText('Hydration sheet 2026-09-08')).toBeTruthy();
+  it('opens the AI meal scan from its tile', () => {
+    const onAiMealScan = jest.fn();
+    const { getByText } = renderAddSheet({ onAiMealScan });
+    fireEvent.press(getByText('AI meal'));
+    expect(onAiMealScan).toHaveBeenCalledTimes(1);
+    expect(mockBottomSheetControls.dismiss).toHaveBeenCalled();
   });
   let requestAnimationFrameSpy: jest.SpyInstance<
     number,
@@ -178,18 +172,13 @@ describe('AddSheet', () => {
     expect(onDismissWithoutAction).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the Measurements tile in the main grid', () => {
-    const { ref, getByText } = renderAddSheet();
+  it('offers the grocery list as a full-width row under the tiles', () => {
+    const onGroceryList = jest.fn();
+    const { ref, getByText } = renderAddSheet({ onGroceryList });
 
     act(() => ref.current?.present());
-    expect(getByText('Measurements')).toBeTruthy();
-  });
-
-  it('opens Run or Ride from its tile', () => {
-    const onRunOrRide = jest.fn();
-    const { getByText } = renderAddSheet({ onRunOrRide });
-    fireEvent.press(getByText('Run or Ride'));
-    expect(onRunOrRide).toHaveBeenCalledTimes(1);
+    fireEvent.press(getByText('Grocery list'));
+    expect(onGroceryList).toHaveBeenCalledTimes(1);
     expect(mockBottomSheetControls.dismiss).toHaveBeenCalled();
   });
 

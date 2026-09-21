@@ -33,6 +33,7 @@ import MeasurementsSummary from '../components/MeasurementsSummary';
 import { emptyDailySummary } from '../services/dailySummaryService';
 import SectionIntro from '../components/SectionIntro';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
+import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import ServingAdjustSheet, {
   type ServingAdjustSheetRef,
 } from '../components/ServingAdjustSheet';
@@ -70,7 +71,7 @@ import {
   getMealTypeDisplayLabel,
 } from '../utils/mealNutrition';
 import {
-  createNativeCartAction,
+  createNativeWorkoutsAction,
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
@@ -149,6 +150,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const accentColor = useCSSVariable('--color-accent-primary') as string;
   const usesNativeTabs = useNativeIOSTabsActive();
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
+  const startWorkout = useOpenStartWorkout(navigation);
 
   const syncNativeHeaderDatePicker = useCallback(() => {
     if (!usesNativeTabs) return;
@@ -178,9 +180,9 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
                 },
               ]
             : []),
-          createNativeCartAction(
-            () => navigation.navigate('Cart'),
-            t('cart.title', { defaultValue: 'Meals' })
+          createNativeWorkoutsAction(
+            startWorkout,
+            t('presetSearch.title', { defaultValue: 'Start Workout' })
           ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
@@ -197,6 +199,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     selectedDate,
     familyDiariesAccessibilityLabel,
     hasFamilyDiaries,
+    startWorkout,
     usesNativeTabs,
     t,
     dateLocale,

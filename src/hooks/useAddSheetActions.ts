@@ -161,6 +161,17 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('FoodScan', { date });
   }, [getActiveDiaryDate, navigateFromSheet]);
 
+  // The same scanner, opened on its photo segment: an AI estimate is a scan of
+  // the plate rather than of a barcode, so it is one screen, not two.
+  const handleAiMealScan = useCallback(() => {
+    const date = getActiveDiaryDate();
+    navigateFromSheet('FoodScan', { date, initialMode: 'photo' });
+  }, [getActiveDiaryDate, navigateFromSheet]);
+
+  const handleOpenGroceryList = useCallback(() => {
+    navigateFromSheet('Cart');
+  }, [navigateFromSheet]);
+
   const checkServerConnected = useCallback(
     (message: string, defaultMessage: string): boolean => {
       const isConnected = queryClient.getQueryData(serverConnectionQueryKey);
@@ -290,11 +301,6 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     [handleStartExerciseForm]
   );
 
-  const handleAddMeasurements = useCallback(() => {
-    const date = getActiveDiaryDate();
-    navigateFromSheet('MeasurementsAdd', { date });
-  }, [getActiveDiaryDate, navigateFromSheet]);
-
   const handleAddProgressPhotos = useCallback(() => {
     const date = getActiveDiaryDate();
     navigateFromSheet('ProgressPhotos', { date });
@@ -302,10 +308,6 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
 
   const handleAskSparky = useCallback(() => {
     navigateFromSheet('Chat');
-  }, [navigateFromSheet]);
-
-  const handleRunOrRide = useCallback(() => {
-    navigateFromSheet('RunOrRide');
   }, [navigateFromSheet]);
 
   const handleOpenCycle = useCallback(() => {
@@ -357,12 +359,12 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
+    handleAiMealScan,
+    handleOpenGroceryList,
     handleStartWorkout,
     handleLogWorkout,
     handleAddActivity,
-    handleAddMeasurements,
     handleAddProgressPhotos,
-    handleRunOrRide,
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,

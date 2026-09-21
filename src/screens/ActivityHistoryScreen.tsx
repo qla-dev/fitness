@@ -19,6 +19,7 @@ import { usePreferences } from '../hooks/usePreferences';
 import { useServerConnection } from '../hooks/useServerConnection';
 import { getWorkoutSummary } from '../utils/workoutSession';
 import { getAppLocale } from '../localization';
+import { getTodayDate } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
 import type { RootStackScreenProps } from '../types/navigation';
 
@@ -42,7 +43,6 @@ const monthLabel = (day: string): string => {
     year: 'numeric',
   });
 };
-
 
 /**
  * The whole logged-activity history: every session, newest first, grouped by
@@ -70,10 +70,42 @@ export default function ActivityHistoryScreen({
     useExerciseHistory();
   const [filter, setFilter] = useState<string>(ALL);
 
+  // Manual logging lives where the log itself lives: the two entry points
+  // the add sheet used to hold — an activity (duration & distance) and a
+  // workout typed up after the fact — are this screen's header buttons now.
+  // Neither passes skipDraftLoad, so an unfinished draft is picked back
+  // up rather than silently replaced.
   useScreenHeader({
     title: t('activityHistory.title', { defaultValue: 'Activities' }),
     nativeTitle: t('activityHistory.title', { defaultValue: 'Activities' }),
     left: { kind: 'back' },
+    right: [
+      {
+        kind: 'icon',
+        sfSymbol: 'figure.strengthtraining.traditional',
+        ionicon: 'barbell-outline',
+        accessibilityLabel: t('activityHistory.logWorkout', {
+          defaultValue: 'Log workout',
+        }),
+        identifier: 'activity-history-log-workout',
+        onPress: () =>
+          navigation.navigate('WorkoutAdd', { date: getTodayDate() }),
+        separated: true,
+      },
+      {
+        kind: 'icon',
+        sfSymbol: 'square.and.pencil',
+        ionicon: 'create-outline',
+        accessibilityLabel: t('activityHistory.logActivity', {
+          defaultValue: 'Log activity',
+        }),
+        identifier: 'activity-history-log-activity',
+        onPress: () =>
+          navigation.navigate('ActivityAdd', { date: getTodayDate() }),
+        // Own glass capsule each, or iOS 26 merges the pair into one control.
+        separated: true,
+      },
+    ],
   });
 
   // Chips are derived from what the history actually holds, so the row never
@@ -121,7 +153,8 @@ export default function ActivityHistoryScreen({
   // Split rather than a computed route name: the two routes take different
   // session shapes, and the discriminated union only narrows inside the branch.
   const openSession = (session: ExerciseSessionResponse) => {
-    if (session.type === 'preset') navigation.navigate('WorkoutDetail', { session });
+    if (session.type === 'preset')
+      navigation.navigate('WorkoutDetail', { session });
     else navigation.navigate('ActivityDetail', { session });
   };
 

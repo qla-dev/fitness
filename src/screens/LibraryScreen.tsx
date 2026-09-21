@@ -14,8 +14,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
+import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import {
-  createNativeCartAction,
+  createNativeWorkoutsAction,
   createNativeProfileAction,
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
@@ -77,9 +78,10 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
   const nativeTabs = useNativeIOSTabsActive();
   const usesNativeTabs = isLogs ? logsNativeHeader : nativeTabs;
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
+  const startWorkout = useOpenStartWorkout(navigation);
 
   // The tab has no date, so it never went through the shared date-picker
-  // helper; it still needs the cart and profile buttons every tab header
+  // helper; it still needs the workouts and profile buttons every tab header
   // carries.
   useLayoutEffect(() => {
     if (!usesNativeTabs || isLogs) return;
@@ -88,9 +90,9 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       // whose header options the bottom-tab navigation type does not describe.
       navigation as unknown as NativeTabHeaderNavigation,
       [
-        createNativeCartAction(
-          () => navigation.navigate('Cart'),
-          t('cart.title', { defaultValue: 'Meals' })
+        createNativeWorkoutsAction(
+          startWorkout,
+          t('presetSearch.title', { defaultValue: 'Start Workout' })
         ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),
@@ -99,7 +101,14 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       ],
       nativeHeaderActionColor
     );
-  }, [navigation, nativeHeaderActionColor, t, usesNativeTabs, isLogs]);
+  }, [
+    navigation,
+    nativeHeaderActionColor,
+    startWorkout,
+    t,
+    usesNativeTabs,
+    isLogs,
+  ]);
   const accentColor = useCSSVariable('--color-accent-primary') as string;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
@@ -239,7 +248,7 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
       {!isLogs && !usesNativeTabs && (
         <TabHeader
           title={t('screens.library.title', { defaultValue: 'Library' })}
-          onCartPress={() => navigation.navigate('Cart')}
+          onWorkoutsPress={startWorkout}
           onProfilePress={() => navigation.navigate('Profile')}
         />
       )}

@@ -144,14 +144,14 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
 
 jest.mock('../../src/utils/nativeHeaderDatePicker', () => ({
   setNativeHeaderDatePickerOptions: jest.fn(),
-  createNativeCartAction: (
+  createNativeWorkoutsAction: (
     onPress: () => void,
     accessibilityLabel: string
   ) => ({
-    sfSymbol: 'cart',
+    sfSymbol: 'figure.run',
     onPress,
     accessibilityLabel,
-    identifier: 'tab-header-cart',
+    identifier: 'tab-header-workouts',
   }),
   createNativeProfileAction: (
     onPress: () => void,
@@ -629,14 +629,14 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    // Family diaries first, then the cart and profile pair every tab header
+    // Family diaries first, then the workouts and profile pair every tab header
     // carries, with profile last so it keeps the corner position.
     expect(options?.trailingActions).toEqual([
       expect.objectContaining({
         sfSymbol: 'person.2.fill',
         accessibilityLabel: 'Open family diaries',
       }),
-      expect.objectContaining({ identifier: 'tab-header-cart' }),
+      expect.objectContaining({ identifier: 'tab-header-workouts' }),
       expect.objectContaining({ identifier: 'tab-header-profile' }),
     ]);
     options?.trailingActions?.[0]?.onPress();
@@ -691,9 +691,9 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    // Only the shared cart and profile pair is left when no diary is shared.
+    // Only the shared workouts and profile pair is left when no diary is shared.
     expect(options?.trailingActions).toEqual([
-      expect.objectContaining({ identifier: 'tab-header-cart' }),
+      expect.objectContaining({ identifier: 'tab-header-workouts' }),
       expect.objectContaining({ identifier: 'tab-header-profile' }),
     ]);
   });
@@ -716,9 +716,9 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    // Only the shared cart and profile pair is left when no diary is shared.
+    // Only the shared workouts and profile pair is left when no diary is shared.
     expect(options?.trailingActions).toEqual([
-      expect.objectContaining({ identifier: 'tab-header-cart' }),
+      expect.objectContaining({ identifier: 'tab-header-workouts' }),
       expect.objectContaining({ identifier: 'tab-header-profile' }),
     ]);
   });

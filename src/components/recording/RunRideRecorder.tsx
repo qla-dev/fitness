@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Alert, Linking, Platform, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useIsFocused } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -30,7 +38,10 @@ import {
   elapsedSeconds,
   recordingCalories,
 } from '../../services/recording/metrics';
-import type { RecordingSport } from '../../services/recording/types';
+import type {
+  RecordingGoal,
+  RecordingSport,
+} from '../../services/recording/types';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { formatLocalizedNumber } from '../../localization';
 import { distanceFromKm, weightToKg } from '../../utils/unitConversions';
@@ -43,7 +54,15 @@ function KeepRecordingAwake() {
 
 export default function RunRideRecorder({
   navigation,
-}: Pick<RootStackScreenProps<'RunOrRide'>, 'navigation'>) {
+  initialSport,
+  initialGoal,
+  initialWeightKg,
+}: Pick<RootStackScreenProps<'RunOrRide'>, 'navigation'> & {
+  /** Setup's choices. The in-screen controls still override them. */
+  initialSport?: RecordingSport;
+  initialGoal?: RecordingGoal;
+  initialWeightKg?: number;
+}) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
@@ -56,7 +75,7 @@ export default function RunRideRecorder({
     getRecordingSnapshot
   );
   const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
-  const [sport, setSport] = useState<RecordingSport>('run');
+  const [sport, setSport] = useState<RecordingSport>(initialSport ?? 'run');
   const [weight, setWeight] = useState('');
   const [showSensors, setShowSensors] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -86,6 +105,27 @@ export default function RunRideRecorder({
       setBusy(false);
     }
   };
+  // Arriving from the setup screen there is nothing left to ask: sport, goal
+  // and weight came with the route, so the session starts itself as soon as
+  // permissions are ready. A bare entry — a resume, a deep link — still gets
+  // the form below.
+  const autoStarted = useRef(false);
+  const [autoStartFailed, setAutoStartFailed] = useState(false);
+  useEffect(() => {
+    if (!initialWeightKg || session || autoStarted.current) return;
+    if (!snapshot.ready || Platform.OS === 'web') return;
+    autoStarted.current = true;
+    void startRecording(
+      initialSport ?? 'run',
+      initialWeightKg,
+      t,
+      initialGoal
+    ).catch(() => setAutoStartFailed(true));
+  }, [initialWeightKg, initialSport, initialGoal, session, snapshot.ready, t]);
+  // Derived, not stored: the route asked for a session and there is not one
+  // yet, so the form it would have filled in has nothing left to ask.
+  const autoStarting = !!initialWeightKg && !session && !autoStartFailed;
+
   const active = session?.phase === 'recording';
   const seconds = session ? elapsedSeconds(session, now) : 0;
   const speed =
@@ -107,6 +147,41 @@ export default function RunRideRecorder({
       <Text className="text-text-primary text-xl font-semibold">{value}</Text>
     </View>
   );
+  // Progress against the session's own goal. It is read off the session
+  // rather than off the route, so it survives leaving the screen and coming
+  // back — the recording outlives the navigation that started it.
+  const goal = session?.goal;
+  const goalDone =
+    !goal || !session
+      ? 0
+      : goal.type === 'time'
+        ? seconds
+        : goal.type === 'distance'
+          ? session.distance
+          : recordingCalories(session, seconds);
+  const goalPercent =
+    goal && goal.target > 0
+      ? Math.min(100, Math.round((goalDone / goal.target) * 100))
+      : 0;
+  const goalText = () => {
+    if (!goal) return null;
+    if (goal.type === 'time')
+      return `${recordingClock(Math.min(goalDone, goal.target))} / ${recordingClock(goal.target)}`;
+    if (goal.type === 'distance') {
+      const target = distanceFromKm(goal.target / 1000, unit);
+      return `${number(distanceFromKm(goalDone / 1000, unit), 2)} / ${number(target, 2)} ${unitLabel}`;
+    }
+    return `${number(goalDone, 0)} / ${number(goal.target, 0)} ${t('recording.kcal', { defaultValue: 'kcal' })}`;
+  };
+  const goalLabel = () => {
+    if (!goal) return '';
+    if (goal.type === 'time')
+      return t('workoutSetup.time', { defaultValue: 'Time' });
+    if (goal.type === 'distance')
+      return t('workoutSetup.distance', { defaultValue: 'Distance' });
+    return t('workoutSetup.calories', { defaultValue: 'Calories' });
+  };
+
   const finish = () =>
     Alert.alert(
       t('recording.finishTitle', { defaultValue: 'Finish this session?' }),
@@ -175,7 +250,14 @@ export default function RunRideRecorder({
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {!session ? (
+        {!session && autoStarting ? (
+          <View className="items-center gap-3 py-8">
+            <ActivityIndicator />
+            <Text className="text-text-muted">
+              {t('recording.starting', { defaultValue: 'Starting…' })}
+            </Text>
+          </View>
+        ) : !session ? (
           <View className="gap-3">
             <View className="flex-row gap-2">
               <Button
@@ -246,6 +328,27 @@ export default function RunRideRecorder({
                       })}
               </Text>
             </View>
+            {goal && (
+              <View className="gap-1 mb-1">
+                <View className="flex-row justify-between">
+                  <Text className="text-text-secondary text-sm">
+                    {t('recording.goal', {
+                      defaultValue: '{{goal}} goal',
+                      goal: goalLabel(),
+                    })}
+                  </Text>
+                  <Text className="text-text-primary text-sm font-semibold">
+                    {goalText()}
+                  </Text>
+                </View>
+                <View className="h-2 rounded-full bg-progress-track overflow-hidden">
+                  <View
+                    className="h-2 bg-accent-primary rounded-full"
+                    style={{ width: `${goalPercent}%` }}
+                  />
+                </View>
+              </View>
+            )}
             <View className="flex-row flex-wrap">
               {metric(
                 t('recording.duration', { defaultValue: 'Duration' }),

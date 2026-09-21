@@ -11,10 +11,8 @@ import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
 
 import Icon, { type IconName } from './Icon';
-import HydrationSheet from './HydrationSheet';
 import AppWordmark from './AppWordmark';
 import CustomModal, { type CustomModalRef } from './CustomModal';
-import { getTodayDate } from '../utils/dateUtils';
 import Button from './ui/Button';
 
 export interface AddSheetRef {
@@ -25,16 +23,15 @@ export interface AddSheetRef {
 export const addSheetRef = React.createRef<AddSheetRef>();
 
 interface AddSheetProps {
-  getHydrationDate?: () => string | undefined;
   onAddFood: () => void;
   onStartWorkout: () => void;
   onAddActivity: () => void;
   onLogWorkout: () => void;
   onSyncHealthData: () => void;
   onBarcodeScan: () => void;
-  onAddMeasurements: () => void;
+  onAiMealScan: () => void;
+  onGroceryList: () => void;
   onAddProgressPhotos: () => void;
-  onRunOrRide: () => void;
   onAskSparky: () => void;
   onOpenCycle?: () => void;
   showCycleCard?: boolean;
@@ -44,26 +41,24 @@ interface AddSheetProps {
 }
 
 interface ActionCard {
-  opensExerciseMenu?: boolean;
   label: string;
   icon: IconName;
   iconSize?: number;
-  onPress?: () => void;
+  onPress: () => void;
 }
 
 const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
   (
     {
       onAddFood,
-      getHydrationDate,
       onStartWorkout,
       onAddActivity,
       onLogWorkout,
       onSyncHealthData,
       onBarcodeScan,
-      onAddMeasurements,
+      onAiMealScan,
+      onGroceryList,
       onAddProgressPhotos,
-      onRunOrRide,
       onAskSparky,
       onOpenCycle,
       showCycleCard,
@@ -83,8 +78,6 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
     const pendingInitialMenuRef = useRef<'exercise' | null>(null);
     const presentFrameRef = useRef<number | null>(null);
     const [showExerciseMenu, setShowExerciseMenu] = useState(false);
-    const [hydrationDate, setHydrationDate] = useState<string | null>(null);
-    const pendingHydrationDate = useRef<string | null>(null);
 
     const [accentPrimary, raisedBg, textSecondary] = useCSSVariable([
       '--color-accent-primary',
@@ -165,11 +158,6 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
     );
 
     const handleDismiss = useCallback(() => {
-      if (pendingHydrationDate.current) {
-        setHydrationDate(pendingHydrationDate.current);
-        pendingHydrationDate.current = null;
-        onDismissWithoutAction?.();
-      }
       isDismissingRef.current = false;
       isOpenRef.current = false;
       if (pendingPresentRef.current) {
@@ -210,51 +198,22 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
       [clearScheduledPresent]
     );
 
+    // The three ways into a meal, as the tiles across the top of the sheet.
     const cards: ActionCard[] = [
       {
-        label: t('addSheet.food', { defaultValue: 'Food' }),
+        label: t('addSheet.logFood', { defaultValue: 'Log Food' }),
         icon: 'food',
         onPress: onAddFood,
       },
       {
-        label: t('addSheet.exercise', { defaultValue: 'Exercise' }),
-        icon: 'exercise-weights',
-        opensExerciseMenu: true,
-      },
-      {
-        label: t('addSheet.scanFood', { defaultValue: 'Scan Food' }),
+        label: t('addSheet.scanBarcode', { defaultValue: 'Scan Barcode' }),
         icon: 'scan',
         onPress: onBarcodeScan,
       },
       {
-        label: t('addSheet.aiMealScan', { defaultValue: 'AI meal scan' }),
+        label: t('addSheet.aiMeal', { defaultValue: 'AI meal' }),
         icon: 'sparkles',
-      },
-      {
-        label: t('addSheet.runOrRide', { defaultValue: 'Run or Ride' }),
-        icon: 'exercise-cycling',
-        iconSize: 36,
-        onPress: onRunOrRide,
-      },
-      {
-        label: t('addSheet.hydration', { defaultValue: 'Hydration' }),
-        icon: 'hydration',
-        iconSize: 28,
-        onPress: () => {
-          pendingHydrationDate.current = getHydrationDate?.() ?? getTodayDate();
-        },
-      },
-      {
-        label: t('addSheet.measurements', { defaultValue: 'Measurements' }),
-        icon: 'measurements',
-        onPress: onAddMeasurements,
-      },
-      {
-        label: t('addSheet.progressPhotos', {
-          defaultValue: 'Progress Photos',
-        }),
-        icon: 'camera-filled',
-        onPress: onAddProgressPhotos,
+        onPress: onAiMealScan,
       },
     ];
 
@@ -264,16 +223,7 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         variant="primary"
         className="flex-1 py-5 mx-1.5"
         style={{ backgroundColor: raisedBg }}
-        onPress={() => {
-          if (card.onPress) {
-            handleAction(card.onPress);
-          } else if (card.opensExerciseMenu) {
-            LayoutAnimation.configureNext(
-              LayoutAnimation.Presets.easeInEaseOut
-            );
-            setShowExerciseMenu(true);
-          }
-        }}
+        onPress={() => handleAction(card.onPress)}
       >
         <View className="h-9 items-center justify-center">
           <Icon
@@ -282,7 +232,12 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
             color={accentPrimary}
           />
         </View>
-        <Text className="text-text-primary text-sm font-medium mt-2">
+        <Text
+          className="text-text-primary text-sm font-medium mt-2 text-center"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
           {card.label}
         </Text>
       </Button>
@@ -394,22 +349,17 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
           </>
         ) : (
           <>
-            <View className="flex-row mb-3">
-              {renderCard(cards[0])}
-              {renderCard(cards[1])}
-            </View>
-            <View className="flex-row">
-              {renderCard(cards[2])}
-              {renderCard(cards[3])}
-            </View>
-            <View className="flex-row mt-3">
-              {renderCard(cards[4])}
-              {renderCard(cards[5])}
-            </View>
-            <View className="flex-row mt-3">
-              {renderCard(cards[6])}
-              {renderCard(cards[7])}
-            </View>
+            <View className="flex-row">{cards.map(renderCard)}</View>
+            {renderSecondaryRow(
+              t('addSheet.groceryList', { defaultValue: 'Grocery list' }),
+              'cart',
+              onGroceryList
+            )}
+            {renderSecondaryRow(
+              t('addSheet.progressPhotos', { defaultValue: 'Progress Photos' }),
+              'camera-filled',
+              onAddProgressPhotos
+            )}
             {!isLocalDataMode() && showCycleCard && onOpenCycle
               ? renderSecondaryRow(
                   cycleLabel ??
@@ -462,12 +412,6 @@ const AddSheet = React.forwardRef<AddSheetRef, AddSheetProps>(
         >
           {content}
         </CustomModal>
-        {hydrationDate && (
-          <HydrationSheet
-            date={hydrationDate}
-            onClose={() => setHydrationDate(null)}
-          />
-        )}
       </>
     );
   }

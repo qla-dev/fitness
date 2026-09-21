@@ -37,6 +37,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ExerciseProgramScreen from '../screens/ExerciseProgramScreen';
 import CartScreen from '../screens/CartScreen';
 import RunOrRideScreen from '../screens/RunOrRideScreen';
+import WorkoutSetupScreen from '../screens/WorkoutSetupScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import ProfileGoalsScreen from '../screens/ProfileGoalsScreen';
 import MyLogsScreen from '../screens/MyLogsScreen';
@@ -130,6 +131,7 @@ export const SafeChat = withErrorBoundary(ChatScreen, 'Chat', { canGoBack: true 
 export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'ExerciseProgram', { canGoBack: true });
 export const SafeCart = withErrorBoundary(CartScreen, 'Cart', { canGoBack: true });
 export const SafeRunOrRide = withErrorBoundary(RunOrRideScreen, 'RunOrRide', { canGoBack: true });
+export const SafeWorkoutSetup = withErrorBoundary(WorkoutSetupScreen, 'WorkoutSetup', { canGoBack: true });
 export const SafeProfile = withErrorBoundary(SettingsScreen, 'Profile', { canGoBack: true });
 export const SafeProfileEdit = withErrorBoundary(ProfileEditScreen, 'ProfileEdit', { canGoBack: true });
 export const SafeProfileGoals = withErrorBoundary(ProfileGoalsScreen, 'ProfileGoals', { canGoBack: true });

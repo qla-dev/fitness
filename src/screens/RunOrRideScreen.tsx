@@ -8,6 +8,7 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 
 export default function RunOrRideScreen({
   navigation,
+  route,
 }: RootStackScreenProps<'RunOrRide'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -23,7 +24,12 @@ export default function RunOrRideScreen({
           never boxed into a panel. It is absolutely positioned rather than a
           flex child for that reason. */}
       <View className="flex-1">
-        <RunRideRecorder navigation={navigation} />
+        <RunRideRecorder
+          navigation={navigation}
+          initialSport={route.params?.sport}
+          initialGoal={route.params?.goal}
+          initialWeightKg={route.params?.weightKg}
+        />
       </View>
       <View
         className="absolute left-0 right-0 top-0"

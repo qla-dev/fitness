@@ -83,25 +83,25 @@ describe('TabHeader', () => {
     expect(getByRole('button', { name: 'Profile' })).toBeTruthy();
   });
 
-  test('offers the meals button, spaced apart, left of profile', () => {
-    const onCartPress = jest.fn();
+  test('offers the workouts button, spaced apart, left of profile', () => {
+    const onWorkoutsPress = jest.fn();
     const onProfilePress = jest.fn();
     const { getByRole } = renderHeader(
       <TabHeader
         title="Activities"
-        onCartPress={onCartPress}
+        onWorkoutsPress={onWorkoutsPress}
         onProfilePress={onProfilePress}
       />
     );
 
-    const cart = getByRole('button', { name: 'Meals' });
+    const workouts = getByRole('button', { name: 'Start Workout' });
     // Its own 44pt tap target, not a slice of a joined block.
-    expect(cart.props.style).toEqual(
+    expect(workouts.props.style).toEqual(
       expect.objectContaining({ width: 44, height: 44 })
     );
 
-    fireEvent.press(cart);
-    expect(onCartPress).toHaveBeenCalledTimes(1);
+    fireEvent.press(workouts);
+    expect(onWorkoutsPress).toHaveBeenCalledTimes(1);
     expect(onProfilePress).not.toHaveBeenCalled();
 
     fireEvent.press(getByRole('button', { name: 'Profile' }));

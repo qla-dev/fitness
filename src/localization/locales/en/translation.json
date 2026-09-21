@@ -415,7 +415,11 @@
     "askSparky": "Ask Sparky",
     "syncHealth": "Sync Health Data",
     "logPregnancyEntry": "Log Pregnancy Entry",
-    "logCycle": "Log Cycle"
+    "logCycle": "Log Cycle",
+    "logFood": "Log Food",
+    "scanBarcode": "Scan Barcode",
+    "aiMeal": "AI meal",
+    "groceryList": "Grocery list"
   },
   "screens": {
     "foods": "Foods",
@@ -5352,7 +5356,9 @@
     "watchNotInstalled": "Install qla.fit on your Apple Watch from the Watch app to use it as a heart-rate sensor.",
     "watchStreaming": "Streaming your heart rate.",
     "watchOverriddenByStrap": "Connected. Your chest strap is more accurate, so it is being used instead.",
-    "watchReady": "Ready. Your watch starts measuring when you start a run or ride."
+    "watchReady": "Ready. Your watch starts measuring when you start a run or ride.",
+    "goal": "{{goal}} goal",
+    "starting": "Starting…"
   },
   "setup": {
     "progress": "Step {{current}} of {{total}}",
@@ -5556,7 +5562,10 @@
     "noExercises": "No exercises yet",
     "noExercisesMessage": "Add an exercise to your library to start here",
     "exercisesHeading": "Exercises",
-    "programsHeading": "Programs"
+    "programsHeading": "Programs",
+    "running": "Running",
+    "cycling": "Cycling",
+    "recorded": "GPS tracked"
   },
   "macros": {
     "title": "AI",
@@ -5577,7 +5586,9 @@
   },
   "activityHistory": {
     "title": "Activities",
-    "empty": "No activities logged yet."
+    "empty": "No activities logged yet.",
+    "logActivity": "Log activity",
+    "logWorkout": "Log workout"
   },
   "activityExtras": {
     "heatmap": "Position heatmap",
@@ -5592,5 +5603,23 @@
     "zoneMid": "Mid-range",
     "zoneThree": "Three",
     "zoneFree": "Free throws"
+  },
+  "workoutSetup": {
+    "title": "Start Workout",
+    "quickStart": "Quick start",
+    "time": "Time",
+    "distance": "Distance",
+    "calories": "Calories",
+    "minutesUnit": "MIN",
+    "kmUnit": "KM",
+    "milesUnit": "MI",
+    "kcalUnit": "KCAL",
+    "startGoal": "Start {{goal}}",
+    "timeTarget": "Time goal in minutes",
+    "distanceTarget": "Distance goal",
+    "calorieTarget": "Calorie goal",
+    "weightHint": "Used for the calorie estimate ({{unit}})",
+    "weightRequired": "Enter your body weight to start.",
+    "goalHint": "A goal is a target, not a limit — the session keeps recording past it until you finish."
   }
 }

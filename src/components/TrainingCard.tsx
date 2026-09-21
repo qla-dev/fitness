@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
-import Icon from './Icon';
+import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
 import { withAlpha } from '../utils/colors';
 
@@ -20,6 +20,7 @@ import { withAlpha } from '../utils/colors';
 export default function TrainingCard({
   title,
   subtitle,
+  icon = 'exercise-running',
   imageUri,
   onPress,
   onInfo,
@@ -29,6 +30,8 @@ export default function TrainingCard({
   title: string;
   /** A short qualifier under the name — the category, or what it works. */
   subtitle?: string | null;
+  /** Glyph shown when there is no artwork. */
+  icon?: IconName;
   /** The exercise's own artwork; a glyph stands in when there is none. */
   imageUri?: string | null;
   onPress: () => void;
@@ -61,20 +64,22 @@ export default function TrainingCard({
       }}
     >
       <View className="flex-row items-start">
-        <View
-          className="w-14 h-14 rounded-2xl items-center justify-center overflow-hidden"
-          style={{ backgroundColor: withAlpha(surface, 0.6) }}
-        >
-          {imageUri ? (
+        {imageUri ? (
+          <View
+            className="w-14 h-14 rounded-2xl items-center justify-center overflow-hidden"
+            style={{ backgroundColor: withAlpha(surface, 0.6) }}
+          >
             <Image
               source={{ uri: imageUri }}
               style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
-          ) : (
-            <Icon name="exercise-running" size={28} color={accent} />
-          )}
-        </View>
+          </View>
+        ) : (
+          <View className="w-14 h-14 items-center justify-center">
+            <Icon name={icon} size={46} color={accent} />
+          </View>
+        )}
         <View className="flex-1" />
         {/* The start affordance. The card carries the press — this says so. */}
         <View

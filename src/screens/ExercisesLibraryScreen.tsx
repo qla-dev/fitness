@@ -22,6 +22,7 @@ import type { ExerciseProgram } from '../types/exerciseProgram';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
+import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import { useExternalExerciseSearch } from '../hooks/useExternalExerciseSearch';
 import { suggestedExercisesQueryKey } from '../hooks/queryKeys';
 import { importExercise } from '../services/api/externalExerciseSearchApi';
@@ -577,6 +578,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     filter: ownershipFilter,
     onSelect: setOwnershipFilter,
   });
+  const startWorkout = useOpenStartWorkout(navigation);
   const header = useScreenHeader({
     // The tab root is the program store; the Library drill-in is still the
     // exercise library.
@@ -587,8 +589,8 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     // here would draw a line between the bar and the field rather than
     // between two sections.
     borderless: true,
-    // The store keeps the cart and profile pair every tab header carries in
-    // the right corner, so the filter moves to the leading slot the back
+    // The store keeps the workouts and profile pair every tab header carries
+    // in the right corner, so the filter moves to the leading slot the back
     // button would otherwise occupy. The drill-in still needs that slot for
     // back, so there the filter stays on the right.
     left: isTabRoot ? filterItem : { kind: 'back' },
@@ -596,11 +598,13 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       ? [
           {
             kind: 'icon' as const,
-            sfSymbol: 'fork.knife',
-            ionicon: 'restaurant',
-            accessibilityLabel: t('cart.title', { defaultValue: 'Meals' }),
-            identifier: 'exercises-library-cart',
-            onPress: () => navigation.navigate('Cart'),
+            sfSymbol: 'figure.run',
+            ionicon: 'walk',
+            accessibilityLabel: t('presetSearch.title', {
+              defaultValue: 'Start Workout',
+            }),
+            identifier: 'exercises-library-workouts',
+            onPress: startWorkout,
             // Own glass capsule each, or iOS 26 merges the pair into one
             // joined control.
             separated: true,

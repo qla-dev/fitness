@@ -125,7 +125,8 @@ export function setNativeTabHeaderActions(
           accessibilityLabel: action.accessibilityLabel,
           identifier: action.identifier,
           // Each tab-header button gets its own Liquid Glass capsule; iOS 26
-          // would otherwise merge the cart and profile into one joined pill.
+          // would otherwise merge the workouts and profile buttons into one
+          // joined pill.
           separated: true,
         })
       ),
@@ -133,20 +134,20 @@ export function setNativeTabHeaderActions(
 }
 
 /**
- * The store cart, shared by every tab's native header. It sits immediately
+ * The workouts list, shared by every tab's native header. It sits immediately
  * before the profile button, so profile keeps the corner position it holds on
- * every tab.
+ * every tab. Food logging moved to the tab bar's centre button, so this slot
+ * carries the other half of the day: what the user trained.
  */
-export function createNativeCartAction(
+export function createNativeWorkoutsAction(
   onPress: () => void,
   accessibilityLabel: string
 ): NativeHeaderAction {
   return {
-    // fork.knife, handed over by the Tracker tab: this opens Meals now.
-    sfSymbol: 'fork.knife',
+    sfSymbol: 'figure.run',
     onPress,
     accessibilityLabel,
-    identifier: 'tab-header-cart',
+    identifier: 'tab-header-workouts',
   };
 }
 

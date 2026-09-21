@@ -41,7 +41,9 @@ export const NON_ADD_TABS = [
   'Exercises',
 ] as const;
 export type NonAddTabName = (typeof NON_ADD_TABS)[number];
-const ADD_TAB_ICON: AppleIcon = { sfSymbol: 'plus' };
+// The centre button opens the log sheet, whose first row is food, so it
+// wears the sheet's own subject rather than a generic plus.
+const ADD_TAB_ICON: AppleIcon = { sfSymbol: 'fork.knife' };
 
 type TabTrackingProps = {
   rememberActiveTab: (routeName: string) => void;
@@ -87,7 +89,10 @@ const popScreenListeners = ({
 }: {
   navigation: { getState: () => { routes: readonly { key: string }[] } };
 }) => ({
-  transitionStart: (event: { data?: { closing?: boolean }; target?: string }) => {
+  transitionStart: (event: {
+    data?: { closing?: boolean };
+    target?: string;
+  }) => {
     if (event.data?.closing)
       fireBackNavigationHaptic(navigation.getState(), event.target);
   },
@@ -150,15 +155,21 @@ function NativeTabsBannerOverlay() {
 function DashboardStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const textPrimary = useCSSVariable('--color-text-primary') as string;
+  const [textPrimary, bgPrimary] = useCSSVariable([
+    '--color-text-primary',
+    '--color-background',
+  ]) as [string, string];
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
-    [defaultColor, textPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
+    [defaultColor, textPrimary, bgPrimary]
   );
 
   return (
     <View className="flex-1">
-      <DashboardStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
+      <DashboardStack.Navigator
+        screenOptions={screenOptions}
+        screenListeners={popScreenListeners}
+      >
         <DashboardStack.Screen
           name="DashboardRoot"
           component={SafeDashboard as React.ComponentType}
@@ -176,15 +187,21 @@ function DashboardStackScreen() {
 function DiaryStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const textPrimary = useCSSVariable('--color-text-primary') as string;
+  const [textPrimary, bgPrimary] = useCSSVariable([
+    '--color-text-primary',
+    '--color-background',
+  ]) as [string, string];
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
-    [defaultColor, textPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
+    [defaultColor, textPrimary, bgPrimary]
   );
 
   return (
     <View className="flex-1">
-      <DiaryStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
+      <DiaryStack.Navigator
+        screenOptions={screenOptions}
+        screenListeners={popScreenListeners}
+      >
         <DiaryStack.Screen
           name="DiaryRoot"
           component={SafeDiary as React.ComponentType}
@@ -202,15 +219,21 @@ function DiaryStackScreen() {
 function TrendsStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const textPrimary = useCSSVariable('--color-text-primary') as string;
+  const [textPrimary, bgPrimary] = useCSSVariable([
+    '--color-text-primary',
+    '--color-background',
+  ]) as [string, string];
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
-    [defaultColor, textPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
+    [defaultColor, textPrimary, bgPrimary]
   );
 
   return (
     <View className="flex-1">
-      <TrendsStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
+      <TrendsStack.Navigator
+        screenOptions={screenOptions}
+        screenListeners={popScreenListeners}
+      >
         <TrendsStack.Screen
           name="TrendsRoot"
           component={SafeTrends as React.ComponentType}
@@ -228,7 +251,10 @@ function TrendsStackScreen() {
 function ExercisesStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const textPrimary = useCSSVariable('--color-text-primary') as string;
+  const [textPrimary, bgPrimary] = useCSSVariable([
+    '--color-text-primary',
+    '--color-background',
+  ]) as [string, string];
   // A small (non-large) title, unlike the other tabs. A large title needs the
   // scrolling content to opt into iOS inset adjustment, and this screen pins a
   // search bar above its list, outside the scroll view — under a large title
@@ -236,13 +262,17 @@ function ExercisesStackScreen() {
   // small header pushes content down instead, so the tab lays out exactly like
   // the same screen pushed from the Library.
   const screenOptions = React.useMemo(
-    () => createIOSSmallNativeHeaderOptions(defaultColor, textPrimary),
-    [defaultColor, textPrimary]
+    () =>
+      createIOSSmallNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
+    [defaultColor, textPrimary, bgPrimary]
   );
 
   return (
     <View className="flex-1">
-      <ExercisesStack.Navigator screenOptions={screenOptions} screenListeners={popScreenListeners}>
+      <ExercisesStack.Navigator
+        screenOptions={screenOptions}
+        screenListeners={popScreenListeners}
+      >
         <ExercisesStack.Screen
           name="ExercisesRoot"
           component={SafeExercises as React.ComponentType}
@@ -392,7 +422,9 @@ export function FallbackTabsLayout({
         name="Dashboard"
         component={SafeDashboard}
         options={{
-          tabBarLabel: t('navigation.dashboard', { defaultValue: 'Activities' }),
+          tabBarLabel: t('navigation.dashboard', {
+            defaultValue: 'Activities',
+          }),
           tabBarAccessibilityLabel: t('navigation.dashboard', {
             defaultValue: 'Activities',
           }),

@@ -37,6 +37,7 @@ import {
 import {
   RECORDING_DETAIL_TYPE,
   type RecordedPoint,
+  type RecordingGoal,
   type RecordingDetail,
   type RecordingSession,
   type RecordingSport,
@@ -330,7 +331,8 @@ async function startLocation(t: TFunction) {
 export async function startRecording(
   sport: RecordingSport,
   weightKg: number,
-  t: TFunction
+  t: TFunction,
+  goal?: RecordingGoal
 ) {
   return serialize(async () => {
     await hydrate();
@@ -354,6 +356,7 @@ export async function startRecording(
       speed: 0,
       weightKg,
       segment: 0,
+      ...(goal && goal.type !== 'open' ? { goal } : {}),
     };
     await checkpointRecording(session);
     publish({ session, error: false });

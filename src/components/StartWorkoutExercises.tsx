@@ -7,6 +7,7 @@ import TrainingCard from './TrainingCard';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useExerciseSearch } from '../hooks/useExerciseSearch';
 import { useSuggestedExercises } from '../hooks/useSuggestedExercises';
+import type { RecordingSport } from '../services/recording/types';
 import type { Exercise } from '../types/exercise';
 
 /**
@@ -25,11 +26,14 @@ export default function StartWorkoutExercises({
   searchText,
   onSelect,
   onInfo,
+  onRecord,
   startingId,
 }: {
   searchText: string;
   onSelect: (exercise: Exercise) => void;
   onInfo: (exercise: Exercise) => void;
+  /** Opens setup for a recorded workout — running first, cycling second. */
+  onRecord: (sport: RecordingSport) => void;
   /** The exercise currently starting a session, if any. */
   startingId?: string | null;
 }) {
@@ -53,6 +57,28 @@ export default function StartWorkoutExercises({
 
   const exercises = isSearchActive ? searchResults : suggested;
 
+  // Left out of a search: these two are fixed entries, not library matches,
+  // and a search that returned them alongside real hits would read as a
+  // result for whatever was typed.
+  const recorded = isSearchActive ? null : (
+    <>
+      <TrainingCard
+        testID="start-workout-run"
+        title={t('startWorkout.running', { defaultValue: 'Running' })}
+        subtitle={t('startWorkout.recorded', { defaultValue: 'GPS tracked' })}
+        icon="exercise-running-filled"
+        onPress={() => onRecord('run')}
+      />
+      <TrainingCard
+        testID="start-workout-ride"
+        title={t('startWorkout.cycling', { defaultValue: 'Cycling' })}
+        subtitle={t('startWorkout.recorded', { defaultValue: 'GPS tracked' })}
+        icon="exercise-cycling"
+        onPress={() => onRecord('ride')}
+      />
+    </>
+  );
+
   if (isSearchActive ? isSearchError : isError) {
     return (
       <StatusView
@@ -75,24 +101,27 @@ export default function StartWorkoutExercises({
   if (exercises.length === 0) {
     if (isSearchActive ? isSearching : isLoading) return <StatusView loading />;
     return (
-      <StatusView
-        title={
-          isSearchActive
-            ? t('startWorkout.noMatches', {
-                defaultValue: 'No exercises found',
-              })
-            : t('startWorkout.noExercises', {
-                defaultValue: 'No exercises yet',
-              })
-        }
-        subtitle={
-          isSearchActive
-            ? undefined
-            : t('startWorkout.noExercisesMessage', {
-                defaultValue: 'Add an exercise to your library to start here',
-              })
-        }
-      />
+      <View className="flex-1">
+        {recorded ? <View className="px-4 pt-4">{recorded}</View> : null}
+        <StatusView
+          title={
+            isSearchActive
+              ? t('startWorkout.noMatches', {
+                  defaultValue: 'No exercises found',
+                })
+              : t('startWorkout.noExercises', {
+                  defaultValue: 'No exercises yet',
+                })
+          }
+          subtitle={
+            isSearchActive
+              ? undefined
+              : t('startWorkout.noExercisesMessage', {
+                  defaultValue: 'Add an exercise to your library to start here',
+                })
+          }
+        />
+      </View>
     );
   }
 
@@ -102,6 +131,7 @@ export default function StartWorkoutExercises({
       keyExtractor={(exercise) => exercise.id}
       contentContainerStyle={{ padding: 16 }}
       keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={recorded}
       renderItem={({ item }) => (
         <TrainingCard
           testID={`start-workout-${item.id}`}

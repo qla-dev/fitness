@@ -11,7 +11,9 @@ import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useStartLiveWorkout } from '../hooks/useStartLiveWorkout';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import { getTodayDate } from '../utils/dateUtils';
 import { buildSingleExerciseStartPayload } from '../utils/workoutSession';
+import type { RecordingSport } from '../services/recording/types';
 import type { Exercise } from '../types/exercise';
 import type { RootStackScreenProps } from '../types/navigation';
 
@@ -53,6 +55,11 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
     navigation.goBack();
   }, [navigation]);
 
+  // Manual logging sits beside the live start: this screen is where the tab
+  // header's workouts button lands, so the two after-the-fact entries the add
+  // sheet used to carry are its right-hand buttons. Neither passes
+  // `skipDraftLoad`, so an unfinished draft is picked back up rather than
+  // silently replaced.
   const header = useScreenHeader({
     title: t('presetSearch.title', { defaultValue: 'Start Workout' }),
     left: {
@@ -60,7 +67,47 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
       onPress: handleCancel,
       identifier: 'preset-search-cancel',
     },
+    right: [
+      {
+        kind: 'icon',
+        sfSymbol: 'figure.strengthtraining.traditional',
+        ionicon: 'barbell-outline',
+        accessibilityLabel: t('activityHistory.logWorkout', {
+          defaultValue: 'Log workout',
+        }),
+        identifier: 'preset-search-log-workout',
+        onPress: () =>
+          runNavigationAction(() =>
+            navigation.navigate('WorkoutAdd', { date: getTodayDate() })
+          ),
+        separated: true,
+      },
+      {
+        kind: 'icon',
+        sfSymbol: 'square.and.pencil',
+        ionicon: 'create-outline',
+        accessibilityLabel: t('activityHistory.logActivity', {
+          defaultValue: 'Log activity',
+        }),
+        identifier: 'preset-search-log-activity',
+        onPress: () =>
+          runNavigationAction(() =>
+            navigation.navigate('ActivityAdd', { date: getTodayDate() })
+          ),
+        // Own glass capsule each, or iOS 26 merges the pair into one control.
+        separated: true,
+      },
+    ],
   });
+
+  // A recorded workout goes through setup first: it has a goal to pick and a
+  // body weight to confirm, neither of which a lifted exercise needs.
+  const handleRecord = useCallback(
+    (sport: RecordingSport) => {
+      runNavigationAction(() => navigation.navigate('WorkoutSetup', { sport }));
+    },
+    [runNavigationAction, navigation]
+  );
 
   // The pressed card is marked by its own id, so the spinner lands on the one
   // that was tapped rather than on the list as a whole.
@@ -140,6 +187,7 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
         startingId={startingId}
         onSelect={handleStartFromExercise}
         onInfo={handlePreviewExercise}
+        onRecord={handleRecord}
       />
     </View>
   );

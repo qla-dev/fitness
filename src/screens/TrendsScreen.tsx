@@ -14,6 +14,7 @@ import StatusView from '../components/StatusView';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useHealthTrends, usePreferences, useServerConnection } from '../hooks';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
+import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import {
@@ -22,7 +23,7 @@ import {
 } from '../utils/healthTrendPreferences';
 import { weightFromKg } from '../utils/unitConversions';
 import {
-  createNativeCartAction,
+  createNativeWorkoutsAction,
   createNativeProfileAction,
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
@@ -72,14 +73,15 @@ export default function TrendsScreen({ navigation }: Props) {
           },
     [trends.weight, weightUnit]
   );
+  const startWorkout = useOpenStartWorkout(navigation);
   const syncHeader = useCallback(() => {
     if (!usesNativeTabs) return;
     setNativeTabHeaderActions(
       navigation as unknown as NativeTabHeaderNavigation,
       [
-        createNativeCartAction(
-          () => navigation.navigate('Cart'),
-          t('cart.title', { defaultValue: 'Meals' })
+        createNativeWorkoutsAction(
+          startWorkout,
+          t('presetSearch.title', { defaultValue: 'Start Workout' })
         ),
         createNativeProfileAction(
           () => navigation.navigate('Profile'),
@@ -88,7 +90,7 @@ export default function TrendsScreen({ navigation }: Props) {
       ],
       defaultColor
     );
-  }, [navigation, usesNativeTabs, defaultColor, t]);
+  }, [navigation, usesNativeTabs, defaultColor, startWorkout, t]);
   useLayoutEffect(syncHeader, [syncHeader]);
   useFocusEffect(syncHeader);
   const refresh = async () => {
@@ -183,7 +185,7 @@ export default function TrendsScreen({ navigation }: Props) {
     <View className="flex-1 bg-background">
       <TabHeader
         title={t('navigation.trends', { defaultValue: 'Goals' })}
-        onCartPress={() => navigation.navigate('Cart')}
+        onWorkoutsPress={startWorkout}
         onProfilePress={() => navigation.navigate('Profile')}
       />
       {renderedContent}

@@ -1,5 +1,18 @@
 export type RecordingSport = 'run' | 'ride';
 
+/** What the session is aiming at. `open` is Quick Start: no target at all. */
+export type RecordingGoalType = 'open' | 'time' | 'distance' | 'calories';
+
+export interface RecordingGoal {
+  type: RecordingGoalType;
+  /**
+   * Seconds for `time`, metres for `distance`, kilocalories for
+   * `calories`. Always metric and always absolute, so a goal set under one
+   * unit preference still reads correctly under another.
+   */
+  target: number;
+}
+
 export interface RecordedPoint {
   timestamp: number;
   latitude: number;
@@ -39,6 +52,8 @@ export interface RecordingSession {
   weightKg: number;
   segment: number;
   exerciseId?: string;
+  /** Absent on sessions started before goals existed, and on Quick Start. */
+  goal?: RecordingGoal;
   saveAttempted?: boolean;
 }
 

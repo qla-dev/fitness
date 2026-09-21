@@ -59,6 +59,7 @@ import {
   useWidgetSync,
 } from '../hooks';
 import { useCheckInPhotoDates } from '../hooks/useCheckInPhotos';
+import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useActiveWorkoutStore } from '../stores/activeWorkoutStore';
@@ -68,7 +69,7 @@ import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { formatDateLabel } from '../utils/dateUtils';
 import { buildHourlyExerciseMinutes } from '../utils/hourlyActivity';
 import {
-  createNativeCartAction,
+  createNativeWorkoutsAction,
   createNativeProfileAction,
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
@@ -126,6 +127,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const usesNativeTabs = useNativeIOSTabsActive();
   const insets = useSafeAreaInsets();
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
+  const startWorkout = useOpenStartWorkout(navigation);
   const syncNativeHeaderDatePicker = useCallback(() => {
     if (!usesNativeTabs) return;
 
@@ -141,12 +143,12 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         dateLabel: `${formatDateLabel(selectedDate, t, dateLocale)} ▾`,
         t,
         locale: dateLocale,
-        // Cart first, then profile, so profile stays in the corner
+        // Workouts first, then profile, so profile stays in the corner
         // position it occupies on every tab.
         trailingActions: [
-          createNativeCartAction(
-            () => navigation.navigate('Cart'),
-            t('cart.title', { defaultValue: 'Meals' })
+          createNativeWorkoutsAction(
+            startWorkout,
+            t('presetSearch.title', { defaultValue: 'Start Workout' })
           ),
           createNativeProfileAction(
             () => navigation.navigate('Profile'),
@@ -160,6 +162,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     navigation,
     openCalendar,
     selectedDate,
+    startWorkout,
     usesNativeTabs,
     t,
     dateLocale,
@@ -512,7 +515,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           title={t('navigation.dashboard', { defaultValue: 'Activities' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
-          onCartPress={() => navigation.navigate('Cart')}
+          onWorkoutsPress={startWorkout}
           onProfilePress={() => navigation.navigate('Profile')}
         />
       ) : null}

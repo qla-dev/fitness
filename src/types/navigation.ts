@@ -1,4 +1,8 @@
 import type { ActivityGoalKey } from '../constants/activityGoals';
+import type {
+  RecordingGoal,
+  RecordingSport,
+} from '../services/recording/types';
 import type { HealthTrendKey } from '../constants/healthTrends';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -82,7 +86,15 @@ export type RootStackParamList = {
   ExerciseProgram: { programId: string };
   /** The store cart, opened from the cart button in the Exercises store header. */
   Cart: undefined;
-  RunOrRide: undefined;
+  WorkoutSetup: { sport: RecordingSport };
+  /**
+   * Started from `WorkoutSetup`, which passes the sport, the goal and the
+   * weight the calorie estimate needs; entered bare (a resume, a deep link)
+   * the recorder asks for those itself.
+   */
+  RunOrRide:
+    | { sport?: RecordingSport; goal?: RecordingGoal; weightKg?: number }
+    | undefined;
   WorkoutPresetsLibrary: undefined;
   WorkoutPresetDetail: { preset: WorkoutPreset; updatedPreset?: WorkoutPreset };
   WorkoutPresetForm:

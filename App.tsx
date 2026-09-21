@@ -73,6 +73,7 @@ import {
   SafeExerciseProgram,
   SafeCart,
   SafeRunOrRide,
+  SafeWorkoutSetup,
   SafeProfile,
   SafeProfileEdit,
   SafeProfileGoals,
@@ -181,16 +182,15 @@ function AppContent() {
   useAppStartup({ shouldYieldObserverSync });
   const {
     rememberActiveTab,
-    getActiveDiaryDate,
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
+    handleAiMealScan,
+    handleOpenGroceryList,
     handleStartWorkout,
     handleLogWorkout,
     handleAddActivity,
-    handleAddMeasurements,
     handleAddProgressPhotos,
-    handleRunOrRide,
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,
@@ -726,6 +726,11 @@ function AppContent() {
             options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
+            name="WorkoutSetup"
+            component={SafeWorkoutSetup}
+            options={createStackScreenOptions(t('workoutSetup.title', { defaultValue: 'Start Workout' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
             name="RunOrRide"
             component={SafeRunOrRide}
             options={createStackScreenOptions(t('addSheet.runOrRide', { defaultValue: 'Run or Ride' }), { headerBackButtonDisplayMode: 'minimal' })}
@@ -910,7 +915,7 @@ function AppContent() {
             })}
           />
         </Stack.Navigator>
-        <AddSheet ref={addSheetRef} getHydrationDate={getActiveDiaryDate} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAddMeasurements={handleAddMeasurements} onAddProgressPhotos={handleAddProgressPhotos} onRunOrRide={handleRunOrRide} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
+        <AddSheet ref={addSheetRef} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAiMealScan={handleAiMealScan} onGroceryList={handleOpenGroceryList} onAddProgressPhotos={handleAddProgressPhotos} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
         <ReauthModal
           visible={showReauthModal}
           expiredConfigId={expiredConfigId}

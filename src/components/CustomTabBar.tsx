@@ -108,7 +108,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
                   }),
                 }}
               >
-                <Icon name="add" size={28} color="#FFFFFF" weight="bold" />
+                <Icon name="food" size={26} color="#FFFFFF" weight="bold" />
               </TouchableOpacity>
             </View>
           );
