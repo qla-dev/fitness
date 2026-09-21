@@ -4,6 +4,7 @@ import {
   Alert,
   Linking,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +16,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteMap from '../RouteMap';
+import Icon from '../Icon';
+import { useCSSVariable } from 'uniwind';
+import { withAlpha } from '../../utils/colors';
+import { fireSelectionHaptic } from '../../services/haptics';
 import Button from '../ui/Button';
 import FormInput from '../FormInput';
 import { recordingClock, routeSegments } from './format';
@@ -94,6 +99,7 @@ export default function RunRideRecorder({
   // navigation it was holding back through.
   const leaving = useRef(false);
   const session = snapshot.session;
+  const accent = useCSSVariable('--color-accent-primary') as string;
   // A session recorded without a route has no map to show, so the screen is
   // the readings on black rather than a dimmed blank tile.
   const tracksRoute = session ? session.gps !== false : initialGps !== false;
@@ -165,15 +171,8 @@ export default function RunRideRecorder({
       : t('recording.km', { defaultValue: 'km' });
   const currentSport = session?.sport ?? sport;
   const bpm = now - sensors.heartRateAt < 10000 ? sensors.heartRate : null;
-  const cadence = now - sensors.cadenceAt < 5000 ? sensors.cadence : null;
   const number = (value: number, digits = 1) =>
     formatLocalizedNumber(value, { maximumFractionDigits: digits });
-  const metric = (label: string, value: string) => (
-    <View key={label} className="w-1/2 py-1">
-      <Text className="text-text-muted text-xs">{label}</Text>
-      <Text className="text-text-primary text-xl font-semibold">{value}</Text>
-    </View>
-  );
   // Progress against the session's own goal. It is read off the session
   // rather than off the route, so it survives leaving the screen and coming
   // back — the recording outlives the navigation that started it.
@@ -330,22 +329,96 @@ export default function RunRideRecorder({
           />
         </>
       ) : null}
-      <View className="flex-1" />
+      <View className="flex-1 justify-center px-6" pointerEvents="none">
+        {session ? (
+          <>
+            <View className="flex-row items-baseline">
+              <Text
+                style={{ color: '#FFF', fontSize: 84, fontWeight: '300' }}
+                numberOfLines={1}
+              >
+                {number(distanceFromKm(session.distance / 1000, unit), 2)}
+              </Text>
+              <Text
+                style={{ color: '#FFF', fontSize: 28, fontWeight: '600' }}
+                className="ml-2"
+              >
+                {unitLabel}
+              </Text>
+            </View>
+
+            <View className="flex-row items-baseline mt-6">
+              <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
+                {currentSport === 'run'
+                  ? speed > 0.5
+                    ? recordingClock(
+                        (unit === 'miles' ? 1609.344 : 1000) / speed
+                      )
+                    : '—'
+                  : number(distanceFromKm(speed * 3.6, unit))}
+              </Text>
+              <Text
+                style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}
+                className="ml-2 uppercase"
+              >
+                {currentSport === 'run'
+                  ? t('recording.pace', { defaultValue: 'Pace' })
+                  : t('recording.speed', { defaultValue: 'Speed' })}
+              </Text>
+            </View>
+
+            <View className="flex-row mt-8">
+              <View className="flex-1">
+                <Text
+                  style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
+                >
+                  {number(recordingCalories(session, seconds), 0)}
+                </Text>
+                <Text
+                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                  className="uppercase"
+                >
+                  {t('recording.kcal', { defaultValue: 'kcal' })}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text
+                  style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
+                >
+                  {bpm === null ? '—' : number(bpm, 0)}
+                </Text>
+                <Text
+                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                  className="uppercase"
+                >
+                  {t('recording.bpm', { defaultValue: 'bpm' })}
+                </Text>
+              </View>
+            </View>
+          </>
+        ) : null}
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="rounded-t-3xl"
         // Dark whatever the app theme is, and translucent so the route keeps
         // showing through underneath.
-        style={{
-          backgroundColor: 'rgba(12,12,12,0.92)',
-          maxHeight: '55%',
-        }}
+        style={{ backgroundColor: 'rgba(12,12,12,0.92)', flexGrow: 0 }}
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 8,
           paddingBottom: insets.bottom + 16,
         }}
         keyboardShouldPersistTaps="handled"
       >
+        <View
+          className="self-center rounded-full mb-3"
+          style={{
+            width: 40,
+            height: 5,
+            backgroundColor: 'rgba(255,255,255,0.25)',
+          }}
+        />
         {!session && autoStarting ? (
           <View className="items-center gap-3 py-8">
             <ActivityIndicator />
@@ -449,51 +522,6 @@ export default function RunRideRecorder({
                 </View>
               </View>
             )}
-            <View className="flex-row flex-wrap">
-              {metric(
-                t('recording.duration', { defaultValue: 'Duration' }),
-                recordingClock(seconds)
-              )}
-              {metric(
-                t('recording.distance', { defaultValue: 'Distance' }),
-                `${number(distanceFromKm(session.distance / 1000, unit), 2)} ${unitLabel}`
-              )}
-              {metric(
-                currentSport === 'run'
-                  ? t('recording.pace', { defaultValue: 'Pace' })
-                  : t('recording.speed', { defaultValue: 'Speed' }),
-                currentSport === 'run'
-                  ? speed > 0.5
-                    ? `${recordingClock((unit === 'miles' ? 1609.344 : 1000) / speed)} / ${unitLabel}`
-                    : '—'
-                  : `${number(distanceFromKm(speed * 3.6, unit))} ${unitLabel}/h`
-              )}
-              {metric(
-                t('recording.maxSpeed', { defaultValue: 'Max speed' }),
-                `${number(distanceFromKm(session.maxSpeed * 3.6, unit))} ${unitLabel}/h`
-              )}
-              {metric(
-                t('recording.elevation', { defaultValue: 'Elevation gain' }),
-                `${number(unit === 'miles' ? session.elevationGain * 3.28084 : session.elevationGain, 0)} ${unit === 'miles' ? t('recording.feet', { defaultValue: 'ft' }) : t('recording.meters', { defaultValue: 'm' })}`
-              )}
-              {metric(
-                t('recording.calories', { defaultValue: 'Estimated calories' }),
-                `${number(recordingCalories(session, seconds), 0)} ${t('recording.kcal', { defaultValue: 'kcal' })}`
-              )}
-              {metric(
-                t('recording.heartRate', { defaultValue: 'Heart rate' }),
-                bpm === null
-                  ? '—'
-                  : `${number(bpm, 0)} ${t('recording.bpm', { defaultValue: 'bpm' })}`
-              )}
-              {currentSport === 'ride' &&
-                metric(
-                  t('recording.cadence', { defaultValue: 'Cadence' }),
-                  cadence === null
-                    ? '—'
-                    : `${number(cadence, 0)} ${t('recording.rpm', { defaultValue: 'rpm' })}`
-                )}
-            </View>
             {active && !snapshot.points.length && (
               <Text className="text-text-muted">
                 {t('recording.waitingGps', {
@@ -502,36 +530,85 @@ export default function RunRideRecorder({
                 })}
               </Text>
             )}
-            <View className="flex-row gap-2">
+            <View className="flex-row items-center justify-between mb-4">
+              <View
+                className="items-center justify-center rounded-full"
+                style={{
+                  width: 44,
+                  height: 44,
+                  backgroundColor: withAlpha(accent, 0.18),
+                }}
+              >
+                <Icon
+                  name={
+                    currentSport === 'ride'
+                      ? 'exercise-cycling'
+                      : 'exercise-running-filled'
+                  }
+                  size={22}
+                  color={accent}
+                />
+              </View>
+              <Text
+                style={{
+                  color: active ? accent : 'rgba(255,255,255,0.5)',
+                  fontSize: 44,
+                  fontWeight: '500',
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {recordingClock(seconds)}
+              </Text>
+              <View style={{ width: 44 }} />
+            </View>
+
+            <View className="flex-row items-center justify-center gap-6 mb-2">
               {session.phase !== 'finished' && (
-                <Button
-                  className="flex-1"
-                  variant="secondary"
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    active
+                      ? t('recording.pause', { defaultValue: 'Pause' })
+                      : t('recording.resume', { defaultValue: 'Resume' })
+                  }
                   disabled={busy}
-                  onPress={() =>
+                  onPress={() => {
+                    fireSelectionHaptic();
                     void perform(() =>
                       active ? pauseRecording() : resumeRecording(t)
-                    )
-                  }
+                    );
+                  }}
+                  className="items-center justify-center rounded-full"
+                  style={{
+                    width: 84,
+                    height: 84,
+                    backgroundColor: active
+                      ? 'rgba(255,255,255,0.12)'
+                      : withAlpha(accent, 0.22),
+                    opacity: busy ? 0.5 : 1,
+                  }}
                 >
-                  {active
-                    ? t('recording.pause', { defaultValue: 'Pause' })
-                    : t('recording.resume', { defaultValue: 'Resume' })}
-                </Button>
+                  <Icon
+                    name={active ? 'pause' : 'play'}
+                    size={34}
+                    color={active ? '#FFF' : accent}
+                  />
+                </Pressable>
               )}
-              <Button className="flex-1" loading={busy} onPress={finish}>
-                {t('recording.finish', { defaultValue: 'Finish and save' })}
-              </Button>
             </View>
-            <Button variant="ghost" disabled={busy} onPress={discard}>
-              {t('recording.discard', { defaultValue: 'Discard' })}
-            </Button>
-            <Text className="text-text-muted text-xs">
-              {t('recording.backgroundHint', {
-                defaultValue:
-                  'Recording continues when you leave this screen. Return through Run or Ride.',
-              })}
-            </Text>
+
+            {/* Ending appears once you have stopped: mid-session it would be a
+                thumb-slip away from throwing the run away. */}
+            {!active && (
+              <>
+                <Button className="mt-2" loading={busy} onPress={finish}>
+                  {t('recording.finish', { defaultValue: 'Finish and save' })}
+                </Button>
+                <Button variant="ghost" disabled={busy} onPress={discard}>
+                  {t('recording.discard', { defaultValue: 'Discard' })}
+                </Button>
+              </>
+            )}
           </View>
         )}
         {(error || snapshot.error) && (

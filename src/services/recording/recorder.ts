@@ -624,6 +624,7 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
     const entry = await createExerciseEntry(payload);
     // Clearing only after acknowledgement preserves a retryable recording on error.
     await clearRecording(s.id);
+    await stopAllLocationTasks();
     publish({ session: null, points: [], error: false });
     return { ...entry, type: 'individual', name: exerciseName };
   });
