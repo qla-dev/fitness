@@ -250,8 +250,7 @@ function ExercisesStackScreen() {
   // small header pushes content down instead, so the tab lays out exactly like
   // the same screen pushed from the Library.
   const screenOptions = React.useMemo(
-    () =>
-      createIOSSmallNativeHeaderOptions(defaultColor, textPrimary),
+    () => createIOSSmallNativeHeaderOptions(defaultColor, textPrimary),
     [defaultColor, textPrimary]
   );
 
