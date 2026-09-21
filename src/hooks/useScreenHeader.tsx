@@ -49,6 +49,13 @@ import { fireSelectionHaptic } from '../services/haptics';
 /** Height of the iOS small native header an accessory has to clear. */
 export const IOS_NATIVE_HEADER_HEIGHT = 44;
 
+/**
+ * The gap between a transparent bar and the content below it. A screen that
+ * offsets by hand adds this to {@link useNativeHeaderOffset}; one that lets iOS
+ * inset it gets the equivalent from the system.
+ */
+export const HEADER_CONTENT_GAP = 16;
+
 export const SAVE_LABEL = 'Save';
 export const SAVING_LABEL = 'Saving…';
 
@@ -231,14 +238,17 @@ export function useNativeHeaderOffset(): number {
 function NativeHeaderAccessory({
   children,
   variant,
+  onHeight,
 }: {
   children: React.ReactNode;
   variant: ScreenHeaderVariant;
+  onHeight?: (height: number) => void;
 }) {
   const headerHeight = useAnimatedHeaderHeight();
   return (
     <RNAnimated.View
       pointerEvents="box-none"
+      onLayout={({ nativeEvent }) => onHeight?.(nativeEvent.layout.height)}
       style={{
         position: 'absolute',
         left: 0,
@@ -276,6 +286,11 @@ export interface ScreenHeaderConfig {
    * `contentContainerStyle` — the accessory's own height, on top of whatever
    * the inset already gives it.
    *
+   * Whatever it holds — a progress hairline, a search field, a row of chips,
+   * or both — the screen never hard-codes its height: pass
+   * {@link ScreenHeaderConfig.onAccessoryHeight} and add the reported height
+   * to {@link useNativeHeaderOffset} to know where content should start.
+   *
    * Content that scrolls away is not an accessory; that belongs in the
    * screen's own scroll view.
    *
@@ -284,6 +299,11 @@ export interface ScreenHeaderConfig {
    * has already cleared the bar, so an automatic inset would count it twice.
    */
   accessory?: React.ReactNode;
+  /**
+   * The accessory's measured height, reported on layout and on every change,
+   * so a screen can offset its content by it without knowing what is inside.
+   */
+  onAccessoryHeight?: (height: number) => void;
   /** Centered title for the custom bar. */
   title?: string;
   /** Also drive `setOptions({ title })` — used for view/edit mode swaps. */
@@ -741,6 +761,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   const {
     variant = 'system',
     accessory,
+    onAccessoryHeight,
     title,
     nativeTitle,
     left,
@@ -980,7 +1001,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
 
   if (usesNativeHeader)
     return accessory ? (
-      <NativeHeaderAccessory variant={variant}>
+      <NativeHeaderAccessory variant={variant} onHeight={onAccessoryHeight}>
         {accessory}
       </NativeHeaderAccessory>
     ) : null;

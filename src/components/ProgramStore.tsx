@@ -18,7 +18,6 @@ import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import {
   EXERCISE_PROGRAMS,
   FEATURED_PROGRAM_IDS,
-  PROGRAM_CATEGORIES,
   PROGRAM_SHELVES,
   getProgramCategoryLabel,
   getProgramLevelLabel,
@@ -54,9 +53,6 @@ const ACCENT_VARS = [
   '--color-wellness-follicular',
   '--color-wellness-pregnant',
 ] as const;
-
-/** Pill height, matching the system's own filter chips. */
-const CHIP_HEIGHT = 40;
 
 /** The Start pill on a program row and on the featured card. */
 const START_HEIGHT = 30;
@@ -99,6 +95,8 @@ interface ProgramStoreProps {
    * carousel and the shelves with one list of hits. Empty shows the store.
    */
   searchText?: string;
+  /** The category filter, owned by the screen that renders the chip row. */
+  category?: ProgramCategoryId | null;
 }
 
 /**
@@ -110,15 +108,16 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
   onSelectProgram,
   onStartProgram,
   searchText = '',
+  category: categoryProp = null,
 }) => {
   const { t } = useTranslation();
   const accents = useProgramAccents();
   const { width } = useWindowDimensions();
-  const [category, setCategory] = useState<ProgramCategoryId | null>(null);
-  const [textSecondary, accentPrimary] = useCSSVariable([
-    '--color-text-secondary',
-    '--color-accent-primary',
-  ]) as [string, string];
+  // The chips live in the screen header now, so the filter is a prop; the
+  // internal state is only the fallback for a caller that renders no chips.
+  const [ownCategory] = useState<ProgramCategoryId | null>(null);
+  const category = categoryProp ?? ownCategory;
+  const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
   // Covers are resolved for the whole catalogue rather than per shelf: the
   // shelves overlap and the chips re-filter in place, so a per-view list
@@ -336,65 +335,8 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
     );
   };
 
-  /**
-   * One category pill, as Liquid Glass.
-   *
-   * Selection is a tint on the material rather than a solid fill swapped in
-   * behind it, so a chosen chip is still the same piece of glass as the ones
-   * beside it. Off iOS 26 the tint becomes that flat fill, which is the look
-   * these had everywhere before.
-   */
-  const chip = (id: ProgramCategoryId | null, label: string) => {
-    const selected = category === id;
-    return (
-      <LiquidGlassSurface
-        key={id ?? 'all'}
-        isInteractive
-        tintColor={selected ? accentPrimary : undefined}
-        style={{
-          height: CHIP_HEIGHT,
-          borderRadius: CHIP_HEIGHT / 2,
-          overflow: 'hidden',
-        }}
-      >
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ selected }}
-          onPress={() => setCategory(selected && id !== null ? null : id)}
-          className="h-full px-4 items-center justify-center"
-        >
-          <Text
-            className={`text-sm font-semibold ${
-              selected ? 'text-accent-text' : 'text-text-primary'
-            }`}
-          >
-            {label}
-          </Text>
-        </TouchableOpacity>
-      </LiquidGlassSurface>
-    );
-  };
-
-  // The chips browse the catalogue; a search has already narrowed it, so
-  // leaving them up offers a second, conflicting filter over the same list.
-  const chips = (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 8 }}
-      // Tight under the search field, which is what they filter — the row used
-      // to float midway between the field and the list it belongs to.
-      className="pt-1 pb-3"
-    >
-      {chip(null, t('programs.allCategories', { defaultValue: 'All' }))}
-      {PROGRAM_CATEGORIES.map((id) => chip(id, getProgramCategoryLabel(t, id)))}
-    </ScrollView>
-  );
-
   return (
     <View className="mb-2">
-      {searching ? null : chips}
-
       {searching ? (
         matches.length > 0 ? (
           renderShelf(

@@ -40,6 +40,8 @@ import {
 import { usePreferences } from '../hooks/usePreferences';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
   SAVING_LABEL,
@@ -75,6 +77,7 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const [textMuted] = useCSSVariable(['--color-text-muted']) as [string];
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
 
   const [isNameEditing, setIsNameEditing] = useState(false);
 
@@ -369,6 +372,7 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
     identifier: 'workout-add-save',
   };
   const header = useScreenHeader({
+    variant: 'transparent',
     left: {
       kind: 'dismiss',
       onPress: () => void handleCancel(),
@@ -405,6 +409,13 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
         <>
           <KeyboardAwareScrollView
             contentContainerClassName="px-4"
+            // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
+            // so the transparent bar's measured height is applied by hand.
+            contentContainerStyle={{
+              paddingTop: usesNativeHeader
+                ? headerOffset + HEADER_CONTENT_GAP
+                : 0,
+            }}
             bottomOffset={80}
             keyboardShouldPersistTaps="handled"
             // Set-row taps remount the focused input; stop the keyboard-hide

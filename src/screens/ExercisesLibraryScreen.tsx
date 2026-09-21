@@ -17,8 +17,12 @@ import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
 import StatusView from '../components/StatusView';
 import ProgramStore from '../components/ProgramStore';
+import ProgramCategoryChips from '../components/ProgramCategoryChips';
+import type {
+  ProgramCategoryId,
+  ExerciseProgram,
+} from '../types/exerciseProgram';
 import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
-import type { ExerciseProgram } from '../types/exerciseProgram';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
@@ -40,7 +44,10 @@ import Icon from '../components/Icon';
 import { CATEGORY_ICON_MAP } from '../utils/workoutSession';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import type { Exercise } from '../types/exercise';
 import type { RootStackScreenProps } from '../types/navigation';
@@ -66,6 +73,20 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
+  const [accessoryHeight, setAccessoryHeight] = useState(0);
+  // The store's category filter belongs beside the search that narrows the
+  // same catalogue, so both stand in the header and neither scrolls away.
+  const [category, setCategory] = useState<ProgramCategoryId | null>(null);
+  // Where content starts: under a transparent bar and the search that floats
+  // with it. Both are measured, so neither this screen nor the store below it
+  // carries a number of its own.
+  // A breath between the header's own accessory and the first shelf, so the
+  // content does not start flush against the chips that filter it.
+  const CONTENT_GAP = 12;
+  const contentTopInset = usesNativeHeader
+    ? headerOffset + accessoryHeight + CONTENT_GAP
+    : 0;
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const [textSecondary, textPrimary] = useCSSVariable([
     '--color-text-secondary',
@@ -467,9 +488,13 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
+          contentContainerStyle={{
+            paddingTop: contentTopInset,
+            paddingBottom: scrollBottomPadding,
+          }}
         >
           <ProgramStore
+            category={category}
             searchText={searchText}
             onSelectProgram={(program) =>
               navigation.navigate('ExerciseProgram', { programId: program.id })
@@ -548,6 +573,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           />
         }
         contentContainerStyle={{
+          paddingTop: contentTopInset,
           paddingBottom: scrollBottomPadding,
           flexGrow: 1,
         }}
@@ -580,6 +606,30 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   });
   const startWorkout = useOpenStartWorkout(navigation);
   const header = useScreenHeader({
+    variant: 'transparent',
+    accessory: isConnected ? (
+      <>
+        <LibrarySearchBar
+          glass
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder={
+            isTabRoot
+              ? t('programs.searchPlaceholder', {
+                  defaultValue: 'Search programs...',
+                })
+              : t('exerciseLibrary.search', {
+                  defaultValue: 'Search exercises...',
+                })
+          }
+          isSearching={isSearching}
+        />
+        {isTabRoot && searchText.trim().length === 0 ? (
+          <ProgramCategoryChips category={category} onChange={setCategory} />
+        ) : null}
+      </>
+    ) : null,
+    onAccessoryHeight: setAccessoryHeight,
     // The tab root is the program store; the Library drill-in is still the
     // exercise library.
     title: isTabRoot
@@ -630,22 +680,6 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      {isConnected ? (
-        <LibrarySearchBar
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder={
-            isTabRoot
-              ? t('programs.searchPlaceholder', {
-                  defaultValue: 'Search programs...',
-                })
-              : t('exerciseLibrary.search', {
-                  defaultValue: 'Search exercises...',
-                })
-          }
-          isSearching={isSearching}
-        />
-      ) : null}
       {renderContent()}
       {purchasing && (
         <ProgramPurchaseSheet

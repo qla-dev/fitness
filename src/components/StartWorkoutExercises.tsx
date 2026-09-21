@@ -28,12 +28,15 @@ export default function StartWorkoutExercises({
   onInfo,
   onRecord,
   startingId,
+  contentTopInset = 0,
 }: {
   searchText: string;
   onSelect: (exercise: Exercise) => void;
   onInfo: (exercise: Exercise) => void;
   /** Opens setup for a recorded workout — running first, cycling second. */
   onRecord: (sport: RecordingSport) => void;
+  /** Where content starts, below a transparent header and its accessory. */
+  contentTopInset?: number;
   /** The exercise currently starting a session, if any. */
   startingId?: string | null;
 }) {
@@ -129,7 +132,7 @@ export default function StartWorkoutExercises({
     <FlatList
       data={exercises}
       keyExtractor={(exercise) => exercise.id}
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{ padding: 16, paddingTop: contentTopInset + 16 }}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={recorded}
       renderItem={({ item }) => (

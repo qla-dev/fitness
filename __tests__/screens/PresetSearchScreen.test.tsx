@@ -14,7 +14,12 @@ jest.mock('../../src/hooks/useNavigationActionGuard', () => ({
   useNavigationActionGuard: jest.fn(),
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
-  useScreenHeader: jest.fn(() => null),
+  useScreenHeader: jest.fn(
+    (config: { accessory?: React.ReactNode }) => config?.accessory ?? null
+  ),
+  // The screen offsets its list by the measured native bar; off the native
+  // path there is nothing to clear.
+  useNativeHeaderOffset: jest.fn(() => 0),
 }));
 jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
   useStartLiveWorkout: jest.fn(),
@@ -82,7 +87,9 @@ beforeEach(() => {
     isNavigationLocked: false,
     runNavigationAction: (fn: () => void) => fn(),
   } as unknown as ReturnType<typeof useNavigationActionGuard>);
-  mockHeader.mockReturnValue(null);
+  mockHeader.mockImplementation(
+    (config) => (config?.accessory as React.ReactElement) ?? null
+  );
   mockSuggested.mockReturnValue({
     recentExercises: [bench],
     topExercises: [squat],

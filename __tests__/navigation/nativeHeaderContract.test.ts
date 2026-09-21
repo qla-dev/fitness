@@ -336,7 +336,11 @@ function hasNativeHeaderSuppressionGuard(source: string): boolean {
     /Platform\.OS\s*===\s*'ios'\s*\?\s*null\s*:/.test(source) ||
     /!usesNativeHeader\s*&&/.test(source) ||
     /usesNativeHeader\s*\?\s*null\s*:/.test(source) ||
-    /if\s*\(usesNativeHeader\)\s*return null/.test(source)
+    /if\s*\(usesNativeHeader\)\s*return null/.test(source) ||
+    // The hook still never renders its custom bar on the native path. What it
+    // may return there is a header accessory — a search field, a progress
+    // hairline — which is not a bar and cannot duplicate the native one.
+    /if\s*\(usesNativeHeader\)\s*return accessory \?/.test(source)
   );
 }
 

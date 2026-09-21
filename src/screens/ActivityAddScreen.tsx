@@ -25,7 +25,11 @@ import {
 } from '../hooks/useActivityForm';
 import { useSelectedExercise } from '../hooks/useSelectedExercise';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   useCreateExerciseEntry,
@@ -63,6 +67,7 @@ const ActivityAddScreen: React.FC<Props> = ({ navigation, route }) => {
     '--color-raised',
   ]) as [string, string, string];
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
 
   const {
     state,
@@ -238,6 +243,7 @@ const ActivityAddScreen: React.FC<Props> = ({ navigation, route }) => {
   ]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     left: {
       kind: 'dismiss',
       onPress: () => void handleCancel(),
@@ -265,6 +271,11 @@ const ActivityAddScreen: React.FC<Props> = ({ navigation, route }) => {
 
       <KeyboardAwareScrollView
         contentContainerClassName="px-4"
+        // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior, so
+        // the transparent bar's measured height is applied by hand.
+        contentContainerStyle={{
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 0,
+        }}
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"
       >

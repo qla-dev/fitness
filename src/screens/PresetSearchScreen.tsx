@@ -1,14 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, TextInput } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCSSVariable } from 'uniwind';
 
-import Button from '../components/ui/Button';
-import Icon from '../components/Icon';
+import LibrarySearchBar from '../components/LibrarySearchBar';
 import StartWorkoutExercises from '../components/StartWorkoutExercises';
 import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useStartLiveWorkout } from '../hooks/useStartLiveWorkout';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { getTodayDate } from '../utils/dateUtils';
@@ -32,23 +33,16 @@ type PresetSearchScreenProps = RootStackScreenProps<'PresetSearch'>;
  * "empty workout" row because there is nothing for it to do that a card does
  * not already do in one tap instead of two.
  */
-// Same native small-header offset used by ChatScreen and MacrosScreen.
-const IOS_SMALL_NATIVE_HEADER_HEIGHT = 44;
-
 const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   navigation,
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [accentColor, textMuted, borderSubtle] = useCSSVariable([
-    '--color-accent-primary',
-    '--color-text-muted',
-    '--color-border-subtle',
-  ]) as [string, string, string];
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
+  const [accessoryHeight, setAccessoryHeight] = useState(0);
 
   const [searchText, setSearchText] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [startingId, setStartingId] = useState<string | null>(null);
 
   const { startLiveWorkout } = useStartLiveWorkout(navigation);
@@ -63,17 +57,22 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   // sheet used to carry are its right-hand buttons. Neither passes
   // `skipDraftLoad`, so an unfinished draft is picked back up rather than
   // silently replaced.
-  // Same header as the Profile screen: transparent, so iOS 26 lays no glass
-  // over the content and the bar takes no tint from what sits under it.
   const header = useScreenHeader({
+    variant: 'transparent',
+    accessory: (
+      <LibrarySearchBar
+        glass
+        value={searchText}
+        onChangeText={setSearchText}
+        placeholder={t('exerciseSearch.search.placeholder', {
+          defaultValue: 'Search exercises...',
+        })}
+        testID="start-workout-search"
+      />
+    ),
+    onAccessoryHeight: setAccessoryHeight,
     title: t('presetSearch.title', { defaultValue: 'Start Workout' }),
     borderless: true,
-    nativeOptions: {
-      headerLargeTitleEnabled: false,
-      headerLargeTitleShadowVisible: false,
-      headerTransparent: true,
-      headerShadowVisible: false,
-    },
     left: {
       kind: 'dismiss',
       onPress: handleCancel,
@@ -151,54 +150,12 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   return (
     <View
       className="flex-1 bg-background"
-      style={{
-        paddingTop: usesNativeHeader
-          ? insets.top + IOS_SMALL_NATIVE_HEADER_HEIGHT
-          : insets.top,
-      }}
+      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
 
-      <View className="px-4 py-2">
-        <View
-          className="flex-row items-center bg-raised rounded-lg px-3 py-2.5"
-          style={{
-            borderWidth: 1,
-            borderColor: isSearchFocused ? accentColor : borderSubtle,
-          }}
-        >
-          <Icon name="search" size={18} color={textMuted} />
-          <View className="flex-1 ml-2">
-            <TextInput
-              className="text-text-primary"
-              style={{ fontSize: 16, padding: 0, includeFontPadding: false }}
-              placeholder={t('exerciseSearch.search.placeholder', {
-                defaultValue: 'Search exercises...',
-              })}
-              placeholderTextColor={textMuted}
-              value={searchText}
-              onChangeText={setSearchText}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              testID="start-workout-search"
-            />
-          </View>
-          {searchText.length > 0 && (
-            <Button
-              variant="header"
-              onPress={() => setSearchText('')}
-              hitSlop={8}
-            >
-              <Icon name="close" size={16} color={textMuted} />
-            </Button>
-          )}
-        </View>
-      </View>
-
       <StartWorkoutExercises
+        contentTopInset={usesNativeHeader ? headerOffset + accessoryHeight : 0}
         searchText={searchText}
         startingId={startingId}
         onSelect={handleStartFromExercise}

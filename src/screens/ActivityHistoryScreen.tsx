@@ -13,7 +13,11 @@ import { useCSSVariable } from 'uniwind';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import CompactActivityRow from '../components/CompactActivityRow';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useExerciseHistory } from '../hooks/useExerciseHistory';
 import { usePreferences } from '../hooks/usePreferences';
 import { useServerConnection } from '../hooks/useServerConnection';
@@ -57,6 +61,12 @@ export default function ActivityHistoryScreen({
 }: RootStackScreenProps<'ActivityHistory'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
+  const [accessoryHeight, setAccessoryHeight] = useState(0);
+  // Under a transparent bar and the chip row that floats with it; both are
+  // measured, so no height is written down here.
+  const contentTopInset = usesNativeHeader ? headerOffset + accessoryHeight : 0;
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
   const { isConnected } = useServerConnection();
   const { preferences } = usePreferences({ enabled: isConnected });
@@ -70,44 +80,6 @@ export default function ActivityHistoryScreen({
     useExerciseHistory();
   const [filter, setFilter] = useState<string>(ALL);
 
-  // Manual logging lives where the log itself lives: the two entry points
-  // the add sheet used to hold — an activity (duration & distance) and a
-  // workout typed up after the fact — are this screen's header buttons now.
-  // Neither passes skipDraftLoad, so an unfinished draft is picked back
-  // up rather than silently replaced.
-  useScreenHeader({
-    title: t('activityHistory.title', { defaultValue: 'Activities' }),
-    nativeTitle: t('activityHistory.title', { defaultValue: 'Activities' }),
-    left: { kind: 'back' },
-    right: [
-      {
-        kind: 'icon',
-        sfSymbol: 'figure.strengthtraining.traditional',
-        ionicon: 'barbell-outline',
-        accessibilityLabel: t('activityHistory.logWorkout', {
-          defaultValue: 'Log workout',
-        }),
-        identifier: 'activity-history-log-workout',
-        onPress: () =>
-          navigation.navigate('WorkoutAdd', { date: getTodayDate() }),
-        separated: true,
-      },
-      {
-        kind: 'icon',
-        sfSymbol: 'square.and.pencil',
-        ionicon: 'create-outline',
-        accessibilityLabel: t('activityHistory.logActivity', {
-          defaultValue: 'Log activity',
-        }),
-        identifier: 'activity-history-log-activity',
-        onPress: () =>
-          navigation.navigate('ActivityAdd', { date: getTodayDate() }),
-        // Own glass capsule each, or iOS 26 merges the pair into one control.
-        separated: true,
-      },
-    ],
-  });
-
   // Chips are derived from what the history actually holds, so the row never
   // offers a filter that would come back empty.
   const filters = useMemo(() => {
@@ -120,54 +92,22 @@ export default function ActivityHistoryScreen({
     return [...names.entries()].map(([value, label]) => ({ value, label }));
   }, [sessions, t]);
 
-  const visible = useMemo(
-    () =>
-      filter === ALL
-        ? sessions
-        : sessions.filter(
-            (session) =>
-              getWorkoutSummary(session, t).name.trim().toLowerCase() === filter
-          ),
-    [sessions, filter, t]
-  );
-
-  // Grouped by month, preserving the newest-first order the history arrives in
-  // rather than re-sorting — the server decides what "recent" means.
-  const sections = useMemo(() => {
-    const byMonth = new Map<string, ExerciseSessionResponse[]>();
-    for (const session of visible) {
-      const day = session.entry_date;
-      if (!day) continue;
-      const key = day.slice(0, 7);
-      const bucket = byMonth.get(key);
-      if (bucket) bucket.push(session);
-      else byMonth.set(key, [session]);
-    }
-    return [...byMonth.entries()].map(([key, data]) => ({
-      key,
-      title: monthLabel(`${key}-01`),
-      data,
-    }));
-  }, [visible]);
-
-  // Split rather than a computed route name: the two routes take different
-  // session shapes, and the discriminated union only narrows inside the branch.
-  const openSession = (session: ExerciseSessionResponse) => {
-    if (session.type === 'preset')
-      navigation.navigate('WorkoutDetail', { session });
-    else navigation.navigate('ActivityDetail', { session });
-  };
-
-  return (
-    <View className="flex-1 bg-background">
-      {/* Horizontal chips rather than a SegmentedControl: the set is open —
-          one per activity the user has logged — and a segmented control with a
-          dozen segments is unreadable and untappable.
-
-          Liquid Glass, exactly as the Store's category pills: selection is a
-          tint ON the material rather than a solid fill swapped in behind it, so
-          a chosen chip is still the same piece of glass as the ones beside it.
-          Off iOS 26 the tint becomes that flat fill. */}
+  // Manual logging lives where the log itself lives: the two entry points
+  // the add sheet used to hold — an activity (duration & distance) and a
+  // workout typed up after the fact — are this screen's header buttons now.
+  // Neither passes skipDraftLoad, so an unfinished draft is picked back
+  // up rather than silently replaced.
+  const header = useScreenHeader({
+    variant: 'transparent',
+    // Horizontal chips rather than a SegmentedControl: the set is open — one
+    // per activity the user has logged — and a segmented control with a dozen
+    // segments is unreadable and untappable.
+    //
+    // Liquid Glass, exactly as the Store's category pills: selection is a tint
+    // ON the material rather than a solid fill swapped in behind it, so a
+    // chosen chip is still the same piece of glass as the ones beside it. Off
+    // iOS 26 the tint becomes that flat fill.
+    accessory: (
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -211,6 +151,81 @@ export default function ActivityHistoryScreen({
             );
           })}
       </ScrollView>
+    ),
+    onAccessoryHeight: setAccessoryHeight,
+    title: t('activityHistory.title', { defaultValue: 'Activities' }),
+    nativeTitle: t('activityHistory.title', { defaultValue: 'Activities' }),
+    left: { kind: 'back' },
+    right: [
+      {
+        kind: 'icon',
+        sfSymbol: 'figure.strengthtraining.traditional',
+        ionicon: 'barbell-outline',
+        accessibilityLabel: t('activityHistory.logWorkout', {
+          defaultValue: 'Log workout',
+        }),
+        identifier: 'activity-history-log-workout',
+        onPress: () =>
+          navigation.navigate('WorkoutAdd', { date: getTodayDate() }),
+        separated: true,
+      },
+      {
+        kind: 'icon',
+        sfSymbol: 'square.and.pencil',
+        ionicon: 'create-outline',
+        accessibilityLabel: t('activityHistory.logActivity', {
+          defaultValue: 'Log activity',
+        }),
+        identifier: 'activity-history-log-activity',
+        onPress: () =>
+          navigation.navigate('ActivityAdd', { date: getTodayDate() }),
+        // Own glass capsule each, or iOS 26 merges the pair into one control.
+        separated: true,
+      },
+    ],
+  });
+
+  const visible = useMemo(
+    () =>
+      filter === ALL
+        ? sessions
+        : sessions.filter(
+            (session) =>
+              getWorkoutSummary(session, t).name.trim().toLowerCase() === filter
+          ),
+    [sessions, filter, t]
+  );
+
+  // Grouped by month, preserving the newest-first order the history arrives in
+  // rather than re-sorting — the server decides what "recent" means.
+  const sections = useMemo(() => {
+    const byMonth = new Map<string, ExerciseSessionResponse[]>();
+    for (const session of visible) {
+      const day = session.entry_date;
+      if (!day) continue;
+      const key = day.slice(0, 7);
+      const bucket = byMonth.get(key);
+      if (bucket) bucket.push(session);
+      else byMonth.set(key, [session]);
+    }
+    return [...byMonth.entries()].map(([key, data]) => ({
+      key,
+      title: monthLabel(`${key}-01`),
+      data,
+    }));
+  }, [visible]);
+
+  // Split rather than a computed route name: the two routes take different
+  // session shapes, and the discriminated union only narrows inside the branch.
+  const openSession = (session: ExerciseSessionResponse) => {
+    if (session.type === 'preset')
+      navigation.navigate('WorkoutDetail', { session });
+    else navigation.navigate('ActivityDetail', { session });
+  };
+
+  return (
+    <View className="flex-1 bg-background">
+      {header}
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
@@ -222,6 +237,7 @@ export default function ActivityHistoryScreen({
           keyExtractor={(session, index) => session.id || String(index)}
           contentContainerStyle={{
             paddingHorizontal: 16,
+            paddingTop: contentTopInset,
             paddingBottom: Math.max(insets.bottom, 16),
           }}
           stickySectionHeadersEnabled={false}
