@@ -218,6 +218,7 @@ const MealsLibraryScreen: React.FC<MealsLibraryScreenProps> = ({
 
     return (
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={filteredMeals}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (

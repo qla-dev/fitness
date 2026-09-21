@@ -142,56 +142,58 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
           onLongPress={handleLongPress}
         >
           {children ?? (
-          <View className="flex-row items-center">
-            {/* Kept in step with the food row's thumbnail so the two diary
+            <View className="flex-row items-center">
+              {/* Kept in step with the food row's thumbnail so the two diary
                 row types line up rather than differing by a few pixels. */}
-            <View
-              className="mr-3 items-center justify-center"
-              style={{ width: 56, height: 56 }}
-            >
-              <SafeImage
-                source={imageSource}
-                style={{ width: 56, height: 56, borderRadius: 8 }}
-                fallback={
-                  <Icon name={iconName} size={28} color={accentPrimary} />
-                }
-              />
-            </View>
-            <View className="flex-1">
-              <View className="flex-row items-center justify-between">
+              <View
+                className="mr-3 items-center justify-center"
+                style={{ width: 56, height: 56 }}
+              >
+                <SafeImage
+                  source={imageSource}
+                  style={{ width: 56, height: 56, borderRadius: 8 }}
+                  fallback={
+                    <Icon name={iconName} size={28} color={accentPrimary} />
+                  }
+                />
+              </View>
+              <View className="flex-1">
+                <View className="flex-row items-center justify-between">
+                  <Text
+                    className="text-base font-semibold text-text-primary flex-1 mr-2"
+                    numberOfLines={1}
+                  >
+                    {name}
+                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <View
+                      className="rounded-full px-1.5 py-0.5"
+                      style={{
+                        backgroundColor: canEdit
+                          ? `${accentPrimary}20`
+                          : `${textMuted}20`,
+                      }}
+                    >
+                      <Text
+                        className="text-xs font-medium"
+                        style={{
+                          color: canEdit ? accentPrimary : textSecondary,
+                        }}
+                      >
+                        {sourceLabel}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-forward" size={14} color={textMuted} />
+                  </View>
+                </View>
                 <Text
-                  className="text-base font-semibold text-text-primary flex-1 mr-2"
+                  className="text-sm text-text-secondary mt-0.5"
                   numberOfLines={1}
                 >
-                  {name}
+                  {subtitle}
                 </Text>
-                <View className="flex-row items-center gap-2">
-                  <View
-                    className="rounded-full px-1.5 py-0.5"
-                    style={{
-                      backgroundColor: canEdit
-                        ? `${accentPrimary}20`
-                        : `${textMuted}20`,
-                    }}
-                  >
-                    <Text
-                      className="text-xs font-medium"
-                      style={{ color: canEdit ? accentPrimary : textSecondary }}
-                    >
-                      {sourceLabel}
-                    </Text>
-                  </View>
-                  <Icon name="chevron-forward" size={14} color={textMuted} />
-                </View>
               </View>
-              <Text
-                className="text-sm text-text-secondary mt-0.5"
-                numberOfLines={1}
-              >
-                {subtitle}
-              </Text>
             </View>
-          </View>
           )}
         </Pressable>
       </ReanimatedSwipeable>

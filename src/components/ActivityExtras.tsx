@@ -30,7 +30,9 @@ export function RecordingSourceBadge({
       ? t('activityDetail.sourceWatch', { defaultValue: 'Recorded on watch' })
       : source === 'app'
         ? t('activityDetail.sourceApp', { defaultValue: 'Recorded in qla.fit' })
-        : t('activityDetail.sourcePhone', { defaultValue: 'Recorded on phone' });
+        : t('activityDetail.sourcePhone', {
+            defaultValue: 'Recorded on phone',
+          });
 
   return (
     <View className="flex-row items-center gap-2 mt-1">
@@ -106,7 +108,10 @@ function Shooting({
           key={zone.zone}
           className="flex-row items-center justify-between py-1.5 border-t border-border"
         >
-          <Text className="text-base text-text-primary flex-1" numberOfLines={1}>
+          <Text
+            className="text-base text-text-primary flex-1"
+            numberOfLines={1}
+          >
             {zone.zone}
           </Text>
           <Text className="text-sm text-text-muted mr-3">

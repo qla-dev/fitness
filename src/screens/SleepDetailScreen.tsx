@@ -187,6 +187,7 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
 
     return (
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,

@@ -163,6 +163,7 @@ export const AnnouncementModal: React.FC = () => {
           </View>
 
           <ScrollView
+            showsVerticalScrollIndicator={false}
             style={styles.bodyScroll}
             contentContainerStyle={styles.bodyContent}
           >

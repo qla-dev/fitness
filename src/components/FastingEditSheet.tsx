@@ -302,7 +302,10 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
         backgroundStyle={{ backgroundColor: surfaceBg }}
         handleIndicatorStyle={{ backgroundColor: textMuted }}
       >
-        <BottomSheetScrollView contentContainerClassName="bg-surface px-5 pb-safe-or-8">
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="bg-surface px-5 pb-safe-or-8"
+        >
           <Text className="text-lg font-semibold text-text-primary text-center mb-1">
             {t('fastingEdit.editTitle', { defaultValue: 'Edit fast' })}
           </Text>

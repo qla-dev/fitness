@@ -504,10 +504,7 @@ const RingCalendarSheet = forwardRef<
   );
 
   return (
-    <CustomModal
-      ref={sheetRef}
-      title={headerTitle}
-    >
+    <CustomModal ref={sheetRef} title={headerTitle}>
       <View className="flex-row px-2 pb-2 border-b border-border-subtle">
         {orderedWeekdays.map((label, index) => (
           <Text

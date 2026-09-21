@@ -246,7 +246,10 @@ const EndFastSheet = forwardRef<EndFastSheetRef, EndFastSheetProps>(
           on Android, gesture-handler lets taps on background-less views fall
           through to the backdrop's tap-to-close. A background makes this
           container absorb them. */}
-        <BottomSheetScrollView contentContainerClassName="bg-surface px-5 pb-safe-or-8">
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="bg-surface px-5 pb-safe-or-8"
+        >
           <Text className="text-lg font-semibold text-text-primary text-center mb-1">
             {t('fastingEdit.endTitle', { defaultValue: 'End fast' })}
           </Text>

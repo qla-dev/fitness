@@ -372,6 +372,7 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,

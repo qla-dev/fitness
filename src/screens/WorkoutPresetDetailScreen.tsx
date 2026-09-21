@@ -368,6 +368,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
       {header}
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,

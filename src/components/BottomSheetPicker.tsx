@@ -250,7 +250,10 @@ function BottomSheetPicker<T extends string | number>({
             {renderSections()}
           </BottomSheetView>
         ) : (
-          <BottomSheetScrollView contentContainerClassName="pb-safe-or-5">
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-safe-or-5"
+          >
             {title && (
               <View className="px-4 py-4 border-b border-border-subtle">
                 <Text className="text-lg font-semibold text-center text-text-primary">

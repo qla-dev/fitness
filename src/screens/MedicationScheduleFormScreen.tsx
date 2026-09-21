@@ -589,6 +589,7 @@ const MedicationScheduleFormScreen: React.FC<
     >
       {header}
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,

@@ -37,7 +37,33 @@ export interface SensorReading {
 export interface RecordingSession {
   id: string;
   scope: string;
+  /**
+   * How the recording behaves: which GPS filter profile it uses and whether
+   * wheel sensors apply. Two profiles, on foot and on a bike.
+   */
   sport: RecordingSport;
+  /**
+   * What the session *is*, as opposed to how it records. Tennis and hiking both
+   * use the foot profile but are not both "Running", so the saved exercise
+   * takes these instead. Resolved when the recording starts — saving happens
+   * without a `t`, and a session that outlives a language change should keep
+   * the name it was started under.
+   */
+  sportName?: string;
+  sportCategory?: string;
+  /**
+   * Whether the phone traces a route. Off for a session indoors or on a court,
+   * where a track is noise: the clock, the sensors and the calorie estimate
+   * all still run. Undefined on a recording started before this existed, which
+   * is why every read treats only `false` as off.
+   */
+  gps?: boolean;
+  /**
+   * Whether a paired watch streams its heart rate into the session. Off leaves
+   * the reading to a chest strap, or to nothing. Undefined on a recording
+   * started before this existed, so only `false` counts as off.
+   */
+  watch?: boolean;
   phase: 'recording' | 'paused' | 'finished';
   startedAt: number;
   updatedAt: number;

@@ -1208,6 +1208,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
       {header}
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4 py-4"
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"

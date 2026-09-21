@@ -1246,6 +1246,7 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
           className="flex-1"
         >
           <ScrollView
+            showsVerticalScrollIndicator={false}
             contentContainerClassName="justify-center items-center p-6"
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"

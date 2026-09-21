@@ -45,6 +45,7 @@ import { CATEGORY_ICON_MAP } from '../utils/workoutSession';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
+  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -81,11 +82,8 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   // Where content starts: under a transparent bar and the search that floats
   // with it. Both are measured, so neither this screen nor the store below it
   // carries a number of its own.
-  // A breath between the header's own accessory and the first shelf, so the
-  // content does not start flush against the chips that filter it.
-  const CONTENT_GAP = 12;
   const contentTopInset = usesNativeHeader
-    ? headerOffset + accessoryHeight + CONTENT_GAP
+    ? headerOffset + accessoryHeight + HEADER_CONTENT_GAP
     : 0;
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const [textSecondary, textPrimary] = useCSSVariable([
@@ -507,6 +505,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
 
     return (
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={rows}
         keyExtractor={(row) => row.key}
         renderItem={({ item: row }) => {

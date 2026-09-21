@@ -210,6 +210,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
         </View>
       ) : (
         <ScrollView
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             padding: 16,
             paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,

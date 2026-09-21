@@ -90,6 +90,7 @@ const FamilyMealDetailScreen: React.FC<FamilyMealDetailScreenProps> = ({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + activeWorkoutBarPadding + 24,

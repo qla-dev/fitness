@@ -167,7 +167,10 @@ const MealTypeFormSheet = forwardRef<
           setValues({ name: '', defaultTime: '', showInQuickLog: false });
         }}
       >
-        <BottomSheetScrollView contentContainerClassName="px-5 pb-safe-or-8">
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="px-5 pb-safe-or-8"
+        >
           <Text className="text-text-primary text-lg font-semibold text-center mb-4">
             {mode === 'create'
               ? t('mealTypeForm.createTitle', { defaultValue: 'Add Meal Type' })

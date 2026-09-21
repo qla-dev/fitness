@@ -412,6 +412,7 @@ const LogScreen: React.FC<LogScreenProps> = ({ navigation }) => {
     >
       {header}
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={filteredLogs}
         ListHeaderComponent={ListHeader}
         renderItem={({ item }: { item: LogEntry }) => (

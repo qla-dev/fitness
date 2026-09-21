@@ -64,6 +64,7 @@ const FamilyMembersScreen: React.FC<FamilyMembersScreenProps> = ({
         />
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={users}
           keyExtractor={(user) => user.userId}
           testID="family-members-list"

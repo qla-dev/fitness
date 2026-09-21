@@ -13,6 +13,7 @@ import {
 import { getActiveServerConfig } from '../storage';
 import { isLocalDataMode } from '../dataMode';
 import { getTodayDate } from '../../utils/dateUtils';
+import { WORKOUT_SPORTS } from '../../constants/workoutSports';
 import { addLog } from '../LogService';
 import {
   checkpointRecording,
@@ -46,6 +47,14 @@ import {
 import type { IndividualSessionResponse } from '@workspace/shared';
 
 export const RECORDING_TASK = 'fitness-run-ride-location-v1';
+
+/**
+ * How long a recording may go without a single update before it is treated as
+ * abandoned. Long enough to cover a phone left in a pocket through a lunch
+ * break, short enough that a session forgotten overnight is not still holding
+ * the receiver in the morning.
+ */
+const STALE_SESSION_MS = 6 * 60 * 60 * 1000;
 interface Snapshot {
   session: RecordingSession | null;
   points: RecordedPoint[];
@@ -127,6 +136,29 @@ function report(error: unknown) {
  * not recording, so app startup passes nothing and only an unfinished session
  * pulls the sensors back up. The recorder screen passes `true`.
  */
+/**
+ * Release every location task this device has registered for us.
+ *
+ * Ours is stopped by name; the sweep catches the rest — a task left behind by
+ * an older build cannot be stopped by a name the current one does not have,
+ * and it holds the receiver open indefinitely.
+ */
+async function stopAllLocationTasks() {
+  if (await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK))
+    await Location.stopLocationUpdatesAsync(RECORDING_TASK);
+  const registered = await TaskManager.getRegisteredTasksAsync().catch(
+    () => [] as Awaited<ReturnType<typeof TaskManager.getRegisteredTasksAsync>>
+  );
+  for (const task of registered) {
+    if (task.taskName === RECORDING_TASK) continue;
+    if (task.taskType !== 'location') continue;
+    await Location.stopLocationUpdatesAsync(task.taskName).catch(
+      () => undefined
+    );
+    await TaskManager.unregisterTaskAsync(task.taskName).catch(() => undefined);
+  }
+}
+
 export async function initializeRecorder({
   sensors = false,
 }: { sensors?: boolean } = {}) {
@@ -137,7 +169,22 @@ export async function initializeRecorder({
   await serialize(async () => {
     await hydrate();
     const s = snapshot.session;
-    if (s?.phase === 'recording') {
+    if (
+      s?.phase === 'recording' &&
+      Date.now() - s.updatedAt > STALE_SESSION_MS
+    ) {
+      if (await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK))
+        await Location.stopLocationUpdatesAsync(RECORDING_TASK);
+      const next = {
+        ...s,
+        elapsed: elapsedSeconds(s, s.updatedAt),
+        runningSince: null,
+        phase: 'paused' as const,
+        segment: s.segment + 1,
+      };
+      await checkpointRecording(next);
+      publish({ session: next });
+    } else if (s?.phase === 'recording') {
       const active =
         await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK);
       // A cold process with no live native task cannot claim the intervening
@@ -153,8 +200,9 @@ export async function initializeRecorder({
         await checkpointRecording(next);
         publish({ session: next });
       }
-    } else if (await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK))
-      await Location.stopLocationUpdatesAsync(RECORDING_TASK);
+    } else {
+      await stopAllLocationTasks();
+    }
   });
   if (!sensorSubscription)
     sensorSubscription = subscribeSensorReadings((reading) => {
@@ -332,18 +380,26 @@ export async function startRecording(
   sport: RecordingSport,
   weightKg: number,
   t: TFunction,
-  goal?: RecordingGoal
+  goal?: RecordingGoal,
+  sportId?: string,
+  gps = true,
+  watch = true
 ) {
   return serialize(async () => {
     await hydrate();
     if (snapshot.session) throw new Error('An unfinished recording exists');
     if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 400)
       throw new Error('Invalid body weight');
+    const catalogueSport = WORKOUT_SPORTS.find((entry) => entry.id === sportId);
     const now = Date.now();
     const session: RecordingSession = {
       id: randomUUID(),
       scope: await scope(),
       sport,
+      sportName: catalogueSport?.label(t),
+      sportCategory: catalogueSport?.category,
+      gps,
+      watch,
       phase: 'paused',
       startedAt: now,
       updatedAt: now,
@@ -362,7 +418,9 @@ export async function startRecording(
     publish({ session, error: false });
     filter = new RecordingGpsFilter(sport);
     wheelAt = 0;
-    await startLocation(t);
+    // No route asked for, no location updates: the rest of the recording — the
+    // clock, the sensors, the estimate — does not depend on them.
+    if (gps) await startLocation(t);
     const next = {
       ...session,
       phase: 'recording' as const,
@@ -373,7 +431,7 @@ export async function startRecording(
     // Best effort and deliberately not awaited into the failure path: a watch
     // that is asleep, unpaired, or without the app installed must not stop a
     // run from being recorded on the phone.
-    void startWatchHeartRate(sport);
+    if (watch) void startWatchHeartRate(sport);
   });
 }
 
@@ -411,7 +469,7 @@ export async function resumeRecording(t: TFunction) {
     const s = snapshot.session;
     if (!s || s.phase !== 'paused') return;
     await assertScope(s);
-    await startLocation(t);
+    if (s.gps !== false) await startLocation(t);
     const next = {
       ...s,
       runningSince: Date.now(),
@@ -422,6 +480,28 @@ export async function resumeRecording(t: TFunction) {
     filter = new RecordingGpsFilter(s.sport);
     wheelAt = 0;
     publish({ session: next, error: false });
+  });
+}
+
+/**
+ * Release everything this device is holding for recording: the stored session,
+ * our location task, any location task an older build left registered, and the
+ * watch workout.
+ *
+ * The escape hatch for a session nobody can reach any more — the recording
+ * outlives the screen that started it, so a forgotten one keeps the receiver
+ * open and the system location indicator lit with no visible way to stop it.
+ */
+export async function stopAllRecording() {
+  return serialize(async () => {
+    await hydrate();
+    await stopAllLocationTasks();
+    const existing = snapshot.session;
+    if (existing) await clearRecording(existing.id);
+    publish({ session: null, points: [], error: false });
+    filter = undefined;
+    wheelAt = 0;
+    await stopWatchHeartRate().catch(() => undefined);
   });
 }
 
@@ -476,7 +556,11 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
         page++;
       }
     }
-    const exerciseName = s.sport === 'run' ? 'Running' : 'Cycling';
+    // The sport it was started as, when it had one: a hike saved as "Running"
+    // loses the only thing that told the two apart.
+    const exerciseName =
+      s.sportName ?? (s.sport === 'run' ? 'Running' : 'Cycling');
+    const exerciseCategory = s.sportCategory ?? 'Cardio';
     if (!s.exerciseId) {
       const existing = (await searchExercises(exerciseName)).find(
         (exercise) =>
@@ -487,7 +571,7 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
         existing ??
         (await createExercise({
           name: exerciseName,
-          category: 'Cardio',
+          category: exerciseCategory,
           modality: 'duration_distance',
           description: null,
         }));

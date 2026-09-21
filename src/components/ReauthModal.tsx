@@ -487,6 +487,7 @@ const ReauthModal: React.FC<ReauthModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+      showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
           contentContainerClassName="justify-center items-center p-6"
           contentContainerStyle={{ flexGrow: 1 }}

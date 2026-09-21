@@ -76,6 +76,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
       {header}
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 12,

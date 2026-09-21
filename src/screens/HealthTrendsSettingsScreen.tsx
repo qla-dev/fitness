@@ -323,6 +323,7 @@ const HealthTrendsSettingsScreen: React.FC<
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,

@@ -201,6 +201,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,

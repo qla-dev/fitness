@@ -73,6 +73,7 @@ export default function MacrosScreen() {
       >
         <View style={{ flex: 1 }}>
           <ScrollView
+      showsVerticalScrollIndicator={false}
             ref={list}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{

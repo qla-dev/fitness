@@ -331,6 +331,7 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,

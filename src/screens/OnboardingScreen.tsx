@@ -1049,6 +1049,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         )}
       </View>
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         ref={scrollViewRef}
         className="flex-1"
         contentContainerStyle={{

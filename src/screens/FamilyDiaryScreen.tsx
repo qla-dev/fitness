@@ -101,6 +101,7 @@ const FamilyDiaryScreen: React.FC<FamilyDiaryScreenProps> = ({
     />
   ) : (
     <ScrollView
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingBottom: insets.bottom + activeWorkoutBarPadding + 24,

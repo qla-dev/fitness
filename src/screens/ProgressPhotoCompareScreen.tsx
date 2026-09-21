@@ -252,7 +252,10 @@ const ProgressPhotoCompareScreen: React.FC<Props> = ({ navigation, route }) => {
     >
       {header}
 
-      <ScrollView contentContainerClassName="px-4 py-3">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="px-4 py-3"
+      >
         <View className="flex-row gap-3">
           {renderPane(
             beforeDay,

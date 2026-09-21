@@ -50,11 +50,12 @@ import { fireSelectionHaptic } from '../services/haptics';
 export const IOS_NATIVE_HEADER_HEIGHT = 44;
 
 /**
- * The gap between a transparent bar and the content below it. A screen that
- * offsets by hand adds this to {@link useNativeHeaderOffset}; one that lets iOS
- * inset it gets the equivalent from the system.
+ * The gap between a transparent header — bar plus accessory — and the first
+ * row of content below it. A screen that offsets by hand adds this to
+ * {@link useNativeHeaderOffset} and its accessory's measured height; sharing
+ * one value is what makes two screens built the same way line up.
  */
-export const HEADER_CONTENT_GAP = 16;
+export const HEADER_CONTENT_GAP = 12;
 
 export const SAVE_LABEL = 'Save';
 export const SAVING_LABEL = 'Saving…';
@@ -245,6 +246,14 @@ function NativeHeaderAccessory({
   onHeight?: (height: number) => void;
 }) {
   const headerHeight = useAnimatedHeaderHeight();
+  if (variant === 'system')
+    return (
+      <View
+        onLayout={({ nativeEvent }) => onHeight?.(nativeEvent.layout.height)}
+      >
+        {children}
+      </View>
+    );
   return (
     <RNAnimated.View
       pointerEvents="box-none"
@@ -273,6 +282,18 @@ function NativeHeaderAccessory({
 export interface ScreenHeaderConfig {
   /** See {@link ScreenHeaderVariant}. Defaults to `system`. */
   variant?: ScreenHeaderVariant;
+  /**
+   * The iOS large title: big under the bar at rest, collapsing into the bar as
+   * content scrolls up. Only on the `system` variant — a transparent bar has
+   * no scroll-edge appearance for the system to animate the handoff against.
+   *
+   * The screen must render its scroll view as the header's sibling, not inside
+   * another `View`: the collapse is driven by the scroll view iOS finds
+   * directly under the screen, and a wrapper hides it. Pair it with
+   * `contentInsetAdjustmentBehavior={usesNativeHeader ? 'automatic' : 'never'}`,
+   * which is what reserves the space the big title sits in.
+   */
+  largeTitle?: boolean;
   /**
    * Fixed content belonging to the header rather than to the screen: a
    * progress bar, a segmented control, a search field. It sits under the
@@ -760,6 +781,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
 
   const {
     variant = 'system',
+    largeTitle = false,
     accessory,
     onAccessoryHeight,
     title,
@@ -879,6 +901,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   const signature = JSON.stringify({
     usesNativeHeader,
     variant,
+    largeTitle,
     defaultColor,
     saveColor,
     accentColor,
@@ -916,6 +939,12 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     const options: Partial<NativeStackNavigationOptions> = {
       headerTintColor: defaultColor,
       ...(variant === 'transparent' ? TRANSPARENT_HEADER_OPTIONS : null),
+      ...(variant === 'system' && largeTitle
+        ? {
+            headerLargeTitleEnabled: true,
+            headerLargeTitleShadowVisible: false,
+          }
+        : null),
       // A screen's own nativeOptions still win, so edit-mode swaps keep
       // overriding whatever the variant set.
       ...nativeOptions,

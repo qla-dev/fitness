@@ -66,10 +66,7 @@ import Toast from 'react-native-toast-message';
 import { addLog } from '../services/LogService';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { WorkoutDraftSet } from '../types/drafts';
-import type {
-  WorkoutGpsPoint,
-  WorkoutHrSample,
-} from '../types/healthRecords';
+import type { WorkoutGpsPoint, WorkoutHrSample } from '../types/healthRecords';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
 
@@ -731,6 +728,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       {header}
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,

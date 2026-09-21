@@ -86,14 +86,24 @@ export type RootStackParamList = {
   ExerciseProgram: { programId: string };
   /** The store cart, opened from the cart button in the Exercises store header. */
   Cart: undefined;
-  WorkoutSetup: { sport: RecordingSport };
+  WorkoutSetup: { sport: RecordingSport; sportId?: string };
   /**
    * Started from `WorkoutSetup`, which passes the sport, the goal and the
    * weight the calorie estimate needs; entered bare (a resume, a deep link)
    * the recorder asks for those itself.
    */
   RunOrRide:
-    | { sport?: RecordingSport; goal?: RecordingGoal; weightKg?: number }
+    | {
+        sport?: RecordingSport;
+        /** The Start Workout sport this session is, if it came from there. */
+        sportId?: string;
+        /** False records without a route; set from the setup screen. */
+        gps?: boolean;
+        /** False keeps a paired watch out of the session. */
+        watch?: boolean;
+        goal?: RecordingGoal;
+        weightKg?: number;
+      }
     | undefined;
   WorkoutPresetsLibrary: undefined;
   WorkoutPresetDetail: { preset: WorkoutPreset; updatedPreset?: WorkoutPreset };

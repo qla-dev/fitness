@@ -485,6 +485,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
     return (
       <View className="flex-1 bg-surface">
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={filteredSearchResults}
           keyExtractor={(item) => item.id}
           renderItem={renderExerciseRow}
@@ -578,6 +579,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
     return (
       <View className="flex-1 bg-surface">
         <SectionList
+          showsVerticalScrollIndicator={false}
           sections={sections}
           keyExtractor={(item, index) => `${index}-${item.id}`}
           renderItem={renderExerciseRow}
@@ -737,6 +739,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
     return (
       <View className="flex-1 bg-surface">
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={onlineSearchResults}
           keyExtractor={(item, index) => `${item.source}-${item.id}-${index}`}
           renderItem={renderExternalExerciseItem}

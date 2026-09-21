@@ -1,13 +1,31 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
-import FormInput from '../components/FormInput';
 import Icon, { type IconName } from '../components/Icon';
+import LiquidGlassSurface from '../components/LiquidGlassSurface';
+import { canUseLiquidGlass } from '../utils/liquidGlass';
 import StepperInput, { useStepperDraft } from '../components/StepperInput';
+import { ToggleChipRow } from '../components/FilterChipRow';
+import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
+import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
+import {
+  getSensorSnapshot,
+  setWheelCircumference,
+  subscribeSensors,
+} from '../services/recording/sensors';
 import { usePreferences } from '../hooks/usePreferences';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -47,7 +65,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const { sport } = route.params;
+  const { sport, sportId } = route.params;
 
   const [green, amber, blue, pink, surface] = useCSSVariable([
     '--color-cat-green',
@@ -66,6 +84,75 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // tiles already do. An edit takes over from the prefill.
   const { history } = useMeasurementHistory(getTodayDate());
   const lastWeight = history?.weight?.shown ?? null;
+  // Standing facts about the person, shown so the estimate is not a black box:
+  // height never changes between sessions, weight rarely does.
+  const lastHeight = history?.height?.shown ?? null;
+  const [heightEdit, setHeightEdit] = useState<string | null>(null);
+  const heightValue =
+    heightEdit ?? (lastHeight === null ? '' : String(Math.round(lastHeight)));
+  const [editingStat, setEditingStat] = useState<
+    'weight' | 'height' | 'wheel' | null
+  >(null);
+  const upsertCheckIn = useUpsertCheckIn();
+  const usesGlass = canUseLiquidGlass();
+  // Off means the session is timed but leaves no route — indoors, or on a
+  // court, where a trace is noise and the battery is better spent elsewhere.
+  const [gpsEnabled, setGpsEnabled] = useState(true);
+  // Quick start is not a goal, so it only shows under "All"; "Custom" is where
+  // saved workouts of your own will land and has nothing in it yet.
+  const [goalFilter, setGoalFilter] = useState('all');
+  // On when a watch is paired: its heart rate is the better reading, and the
+  // switch is there for when you would rather it stayed out of the session.
+  const [watchEnabled, setWatchEnabled] = useState(true);
+  const [sensorsOpen, setSensorsOpen] = useState(false);
+  // Asked for here rather than at the first GPS fix: a permission sheet that
+  // appears the moment you start running is a sheet nobody reads. Setup is
+  // where you are still looking at the phone.
+  const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
+  const askForLocation = useCallback(async () => {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    const granted =
+      permission.granted && permission.android?.accuracy !== 'coarse';
+    setLocationGranted(granted);
+    return granted;
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const existing = await Location.getForegroundPermissionsAsync();
+      const granted =
+        existing.granted && existing.android?.accuracy !== 'coarse';
+      if (cancelled) return;
+      setLocationGranted(granted);
+      // Asked on arrival rather than at the first fix: a permission sheet that
+      // appears the moment you start running is a sheet nobody reads.
+      if (!granted && existing.canAskAgain) await askForLocation();
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Arrival only: re-running this on every toggle would re-prompt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // No location is read on this screen. Setup asks for the permission — so
+  // the sheet is answered while you are still looking at the phone — but the
+  // receiver stays off until a session actually starts, and stops with it.
+  // Warming it up here meant the system indicator stayed lit while you were
+  // elsewhere in the app, which reads as being tracked for no reason.
+  const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
+  const watchConnected =
+    sensors.watchStreaming || sensors.heartRateSource === 'watch';
+  // Wheel size only means anything on a bike, and only a bike sensor uses
+  // it: it is what turns wheel revolutions into distance.
+  const [wheelEdit, setWheelEdit] = useState<string | null>(null);
+  const wheelValue = wheelEdit ?? String(sensors.wheelMm);
+  const commitWheel = () => {
+    setEditingStat(null);
+    const value = parseDecimalInput(wheelValue);
+    if (!(value > 0) || value === sensors.wheelMm) return;
+    void setWheelCircumference(value);
+  };
   const [weightEdit, setWeightEdit] = useState<string | null>(null);
   const weight =
     weightEdit ??
@@ -84,16 +171,203 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       ? t('startWorkout.cycling', { defaultValue: 'Cycling' })
       : t('startWorkout.running', { defaultValue: 'Running' });
 
-  useScreenHeader({ title, nativeTitle: title, left: { kind: 'back' } });
+  // The Workout app's shape: a large title with the cards under it. The stats
+  // and the goal filter are page content rather than header accessories —
+  // they belong with the cards they describe and scroll away with them.
+  const header = useScreenHeader({
+    variant: 'system',
+    title,
+    nativeTitle: title,
+    largeTitle: true,
+    left: { kind: 'back' },
+    right: {
+      kind: 'menu',
+      accessibilityLabel: t('workoutSetup.filterLabel', {
+        defaultValue: 'Filter workouts',
+      }),
+      identifier: 'workout-setup-filter',
+      showsBadge: goalFilter !== 'all',
+      items: [
+        {
+          label: t('workoutSetup.filterLabel', {
+            defaultValue: 'Filter workouts',
+          }),
+          items: [
+            {
+              label: t('workoutSetup.filters.all', { defaultValue: 'All' }),
+              sfSymbol: 'square.stack.3d.up',
+              icon: 'meal',
+              selected: goalFilter === 'all',
+              onPress: () => setGoalFilter('all'),
+            },
+            {
+              label: t('workoutSetup.filters.goals', { defaultValue: 'Goals' }),
+              sfSymbol: 'timer',
+              icon: 'timer',
+              selected: goalFilter === 'goals',
+              onPress: () => setGoalFilter('goals'),
+            },
+            {
+              label: t('workoutSetup.filters.custom', {
+                defaultValue: 'Custom',
+              }),
+              sfSymbol: 'doc.on.clipboard',
+              icon: 'paste',
+              selected: goalFilter === 'custom',
+              onPress: () => setGoalFilter('custom'),
+            },
+          ],
+        },
+      ],
+    },
+  });
 
   const canStart = parseDecimalInput(weight) > 0;
 
+  // Written back to the day's check-in rather than kept on the screen: this is
+  // the same weight the measurement tiles show, and a run started after an
+  // edit should agree with them.
+  const commitWeight = () => {
+    setEditingStat(null);
+    const value = parseDecimalInput(weight);
+    if (!(value > 0) || value === lastWeight) return;
+    upsertCheckIn.mutate({
+      entryDate: getTodayDate(),
+      weight: weightToKg(value, weightUnit),
+    });
+  };
+  const commitHeight = () => {
+    setEditingStat(null);
+    const value = parseDecimalInput(heightValue);
+    if (!(value > 0) || value === lastHeight) return;
+    upsertCheckIn.mutate({ entryDate: getTodayDate(), height: value });
+  };
+
+  /** One tappable stat. Tapping swaps the reading for a focused input. */
+  const statCard = ({
+    field,
+    icon,
+    color,
+    label,
+    unit,
+    value,
+    onChangeText,
+    onCommit,
+  }: {
+    field: 'weight' | 'height' | 'wheel';
+    icon: IconName;
+    color: string;
+    label: string;
+    unit: string;
+    value: string;
+    onChangeText: (next: string) => void;
+    onCommit: () => void;
+  }) => {
+    const editing = editingStat === field;
+    // Glass, like the chips under them: the two rows read as one control
+    // strip rather than a filled card above a row of pills. Off iOS 26 the
+    // material falls back to the raised fill these had before.
+    return (
+      <LiquidGlassSurface
+        isInteractive
+        style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          onPress={() => {
+            fireSelectionHaptic();
+            setEditingStat(field);
+          }}
+          className={`flex-1 flex-row items-center gap-3 rounded-2xl px-4 py-3${
+            usesGlass ? '' : ' bg-raised'
+          }`}
+        >
+          <Icon name={icon} size={20} color={color} />
+          <View className="flex-1">
+            <Text className="text-text-muted text-xs" numberOfLines={1}>
+              {label}
+            </Text>
+            {/* One row in both states, with the unit pinned beside the value:
+                the reading and the field occupy the same space, so nothing
+                moves when the card is tapped and a long value shortens itself
+                rather than pushing the unit onto a second line. */}
+            <View className="flex-row items-baseline">
+              {editing ? (
+                <TextInput
+                  autoFocus
+                  selectTextOnFocus
+                  value={value}
+                  onChangeText={onChangeText}
+                  onBlur={onCommit}
+                  onSubmitEditing={onCommit}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  className="text-text-primary text-base font-semibold"
+                  style={{ flexShrink: 1, padding: 0 }}
+                />
+              ) : (
+                <Text
+                  className="text-text-primary text-base font-semibold"
+                  numberOfLines={1}
+                  style={{ flexShrink: 1 }}
+                >
+                  {value || '—'}
+                </Text>
+              )}
+              <Text
+                className="text-text-muted text-xs ml-1"
+                numberOfLines={1}
+                style={{ flexShrink: 0 }}
+              >
+                {unit}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      </LiquidGlassSurface>
+    );
+  };
+
+  // Denied, but the session is about to record a route anyway: the system
+  // only asks once, so the way back is the Settings app.
+  const promptForLocationSettings = () => {
+    Alert.alert(
+      t('workoutSetup.locationTitle', {
+        defaultValue: 'Track your route?',
+      }),
+      t('workoutSetup.locationMessage', {
+        defaultValue:
+          'Location access is off, so this session will record time and calories but no route. Turn it on in Settings to trace where you go.',
+      }),
+      [
+        {
+          text: t('common.cancel', { defaultValue: 'Cancel' }),
+          style: 'cancel',
+        },
+        {
+          text: t('workoutSetup.openSettings', { defaultValue: 'Settings' }),
+          onPress: () => void Linking.openSettings(),
+        },
+      ]
+    );
+  };
+
   const start = (goal: RecordingGoal) => {
     fireSelectionHaptic();
+    // Starting a GPS session without permission would record a route-shaped
+    // nothing, so the choice is made here rather than discovered afterwards.
+    if (gpsEnabled && locationGranted === false) {
+      promptForLocationSettings();
+      return;
+    }
     // Replace: with a session running, back belongs to the recorder, and a
     // setup screen left behind it would offer to start a second one.
     navigation.replace('RunOrRide', {
       sport,
+      sportId,
+      gps: gpsEnabled,
+      watch: watchEnabled,
       goal,
       weightKg: weightToKg(parseDecimalInput(weight), weightUnit),
     });
@@ -180,91 +454,196 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   );
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{
-        padding: 16,
-        paddingTop: usesNativeHeader ? 16 : insets.top + 16,
-        paddingBottom: insets.bottom + 24,
-      }}
-      keyboardShouldPersistTaps="handled"
-    >
-      {card(
-        green,
-        'checkmark-circle',
-        t('workoutSetup.quickStart', { defaultValue: 'Quick start' }),
-        { type: 'open', target: 0 }
-      )}
-      {card(
-        amber,
-        'timer',
-        t('workoutSetup.time', { defaultValue: 'Time' }),
-        { type: 'time', target: minutes * 60 },
-        targetRow(
-          amber,
-          minuteDraft,
-          t('workoutSetup.minutesUnit', { defaultValue: 'MIN' }),
-          t('workoutSetup.timeTarget', { defaultValue: 'Time goal in minutes' })
-        )
-      )}
-      {card(
-        blue,
-        'exercise-running',
-        t('workoutSetup.distance', { defaultValue: 'Distance' }),
-        {
-          type: 'distance',
-          target: distanceToKm(distance, distanceUnit) * 1000,
-        },
-        targetRow(
-          blue,
-          distanceDraft,
-          distanceUnit === 'miles'
-            ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
-            : t('workoutSetup.kmUnit', { defaultValue: 'KM' }),
-          t('workoutSetup.distanceTarget', { defaultValue: 'Distance goal' })
-        )
-      )}
-      {card(
-        pink,
-        'exercise',
-        t('workoutSetup.calories', { defaultValue: 'Calories' }),
-        { type: 'calories', target: calories },
-        targetRow(
-          pink,
-          calorieDraft,
-          t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' }),
-          t('workoutSetup.calorieTarget', { defaultValue: 'Calorie goal' })
-        )
-      )}
-
-      <Text className="text-text-secondary text-sm mt-2 mb-2">
-        {t('workoutSetup.weightHint', {
-          defaultValue: 'Used for the calorie estimate ({{unit}})',
-          unit: weightUnit,
-        })}
-      </Text>
-      <FormInput
-        accessibilityLabel={t('recording.weight', {
-          defaultValue: 'Body weight ({{unit}}), for estimated calories',
-          unit: weightUnit,
-        })}
-        value={weight}
-        onChangeText={setWeightEdit}
-        keyboardType="decimal-pad"
-      />
-      {!canStart && (
-        <Text className="text-text-muted text-sm mt-2">
-          {t('workoutSetup.weightRequired', {
-            defaultValue: 'Enter your body weight to start.',
+    <>
+      {header}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        className="flex-1 bg-background"
+        contentContainerStyle={{
+          padding: 16,
+          paddingTop: usesNativeHeader ? 16 : insets.top + 16,
+          paddingBottom: insets.bottom + 24,
+        }}
+        contentInsetAdjustmentBehavior={
+          usesNativeHeader ? 'automatic' : 'never'
+        }
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* What the calorie estimate is based on. Both edit in place — one
+            tap puts the caret in the card — and commit on blur to the day's
+            check-in, so the value the estimate uses is the value on file. */}
+        <View className="flex-row gap-2 mb-3">
+          {statCard({
+            field: 'weight',
+            icon: 'scale',
+            color: blue,
+            label: t('workoutSetup.weightLabel', { defaultValue: 'Weight' }),
+            unit: weightUnit,
+            value: weight,
+            onChangeText: setWeightEdit,
+            onCommit: commitWeight,
           })}
-        </Text>
-      )}
-      <Text className="text-text-muted text-xs mt-4">
-        {t('workoutSetup.goalHint', {
-          defaultValue:
-            'A goal is a target, not a limit — the session keeps recording past it until you finish.',
-        })}
-      </Text>
-    </ScrollView>
+          {statCard({
+            field: 'height',
+            icon: 'measurements',
+            color: green,
+            label: t('workoutSetup.heightLabel', { defaultValue: 'Height' }),
+            unit: 'cm',
+            value: heightValue,
+            onChangeText: setHeightEdit,
+            onCommit: commitHeight,
+          })}
+          {sport === 'ride' &&
+            statCard({
+              field: 'wheel',
+              icon: 'exercise-cycling',
+              color: amber,
+              label: t('workoutSetup.wheelLabel', { defaultValue: 'Wheel' }),
+              unit: 'mm',
+              value: wheelValue,
+              onChangeText: setWheelEdit,
+              onCommit: commitWheel,
+            })}
+        </View>
+
+        {/* How this session gets measured. Two switches rather than a
+            segmented control: tracing a route and reading the watch are
+            independent, and either can be on without the other. */}
+        <View className="-mx-4 mb-1">
+          <ToggleChipRow
+            options={[
+              {
+                value: 'gps',
+                label:
+                  gpsEnabled && locationGranted !== false
+                    ? t('workoutSetup.gpsOn', {
+                        defaultValue: 'GPS tracking on',
+                      })
+                    : t('workoutSetup.gpsOff', {
+                        defaultValue: 'GPS tracking off',
+                      }),
+                icon: 'gps-track',
+                on: gpsEnabled && locationGranted !== false,
+              },
+              {
+                value: 'watch',
+                label: watchConnected
+                  ? t('workoutSetup.watch', { defaultValue: 'Watch' })
+                  : t('workoutSetup.watchDisconnected', {
+                      defaultValue: 'No watch connected',
+                    }),
+                icon: 'device-watch',
+                on: watchEnabled && watchConnected,
+                // Nothing to turn on until one is paired.
+                disabled: !watchConnected,
+              },
+              {
+                value: 'sensors',
+                label:
+                  sensors.devices.length > 0
+                    ? t('workoutSetup.sensorsConnected', {
+                        defaultValue: 'Sensors',
+                      })
+                    : t('recording.sensors', {
+                        defaultValue: 'Bluetooth sensors',
+                      }),
+                icon: 'heart-rate',
+                on: sensors.devices.length > 0,
+              },
+            ]}
+            onToggle={(value) => {
+              // Not a switch: pairing is a place you go, and the chip reports
+              // whether anything is connected rather than turning it on.
+              if (value === 'sensors') return setSensorsOpen(true);
+              if (value === 'gps') {
+                // Turning it on is also when the permission is worth asking
+                // for: the answer decides whether the chip can be on at all.
+                if (!gpsEnabled) {
+                  void askForLocation().then((granted) => {
+                    setGpsEnabled(true);
+                    if (!granted) promptForLocationSettings();
+                  });
+                  return;
+                }
+                return setGpsEnabled(false);
+              }
+              setWatchEnabled((on) => !on);
+            }}
+          />
+        </View>
+
+        {goalFilter === 'all' &&
+          card(
+            green,
+            'checkmark-circle',
+            t('workoutSetup.quickStart', { defaultValue: 'Quick start' }),
+            { type: 'open', target: 0 }
+          )}
+        {goalFilter !== 'custom' &&
+          card(
+            amber,
+            'timer',
+            t('workoutSetup.time', { defaultValue: 'Time' }),
+            { type: 'time', target: minutes * 60 },
+            targetRow(
+              amber,
+              minuteDraft,
+              t('workoutSetup.minutesUnit', { defaultValue: 'MIN' }),
+              t('workoutSetup.timeTarget', {
+                defaultValue: 'Time goal in minutes',
+              })
+            )
+          )}
+        {goalFilter !== 'custom' &&
+          card(
+            blue,
+            'exercise-running',
+            t('workoutSetup.distance', { defaultValue: 'Distance' }),
+            {
+              type: 'distance',
+              target: distanceToKm(distance, distanceUnit) * 1000,
+            },
+            targetRow(
+              blue,
+              distanceDraft,
+              distanceUnit === 'miles'
+                ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
+                : t('workoutSetup.kmUnit', { defaultValue: 'KM' }),
+              t('workoutSetup.distanceTarget', {
+                defaultValue: 'Distance goal',
+              })
+            )
+          )}
+        {goalFilter !== 'custom' &&
+          card(
+            pink,
+            'exercise',
+            t('workoutSetup.calories', { defaultValue: 'Calories' }),
+            { type: 'calories', target: calories },
+            targetRow(
+              pink,
+              calorieDraft,
+              t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' }),
+              t('workoutSetup.calorieTarget', { defaultValue: 'Calorie goal' })
+            )
+          )}
+        {goalFilter === 'custom' && (
+          <View className="items-center py-10 px-6">
+            <Icon name="paste" size={28} color={surface} />
+            <Text className="text-text-secondary text-base font-semibold mt-3 text-center">
+              {t('workoutSetup.customEmptyTitle', {
+                defaultValue: 'No custom workouts yet',
+              })}
+            </Text>
+            <Text className="text-text-muted text-sm mt-1 text-center">
+              {t('workoutSetup.customEmptyMessage', {
+                defaultValue: 'Workouts you build yourself will show up here.',
+              })}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+      <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
+    </>
   );
 }

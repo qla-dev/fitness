@@ -235,8 +235,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation, route }) => {
                 defaultValue: 'Camera permission is required',
               }),
               text2: t('progressPhotos.cameraPermissionHint', {
-                defaultValue:
-                  'Enable camera access for qla.fit in Settings.',
+                defaultValue: 'Enable camera access for qla.fit in Settings.',
               }),
             });
             return;

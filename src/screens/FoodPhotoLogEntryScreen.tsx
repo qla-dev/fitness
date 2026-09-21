@@ -330,6 +330,7 @@ const FoodPhotoLogEntryScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4 py-4"
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"

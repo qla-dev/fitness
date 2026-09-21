@@ -518,6 +518,7 @@ export default function AppleHealthCheckScreen({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
         contentInsetAdjustmentBehavior={
           usesNativeHeader ? 'automatic' : 'never'

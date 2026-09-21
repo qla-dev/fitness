@@ -162,6 +162,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,

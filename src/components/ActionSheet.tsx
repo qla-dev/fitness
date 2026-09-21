@@ -215,7 +215,10 @@ const ActionSheet = React.forwardRef<ActionSheetRef, ActionSheetProps>(
         onAnimate={handleAnimate}
         onDismiss={handleDismiss}
       >
-        <BottomSheetScrollView contentContainerClassName="pb-safe-or-5">
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="pb-safe-or-5"
+        >
           <View className="px-4 py-4 border-b border-border-subtle">
             <Text
               numberOfLines={1}

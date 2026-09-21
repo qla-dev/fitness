@@ -253,6 +253,7 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
         />
       )}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1 bg-background"
         style={{ flex: 1 }}
         contentContainerStyle={{

@@ -333,6 +333,7 @@ const MealPlansScreen: React.FC<MealPlansScreenProps> = ({ navigation }) => {
     }
     return (
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={mealPlans}
         keyExtractor={(item) => item.id}
         renderItem={renderPlan}

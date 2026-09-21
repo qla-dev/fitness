@@ -131,9 +131,7 @@ const CompactActivityRow: React.FC<CompactActivityRowProps> = ({
           numberOfLines={1}
         >
           {value}
-          {unit ? (
-            <Text className="text-sm font-semibold"> {unit}</Text>
-          ) : null}
+          {unit ? <Text className="text-sm font-semibold"> {unit}</Text> : null}
         </Text>
       </View>
 

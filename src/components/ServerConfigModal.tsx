@@ -1108,6 +1108,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+      showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
           className="bg-black/50"
           contentContainerClassName="justify-center items-center p-6"

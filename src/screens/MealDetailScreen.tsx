@@ -334,6 +334,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
 
     return (
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1 bg-background"
         contentContainerClassName="px-4 py-4 gap-4"
         contentContainerStyle={{

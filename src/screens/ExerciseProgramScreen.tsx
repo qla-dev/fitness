@@ -160,6 +160,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         onScroll={(event) => setScrollOffset(event.nativeEvent.contentOffset.y)}
         scrollEventThrottle={100}
         contentContainerStyle={{

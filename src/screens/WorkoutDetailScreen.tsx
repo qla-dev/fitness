@@ -765,6 +765,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       {header}
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4 py-4"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 20 + activeWorkoutBarPadding,

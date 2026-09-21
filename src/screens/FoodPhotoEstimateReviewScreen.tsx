@@ -971,6 +971,7 @@ const FoodPhotoEstimateReviewScreen: React.FC<Props> = ({
       ) : (
         <>
           <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
             contentContainerClassName="px-4 py-4"
             bottomOffset={80}
             keyboardShouldPersistTaps="handled"

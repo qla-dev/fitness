@@ -711,6 +711,7 @@ function WorkoutReorderList({
         </View>
 
         <Animated.ScrollView
+      showsVerticalScrollIndicator={false}
           ref={scrollRef}
           onScroll={scrollHandler}
           scrollEventThrottle={16}

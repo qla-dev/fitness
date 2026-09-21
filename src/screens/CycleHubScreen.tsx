@@ -186,6 +186,7 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
       </View>
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 12,

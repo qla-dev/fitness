@@ -408,6 +408,7 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
       ) : (
         <>
           <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
             contentContainerClassName="px-4"
             // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
             // so the transparent bar's measured height is applied by hand.

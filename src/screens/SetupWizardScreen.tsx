@@ -268,6 +268,7 @@ export default function SetupWizardScreen({
       >
         {header}
         <KeyboardAwareScrollView
+          showsVerticalScrollIndicator={false}
           // No automatic inset: the header accessory above already carries the
           // offset the transparent bar does not reserve. Asking for it here too
           // pushed this content up under the accessory.

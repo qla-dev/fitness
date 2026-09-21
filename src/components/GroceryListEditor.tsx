@@ -102,6 +102,7 @@ export default function GroceryListEditor({
           </Button>
         </View>
         <ScrollView
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         >

@@ -85,11 +85,12 @@ const NAME_KEYWORDS: [string, IconName][] = [
   ['run', 'exercise-running'],
 ];
 
-export function getWorkoutIcon(session: ExerciseSessionResponse): IconName {
-  if (session.type === 'preset') return 'exercise-weights';
-
-  const name = session.name ?? session.exercise_snapshot?.name ?? '';
-  const category = session.exercise_snapshot?.category;
+export function getExerciseIcon(exercise: {
+  name?: string | null;
+  category?: string | null;
+}): IconName {
+  const name = exercise.name ?? '';
+  const category = exercise.category;
 
   // Exact name match (handles synced workouts where name is the activity type)
   if (name in CATEGORY_ICON_MAP) return CATEGORY_ICON_MAP[name];
@@ -111,6 +112,15 @@ export function getWorkoutIcon(session: ExerciseSessionResponse): IconName {
   }
 
   return 'exercise-default';
+}
+
+export function getWorkoutIcon(session: ExerciseSessionResponse): IconName {
+  if (session.type === 'preset') return 'exercise-weights';
+
+  return getExerciseIcon({
+    name: session.name ?? session.exercise_snapshot?.name ?? '',
+    category: session.exercise_snapshot?.category,
+  });
 }
 
 const SOURCE_DISPLAY_NAMES: Record<string, string> = {

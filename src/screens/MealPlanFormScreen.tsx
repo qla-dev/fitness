@@ -531,6 +531,7 @@ const MealPlanFormScreen: React.FC<MealPlanFormScreenProps> = ({
     >
       {header}
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,

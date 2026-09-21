@@ -110,10 +110,7 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
           onPress={() => onPressSession?.(session)}
           distanceUnit={distanceUnit}
         >
-          <CompactActivityRow
-            session={session}
-            distanceUnit={distanceUnit}
-          />
+          <CompactActivityRow session={session} distanceUnit={distanceUnit} />
         </SwipeableExerciseRow>
       ))}
     </View>

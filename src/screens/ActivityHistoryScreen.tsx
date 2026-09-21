@@ -233,6 +233,7 @@ export default function ActivityHistoryScreen({
         </View>
       ) : (
         <SectionList
+          showsVerticalScrollIndicator={false}
           sections={sections}
           keyExtractor={(session, index) => session.id || String(index)}
           contentContainerStyle={{

@@ -501,7 +501,10 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
             </Text>
           </View>
 
-          <BottomSheetScrollView contentContainerClassName="pb-safe-or-5">
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-safe-or-5"
+          >
             {customSavedVariants.length > 0 ? (
               <>
                 <View className="px-4 py-2 bg-surface">

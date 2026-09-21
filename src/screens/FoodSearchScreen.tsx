@@ -1203,6 +1203,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
       return (
         <View className="flex-1 bg-surface">
           <SectionList
+            showsVerticalScrollIndicator={false}
             sections={resultSections}
             keyExtractor={resultKeyExtractor}
             renderItem={renderResultRow}
@@ -1269,6 +1270,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
     return (
       <View className="flex-1 bg-surface">
         <SectionList
+          showsVerticalScrollIndicator={false}
           sections={landingSections}
           keyExtractor={(item) => item.key}
           renderItem={({ item }) => (

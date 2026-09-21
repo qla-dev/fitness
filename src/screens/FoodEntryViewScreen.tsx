@@ -969,6 +969,7 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
       {header}
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerClassName="px-4 py-4 gap-4"
         contentContainerStyle={{

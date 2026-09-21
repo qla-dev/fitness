@@ -247,6 +247,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
 
     return (
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={filteredPresets}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderRow}

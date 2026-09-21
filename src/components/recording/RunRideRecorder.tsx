@@ -5,6 +5,7 @@ import {
   Linking,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -16,7 +17,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteMap from '../RouteMap';
 import Button from '../ui/Button';
 import FormInput from '../FormInput';
-import SensorPanel from './SensorPanel';
 import { recordingClock, routeSegments } from './format';
 import { usePreferences } from '../../hooks/usePreferences';
 import { invalidateExerciseCache } from '../../hooks/invalidateExerciseCache';
@@ -55,11 +55,20 @@ function KeepRecordingAwake() {
 export default function RunRideRecorder({
   navigation,
   initialSport,
+  initialSportId,
+  initialGps,
+  initialWatch,
   initialGoal,
   initialWeightKg,
 }: Pick<RootStackScreenProps<'RunOrRide'>, 'navigation'> & {
   /** Setup's choices. The in-screen controls still override them. */
   initialSport?: RecordingSport;
+  /** Names the session; the sport above only decides how it records. */
+  initialSportId?: string;
+  /** False records the session without tracing a route. */
+  initialGps?: boolean;
+  /** False keeps a paired watch out of the session. */
+  initialWatch?: boolean;
   initialGoal?: RecordingGoal;
   initialWeightKg?: number;
 }) {
@@ -77,12 +86,17 @@ export default function RunRideRecorder({
   const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
   const [sport, setSport] = useState<RecordingSport>(initialSport ?? 'run');
   const [weight, setWeight] = useState('');
-  const [showSensors, setShowSensors] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const locked = useRef(false);
+  // Set once the session is over, so the leave guard steps aside and lets the
+  // navigation it was holding back through.
+  const leaving = useRef(false);
   const session = snapshot.session;
+  // A session recorded without a route has no map to show, so the screen is
+  // the readings on black rather than a dimmed blank tile.
+  const tracksRoute = session ? session.gps !== false : initialGps !== false;
   useEffect(() => {
     void initializeRecorder({ sensors: true }).catch(() => setError(true));
   }, []);
@@ -119,9 +133,22 @@ export default function RunRideRecorder({
       initialSport ?? 'run',
       initialWeightKg,
       t,
-      initialGoal
+      initialGoal,
+      initialSportId,
+      initialGps,
+      initialWatch
     ).catch(() => setAutoStartFailed(true));
-  }, [initialWeightKg, initialSport, initialGoal, session, snapshot.ready, t]);
+  }, [
+    initialWeightKg,
+    initialSport,
+    initialSportId,
+    initialGps,
+    initialWatch,
+    initialGoal,
+    session,
+    snapshot.ready,
+    t,
+  ]);
   // Derived, not stored: the route asked for a session and there is not one
   // yet, so the form it would have filled in has nothing left to ask.
   const autoStarting = !!initialWeightKg && !session && !autoStartFailed;
@@ -207,11 +234,55 @@ export default function RunRideRecorder({
               void queryClient.invalidateQueries({
                 queryKey: ['exercises', 'count'],
               });
+              leaving.current = true;
               navigation.replace('ActivityDetail', { session: entry });
             }),
         },
       ]
     );
+  // Leaving is ending. Backing out used to close the screen and leave the
+  // session running — the recording outlives its screen, so you would be back
+  // on the tabs with the route still being traced and no sign of it. The
+  // listener catches the back button, the swipe and the hardware back alike.
+  useEffect(() => {
+    if (!session) return;
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (leaving.current) return;
+      event.preventDefault();
+      Alert.alert(
+        t('recording.leaveTitle', { defaultValue: 'End this workout?' }),
+        t('recording.leaveMessage', {
+          defaultValue:
+            'Recording stops when you leave. Save it as an exercise, or throw it away.',
+        }),
+        [
+          {
+            text: t('recording.keepRecording', {
+              defaultValue: 'Keep recording',
+            }),
+            style: 'cancel',
+          },
+          {
+            text: t('recording.discard', { defaultValue: 'Discard' }),
+            style: 'destructive',
+            onPress: () =>
+              void perform(async () => {
+                await discardRecording();
+                leaving.current = true;
+                navigation.dispatch(event.data.action);
+              }),
+          },
+          {
+            text: t('recording.finish', { defaultValue: 'Finish and save' }),
+            onPress: () => finish(),
+          },
+        ]
+      );
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, session, t]);
+
   const discard = () =>
     Alert.alert(
       t('recording.discardTitle', { defaultValue: 'Discard this recording?' }),
@@ -232,18 +303,43 @@ export default function RunRideRecorder({
     );
 
   return (
-    <View className="flex-1">
+    // Forced dark for the whole recording: a full-screen takeover read at
+    // arm's length, usually outdoors, where a light sheet under sun is the
+    // wrong instinct. It also lets the map sit behind everything without the
+    // panel over it changing colour with the user's theme.
+    <View className="flex-1" style={{ backgroundColor: '#000' }}>
       {active && focused && <KeepRecordingAwake />}
-      <View className="flex-1">
-        <RouteMap
-          center={snapshot.points[snapshot.points.length - 1]}
-          segments={routeSegments(snapshot.points)}
-          showsUserLocation={!!session && active}
-        />
-      </View>
+      {tracksRoute ? (
+        <>
+          {/* The map is the background rather than a pane at the top: it fills
+              the screen and the readings sit over it, dimmed enough to stay
+              legible against a bright map. */}
+          <View style={StyleSheet.absoluteFill}>
+            <RouteMap
+              center={snapshot.points[snapshot.points.length - 1]}
+              segments={routeSegments(snapshot.points)}
+              showsUserLocation={!!session && active}
+            />
+          </View>
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: 'rgba(0,0,0,0.55)' },
+            ]}
+          />
+        </>
+      ) : null}
+      <View className="flex-1" />
       <ScrollView
-        className="bg-background rounded-t-3xl"
-        style={{ maxHeight: showSensors ? '70%' : '55%' }}
+        showsVerticalScrollIndicator={false}
+        className="rounded-t-3xl"
+        // Dark whatever the app theme is, and translucent so the route keeps
+        // showing through underneath.
+        style={{
+          backgroundColor: 'rgba(12,12,12,0.92)',
+          maxHeight: '55%',
+        }}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 16,
@@ -300,7 +396,11 @@ export default function RunRideRecorder({
                   startRecording(
                     sport,
                     weightToKg(parseDecimalInput(weight), weightUnit),
-                    t
+                    t,
+                    undefined,
+                    initialSportId,
+                    initialGps,
+                    initialWatch
                   )
                 )
               }
@@ -449,13 +549,6 @@ export default function RunRideRecorder({
             </Button>
           </View>
         )}
-        <Button
-          variant="ghost"
-          onPress={() => setShowSensors((value) => !value)}
-        >
-          {t('recording.sensors', { defaultValue: 'Bluetooth sensors' })}
-        </Button>
-        {showSensors && <SensorPanel />}
       </ScrollView>
     </View>
   );

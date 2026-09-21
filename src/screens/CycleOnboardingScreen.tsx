@@ -301,6 +301,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 100,

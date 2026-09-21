@@ -404,6 +404,7 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
 
     return (
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 
 import LiquidGlassSurface from './LiquidGlassSurface';
+import { fireSelectionHaptic } from '../services/haptics';
 import {
   PROGRAM_CATEGORIES,
   getProgramCategoryLabel,
@@ -50,7 +51,10 @@ const ProgramCategoryChips: React.FC<{
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityState={{ selected }}
-          onPress={() => onChange(selected && id !== null ? null : id)}
+          onPress={() => {
+            fireSelectionHaptic();
+            onChange(selected && id !== null ? null : id);
+          }}
           className="h-full px-4 items-center justify-center"
         >
           <Text

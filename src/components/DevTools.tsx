@@ -15,6 +15,7 @@ import {
   seedRichStrengthWorkoutIOS,
 } from '../services/seedHealthDataIOS';
 import { triggerManualSync } from '../services/backgroundSyncService';
+import { stopAllRecording } from '../services/recording/recorder';
 import { notifySessionExpired } from '../services/api/authService';
 import { getActiveServerConfig } from '../services/storage';
 import { resetWhatsNewBanner } from '../services/whatsNewBanner';
@@ -453,6 +454,38 @@ const DevTools: React.FC = () => {
           defaultValue: 'Insert sample health data for testing.',
         })}
       </Text>
+
+      {/* The escape hatch for a recording nobody can reach: it outlives the
+          screen that started it, so a forgotten one keeps the location
+          receiver open with no visible way to stop it. */}
+      <Button
+        variant="secondary"
+        className="py-2 px-4 rounded-lg my-1 self-stretch"
+        onPress={() => {
+          void stopAllRecording()
+            .then(() =>
+              Toast.show({
+                type: 'success',
+                text1: t('devTools.stopRecording.done', {
+                  defaultValue: 'Recording stopped and location released',
+                }),
+              })
+            )
+            .catch(() =>
+              Toast.show({
+                type: 'error',
+                text1: t('devTools.stopRecording.failed', {
+                  defaultValue: 'Could not stop recording',
+                }),
+              })
+            );
+        }}
+        textClassName="font-bold"
+      >
+        {t('devTools.stopRecording.action', {
+          defaultValue: 'Stop all workouts & location',
+        })}
+      </Button>
 
       <View className="flex-row gap-2 flex-wrap justify-between">
         <Button

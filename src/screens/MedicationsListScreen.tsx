@@ -139,6 +139,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
         </View>
       ) : (
         <SectionList
+          showsVerticalScrollIndicator={false}
           sections={sections}
           keyExtractor={(item) => item.id}
           renderItem={renderMedItem}

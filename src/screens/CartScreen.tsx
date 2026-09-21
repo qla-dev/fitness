@@ -138,6 +138,7 @@ export default function CartScreen() {
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior={native ? 'automatic' : 'never'}
         contentContainerStyle={{
           padding: 20,

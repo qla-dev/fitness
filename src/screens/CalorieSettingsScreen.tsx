@@ -474,6 +474,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
     >
       {header}
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,

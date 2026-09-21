@@ -541,6 +541,7 @@ const FoodPhotoImproveScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4 pt-4"
         contentContainerStyle={{
           flexGrow: 1,

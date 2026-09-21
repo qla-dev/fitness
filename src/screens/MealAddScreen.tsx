@@ -575,6 +575,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
       {header}
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerClassName="px-4 pt-4 pb-8 gap-4"
         keyboardShouldPersistTaps="handled"

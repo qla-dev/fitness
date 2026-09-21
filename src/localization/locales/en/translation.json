@@ -5554,7 +5554,9 @@
     "amountLeft": "{{amount}} left"
   },
   "trainingCard": {
-    "details": "Details"
+    "details": "Details",
+    "gps": "GPS tracked",
+    "watch": "Smart watch"
   },
   "startWorkout": {
     "loadFailed": "Failed to load exercises",
@@ -5565,7 +5567,34 @@
     "programsHeading": "Programs",
     "running": "Running",
     "cycling": "Cycling",
-    "recorded": "GPS tracked"
+    "recorded": "GPS tracked",
+    "groups": {
+      "moving": "Moving",
+      "stationary": "Stationary",
+      "ball": "Ball",
+      "studio": "Studio",
+      "strength": "Strength",
+      "indoor": "Indoor",
+      "outdoor": "Outdoor"
+    },
+    "sports": {
+      "walking": "Walking",
+      "hiking": "Hiking",
+      "swimming": "Swimming",
+      "rowing": "Rowing",
+      "elliptical": "Elliptical",
+      "stairClimbing": "Stair Climbing",
+      "tennis": "Tennis",
+      "basketball": "Basketball",
+      "football": "Football",
+      "yoga": "Yoga",
+      "pilates": "Pilates",
+      "dancing": "Dancing",
+      "boxing": "Boxing",
+      "strengthTraining": "Strength Training",
+      "crossfit": "CrossFit",
+      "hiit": "HIIT"
+    }
   },
   "macros": {
     "title": "AI",

@@ -52,7 +52,11 @@ export function DetailSectionHeading({
   );
   if (!onPress) return content;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+    >
       {content}
     </Pressable>
   );

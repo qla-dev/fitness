@@ -1,13 +1,12 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import PresetSearchScreen from '../../src/screens/PresetSearchScreen';
 import { useNavigationActionGuard } from '../../src/hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../../src/hooks/useScreenHeader';
 import { useStartLiveWorkout } from '../../src/hooks/useStartLiveWorkout';
-import { useSuggestedExercises } from '../../src/hooks/useSuggestedExercises';
-import { useExerciseSearch } from '../../src/hooks/useExerciseSearch';
-import { buildSingleExerciseStartPayload } from '../../src/utils/workoutSession';
+import { useCreateExercise } from '../../src/hooks/useExerciseMutations';
+import { useExercisesLibrary } from '../../src/hooks/useExercisesLibrary';
 import type { Exercise } from '../../src/types/exercise';
 
 jest.mock('../../src/hooks/useNavigationActionGuard', () => ({
@@ -20,20 +19,16 @@ jest.mock('../../src/hooks/useScreenHeader', () => ({
   // The screen offsets its list by the measured native bar; off the native
   // path there is nothing to clear.
   useNativeHeaderOffset: jest.fn(() => 0),
+  HEADER_CONTENT_GAP: 12,
 }));
 jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
   useStartLiveWorkout: jest.fn(),
 }));
-jest.mock('../../src/hooks/useSuggestedExercises', () => ({
-  useSuggestedExercises: jest.fn(),
+jest.mock('../../src/hooks/useExerciseMutations', () => ({
+  useCreateExercise: jest.fn(),
 }));
-jest.mock('../../src/hooks/useExerciseSearch', () => ({
-  useExerciseSearch: jest.fn(),
-}));
-jest.mock('../../src/hooks/useExerciseImageSource', () => ({
-  useExerciseImageSource: jest.fn(() => ({
-    getImageSource: jest.fn((path: string) => ({ uri: path, headers: {} })),
-  })),
+jest.mock('../../src/hooks/useExercisesLibrary', () => ({
+  useExercisesLibrary: jest.fn(),
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: jest.fn(() => false),
@@ -48,144 +43,153 @@ const mockHeader = useScreenHeader as jest.MockedFunction<
 const mockStart = useStartLiveWorkout as jest.MockedFunction<
   typeof useStartLiveWorkout
 >;
-const mockSuggested = useSuggestedExercises as jest.MockedFunction<
-  typeof useSuggestedExercises
+const mockCreate = useCreateExercise as jest.MockedFunction<
+  typeof useCreateExercise
 >;
-const mockSearch = useExerciseSearch as jest.MockedFunction<
-  typeof useExerciseSearch
+const mockLibrary = useExercisesLibrary as jest.MockedFunction<
+  typeof useExercisesLibrary
 >;
 
 const exercise = (id: string, name: string): Exercise =>
   ({
     id,
     name,
-    category: 'Strength',
-    equipment: [],
-    primary_muscles: [],
-    secondary_muscles: [],
-    calories_per_hour: 0,
-    source: 'local',
+    category: 'Cardio',
+    modality: 'duration',
     images: [],
-    tags: [],
   }) as unknown as Exercise;
 
-const bench = exercise('e1', 'Bench Press');
-const squat = exercise('e2', 'Squat');
-
-let startLiveWorkout: jest.Mock;
 let navigation: { goBack: jest.Mock; navigate: jest.Mock };
+let startLiveWorkout: jest.Mock;
+let createExerciseAsync: jest.Mock;
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  startLiveWorkout = jest.fn();
-  navigation = { goBack: jest.fn(), navigate: jest.fn() };
-  mockStart.mockReturnValue({
-    startLiveWorkout,
-    isStarting: false,
-  } as unknown as ReturnType<typeof useStartLiveWorkout>);
-  mockGuard.mockReturnValue({
-    isNavigationLocked: false,
-    runNavigationAction: (fn: () => void) => fn(),
-  } as unknown as ReturnType<typeof useNavigationActionGuard>);
-  mockHeader.mockImplementation(
-    (config) => (config?.accessory as React.ReactElement) ?? null
-  );
-  mockSuggested.mockReturnValue({
-    recentExercises: [bench],
-    topExercises: [squat],
-    isLoading: false,
-    isError: false,
-    refetch: jest.fn(),
-  } as unknown as ReturnType<typeof useSuggestedExercises>);
-  mockSearch.mockReturnValue({
-    searchResults: [],
-    isSearching: false,
-    isSearchActive: false,
-    isSearchError: false,
-  } as unknown as ReturnType<typeof useExerciseSearch>);
-});
-
-const renderScreen = () =>
-  render(
+const renderScreen = (library: Exercise[] = []) => {
+  mockLibrary.mockReturnValue({
+    exercises: library,
+  } as unknown as ReturnType<typeof useExercisesLibrary>);
+  return render(
     <SafeAreaProvider
       initialMetrics={{
-        insets: { top: 0, left: 0, right: 0, bottom: 0 },
         frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 0, left: 0, right: 0, bottom: 0 },
       }}
     >
       <PresetSearchScreen
         navigation={navigation as never}
-        route={{ key: 'k', name: 'PresetSearch', params: undefined } as never}
+        route={{ key: 'preset', name: 'PresetSearch' } as never}
       />
     </SafeAreaProvider>
   );
+};
 
-/**
- * Start Workout lists the local exercises and nothing else.
- *
- * Saved programs are deliberately absent: they are opened from the profile and
- * started from their own detail screen, so having them here made one screen
- * answer two different questions with a layout that changed depending on
- * whether any were saved.
- */
+beforeEach(() => {
+  jest.clearAllMocks();
+  navigation = { goBack: jest.fn(), navigate: jest.fn() };
+  startLiveWorkout = jest.fn().mockResolvedValue(undefined);
+  createExerciseAsync = jest.fn(async ({ name }: { name: string }) =>
+    exercise('created-1', name)
+  );
+  mockStart.mockReturnValue({
+    startLiveWorkout,
+    isStarting: false,
+  } as unknown as ReturnType<typeof useStartLiveWorkout>);
+  mockCreate.mockReturnValue({
+    createExerciseAsync,
+    isPending: false,
+  } as unknown as ReturnType<typeof useCreateExercise>);
+  mockGuard.mockReturnValue({
+    runNavigationAction: (action: () => void) => action(),
+  } as unknown as ReturnType<typeof useNavigationActionGuard>);
+  // The header renders the screen's accessory, which is where the search field
+  // and the chip row live.
+  mockHeader.mockImplementation(
+    (config) => (config?.accessory as React.ReactElement) ?? null
+  );
+});
+
 describe('PresetSearchScreen', () => {
-  test('titles itself Start Workout and offers a way out', () => {
+  it('titles itself Start Workout and offers a way out', () => {
     renderScreen();
 
     const config = mockHeader.mock.calls[0][0];
     expect(config.title).toBe('Start Workout');
-    expect(config.left).toMatchObject({ kind: 'dismiss' });
+    config.left?.kind === 'dismiss' && config.left.onPress?.();
+    expect(navigation.goBack).toHaveBeenCalled();
   });
 
-  test('lists the local exercises, recent before popular', () => {
-    const { getByText } = renderScreen();
+  it('lists sports rather than saved exercises, each one only once', () => {
+    const { getByTestId, queryAllByText } = renderScreen([
+      exercise('lib-1', 'Running'),
+    ]);
 
-    expect(getByText('Bench Press')).toBeTruthy();
-    expect(getByText('Squat')).toBeTruthy();
+    // The library also holds a "Running"; the catalogue is what the list shows,
+    // so the sport appears once rather than twice.
+    expect(getByTestId('start-workout-running')).toBeTruthy();
+    expect(queryAllByText('Running')).toHaveLength(1);
   });
 
-  // One tap, not two: the card is the workout, with its first movement chosen.
-  test('a card starts a workout built from that one exercise', () => {
-    const { getByLabelText } = renderScreen();
+  it('calls the ball sport football', () => {
+    const { getByTestId, getByText } = renderScreen();
 
-    fireEvent.press(getByLabelText('Bench Press'));
+    // Searched for rather than scrolled to: the list is virtualized, and this
+    // one sits far enough down that it is not mounted on first render.
+    fireEvent.changeText(getByTestId('start-workout-search'), 'foot');
 
-    expect(startLiveWorkout).toHaveBeenCalledWith({
-      exercises: buildSingleExerciseStartPayload(bench),
-    });
+    expect(getByText('Football')).toBeTruthy();
   });
 
-  test('the details pill opens the exercise without starting anything', () => {
+  it('records a GPS sport through setup', () => {
     const { getAllByLabelText } = renderScreen();
 
-    fireEvent.press(getAllByLabelText('Details')[0]);
+    fireEvent.press(getAllByLabelText('GPS tracked')[0]);
 
-    expect(navigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
-      item: bench,
-      hideWorkoutActions: true,
+    // The sport travels alongside the recording profile: the recorder needs
+    // both how to record and what it is recording.
+    expect(navigation.navigate).toHaveBeenCalledWith('WorkoutSetup', {
+      sport: 'run',
+      sportId: 'running',
     });
-    expect(startLiveWorkout).not.toHaveBeenCalled();
   });
 
-  test('typing searches exercises rather than programs', () => {
-    mockSearch.mockReturnValue({
-      searchResults: [squat],
-      isSearching: false,
-      isSearchActive: true,
-      isSearchError: false,
-    } as unknown as ReturnType<typeof useExerciseSearch>);
+  it('offers no GPS on a studio sport, which has no route to trace', () => {
+    const { getByTestId, queryByText } = renderScreen();
 
-    const { getByTestId, getByText, queryByText } = renderScreen();
-    fireEvent.changeText(getByTestId('start-workout-search'), 'squ');
+    fireEvent.changeText(getByTestId('start-workout-search'), 'yoga');
 
-    expect(getByText('Squat')).toBeTruthy();
-    expect(queryByText('Bench Press')).toBeNull();
+    expect(getByTestId('start-workout-yoga')).toBeTruthy();
+    expect(queryByText('GPS tracked')).toBeNull();
   });
 
-  // The row that used to sit above the list only led to another screen.
-  test('carries no empty-workout row', () => {
-    const { queryByTestId } = renderScreen();
+  it('starts a watch session on an exercise the sport already has', async () => {
+    const saved = exercise('lib-yoga', 'Yoga');
+    const { getByTestId, getAllByLabelText } = renderScreen([saved]);
 
-    expect(queryByTestId('empty-workout-row')).toBeNull();
+    fireEvent.changeText(getByTestId('start-workout-search'), 'yoga');
+    fireEvent.press(getAllByLabelText('Smart watch')[0]);
+
+    await waitFor(() => expect(startLiveWorkout).toHaveBeenCalled());
+    expect(createExerciseAsync).not.toHaveBeenCalled();
+  });
+
+  it('creates the exercise the first time a sport is started', async () => {
+    const { getByTestId, getAllByLabelText } = renderScreen();
+
+    fireEvent.changeText(getByTestId('start-workout-search'), 'pilates');
+    fireEvent.press(getAllByLabelText('Smart watch')[0]);
+
+    await waitFor(() => expect(createExerciseAsync).toHaveBeenCalled());
+    expect(createExerciseAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Pilates', category: 'Pilates' })
+    );
+    expect(startLiveWorkout).toHaveBeenCalled();
+  });
+
+  it('filters by where a sport happens, not just by what it is like', () => {
+    const { getByText, queryByTestId, getByTestId } = renderScreen();
+
+    fireEvent.press(getByText('Indoor'));
+
+    expect(queryByTestId('start-workout-running')).toBeNull();
+    expect(getByTestId('start-workout-yoga')).toBeTruthy();
   });
 });

@@ -24,6 +24,8 @@ export default function TrainingCard({
   imageUri,
   onPress,
   onInfo,
+  onGps,
+  onWatch,
   starting = false,
   testID,
 }: {
@@ -37,6 +39,10 @@ export default function TrainingCard({
   onPress: () => void;
   /** Opens the detail view. The pill is left out when nothing is passed. */
   onInfo?: () => void;
+  /** Start recorded with the phone's GPS, so the session carries a route. */
+  onGps?: () => void;
+  /** Start measured by a paired watch instead of the phone. */
+  onWatch?: () => void;
   /** Swaps the start glyph for a spinner-like disabled state. */
   starting?: boolean;
   testID?: string;
@@ -98,7 +104,49 @@ export default function TrainingCard({
         {title}
       </Text>
 
+      {/* How to measure it, rather than what it is: every sport here can be
+          recorded, so the choice is which instrument takes the readings. */}
       <View className="flex-row items-center gap-2 mt-3">
+        {onGps ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('trainingCard.gps', {
+              defaultValue: 'GPS tracked',
+            })}
+            hitSlop={8}
+            onPress={() => {
+              fireSelectionHaptic();
+              onGps();
+            }}
+            className="flex-1 h-10 rounded-2xl flex-row items-center justify-center gap-2 px-3"
+            style={{ backgroundColor: withAlpha(surface, 0.6) }}
+          >
+            <Icon name="gps-track" size={18} color={accent} />
+            <Text className="text-text-secondary text-sm" numberOfLines={1}>
+              {t('trainingCard.gps', { defaultValue: 'GPS tracked' })}
+            </Text>
+          </Pressable>
+        ) : null}
+        {onWatch ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('trainingCard.watch', {
+              defaultValue: 'Smart watch',
+            })}
+            hitSlop={8}
+            onPress={() => {
+              fireSelectionHaptic();
+              onWatch();
+            }}
+            className="flex-1 h-10 rounded-2xl flex-row items-center justify-center gap-2 px-3"
+            style={{ backgroundColor: withAlpha(surface, 0.6) }}
+          >
+            <Icon name="device-watch" size={18} color={accent} />
+            <Text className="text-text-secondary text-sm" numberOfLines={1}>
+              {t('trainingCard.watch', { defaultValue: 'Smart watch' })}
+            </Text>
+          </Pressable>
+        ) : null}
         {onInfo ? (
           <Pressable
             accessibilityRole="button"

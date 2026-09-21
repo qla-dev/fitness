@@ -235,6 +235,7 @@ const MedicationFormScreen: React.FC<MedicationFormScreenProps> = ({
     >
       {header}
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           rowGap: 24,

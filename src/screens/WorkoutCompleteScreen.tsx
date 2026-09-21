@@ -606,6 +606,7 @@ function WorkoutCompleteScreen({ navigation, route }: Props) {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 24 }}
       >

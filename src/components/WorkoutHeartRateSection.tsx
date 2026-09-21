@@ -101,8 +101,10 @@ export default function WorkoutHeartRateSection({
 
   const zoneTotals = ZONES.map((zone, index) => {
     const lower = zone.from * max;
-    const upper = index + 1 < ZONES.length ? ZONES[index + 1].from * max :
-      Number.POSITIVE_INFINITY;
+    const upper =
+      index + 1 < ZONES.length
+        ? ZONES[index + 1].from * max
+        : Number.POSITIVE_INFINITY;
     const count = samples.filter(
       (sample) => sample.bpm >= lower && sample.bpm < upper
     ).length;

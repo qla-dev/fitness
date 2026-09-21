@@ -1425,6 +1425,7 @@ function ActiveWorkoutScreen({ navigation, route }: Props) {
       </KeyboardCollapsible>
 
       <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="px-3 pt-2"

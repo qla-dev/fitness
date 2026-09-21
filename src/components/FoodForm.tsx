@@ -923,6 +923,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
     >
       <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerClassName="px-4 pt-4 pb-20 gap-4"
         keyboardShouldPersistTaps="handled"

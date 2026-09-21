@@ -185,7 +185,10 @@ const CopyMealSheet = forwardRef<CopyMealSheetRef, CopyMealSheetProps>(
         backgroundStyle={{ backgroundColor: surfaceBg }}
         handleIndicatorStyle={{ backgroundColor: textMuted }}
       >
-        <BottomSheetScrollView contentContainerClassName="pb-safe-or-8">
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="pb-safe-or-8"
+        >
           {source && (
             <View className="px-5">
               <View className="items-center mb-4">
