@@ -150,6 +150,7 @@ const FoodSettingsScreen: React.FC<FoodSettingsScreenProps> = ({
   );
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('foodSettings.title', { defaultValue: 'Food Settings' }),
     left: { kind: 'back' },
   });

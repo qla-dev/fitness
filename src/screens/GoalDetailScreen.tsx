@@ -137,15 +137,10 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
   // over the content, and the title is handed to the bar by hand once the
   // content has scrolled under it.
   const header = useScreenHeader({
+    variant: 'transparent',
     left: { kind: 'back' },
     nativeTitle: showHeaderTitle ? title : '',
     borderless: true,
-    nativeOptions: {
-      headerLargeTitleEnabled: false,
-      headerLargeTitleShadowVisible: false,
-      headerTransparent: true,
-      headerShadowVisible: false,
-    },
   });
 
   /**

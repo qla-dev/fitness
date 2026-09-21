@@ -1,6 +1,7 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated as RNAnimated,
   Platform,
   Pressable,
   Text,
@@ -10,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SymbolView } from 'expo-symbols';
 import { useCSSVariable } from 'uniwind';
 import { useNavigation } from '@react-navigation/native';
+import { useAnimatedHeaderHeight } from '@react-navigation/native-stack';
 import { createDuplicatePressGuard } from '../utils/duplicatePress';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -22,6 +24,7 @@ import type {
 } from '@react-navigation/native-stack';
 import Icon, { IconName } from '../components/Icon';
 import FadeView from '../components/FadeView';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import AnchoredMenu, {
   measureAnchoredMenuTrigger,
 } from '../components/AnchoredMenu';
@@ -43,6 +46,9 @@ import { fireSelectionHaptic } from '../services/haptics';
  * own label; screens that omit a `kind:'primary'` label fall back to the
  * localized `common.save` / `common.saving` values.
  */
+/** Height of the iOS small native header an accessory has to clear. */
+export const IOS_NATIVE_HEADER_HEIGHT = 44;
+
 export const SAVE_LABEL = 'Save';
 export const SAVING_LABEL = 'Saving…';
 
@@ -163,7 +169,121 @@ export type HeaderItem =
 
 type MenuHeaderItem = Extract<HeaderItem, { kind: 'menu' }>;
 
+/**
+ * How a screen's native iOS bar behaves. Two shapes, both verified on device.
+ *
+ * - `system` (default): the bar iOS gives us, untouched — large title where
+ *   the navigator asks for one, the system's own blur once content scrolls
+ *   under it. This is what the tab screens run, and what every screen that
+ *   names no variant keeps.
+ * - `transparent`: no large title and nothing painted behind the bar, so the
+ *   content shows through with the system blur over it. This is the Profile
+ *   screen's shape. A screen on this variant MUST give its scroll view
+ *   `contentInsetAdjustmentBehavior={usesNativeHeader ? 'automatic' : 'never'}`,
+ *   because a transparent bar reserves no space and iOS measures the offset
+ *   itself. Pair it with `nativeTitle: scrolled ? title : ''` when the screen
+ *   carries its own big title in the content.
+ *
+ * Neither variant applies off the native path: Android and iOS below 26 render
+ * the screen-owned bar this hook returns, which is unaffected.
+ */
+export type ScreenHeaderVariant = 'system' | 'transparent';
+
+/** The `transparent` variant's native options, in one place. */
+const TRANSPARENT_HEADER_OPTIONS: Partial<NativeStackNavigationOptions> = {
+  headerLargeTitleEnabled: false,
+  headerLargeTitleShadowVisible: false,
+  headerTransparent: true,
+  headerShadowVisible: false,
+};
+
+/**
+ * The live height of the native bar above this screen, safe area included.
+ *
+ * Only valid on the native header path and inside a native stack screen, which
+ * is why it lives behind {@link NativeHeaderAccessory} rather than being called
+ * from the hook itself. A screen on the `transparent` variant uses it to start
+ * its content below a bar that reserves no space — the number differs between a
+ * pushed screen and a modal, so it must be measured rather than assumed.
+ */
+/**
+ * The measured native bar height, for a screen on the `transparent` variant
+ * that has to pad its content by hand — a `KeyboardAwareScrollView`, say,
+ * which ignores `contentInsetAdjustmentBehavior`.
+ *
+ * Only valid inside a native stack screen. The first value is read straight
+ * off the animated node so the content does not start at zero and jump once
+ * the listener fires.
+ */
+export function useNativeHeaderOffset(): number {
+  const animated = useAnimatedHeaderHeight();
+  const [height, setHeight] = useState(() => {
+    const node = animated as unknown as { __getValue?: () => number };
+    return typeof node.__getValue === 'function' ? node.__getValue() : 0;
+  });
+  useEffect(() => {
+    const id = animated.addListener(({ value }) => setHeight(value));
+    return () => animated.removeListener(id);
+  }, [animated]);
+  return height;
+}
+
+function NativeHeaderAccessory({
+  children,
+  variant,
+}: {
+  children: React.ReactNode;
+  variant: ScreenHeaderVariant;
+}) {
+  const headerHeight = useAnimatedHeaderHeight();
+  return (
+    <RNAnimated.View
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        // A system bar laid itself out, so the screen's content already starts
+        // below it. A transparent one reserved nothing, so the accessory clears
+        // the measured bar — as a translation, because the native animated
+        // module does not drive `top`.
+        transform:
+          variant === 'transparent'
+            ? [{ translateY: headerHeight }]
+            : undefined,
+        zIndex: 10,
+      }}
+    >
+      {children}
+    </RNAnimated.View>
+  );
+}
+
 export interface ScreenHeaderConfig {
+  /** See {@link ScreenHeaderVariant}. Defaults to `system`. */
+  variant?: ScreenHeaderVariant;
+  /**
+   * Fixed content belonging to the header rather than to the screen: a
+   * progress bar, a segmented control, a search field. It sits under the
+   * title, spans both variants, and is the hook's job because only the hook
+   * knows whether the bar above it reserved any space — on `transparent` it
+   * did not, so the accessory clears the bar itself.
+   *
+   * It is laid over the screen rather than stacked above it, so the scroll
+   * view underneath keeps its full height and keeps blurring under the bar.
+   * The screen makes room for it with `paddingTop` on its
+   * `contentContainerStyle` — the accessory's own height, on top of whatever
+   * the inset already gives it.
+   *
+   * Content that scrolls away is not an accessory; that belongs in the
+   * screen's own scroll view.
+   *
+   * A screen with an accessory sets `contentInsetAdjustmentBehavior="never"`
+   * on its scroll view even on `transparent`: the accessory is in the flow and
+   * has already cleared the bar, so an automatic inset would count it twice.
+   */
+  accessory?: React.ReactNode;
   /** Centered title for the custom bar. */
   title?: string;
   /** Also drive `setOptions({ title })` — used for view/edit mode swaps. */
@@ -609,6 +729,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   // path where saveColor is coerced to the monochrome text color.
   const accentColor =
     (useCSSVariable('--color-accent-primary') as string) || '#0A84FF';
+  const titleColor = (useCSSVariable('--color-text-primary') as string) || '';
 
   // Custom-path menu presentation: which menu item is open, anchored where.
   const [openMenu, setOpenMenu] = useState<{
@@ -618,6 +739,8 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   const menuTriggerRefs = useRef<Record<string, View | null>>({});
 
   const {
+    variant = 'system',
+    accessory,
     title,
     nativeTitle,
     left,
@@ -734,9 +857,11 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   // visible signature changes; onPress is dispatched through `handlersRef`.
   const signature = JSON.stringify({
     usesNativeHeader,
+    variant,
     defaultColor,
     saveColor,
     accentColor,
+    titleColor,
     nativeTitle: nativeTitle ?? null,
     left: left
       ? {
@@ -769,11 +894,39 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
 
     const options: Partial<NativeStackNavigationOptions> = {
       headerTintColor: defaultColor,
+      ...(variant === 'transparent' ? TRANSPARENT_HEADER_OPTIONS : null),
+      // A screen's own nativeOptions still win, so edit-mode swaps keep
+      // overriding whatever the variant set.
       ...nativeOptions,
     };
 
     if (usesNativeHeader) {
       if (nativeTitle !== undefined) options.title = nativeTitle;
+
+      // The system animates its own title handoff on the large-title path —
+      // the inline title slides up from the bottom of the bar. The transparent
+      // variant has no large title to hand off from, so a screen swapping
+      // nativeTitle in on scroll would otherwise pop it in. Rendering the title
+      // ourselves reproduces that slide; the key remounts it, which is what
+      // runs the entering animation.
+      if (variant === 'transparent' && nativeTitle !== undefined) {
+        const shownTitle = nativeTitle;
+        options.headerTitle = () =>
+          shownTitle ? (
+            <Animated.View
+              key={shownTitle}
+              entering={FadeInDown.duration(220)}
+              exiting={FadeOutDown.duration(160)}
+            >
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: 17, fontWeight: '600', color: titleColor }}
+              >
+                {shownTitle}
+              </Text>
+            </Animated.View>
+          ) : null;
+      }
 
       const buildItem = (
         item: HeaderItem,
@@ -825,7 +978,12 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation, signature]);
 
-  if (usesNativeHeader) return null;
+  if (usesNativeHeader)
+    return accessory ? (
+      <NativeHeaderAccessory variant={variant}>
+        {accessory}
+      </NativeHeaderAccessory>
+    ) : null;
 
   // Menu triggers are wrapped in a measurable View so the press handler can
   // anchor the AnchoredMenu under the button it came from.
@@ -954,6 +1112,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
       ) : (
         bar
       )}
+      {accessory}
       {menuOverlay}
     </>
   );

@@ -277,6 +277,7 @@ const HealthTrendsSettingsScreen: React.FC<
   const hasHiddenTrends = dividerIndex < rows.length - 1;
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('screens.healthTrendsSettings', { defaultValue: 'Health Trends' }),
     left: { kind: 'back' },
   });

@@ -76,6 +76,7 @@ const ProfileThemeScreen: React.FC<ProfileThemeScreenProps> = ({
   const options = themeOptions(t);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('settings.theme.title', { defaultValue: 'Theme' }),
     left: { kind: 'back' },
   });

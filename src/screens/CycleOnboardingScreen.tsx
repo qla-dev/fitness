@@ -275,6 +275,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('cycleOnboarding.stepTitle', {
       defaultValue: 'Setup: Step {{step}} of 4',
       step,

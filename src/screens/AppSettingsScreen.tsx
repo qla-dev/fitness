@@ -126,6 +126,7 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
   }, [t]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('settings.app', 'App Settings'),
     left: { kind: 'back' },
   });

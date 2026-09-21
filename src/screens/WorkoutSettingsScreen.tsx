@@ -40,6 +40,7 @@ const WorkoutSettingsScreen: React.FC<WorkoutSettingsScreenProps> = () => {
   );
   const restSheetRef = useRef<RestPeriodSheetRef>(null);
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('workoutSettings.title', { defaultValue: 'Workout Settings' }),
     left: { kind: 'back' },
   });

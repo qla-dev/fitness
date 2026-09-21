@@ -319,6 +319,7 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('screens.serverSettings', { defaultValue: 'Server Settings' }),
     left: { kind: 'back' },
   });

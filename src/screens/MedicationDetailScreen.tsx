@@ -178,6 +178,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
   );
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title:
       med?.name ?? t('medications.medication', { defaultValue: 'Medication' }),
     nativeTitle:

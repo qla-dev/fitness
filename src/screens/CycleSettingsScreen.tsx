@@ -314,6 +314,7 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
       });
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: headerTitle,
     nativeTitle: headerTitle,
     left: { kind: 'back' },

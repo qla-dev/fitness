@@ -202,6 +202,7 @@ const MedicationFormScreen: React.FC<MedicationFormScreenProps> = ({
   ]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: isEditing
       ? t('medications.form.editTitle', { defaultValue: 'Edit Medication' })
       : t('medications.form.newTitle', { defaultValue: 'New Medication' }),

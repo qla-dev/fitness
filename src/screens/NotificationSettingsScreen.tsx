@@ -94,6 +94,7 @@ const NotificationSettingsScreen: React.FC<
   );
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('notificationSettings.title', { defaultValue: 'Notifications' }),
     left: { kind: 'back' },
   });

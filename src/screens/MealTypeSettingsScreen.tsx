@@ -901,6 +901,7 @@ const MealTypeSettingsScreen: React.FC<MealTypeSettingsScreenProps> = () => {
   }, [refetch]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('navigation.mealTypes', { defaultValue: 'Meal Types' }),
     left: { kind: 'back' },
     right: {

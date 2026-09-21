@@ -208,7 +208,10 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
   };
 
   const header = useScreenHeader({
-    title: t('dashboardSettings.title', { defaultValue: 'Activities Settings' }),
+    variant: 'transparent',
+    title: t('dashboardSettings.title', {
+      defaultValue: 'Activities Settings',
+    }),
     left: { kind: 'back' },
   });
 
@@ -301,7 +304,8 @@ const DashboardSettingsScreen: React.FC<DashboardSettingsScreenProps> = ({
               defaultValue: 'Progress Photos',
             })}
             subtitle={t('dashboardSettings.progressPhotosSubtitle', {
-              defaultValue: 'Show the progress photos card on the Activities tab',
+              defaultValue:
+                'Show the progress photos card on the Activities tab',
             })}
             rightAccessory={
               <Switch

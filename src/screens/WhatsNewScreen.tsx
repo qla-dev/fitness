@@ -696,6 +696,7 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
   ];
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('whatsNewPage.title', { defaultValue: "What's New" }),
     left: { kind: 'back' },
   });

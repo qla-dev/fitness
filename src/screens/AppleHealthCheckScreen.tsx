@@ -289,13 +289,12 @@ export default function AppleHealthCheckScreen({
     let cancelled = false;
     void (async () => {
       const initialized = await initHealthConnect();
-      const [dailyRange, background, onOpen, metricStates] =
-        await Promise.all([
-          loadDailySyncRange(),
-          loadBackgroundSyncEnabled(),
-          loadSyncOnOpenEnabled(),
-          loadHealthMetricStates(),
-        ]);
+      const [dailyRange, background, onOpen, metricStates] = await Promise.all([
+        loadDailySyncRange(),
+        loadBackgroundSyncEnabled(),
+        loadSyncOnOpenEnabled(),
+        loadHealthMetricStates(),
+      ]);
       const writeback: Record<string, boolean> = {};
       for (const metric of WRITEBACK_METRICS) {
         writeback[metric.id] =
@@ -502,6 +501,7 @@ export default function AppleHealthCheckScreen({
           });
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
     nativeTitle: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
     right: {
@@ -517,7 +517,12 @@ export default function AppleHealthCheckScreen({
       style={{ paddingTop: usesNativeHeader ? 0 : insets.top }}
     >
       {header}
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 24 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+        contentInsetAdjustmentBehavior={
+          usesNativeHeader ? 'automatic' : 'never'
+        }
+      >
         <View className="items-center mb-4">
           <HealthHeroIcon />
         </View>

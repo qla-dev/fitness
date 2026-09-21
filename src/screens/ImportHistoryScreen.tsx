@@ -326,6 +326,7 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
   const handleStartOver = useCallback(() => startOver(), [startOver]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('screens.importHistory', { defaultValue: 'Import History' }),
     left: { kind: 'back' },
   });

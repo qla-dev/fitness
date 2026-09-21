@@ -494,6 +494,7 @@ const MedicationScheduleFormScreen: React.FC<
   ]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: isEditing
       ? t('medications.schedule.editTitle', { defaultValue: 'Edit Schedule' })
       : t('medications.schedule.newTitle', { defaultValue: 'New Schedule' }),

@@ -38,6 +38,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('about.title', { defaultValue: 'About' }),
     left: { kind: 'back' },
   });

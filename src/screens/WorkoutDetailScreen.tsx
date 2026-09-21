@@ -717,6 +717,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // left slot with swipe-back disabled, Save (+ reorder) on the right; name
   // edited in-body.
   const header = useScreenHeader({
+    variant: 'transparent',
     nativeTitle: isEditing
       ? t('workoutDetail.title.edit', { defaultValue: 'Edit Workout' })
       : name,

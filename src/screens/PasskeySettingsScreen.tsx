@@ -287,6 +287,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('screens.passkeys', { defaultValue: 'Passkeys' }),
     left: { kind: 'back' },
   });

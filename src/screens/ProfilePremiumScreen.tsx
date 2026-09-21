@@ -24,6 +24,7 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
   const [accent] = useCSSVariable(['--color-accent-primary']) as [string];
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('profile.paywallTitle', { defaultValue: 'More with Premium' }),
     left: { kind: 'back' },
   });

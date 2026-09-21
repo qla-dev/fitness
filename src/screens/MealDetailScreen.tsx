@@ -269,6 +269,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
       : []),
   ];
   const header = useScreenHeader({
+    variant: 'transparent',
     borderless: true,
     left: { kind: 'back' },
     right: rightItems.length > 0 ? rightItems : null,

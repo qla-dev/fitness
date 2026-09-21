@@ -460,6 +460,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
   ]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('calorieSettings.title', {
       defaultValue: 'Calorie & BMR Settings',
     }),

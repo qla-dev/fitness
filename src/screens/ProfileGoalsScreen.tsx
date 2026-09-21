@@ -45,6 +45,7 @@ const ProfileGoalsScreen: React.FC<ProfileGoalsScreenProps> = ({
   const { customNutrients } = useCustomNutrients();
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('profile.goals', { defaultValue: 'Goals' }),
     left: { kind: 'back' },
   });

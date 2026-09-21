@@ -12,7 +12,10 @@ import PillInput from '../components/ui/PillInput';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   clearSetupWizardSession,
@@ -53,12 +56,17 @@ function fieldSuggestion(field: SetupField, answers: SetupAnswers) {
     : field.suggestion;
 }
 
+// The single spacing step this screen repeats: header to progress bar,
+// progress bar to title, title to its supporting line.
+const WIZARD_GAP = 12;
+
 export default function SetupWizardScreen({
   navigation,
 }: RootStackScreenProps<'SetupWizard'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const accentColor =
     (useCSSVariable('--color-accent-primary') as string) || '#0A84FF';
   const [session] = useState(getSetupWizardSession);
@@ -211,6 +219,7 @@ export default function SetupWizardScreen({
     total: formatLocalizedNumber(steps.length + 1),
   });
   const header = useScreenHeader({
+    variant: 'transparent',
     title: progressTitle,
     nativeTitle: progressTitle,
     left: {
@@ -229,6 +238,17 @@ export default function SetupWizardScreen({
           disabled: busy,
         }
       : null,
+    accessory: (
+      <View
+        className="h-1 mx-5 bg-raised rounded-full"
+        style={{ marginTop: 13 }}
+      >
+        <View
+          className="h-1 bg-accent-primary rounded-full"
+          style={{ width: `${((index + 1) / (steps.length + 1)) * 100}%` }}
+        />
+      </View>
+    ),
     nativeOptions: { headerBackVisible: false, gestureEnabled: false },
   });
 
@@ -247,13 +267,11 @@ export default function SetupWizardScreen({
         style={{ paddingTop: usesNativeHeader ? 0 : insets.top }}
       >
         {header}
-        <View className="h-1 mx-5 mt-3 bg-raised rounded-full">
-          <View
-            className="h-1 bg-accent-primary rounded-full"
-            style={{ width: `${((index + 1) / (steps.length + 1)) * 100}%` }}
-          />
-        </View>
         <KeyboardAwareScrollView
+          // No automatic inset: the header accessory above already carries the
+          // offset the transparent bar does not reserve. Asking for it here too
+          // pushed this content up under the accessory.
+          contentInsetAdjustmentBehavior="never"
           key={step?.id ?? 'review'}
           keyboardShouldPersistTaps="handled"
           // Keyboard up, the footer loses keyboardTrim of its bottom padding,
@@ -263,6 +281,13 @@ export default function SetupWizardScreen({
           extraKeyboardSpace={-keyboardTrim}
           contentContainerStyle={{
             padding: 20,
+            // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
+            // so a transparent bar's offset is spelled out: the measured bar,
+            // then the accessory's own gap, its hairline, and the same gap
+            // again — the three gaps around the progress bar are one value.
+            paddingTop: usesNativeHeader
+              ? headerOffset + WIZARD_GAP * 4 + 4
+              : WIZARD_GAP * 3,
             paddingBottom: footerHeight + 12,
           }}
         >

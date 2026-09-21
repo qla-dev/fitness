@@ -52,6 +52,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
   }, [refetch]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('medications.title', { defaultValue: 'Medications' }),
     left: { kind: 'back' },
     right: {

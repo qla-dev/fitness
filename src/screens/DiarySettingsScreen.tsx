@@ -189,6 +189,7 @@ const DiarySettingsScreen: React.FC<DiarySettingsScreenProps> = () => {
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('diarySettings.title', { defaultValue: 'Nutrition Settings' }),
     left: { kind: 'back' },
   });

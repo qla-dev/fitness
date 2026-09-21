@@ -67,6 +67,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: program?.name ?? t('programs.title', { defaultValue: 'Program' }),
     nativeTitle:
       program?.name ?? t('programs.title', { defaultValue: 'Program' }),

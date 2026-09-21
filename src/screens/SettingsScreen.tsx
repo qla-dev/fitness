@@ -176,18 +176,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('profile.title', { defaultValue: 'Profile' }),
     nativeTitle: showHeaderTitle
       ? t('profile.title', { defaultValue: 'Profile' })
       : '',
     left: { kind: 'back' },
     borderless: true,
-    nativeOptions: {
-      headerLargeTitleEnabled: false,
-      headerLargeTitleShadowVisible: false,
-      headerTransparent: true,
-      headerShadowVisible: false,
-    },
   });
 
   return (
