@@ -24,6 +24,8 @@ export function createIOSNativeHeaderOptions(
     headerShown: true,
     headerLargeTitleEnabled: true,
     headerLargeTitleShadowVisible: false,
+    headerBlurEffect: 'none',
+    scrollEdgeEffects: { top: 'hidden' },
     headerTintColor: actionTintColor,
     headerTitleStyle: {
       color: titleColor,
