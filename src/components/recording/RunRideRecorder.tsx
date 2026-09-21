@@ -405,9 +405,9 @@ export default function RunRideRecorder({
         // showing through underneath.
         style={{ backgroundColor: 'rgba(12,12,12,0.92)', flexGrow: 0 }}
         contentContainerStyle={{
-          padding: 16,
+          paddingHorizontal: 16,
           paddingTop: 8,
-          paddingBottom: insets.bottom + 16,
+          paddingBottom: Math.max(insets.bottom, 12),
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -483,24 +483,6 @@ export default function RunRideRecorder({
           </View>
         ) : (
           <View className="gap-2">
-            <View className="flex-row justify-between">
-              <Text className="text-text-primary font-semibold">
-                {currentSport === 'run'
-                  ? t('recording.run', { defaultValue: 'Run' })
-                  : t('recording.ride', { defaultValue: 'Bike ride' })}
-              </Text>
-              <Text className="text-text-muted">
-                {active
-                  ? t('recording.active', { defaultValue: 'Recording' })
-                  : session.phase === 'paused'
-                    ? t('recording.paused', {
-                        defaultValue: 'Paused — resume or save',
-                      })
-                    : t('recording.unsaved', {
-                        defaultValue: 'Finished — ready to save',
-                      })}
-              </Text>
-            </View>
             {goal && (
               <View className="gap-1 mb-1">
                 <View className="flex-row justify-between">
@@ -521,14 +503,6 @@ export default function RunRideRecorder({
                   />
                 </View>
               </View>
-            )}
-            {active && !snapshot.points.length && (
-              <Text className="text-text-muted">
-                {t('recording.waitingGps', {
-                  defaultValue:
-                    'Waiting for an accurate GPS position. Move outdoors with a clear view of the sky.',
-                })}
-              </Text>
             )}
             <View className="flex-row items-center justify-between mb-4">
               <View

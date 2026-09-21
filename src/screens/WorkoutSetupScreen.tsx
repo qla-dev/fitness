@@ -353,14 +353,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     );
   };
 
-  const start = (goal: RecordingGoal) => {
-    fireSelectionHaptic();
-    // Starting a GPS session without permission would record a route-shaped
-    // nothing, so the choice is made here rather than discovered afterwards.
-    if (gpsEnabled && locationGranted === false) {
-      promptForLocationSettings();
-      return;
-    }
+  const begin = (goal: RecordingGoal) => {
     // Replace: with a session running, back belongs to the recorder, and a
     // setup screen left behind it would offer to start a second one.
     navigation.replace('RunOrRide', {
@@ -371,6 +364,35 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       goal,
       weightKg: weightToKg(parseDecimalInput(weight), weightUnit),
     });
+  };
+
+  const start = (goal: RecordingGoal) => {
+    fireSelectionHaptic();
+    if (gpsEnabled && locationGranted === false) {
+      promptForLocationSettings();
+      return;
+    }
+    if (!gpsEnabled) {
+      Alert.alert(
+        t('workoutSetup.noGpsTitle', { defaultValue: 'Start without GPS?' }),
+        t('workoutSetup.noGpsMessage', {
+          defaultValue:
+            'This session will record time, heart rate and calories, but no route or distance from GPS.',
+        }),
+        [
+          {
+            text: t('common.cancel', { defaultValue: 'Cancel' }),
+            style: 'cancel',
+          },
+          {
+            text: t('workoutSetup.startAnyway', { defaultValue: 'Start' }),
+            onPress: () => begin(goal),
+          },
+        ]
+      );
+      return;
+    }
+    begin(goal);
   };
 
   const minuteDraft = useStepperDraft({
