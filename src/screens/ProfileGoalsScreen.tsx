@@ -43,10 +43,26 @@ const ProfileGoalsScreen: React.FC<ProfileGoalsScreenProps> = ({
     queryFn: () => fetchDailyGoals(today),
   });
   const { customNutrients } = useCustomNutrients();
+  const [showHeaderTitle, setShowHeaderTitle] = React.useState(false);
 
+  // The Profile pattern: no bar background at all on iOS, which means no
+  // Liquid Glass tint picked up from whatever scrolls under it. A transparent
+  // bar has no scroll-edge appearance to animate, so the title handoff is
+  // done by hand — the bar is empty at the top of the list and takes the
+  // title once the content has moved under it.
   const header = useScreenHeader({
     title: t('profile.goals', { defaultValue: 'Goals' }),
+    nativeTitle: showHeaderTitle
+      ? t('profile.goals', { defaultValue: 'Goals' })
+      : '',
     left: { kind: 'back' },
+    borderless: true,
+    nativeOptions: {
+      headerLargeTitleEnabled: false,
+      headerLargeTitleShadowVisible: false,
+      headerTransparent: true,
+      headerShadowVisible: false,
+    },
   });
 
   const sections: ProfileGoalSection[] = [
@@ -82,9 +98,16 @@ const ProfileGoalsScreen: React.FC<ProfileGoalsScreenProps> = ({
           padding: 16,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
+        scrollEventThrottle={16}
+        onScroll={({ nativeEvent }) => {
+          const offset =
+            nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
+          setShowHeaderTitle(offset > 16);
+        }}
         contentInsetAdjustmentBehavior={
           usesNativeHeader ? 'automatic' : 'never'
         }
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
       >
         <Text className="text-text-secondary text-sm mb-4">
           {t('profile.goalsHelp', {
