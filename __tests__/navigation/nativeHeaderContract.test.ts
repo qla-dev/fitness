@@ -50,7 +50,6 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   SleepDetail: 'Root-stack diary detail route presented above the tab host.',
   Logs: 'Root-stack settings route presented above the tab host.',
   MyLogs: 'Recent logged items opened from Profile above the tab host.',
-  Sync: 'Root-stack settings route presented above the tab host.',
   MeasurementsAdd: 'Root-stack measurement modal presented from the tab host.',
   ExerciseProgram: 'Root-stack program detail pushed from the Exercises store.',
   Cart: 'Root-stack cart route pushed from the Exercises store header.',

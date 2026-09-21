@@ -155,13 +155,10 @@ function NativeTabsBannerOverlay() {
 function DashboardStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const [textPrimary, bgPrimary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-background',
-  ]) as [string, string];
+  const textPrimary = useCSSVariable('--color-text-primary') as string;
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
-    [defaultColor, textPrimary, bgPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
+    [defaultColor, textPrimary]
   );
 
   return (
@@ -187,13 +184,10 @@ function DashboardStackScreen() {
 function DiaryStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const [textPrimary, bgPrimary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-background',
-  ]) as [string, string];
+  const textPrimary = useCSSVariable('--color-text-primary') as string;
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
-    [defaultColor, textPrimary, bgPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
+    [defaultColor, textPrimary]
   );
 
   return (
@@ -219,13 +213,10 @@ function DiaryStackScreen() {
 function TrendsStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const [textPrimary, bgPrimary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-background',
-  ]) as [string, string];
+  const textPrimary = useCSSVariable('--color-text-primary') as string;
   const screenOptions = React.useMemo(
-    () => createIOSNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
-    [defaultColor, textPrimary, bgPrimary]
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
+    [defaultColor, textPrimary]
   );
 
   return (
@@ -251,10 +242,7 @@ function TrendsStackScreen() {
 function ExercisesStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
-  const [textPrimary, bgPrimary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-background',
-  ]) as [string, string];
+  const textPrimary = useCSSVariable('--color-text-primary') as string;
   // A small (non-large) title, unlike the other tabs. A large title needs the
   // scrolling content to opt into iOS inset adjustment, and this screen pins a
   // search bar above its list, outside the scroll view — under a large title
@@ -263,8 +251,8 @@ function ExercisesStackScreen() {
   // the same screen pushed from the Library.
   const screenOptions = React.useMemo(
     () =>
-      createIOSSmallNativeHeaderOptions(defaultColor, textPrimary, bgPrimary),
-    [defaultColor, textPrimary, bgPrimary]
+      createIOSSmallNativeHeaderOptions(defaultColor, textPrimary),
+    [defaultColor, textPrimary]
   );
 
   return (

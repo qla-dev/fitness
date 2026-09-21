@@ -4,32 +4,27 @@ import type {
   NativeStackNavigationOptions,
 } from '@react-navigation/native-stack';
 
+/**
+ * The iOS native stack header, left to the system.
+ *
+ * Deliberately names no background. A header painted with an explicit
+ * `headerStyle.backgroundColor` replaces the scroll-edge appearance that
+ * iOS animates between, which on a large-title screen is the very mechanism
+ * that hands the big title in the content off to the inline one in the bar:
+ * pinning both appearances to one colour left the bar title missing and the
+ * app's transition fighting the system's on every scroll. iOS 26 renders this
+ * as Liquid Glass — transparent at the top of the content, glass once
+ * something scrolls under it.
+ */
 export function createIOSNativeHeaderOptions(
   actionTintColor: string,
-  titleColor: string = actionTintColor,
-  /**
-   * Opaque header fill. iOS 26 renders a native header as Liquid Glass by
-   * default, so it takes a tint from whatever scrolls beneath it and shifts
-   * colour as the user moves — on a themed app that reads as the header being
-   * the wrong colour. Naming a background (and clearing the blur) keeps it the
-   * app's own surface. Omit it to get the system default back.
-   */
-  backgroundColor?: string
+  titleColor: string = actionTintColor
 ): NativeStackNavigationOptions {
   return {
     headerShown: true,
     headerLargeTitleEnabled: true,
     headerLargeTitleShadowVisible: false,
     headerTintColor: actionTintColor,
-    ...(backgroundColor
-      ? {
-          headerTransparent: false,
-          headerBlurEffect: undefined,
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor },
-          headerLargeStyle: { backgroundColor },
-        }
-      : {}),
     headerTitleStyle: {
       color: titleColor,
       fontWeight: '600',
@@ -44,11 +39,10 @@ export function createIOSNativeHeaderOptions(
 
 export function createIOSSmallNativeHeaderOptions(
   actionTintColor: string,
-  titleColor: string = actionTintColor,
-  backgroundColor?: string
+  titleColor: string = actionTintColor
 ): NativeStackNavigationOptions {
   return {
-    ...createIOSNativeHeaderOptions(actionTintColor, titleColor, backgroundColor),
+    ...createIOSNativeHeaderOptions(actionTintColor, titleColor),
     headerLargeTitleEnabled: false,
   };
 }

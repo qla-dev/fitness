@@ -212,13 +212,8 @@ function AppContent() {
   ]) as [string, string, string, string];
   const { defaultColor: headerActionColor } = useHeaderActionColors();
   const iosSmallHeaderOptions = useMemo(
-    () =>
-      createIOSSmallNativeHeaderOptions(
-        headerActionColor,
-        textPrimary,
-        bgPrimary,
-      ),
-    [headerActionColor, textPrimary, bgPrimary],
+    () => createIOSSmallNativeHeaderOptions(headerActionColor, textPrimary),
+    [headerActionColor, textPrimary],
   );
   const createStackScreenOptions = useCallback(
     (
