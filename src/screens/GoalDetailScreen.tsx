@@ -23,6 +23,7 @@ import {
   hasActivityHistory,
 } from '../hooks/useActivityRange';
 import { useScreenHeader } from '../hooks/useScreenHeader';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { formatLocalizedNumber, getAppLocale } from '../localization';
 import {
   activityGoalByKey,
@@ -73,6 +74,8 @@ const TREND_CHROME: Record<HealthTrendKey, { icon: IconName; color: string }> =
 export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const usesNativeHeader = useNativeIOSHeadersActive();
+  const [showHeaderTitle, setShowHeaderTitle] = useState(false);
   const { metric, date } = route.params;
   const [range, setRange] = useState<HealthTrendDateRange>('w');
 
@@ -130,9 +133,19 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
     ? activity.label(t)
     : HEALTH_TREND_LABELS[trend ?? 'steps'](t);
 
+  // Same header as the Profile screen: transparent, so iOS 26 puts no glass
+  // over the content, and the title is handed to the bar by hand once the
+  // content has scrolled under it.
   const header = useScreenHeader({
     left: { kind: 'back' },
-    nativeTitle: title,
+    nativeTitle: showHeaderTitle ? title : '',
+    borderless: true,
+    nativeOptions: {
+      headerLargeTitleEnabled: false,
+      headerLargeTitleShadowVisible: false,
+      headerTransparent: true,
+      headerShadowVisible: false,
+    },
   });
 
   /**
@@ -215,7 +228,10 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
       : 0;
 
   return (
-    <View className="flex-1 bg-background">
+    <View
+      className="flex-1 bg-background"
+      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+    >
       {header}
       <ScrollView
         className="flex-1"
@@ -223,6 +239,16 @@ export default function GoalDetailScreen({ route }: GoalDetailScreenProps) {
           paddingHorizontal: 16,
           paddingBottom: insets.bottom + 24,
         }}
+        scrollEventThrottle={16}
+        onScroll={({ nativeEvent }) => {
+          const offset =
+            nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
+          setShowHeaderTitle(offset > 16);
+        }}
+        contentInsetAdjustmentBehavior={
+          usesNativeHeader ? 'automatic' : 'never'
+        }
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
         showsVerticalScrollIndicator={false}
       >
         <View className="mb-4">

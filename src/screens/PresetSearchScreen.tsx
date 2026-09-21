@@ -32,6 +32,9 @@ type PresetSearchScreenProps = RootStackScreenProps<'PresetSearch'>;
  * "empty workout" row because there is nothing for it to do that a card does
  * not already do in one tap instead of two.
  */
+// Same native small-header offset used by ChatScreen and MacrosScreen.
+const IOS_SMALL_NATIVE_HEADER_HEIGHT = 44;
+
 const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   navigation,
 }) => {
@@ -60,8 +63,17 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   // sheet used to carry are its right-hand buttons. Neither passes
   // `skipDraftLoad`, so an unfinished draft is picked back up rather than
   // silently replaced.
+  // Same header as the Profile screen: transparent, so iOS 26 lays no glass
+  // over the content and the bar takes no tint from what sits under it.
   const header = useScreenHeader({
     title: t('presetSearch.title', { defaultValue: 'Start Workout' }),
+    borderless: true,
+    nativeOptions: {
+      headerLargeTitleEnabled: false,
+      headerLargeTitleShadowVisible: false,
+      headerTransparent: true,
+      headerShadowVisible: false,
+    },
     left: {
       kind: 'dismiss',
       onPress: handleCancel,
@@ -139,7 +151,11 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   return (
     <View
       className="flex-1 bg-background"
-      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+      style={{
+        paddingTop: usesNativeHeader
+          ? insets.top + IOS_SMALL_NATIVE_HEADER_HEIGHT
+          : insets.top,
+      }}
     >
       {header}
 
