@@ -52,10 +52,22 @@ const LiquidGlassSurface: React.FC<LiquidGlassSurfaceProps> = ({
   const fallbackBackground = useCSSVariable('--color-chrome') as string;
 
   if (!canUseLiquidGlass()) {
+    // Without the material, a forced scheme has to be painted by hand: a
+    // surface pinned to `dark` sits over artwork and carries white text, so
+    // the theme's chrome (near-white in light mode) rendered that text
+    // invisible on Android. A translucent dark scrim keeps the contrast the
+    // caller designed for; `light` mirrors it; `auto` keeps following the
+    // theme as before.
+    const forcedBackground =
+      colorScheme === 'dark'
+        ? 'rgba(0, 0, 0, 0.55)'
+        : colorScheme === 'light'
+          ? 'rgba(255, 255, 255, 0.85)'
+          : fallbackBackground;
     return (
       <View
         {...props}
-        style={[{ backgroundColor: tintColor ?? fallbackBackground }, style]}
+        style={[{ backgroundColor: tintColor ?? forcedBackground }, style]}
       />
     );
   }

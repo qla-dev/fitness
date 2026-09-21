@@ -19,7 +19,14 @@ const EXACT_ALARM_PROMPT_KEY = '@SparkyFitness/exactAlarmPromptShown';
 
 function notificationCopy(key: string, defaultValue: string): string {
   // i18n-audit-ignore-next-line dynamic-i18n-key -- all call sites use literal notification catalog keys.
-  return i18n.t(key, { defaultValue });
+  const copy = i18n.t(key, { defaultValue });
+  // `initNotifications` runs from app startup in parallel with language
+  // initialisation, and until i18next has an instance `t()` yields undefined
+  // rather than the fallback. Android then received a channel with no name
+  // and threw `NullPointerException: getString(...) must not be null` on
+  // every cold start. The English fallback is what the catalog would give
+  // anyway; the `languageChanged` re-registration relabels it once ready.
+  return typeof copy === 'string' && copy.length > 0 ? copy : defaultValue;
 }
 
 const REST_COMPLETE_CATEGORY = 'rest-complete';

@@ -37,6 +37,7 @@ import HealthMetricList from '../components/HealthMetricList';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useWritebackToggles } from '../hooks/useWritebackToggles';
 import { useSyncHealthData } from '../hooks';
+import { openHealthConnectSettings } from 'react-native-health-connect';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
 import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -213,6 +214,10 @@ export default function AppleHealthCheckScreen({
     Platform.OS === 'android'
       ? t('healthSync.healthConnect', { defaultValue: 'Health Connect' })
       : t('healthSync.appleHealth', { defaultValue: 'Apple Health' });
+  // Everything below that names the store, its app or the phone follows the
+  // same split; the screen is one flow on both platforms, only the words and
+  // the permissions entry point differ.
+  const isAndroid = Platform.OS === 'android';
 
   // Delete written data, then surface the outcome honestly: success, a warning when
   // some records couldn't be deleted (partial), or an error if it threw. A full purge
@@ -502,8 +507,8 @@ export default function AppleHealthCheckScreen({
 
   const header = useScreenHeader({
     variant: 'transparent',
-    title: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
-    nativeTitle: t('appleHealthCheck.title', { defaultValue: 'Apple Health' }),
+    title: writebackStoreName,
+    nativeTitle: writebackStoreName,
     right: {
       kind: 'text',
       label: t('common.done', { defaultValue: 'Done' }),
@@ -533,34 +538,59 @@ export default function AppleHealthCheckScreen({
           })}
         </Text>
         <Text className="text-text-secondary text-base mb-7">
-          {t('appleHealthCheck.hint', {
-            defaultValue:
-              'Choose how qla.fit stays up to date with Apple Health. You can change this any time in Sync settings.',
-          })}
+          {isAndroid
+            ? t('appleHealthCheck.hintAndroid', {
+                defaultValue:
+                  'Choose how qla.fit stays up to date with Health Connect. You can change this any time in Sync settings.',
+              })
+            : t('appleHealthCheck.hint', {
+                defaultValue:
+                  'Choose how qla.fit stays up to date with Apple Health. You can change this any time in Sync settings.',
+              })}
         </Text>
 
         <SettingsRowGroup>
           <SettingsRow
             icon="health-data-sync"
             iconColor={accentColor}
-            title={t('appleHealthCheck.checkPermissionsTitle', {
-              defaultValue: 'Check Apple Health Permissions',
-            })}
-            subtitle={t('appleHealthCheck.checkPermissionsSubtitle', {
-              defaultValue: 'Opens the Health app',
-            })}
+            title={
+              isAndroid
+                ? t('appleHealthCheck.checkPermissionsTitleAndroid', {
+                    defaultValue: 'Check Health Connect permissions',
+                  })
+                : t('appleHealthCheck.checkPermissionsTitle', {
+                    defaultValue: 'Check Apple Health Permissions',
+                  })
+            }
+            subtitle={
+              isAndroid
+                ? t('appleHealthCheck.checkPermissionsSubtitleAndroid', {
+                    defaultValue: 'Opens Health Connect',
+                  })
+                : t('appleHealthCheck.checkPermissionsSubtitle', {
+                    defaultValue: 'Opens the Health app',
+                  })
+            }
             // iOS offers apps no supported link into Settings > Health, and
             // read access can only be changed by the user; see HEALTH_APPS_URL.
+            // Android has no handler for that scheme at all — the row was a
+            // silent no-op — so it opens Health Connect's own settings instead.
             onPress={() => {
-              void Linking.openURL(HEALTH_APPS_URL);
+              if (isAndroid) openHealthConnectSettings();
+              else void Linking.openURL(HEALTH_APPS_URL);
             }}
           />
         </SettingsRowGroup>
         <Text className="text-text-secondary text-sm px-4 -mt-2 mb-6">
-          {t('appleHealthCheck.permissionsHelp', {
-            defaultValue:
-              'If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.',
-          })}
+          {isAndroid
+            ? t('appleHealthCheck.permissionsHelpAndroid', {
+                defaultValue:
+                  'If a metric below shows no data, open Health Connect, tap App permissions, then qla.fit, and turn that data on.',
+              })
+            : t('appleHealthCheck.permissionsHelp', {
+                defaultValue:
+                  'If a metric below shows no data, open the Health app, tap Sharing, then Apps, then qla.fit, and turn that data on.',
+              })}
         </Text>
 
         <SettingsRowGroup
@@ -665,9 +695,15 @@ export default function AppleHealthCheckScreen({
             title={t('syncFrequency.enable', {
               defaultValue: 'Enable Background Sync',
             })}
-            subtitle={t('appleHealthCheck.backgroundSubtitle', {
-              defaultValue: 'Updates whenever your iPhone allows it',
-            })}
+            subtitle={
+              isAndroid
+                ? t('appleHealthCheck.backgroundSubtitleAndroid', {
+                    defaultValue: 'Updates whenever Android allows it',
+                  })
+                : t('appleHealthCheck.backgroundSubtitle', {
+                    defaultValue: 'Updates whenever your iPhone allows it',
+                  })
+            }
             rightAccessory={
               <Switch
                 accessibilityLabel={t('syncFrequency.toggleLabel', {

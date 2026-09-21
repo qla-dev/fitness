@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import {
+  Platform,
   Pressable,
   Text,
   View,
@@ -79,9 +80,19 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
     const sheet = useRef<BottomSheetModal>(null);
     const { t } = useTranslation();
     const Container = fullHeight ? View : BottomSheetView;
-    const containerStyle = fullHeight ? { flex: 1 } : { paddingBottom: 16 };
     const backdrop = useSheetBackdrop({ dismissOnPress: dismissOnBackdropPress });
     const insets = useSafeAreaInsets();
+    // The sheet's children render through gorhom's portal, whose host sits
+    // above SafeAreaProvider in App.tsx, so nothing inside can read the
+    // insets — FooterCTA resolves 0. On iOS that is fine: the sheet keeps
+    // itself clear of the home indicator. On Android, edge-to-edge, the sheet
+    // runs under the navigation bar and its footer button was drawn behind
+    // the system buttons. This hook runs in the screen's tree, so it sees the
+    // real value and pads the content for it here.
+    const androidBottomInset = Platform.OS === 'android' ? insets.bottom : 0;
+    const containerStyle = fullHeight
+      ? { flex: 1, paddingBottom: androidBottomInset }
+      : { paddingBottom: 16 + androidBottomInset };
     const [surface, pageBackground, raised, foreground, muted] = useCSSVariable(
       [
         '--color-surface',

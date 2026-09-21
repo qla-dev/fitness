@@ -1,7 +1,13 @@
 import ProfileSummary from '../components/ProfileSummary';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -246,9 +252,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             >
               <SettingsRow
                 icon="health-data-sync"
-                title={t('settings.rows.appleHealthSync', {
-                  defaultValue: 'Apple Health Data Sync',
-                })}
+                title={
+                  Platform.OS === 'android'
+                    ? t('settings.rows.healthConnectSync', {
+                        defaultValue: 'Health Connect Data Sync',
+                      })
+                    : t('settings.rows.appleHealthSync', {
+                        defaultValue: 'Apple Health Data Sync',
+                      })
+                }
                 subtitle={syncSubtitle}
                 onPress={() => navigation.navigate('AppleHealthCheck')}
                 iconColor={catPink}
