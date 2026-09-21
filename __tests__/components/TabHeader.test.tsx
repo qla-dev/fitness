@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabHeader from '../../src/components/TabHeader';
@@ -56,8 +57,9 @@ describe('TabHeader', () => {
     );
 
     const profile = getByRole('button', { name: 'Profile' });
-    expect(profile.props.style).toEqual(
-      expect.objectContaining({ width: 44, height: 44 })
+    // The circle button hands Pressable a style array; flatten to read it.
+    expect(StyleSheet.flatten(profile.props.style)).toEqual(
+      expect.objectContaining({ width: 44, height: 44, borderRadius: 22 })
     );
 
     fireEvent.press(profile);
@@ -96,8 +98,8 @@ describe('TabHeader', () => {
 
     const workouts = getByRole('button', { name: 'Start Workout' });
     // Its own 44pt tap target, not a slice of a joined block.
-    expect(workouts.props.style).toEqual(
-      expect.objectContaining({ width: 44, height: 44 })
+    expect(StyleSheet.flatten(workouts.props.style)).toEqual(
+      expect.objectContaining({ width: 44, height: 44, borderRadius: 22 })
     );
 
     fireEvent.press(workouts);

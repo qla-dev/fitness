@@ -4,13 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
+import HeaderCircleButton from './ui/HeaderCircleButton';
 import type { IconName } from './Icon';
 import { formatDateLabel } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
 
 /** Tap target for each header button, and the gap that keeps them apart. */
 const BUTTON_SIZE = 44;
-const BUTTON_GAP = 4;
+const BUTTON_GAP = 8;
 
 /**
  * Base width for the outer slots, so the centered title stays centered. Both
@@ -144,9 +145,8 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         style={{ minWidth: slotWidth, minHeight: 44 }}
       >
         {onPreviousDay && (
-          <TouchableOpacity
+          <HeaderCircleButton
             onPress={withHaptic(onPreviousDay)}
-            accessibilityRole="button"
             accessibilityLabel={
               dateControls?.previousDayLabel ??
               t('familyDiary.previousDay', { defaultValue: 'Previous day' })
@@ -157,11 +157,9 @@ const TabHeader: React.FC<TabHeaderProps> = ({
                 defaultValue: 'Shows the previous day',
               })
             }
-            className="items-center justify-center"
-            style={{ minWidth: 44, minHeight: 44 }}
           >
             <Icon name="chevron-back" size={18} color={secondaryTextColor} />
-          </TouchableOpacity>
+          </HeaderCircleButton>
         )}
         {dateLabel !== null && (
           <TouchableOpacity
@@ -189,9 +187,8 @@ const TabHeader: React.FC<TabHeaderProps> = ({
           </TouchableOpacity>
         )}
         {onNextDay && (
-          <TouchableOpacity
+          <HeaderCircleButton
             onPress={withHaptic(onNextDay)}
-            accessibilityRole="button"
             accessibilityLabel={
               dateControls?.nextDayLabel ??
               t('familyDiary.nextDay', { defaultValue: 'Next day' })
@@ -202,11 +199,9 @@ const TabHeader: React.FC<TabHeaderProps> = ({
                 defaultValue: 'Shows the next day',
               })
             }
-            className="items-center justify-center"
-            style={{ minWidth: 44, minHeight: 44 }}
           >
             <Icon name="chevron-forward" size={18} color={secondaryTextColor} />
-          </TouchableOpacity>
+          </HeaderCircleButton>
         )}
       </View>
 
@@ -227,43 +222,34 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         style={{ width: slotWidth, minHeight: 44, gap: BUTTON_GAP }}
       >
         {action ? (
-          <TouchableOpacity
+          <HeaderCircleButton
             onPress={withHaptic(action.onPress)}
-            accessibilityRole="button"
             accessibilityLabel={action.accessibilityLabel}
-            className="items-center justify-center"
-            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
             <Icon name={action.icon} size={22} color={primaryTextColor} />
-          </TouchableOpacity>
+          </HeaderCircleButton>
         ) : null}
         {onWorkoutsPress && (
-          <TouchableOpacity
+          <HeaderCircleButton
             onPress={withHaptic(onWorkoutsPress)}
-            accessibilityRole="button"
             accessibilityLabel={t('presetSearch.title', {
               defaultValue: 'Start Workout',
             })}
-            className="items-center justify-center"
-            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
             <Icon
               name="exercise-running-filled"
               size={22}
               color={primaryTextColor}
             />
-          </TouchableOpacity>
+          </HeaderCircleButton>
         )}
         {onProfilePress && (
-          <TouchableOpacity
+          <HeaderCircleButton
             onPress={withHaptic(onProfilePress)}
-            accessibilityRole="button"
             accessibilityLabel={t('profile.title', { defaultValue: 'Profile' })}
-            className="items-center justify-center"
-            style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
           >
             <Icon name="profile" size={24} color={primaryTextColor} />
-          </TouchableOpacity>
+          </HeaderCircleButton>
         )}
       </View>
     </View>

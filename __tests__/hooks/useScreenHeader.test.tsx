@@ -182,7 +182,7 @@ describe('useScreenHeader custom bar title layout', () => {
     );
 
     const leftContainer = views.find(
-      (view) => view.props.className === 'flex-row items-center gap-4'
+      (view) => view.props.className === 'flex-row items-center gap-2'
     );
     expect(leftContainer?.props.style).toEqual(
       expect.objectContaining({ flexShrink: 0 })
@@ -190,7 +190,7 @@ describe('useScreenHeader custom bar title layout', () => {
 
     const rightContainer = views.find(
       (view) =>
-        view.props.className === 'flex-row items-center justify-end gap-4'
+        view.props.className === 'flex-row items-center justify-end gap-2'
     );
     expect(rightContainer?.props.style).toEqual(
       expect.objectContaining({ flexShrink: 0 })

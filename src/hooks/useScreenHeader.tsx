@@ -23,6 +23,7 @@ import type {
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
 import Icon, { IconName } from '../components/Icon';
+import HeaderCircleButton from '../components/ui/HeaderCircleButton';
 import FadeView from '../components/FadeView';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import AnchoredMenu, {
@@ -696,6 +697,25 @@ function HeaderBarButton({
     );
   }
 
+  // Glyph buttons sit in a circle (see HeaderCircleButton); text buttons —
+  // Done, Save, Cancel — stay bare, a word in a 44 pt circle reads as a chip.
+  const isGlyph =
+    item.kind === 'back' ||
+    item.kind === 'dismiss' ||
+    item.kind === 'icon' ||
+    item.kind === 'menu';
+  if (isGlyph) {
+    return (
+      <HeaderCircleButton
+        onPress={onPress}
+        disabled={disabled}
+        accessibilityLabel={itemAccessibilityLabel(item, t)}
+      >
+        {content}
+      </HeaderCircleButton>
+    );
+  }
+
   return (
     <Pressable
       onPress={onPress}
@@ -1169,11 +1189,11 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
           never be squeezed by the title, at the cost of no longer truncating
           if their own content ever got wide enough to overflow — a non-issue
           for the icon/short-text buttons this bar renders. */}
-      <View className="flex-row items-center gap-4" style={{ flexShrink: 0 }}>
+      <View className="flex-row items-center gap-2" style={{ flexShrink: 0 }}>
         {leftCustom}
       </View>
       <View
-        className="flex-row items-center justify-end gap-4"
+        className="flex-row items-center justify-end gap-2"
         style={{ flexShrink: 0 }}
       >
         {rightCustom}
