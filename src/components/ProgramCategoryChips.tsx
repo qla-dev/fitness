@@ -5,8 +5,10 @@ import { useCSSVariable } from 'uniwind';
 
 import LiquidGlassSurface from './LiquidGlassSurface';
 import { fireSelectionHaptic } from '../services/haptics';
+import Icon, { type IconName } from './Icon';
 import {
   PROGRAM_CATEGORIES,
+  getProgramCategoryIcon,
   getProgramCategoryLabel,
 } from '../constants/exercisePrograms';
 import type { ProgramCategoryId } from '../types/exerciseProgram';
@@ -25,7 +27,11 @@ const ProgramCategoryChips: React.FC<{
   onChange: (category: ProgramCategoryId | null) => void;
 }> = ({ category, onChange }) => {
   const { t } = useTranslation();
-  const accentPrimary = useCSSVariable('--color-accent-primary') as string;
+  const [accentPrimary, accentText, textPrimary] = useCSSVariable([
+    '--color-accent-primary',
+    '--color-accent-text',
+    '--color-text-primary',
+  ]) as string[];
 
   /**
    * One category pill, as Liquid Glass.
@@ -35,7 +41,11 @@ const ProgramCategoryChips: React.FC<{
    * beside it. Off iOS 26 the tint becomes that flat fill, which is the look
    * these had everywhere before.
    */
-  const chip = (id: ProgramCategoryId | null, label: string) => {
+  const chip = (
+    id: ProgramCategoryId | null,
+    label: string,
+    icon?: IconName
+  ) => {
     const selected = category === id;
     return (
       <LiquidGlassSurface
@@ -55,8 +65,15 @@ const ProgramCategoryChips: React.FC<{
             fireSelectionHaptic();
             onChange(selected && id !== null ? null : id);
           }}
-          className="h-full px-4 items-center justify-center"
+          className="h-full px-4 flex-row items-center justify-center gap-1.5"
         >
+          {icon ? (
+            <Icon
+              name={icon}
+              size={15}
+              color={selected ? accentText : textPrimary}
+            />
+          ) : null}
           <Text
             className={`text-sm font-semibold ${
               selected ? 'text-accent-text' : 'text-text-primary'
@@ -78,8 +95,10 @@ const ProgramCategoryChips: React.FC<{
       // enough to read as one control, with no gap of their own on top.
       className="pb-3"
     >
-      {chip(null, t('programs.allCategories', { defaultValue: 'All' }))}
-      {PROGRAM_CATEGORIES.map((id) => chip(id, getProgramCategoryLabel(t, id)))}
+      {chip(null, t('programs.allCategories', { defaultValue: 'All' }), 'meal')}
+      {PROGRAM_CATEGORIES.map((id) =>
+        chip(id, getProgramCategoryLabel(t, id), getProgramCategoryIcon(id))
+      )}
     </ScrollView>
   );
 };

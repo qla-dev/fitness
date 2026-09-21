@@ -31,6 +31,8 @@ import SafeImage from '../components/SafeImage';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
   SAVING_LABEL,
@@ -96,6 +98,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     '--color-border-subtle',
   ]) as [string, string];
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
 
   const { getImageSource } = useExerciseImageSource();
 
@@ -273,7 +276,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // is still honored at runtime; the compiler just skips optimizing this
   // component. Suppress the bailout rather than rewrite the working id counter.
   const addDraftSet = useCallback(
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization
+     
     (_exerciseId?: string) => {
       const id = `set-${nextSetIdRef.current++}`;
       setDraftSets((prev) => {
@@ -677,6 +680,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // View mode: name title + owner-only Edit. Edit mode: "Edit Activity" title,
   // X-dismiss owning the left slot with swipe-back disabled, Save on the right.
   const header = useScreenHeader({
+    variant: 'transparent',
     nativeTitle: isEditing ? 'Edit Activity' : name,
     animateKey: isEditing ? 'edit' : 'view',
     borderless: true,
@@ -731,6 +735,9 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4"
         contentContainerStyle={{
+          // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior, so
+          // the transparent bar's measured height is applied by hand.
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 0,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
         bottomOffset={20}

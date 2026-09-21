@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import CustomModal, { type CustomModalRef } from './CustomModal';
+import NativePromptSheet from './ui/NativePromptSheet';
+import Button from './ui/Button';
 import { MeasurementIcons } from './icons/measurements';
 import PillInput from './ui/PillInput';
-import FooterCTA from './ui/FooterCTA';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import { formatLocalizedNumber } from '../localization';
 import { formatDottedDay } from '../utils/dateUtils';
@@ -43,7 +43,6 @@ export default function MeasurementRecordSheet({
   units,
   onClose,
 }: MeasurementRecordSheetProps) {
-  const sheetRef = useRef<CustomModalRef>(null);
   const { t } = useTranslation();
 
   const upsert = useUpsertCheckIn();
@@ -57,10 +56,6 @@ export default function MeasurementRecordSheet({
   const [value, setValue] = useState(() =>
     current === null ? '' : definition.toInput(current, resolved)
   );
-
-  useEffect(() => {
-    sheetRef.current?.present();
-  }, []);
 
   const parsed = Number(value.replace(',', '.'));
   const filled = value.trim() !== '';
@@ -81,7 +76,9 @@ export default function MeasurementRecordSheet({
           ? definition.toStorage(parsed, resolved)
           : null,
       },
-      { onSuccess: () => sheetRef.current?.dismiss() }
+      // Closing is the caller's business now: the sheet is open for as long
+      // as it is rendered, so a successful save unmounts it.
+      { onSuccess: onClose }
     );
   };
 
@@ -89,71 +86,56 @@ export default function MeasurementRecordSheet({
   const DrawnIcon = MeasurementIcons[definition.kind];
 
   return (
-    <CustomModal
-      ref={sheetRef}
-      fullHeight
-      // The page background, so the input reads as the same pill the setup
-      // wizard shows. On the default surface it would sit on its own colour.
-      background="background"
-      title={t('measurements.title', { defaultValue: 'Measurements' })}
-      onDismiss={onClose}
+    <NativePromptSheet
+      open
+      onClose={onClose}
+      hasTextInput
+      dismissOnBackdropPress={false}
+      title={definition.label(t)}
+      description={t('measurements.recordHintFor', {
+        defaultValue: 'This measurement is going to be logged for {{date}}',
+        date: formatDottedDay(date),
+      })}
+      footer={
+        <Button
+          onPress={save}
+          disabled={invalid || upsert.isPending}
+          loading={upsert.isPending}
+        >
+          {t('common.save', { defaultValue: 'Save' })}
+        </Button>
+      }
     >
-      {/* The setup wizard's question step, as a sheet: the measurement's own
-          icon, the field as the heading, one input, and the action at the
-          foot. The sheet is full height so none of that moves when the error
-          line under the input appears. */}
-      <View className="flex-1 px-5">
-        {/* Centred as a column: the measurement's own mark, its name, and
-            what recording it means, stacked over the one input. Drawn larger
-            than a tile's — here it is the subject rather than a label. */}
-        <View className="items-center py-4">
-          <DrawnIcon
-            size={96}
-            color={iconDecorative}
-            accentColor={accentPrimary}
-          />
-        </View>
-        <Text className="text-text-primary text-3xl font-bold text-center">
-          {definition.label(t)}
-        </Text>
-        <Text className="text-text-secondary text-sm mt-2 mb-5 text-center">
-          {t('measurements.recordHintFor', {
-            defaultValue: 'This measurement is going to be logged for {{date}}',
-            date: formatDottedDay(date),
-          })}
-        </Text>
-        <PillInput
-          // Inside a sheet the input has to be the sheet's own, or the
-          // keyboard covers the field it just focused.
-          InputComponent={BottomSheetTextInput}
-          autoFocus
-          accessibilityLabel={definition.label(t)}
-          value={value}
-          onChangeText={setValue}
-          unit={unit}
-          reserveErrorSpace
-          error={
-            invalid
-              ? t('measurements.recordRange', {
-                  defaultValue: 'Enter a number up to {{max}}.',
-                  max: formatLocalizedNumber(definition.max),
-                })
-              : undefined
-          }
-          keyboardType="decimal-pad"
-          maxLength={8}
-          editable={!upsert.isPending}
-          onSubmitEditing={save}
+      <View className="items-center mb-5">
+        <DrawnIcon
+          size={96}
+          color={iconDecorative}
+          accentColor={accentPrimary}
         />
       </View>
-      <FooterCTA
-        // The sheet lifts for the keyboard on its own.
-        sticky={false}
-        label={t('common.save', { defaultValue: 'Save' })}
-        onPress={save}
-        disabled={invalid || upsert.isPending}
-        loading={upsert.isPending}
+      <PillInput
+        // Inside a sheet the input has to be the sheet's own, or the keyboard
+        // covers the field it just focused.
+        InputComponent={BottomSheetTextInput}
+        autoFocus
+        accessibilityLabel={definition.label(t)}
+        value={value}
+        onChangeText={setValue}
+        unit={unit}
+        reserveErrorSpace
+        error={
+          invalid
+            ? t('measurements.recordRange', {
+                defaultValue: 'Enter a number up to {{max}}.',
+                max: formatLocalizedNumber(definition.max),
+              })
+            : undefined
+        }
+        keyboardType="decimal-pad"
+        maxLength={8}
+        editable={!upsert.isPending}
+        onSubmitEditing={save}
       />
-    </CustomModal>
+    </NativePromptSheet>
   );
 }

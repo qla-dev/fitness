@@ -27,6 +27,24 @@ export const SPORT_ENVIRONMENTS: SportEnvironment[] = ['indoor', 'outdoor'];
 /** What the chip row filters on: a group, an environment, or nothing. */
 export type SportFilter = SportGroup | SportEnvironment;
 
+const SPORT_GROUP_ICONS: Record<SportGroup, IconName> = {
+  moving: 'exercise-running-filled',
+  stationary: 'exercise-rowing',
+  ball: 'exercise-basketball',
+  studio: 'exercise-yoga',
+  strength: 'exercise-weights',
+};
+
+export function getSportGroupIcon(group: SportGroup): IconName {
+  return SPORT_GROUP_ICONS[group];
+}
+
+export function getSportEnvironmentIcon(
+  environment: SportEnvironment
+): IconName {
+  return environment === 'indoor' ? 'exercise-weights' : 'exercise-hiking';
+}
+
 export function getSportEnvironmentLabel(
   t: TFunction,
   environment: SportEnvironment

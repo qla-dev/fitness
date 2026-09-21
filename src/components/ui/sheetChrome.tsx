@@ -20,7 +20,9 @@ export const sheetContainer =
  * The app's standard bottom-sheet backdrop: dimmed, tap-to-dismiss, darker in
  * dark themes. Pass the result to BottomSheetModal's `backdropComponent`.
  */
-export function useSheetBackdrop() {
+export function useSheetBackdrop({
+  dismissOnPress = true,
+}: { dismissOnPress?: boolean } = {}) {
   const { theme } = useUniwind();
   const isDarkMode = theme === 'dark';
 
@@ -31,8 +33,12 @@ export function useSheetBackdrop() {
         opacity={isDarkMode ? 0.7 : 0.5}
         disappearsOnIndex={-1}
         appearsOnIndex={0}
+        // A sheet holding an open keyboard swallows the first tap outside it to
+        // dismiss the keyboard, so a tap-to-close backdrop reads as the sheet
+        // closing itself while you were still typing.
+        pressBehavior={dismissOnPress ? 'close' : 'none'}
       />
     ),
-    [isDarkMode]
+    [isDarkMode, dismissOnPress]
   );
 }

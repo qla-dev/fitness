@@ -19,6 +19,8 @@ import { canUseLiquidGlass } from '../utils/liquidGlass';
 import StepperInput, { useStepperDraft } from '../components/StepperInput';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
+import NativePromptSheet from '../components/ui/NativePromptSheet';
+import Button from '../components/ui/Button';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import {
@@ -31,6 +33,7 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
 import type { RecordingGoal } from '../services/recording/types';
+import { formatLocalizedNumber } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
 import { withAlpha } from '../utils/colors';
 import {
@@ -105,6 +108,11 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // switch is there for when you would rather it stayed out of the session.
   const [watchEnabled, setWatchEnabled] = useState(true);
   const [sensorsOpen, setSensorsOpen] = useState(false);
+  // Which target the sheet is editing, if any. One sheet for the three cards:
+  // they ask the same question in different units.
+  const [editingGoal, setEditingGoal] = useState<
+    'time' | 'distance' | 'calories' | null
+  >(null);
   // Asked for here rather than at the first GPS fix: a permission sheet that
   // appears the moment you start running is a sheet nobody reads. Setup is
   // where you are still looking at the phone.
@@ -392,6 +400,28 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       );
       return;
     }
+    if (watchConnected && !watchEnabled) {
+      Alert.alert(
+        t('workoutSetup.noWatchTitle', {
+          defaultValue: 'Start without your watch?',
+        }),
+        t('workoutSetup.noWatchMessage', {
+          defaultValue:
+            'Your watch is connected but will stay out of this session, so there will be no heart rate from it.',
+        }),
+        [
+          {
+            text: t('common.cancel', { defaultValue: 'Cancel' }),
+            style: 'cancel',
+          },
+          {
+            text: t('workoutSetup.startAnyway', { defaultValue: 'Start' }),
+            onPress: () => begin(goal),
+          },
+        ]
+      );
+      return;
+    }
     begin(goal);
   };
 
@@ -416,39 +446,30 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     onCommit: setCalories,
   });
 
-  const targetRow = (
-    color: string,
-    draft: ReturnType<typeof useStepperDraft>,
-    unit: string,
-    accessibilityLabel: string
-  ) => (
-    <View className="flex-row items-center mt-2">
-      <View style={{ width: 128 }}>
-        <StepperInput
-          compact
-          keyboardType="number-pad"
-          value={draft.value}
-          onChangeText={draft.onChangeText}
-          onBlur={draft.onBlur}
-          onIncrement={draft.onIncrement}
-          onDecrement={draft.onDecrement}
-          accessibilityLabels={{ input: accessibilityLabel }}
-        />
-      </View>
-      <Text className="ml-2 text-sm font-semibold" style={{ color }}>
-        {unit}
-      </Text>
-    </View>
-  );
-
   const card = (
     color: string,
     icon: IconName,
     label: string,
     goal: RecordingGoal,
-    target?: React.ReactNode
+    value?: string,
+    onEdit?: () => void
   ) => (
-    <View
+    <Pressable
+      accessibilityRole={onEdit ? 'button' : undefined}
+      accessibilityLabel={
+        onEdit
+          ? t('workoutSetup.editGoal', {
+              defaultValue: 'Edit {{goal}}',
+              goal: label,
+            })
+          : undefined
+      }
+      disabled={!onEdit}
+      onPress={() => {
+        if (!onEdit) return;
+        fireSelectionHaptic();
+        onEdit();
+      }}
       className="rounded-3xl p-4 mb-3"
       style={{ backgroundColor: withAlpha(color, 0.16) }}
     >
@@ -456,23 +477,48 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         <Icon name={icon} size={30} color={color} />
         <View className="flex-1 ml-3">
           <Text className="text-text-primary text-xl font-bold">{label}</Text>
-          {target}
+          {value ? (
+            <Text
+              className="text-base font-semibold mt-0.5"
+              style={{ color }}
+              numberOfLines={1}
+            >
+              {value}
+            </Text>
+          ) : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('workoutSetup.startGoal', {
-            defaultValue: 'Start {{goal}}',
-            goal: label,
-          })}
-          disabled={!canStart}
-          onPress={() => start(goal)}
-          className="w-14 h-14 rounded-full items-center justify-center"
-          style={{ backgroundColor: color, opacity: canStart ? 1 : 0.4 }}
+        {/* Glass, like the tab bar: the start control is the one thing on the
+            card that acts on its own, so it gets the material that reacts to
+            a press rather than a flat disc. */}
+        <LiquidGlassSurface
+          isInteractive
+          tintColor={color}
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            overflow: 'hidden',
+          }}
         >
-          <Icon name="play" size={24} color={surface} />
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('workoutSetup.startGoal', {
+              defaultValue: 'Start {{goal}}',
+              goal: label,
+            })}
+            disabled={!canStart}
+            onPress={() => start(goal)}
+            className="w-full h-full items-center justify-center"
+            style={{
+              backgroundColor: usesGlass ? undefined : color,
+              opacity: canStart ? 1 : 0.4,
+            }}
+          >
+            <Icon name="play" size={24} color={surface} />
+          </Pressable>
+        </LiquidGlassSurface>
       </View>
-    </View>
+    </Pressable>
   );
 
   return (
@@ -607,14 +653,11 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
             'timer',
             t('workoutSetup.time', { defaultValue: 'Time' }),
             { type: 'time', target: minutes * 60 },
-            targetRow(
-              amber,
-              minuteDraft,
-              t('workoutSetup.minutesUnit', { defaultValue: 'MIN' }),
-              t('workoutSetup.timeTarget', {
-                defaultValue: 'Time goal in minutes',
-              })
-            )
+            `${formatLocalizedNumber(minutes, { maximumFractionDigits: 0 })} ${t(
+              'workoutSetup.minutesUnit',
+              { defaultValue: 'MIN' }
+            )}`,
+            () => setEditingGoal('time')
           )}
         {goalFilter !== 'custom' &&
           card(
@@ -625,16 +668,14 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               type: 'distance',
               target: distanceToKm(distance, distanceUnit) * 1000,
             },
-            targetRow(
-              blue,
-              distanceDraft,
+            `${formatLocalizedNumber(distance, {
+              maximumFractionDigits: 1,
+            })} ${
               distanceUnit === 'miles'
                 ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
-                : t('workoutSetup.kmUnit', { defaultValue: 'KM' }),
-              t('workoutSetup.distanceTarget', {
-                defaultValue: 'Distance goal',
-              })
-            )
+                : t('workoutSetup.kmUnit', { defaultValue: 'KM' })
+            }`,
+            () => setEditingGoal('distance')
           )}
         {goalFilter !== 'custom' &&
           card(
@@ -642,12 +683,10 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
             'exercise',
             t('workoutSetup.calories', { defaultValue: 'Calories' }),
             { type: 'calories', target: calories },
-            targetRow(
-              pink,
-              calorieDraft,
-              t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' }),
-              t('workoutSetup.calorieTarget', { defaultValue: 'Calorie goal' })
-            )
+            `${formatLocalizedNumber(calories, {
+              maximumFractionDigits: 0,
+            })} ${t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })}`,
+            () => setEditingGoal('calories')
           )}
         {goalFilter === 'custom' && (
           <View className="items-center py-10 px-6">
@@ -666,6 +705,95 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
       <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
+      {/* One sheet for the three targets: same question, different unit. The
+          stepper lives here rather than on the card, where it competed with
+          the card's own tap and the start button beside it. */}
+      <NativePromptSheet
+        open={editingGoal !== null}
+        onClose={() => setEditingGoal(null)}
+        title={
+          editingGoal === 'time'
+            ? t('workoutSetup.time', { defaultValue: 'Time' })
+            : editingGoal === 'distance'
+              ? t('workoutSetup.distance', { defaultValue: 'Distance' })
+              : t('workoutSetup.calories', { defaultValue: 'Calories' })
+        }
+        description={t('workoutSetup.goalSheetMessage', {
+          defaultValue:
+            'A goal is a target, not a limit — the session keeps recording past it until you finish.',
+        })}
+        footer={
+          <Button onPress={() => setEditingGoal(null)}>
+            {t('common.done', { defaultValue: 'Done' })}
+          </Button>
+        }
+      >
+        <View className="items-center">
+          <View style={{ width: 200 }}>
+            <StepperInput
+              keyboardType="number-pad"
+              value={
+                editingGoal === 'time'
+                  ? minuteDraft.value
+                  : editingGoal === 'distance'
+                    ? distanceDraft.value
+                    : calorieDraft.value
+              }
+              onChangeText={
+                editingGoal === 'time'
+                  ? minuteDraft.onChangeText
+                  : editingGoal === 'distance'
+                    ? distanceDraft.onChangeText
+                    : calorieDraft.onChangeText
+              }
+              onBlur={
+                editingGoal === 'time'
+                  ? minuteDraft.onBlur
+                  : editingGoal === 'distance'
+                    ? distanceDraft.onBlur
+                    : calorieDraft.onBlur
+              }
+              onIncrement={
+                editingGoal === 'time'
+                  ? minuteDraft.onIncrement
+                  : editingGoal === 'distance'
+                    ? distanceDraft.onIncrement
+                    : calorieDraft.onIncrement
+              }
+              onDecrement={
+                editingGoal === 'time'
+                  ? minuteDraft.onDecrement
+                  : editingGoal === 'distance'
+                    ? distanceDraft.onDecrement
+                    : calorieDraft.onDecrement
+              }
+              accessibilityLabels={{
+                input:
+                  editingGoal === 'time'
+                    ? t('workoutSetup.timeTarget', {
+                        defaultValue: 'Time goal in minutes',
+                      })
+                    : editingGoal === 'distance'
+                      ? t('workoutSetup.distanceTarget', {
+                          defaultValue: 'Distance goal',
+                        })
+                      : t('workoutSetup.calorieTarget', {
+                          defaultValue: 'Calorie goal',
+                        }),
+              }}
+            />
+          </View>
+          <Text className="text-text-secondary text-base font-semibold mt-4 uppercase">
+            {editingGoal === 'time'
+              ? t('workoutSetup.minutesUnit', { defaultValue: 'MIN' })
+              : editingGoal === 'distance'
+                ? distanceUnit === 'miles'
+                  ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
+                  : t('workoutSetup.kmUnit', { defaultValue: 'KM' })
+                : t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })}
+          </Text>
+        </View>
+      </NativePromptSheet>
     </>
   );
 }

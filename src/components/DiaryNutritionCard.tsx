@@ -19,6 +19,7 @@ import { useCSSVariable } from 'uniwind';
 import DashboardCardTitle from './DashboardCardTitle';
 import Icon from './Icon';
 import MacroRingGauge from './MacroRingGauge';
+import GoalRecordSheet from './GoalRecordSheet';
 import ArcGauge, { arcGaugeHeight } from './ArcGauge';
 import ValueSkeleton from './ValueSkeleton';
 import { formatLocalizedNumber } from '../localization';
@@ -150,6 +151,7 @@ function MacroRing({
   unit,
   color,
   trackColor,
+  onPress,
   Glyph,
   loading,
 }: {
@@ -161,12 +163,26 @@ function MacroRing({
   trackColor: string;
   Glyph: MacroGlyph;
   loading?: boolean;
+  /** Opens the goal sheet for this nutrient. */
+  onPress?: () => void;
 }) {
   const { t } = useTranslation();
   const left = Math.max(0, goal - consumed);
 
   return (
-    <View className="items-center" style={{ width: MACRO_ITEM }}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('diaryNutrition.editGoalFor', {
+        defaultValue: 'Change your {{nutrient}} goal',
+        nutrient: label,
+      })}
+      onPress={() => {
+        fireSelectionHaptic();
+        onPress?.();
+      }}
+      className="items-center"
+      style={{ width: MACRO_ITEM }}
+    >
       <Glyph size={22} color={color} accentColor={color} />
       <View
         className="items-center justify-center mt-2"
@@ -208,7 +224,7 @@ function MacroRing({
           })}
         </Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -288,6 +304,10 @@ export default function DiaryNutritionCard({
   // Twelve of the sixteen are summed across the day's entries, so this is a
   // pass over them per nutrient. Held still across the arc's layout pass and
   // the animation frames that follow it.
+  // Which nutrient's goal is being changed, if any. One sheet for all of
+  // them: they ask the same question in different units.
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+
   const rings = useMemo(
     () =>
       MACRO_RINGS.map((spec) =>
@@ -489,12 +509,19 @@ export default function DiaryNutritionCard({
                   trackColor={trackColor}
                   Glyph={spec.Glyph}
                   loading={loading}
+                  onPress={() => setEditingGoal(spec.key)}
                 />
               );
             })}
           </ScrollView>
         </Animated.View>
       </Animated.View>
+      {editingGoal ? (
+        <GoalRecordSheet
+          goalKey={editingGoal}
+          onClose={() => setEditingGoal(null)}
+        />
+      ) : null}
     </View>
   );
 }

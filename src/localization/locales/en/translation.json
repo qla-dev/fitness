@@ -1398,6 +1398,11 @@
         "late": "Period late — day 31",
         "unknown": "Cycle phase"
       }
+    },
+    "stopRecording": {
+      "action": "Stop all workouts & location",
+      "done": "Recording stopped and location released",
+      "failed": "Could not stop recording"
     }
   },
   "workout": {
@@ -2151,7 +2156,10 @@
     "waterPerTap": "per tap",
     "waterNoContainer": "Set up a water container to start tracking hydration.",
     "waterGoal": "Goal {{goal}} ml",
-    "noGoal": "No goal set"
+    "noGoal": "No goal set",
+    "waterSheet": "Add what you have drunk today, one {{serving}} ml serving at a time.",
+    "waterSheetGoal": "Add what you have drunk today, one {{serving}} ml serving at a time. Your goal is {{goal}} ml.",
+    "waterUnit": "ml today"
   },
   "foodScan": {
     "segment": {
@@ -4349,7 +4357,8 @@
     "exercises": "exercises",
     "exerciseCount_one": "{{count}} exercise",
     "exerciseCount_other": "{{count}} exercises",
-    "noun": "workout programs"
+    "noun": "workout programs",
+    "startNow": "Start now"
   },
   "workoutForm": {
     "viewExercise": "View exercise",
@@ -5140,7 +5149,7 @@
   },
   "profile": {
     "title": "Profile",
-    "subtitle": "Your health, goals, and preferences",
+    "namePrompt": "Enter your name",
     "library": {
       "title": "Library",
       "itemCount_one": "{{formattedCount}} item",
@@ -5193,7 +5202,10 @@
     "themeDarkDescription": "A true-black dark appearance, easy on OLED screens",
     "age": "Age",
     "ageValue_one": "{{count}} year",
-    "ageValue_other": "{{count}} years"
+    "ageValue_other": "{{count}} years",
+    "changeTodayGoal": "Change today's goal",
+    "goalIncrease": "Increase goal",
+    "goalDecrease": "Decrease goal"
   },
   "programs": {
     "title": "Program",
@@ -5358,7 +5370,10 @@
     "watchOverriddenByStrap": "Connected. Your chest strap is more accurate, so it is being used instead.",
     "watchReady": "Ready. Your watch starts measuring when you start a run or ride.",
     "goal": "{{goal}} goal",
-    "starting": "Starting…"
+    "starting": "Starting…",
+    "leaveTitle": "End this workout?",
+    "leaveMessage": "Recording stops when you leave. Save it as an exercise, or throw it away.",
+    "keepRecording": "Keep recording"
   },
   "setup": {
     "progress": "Step {{current}} of {{total}}",
@@ -5551,7 +5566,8 @@
     "burned": "Burned",
     "kcalLeft": "kcal left",
     "kcalLeftOfGoal": "kcal left of {{goal}}",
-    "amountLeft": "{{amount}} left"
+    "amountLeft": "{{amount}} left",
+    "editGoalFor": "Change your {{nutrient}} goal"
   },
   "trainingCard": {
     "details": "Details",
@@ -5649,6 +5665,32 @@
     "calorieTarget": "Calorie goal",
     "weightHint": "Used for the calorie estimate ({{unit}})",
     "weightRequired": "Enter your body weight to start.",
-    "goalHint": "A goal is a target, not a limit — the session keeps recording past it until you finish."
+    "goalHint": "A goal is a target, not a limit — the session keeps recording past it until you finish.",
+    "editGoal": "Edit {{goal}}",
+    "goalSheetMessage": "A goal is a target, not a limit — the session keeps recording past it until you finish.",
+    "weightLabel": "Weight",
+    "heightLabel": "Height",
+    "wheelLabel": "Wheel",
+    "gpsOn": "GPS tracking on",
+    "gpsOff": "GPS tracking off",
+    "watch": "Watch",
+    "sensorsConnected": "Sensors",
+    "filterLabel": "Filter workouts",
+    "noGpsTitle": "Start without GPS?",
+    "noGpsMessage": "This session will record time, heart rate and calories, but no route or distance from GPS.",
+    "noWatchTitle": "Start without your watch?",
+    "noWatchMessage": "Your watch is connected but will stay out of this session, so there will be no heart rate from it.",
+    "startAnyway": "Start",
+    "locationTitle": "Track your route?",
+    "locationMessage": "Location access is off, so this session will record time and calories but no route. Turn it on in Settings to trace where you go.",
+    "openSettings": "Settings",
+    "customEmptyTitle": "No custom workouts yet",
+    "customEmptyMessage": "Workouts you build yourself will show up here.",
+    "filters": {
+      "all": "All",
+      "goals": "Goals",
+      "custom": "Custom"
+    },
+    "watchDisconnected": "No watch connected"
   }
 }

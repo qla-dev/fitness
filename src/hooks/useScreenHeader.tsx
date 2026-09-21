@@ -224,12 +224,25 @@ const TRANSPARENT_HEADER_OPTIONS: Partial<NativeStackNavigationOptions> = {
  * the listener fires.
  */
 export function useNativeHeaderOffset(): number {
-  const animated = useAnimatedHeaderHeight();
+  // `useAnimatedHeaderHeight` throws outside a native stack screen. A screen
+  // rendered on its own — a test, a preview, a sheet — has no bar to clear, so
+  // the answer there is zero rather than a crash. The call itself is
+  // unconditional; only its failure is handled.
+  let animated: ReturnType<typeof useAnimatedHeaderHeight> | null = null;
+  try {
+    // The call runs on every render — only its failure is caught — so hook
+    // order is unchanged. The rule cannot see that through the try.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    animated = useAnimatedHeaderHeight();
+  } catch {
+    animated = null;
+  }
   const [height, setHeight] = useState(() => {
-    const node = animated as unknown as { __getValue?: () => number };
-    return typeof node.__getValue === 'function' ? node.__getValue() : 0;
+    const node = animated as unknown as { __getValue?: () => number } | null;
+    return typeof node?.__getValue === 'function' ? node.__getValue() : 0;
   });
   useEffect(() => {
+    if (!animated) return;
     const id = animated.addListener(({ value }) => setHeight(value));
     return () => animated.removeListener(id);
   }, [animated]);
@@ -245,7 +258,17 @@ function NativeHeaderAccessory({
   variant: ScreenHeaderVariant;
   onHeight?: (height: number) => void;
 }) {
-  const headerHeight = useAnimatedHeaderHeight();
+  // Same guard as useNativeHeaderOffset: outside a native stack screen there
+  // is no bar to clear, so the accessory sits at the top rather than throwing.
+  let headerHeight: ReturnType<typeof useAnimatedHeaderHeight> | number = 0;
+  try {
+    // The call runs on every render — only its failure is caught — so hook
+    // order is unchanged. The rule cannot see that through the try.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    headerHeight = useAnimatedHeaderHeight();
+  } catch {
+    headerHeight = 0;
+  }
   if (variant === 'system')
     return (
       <View
@@ -988,7 +1011,10 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
               id,
               colors,
               accentColor,
-              (handlerKey) => () => handlersRef.current[handlerKey]?.()
+              (handlerKey) => () => {
+                fireSelectionHaptic();
+                handlersRef.current[handlerKey]?.();
+              }
             )
           : buildNativeItem(
               item,

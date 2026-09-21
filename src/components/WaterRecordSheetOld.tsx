@@ -57,7 +57,7 @@ function StepButton({
  * The bottle fills as you go, so the sheet answers "how am I doing" without a
  * second reading of the number.
  */
-export default function WaterRecordSheet({
+export default function WaterRecordSheetOld({
   date,
   consumedMl,
   goalMl,

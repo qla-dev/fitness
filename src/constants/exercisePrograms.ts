@@ -1,3 +1,4 @@
+import type { IconName } from '../components/Icon';
 import type { TFunction } from 'i18next';
 import type {
   ExerciseProgram,
@@ -23,6 +24,22 @@ export const PROGRAM_CATEGORIES: ProgramCategoryId[] = [
   'mobility',
   'beginner',
 ];
+
+const PROGRAM_CATEGORY_ICONS: Record<ProgramCategoryId, IconName> = {
+  glutes: 'exercise-weights',
+  core: 'exercise-yoga',
+  upper: 'exercise-weights',
+  legs: 'exercise-running-filled',
+  fullBody: 'exercise',
+  strength: 'exercise-weights',
+  fatLoss: 'flame',
+  mobility: 'exercise-yoga',
+  beginner: 'star',
+};
+
+export function getProgramCategoryIcon(category: ProgramCategoryId): IconName {
+  return PROGRAM_CATEGORY_ICONS[category];
+}
 
 export function getProgramCategoryLabel(
   t: TFunction,

@@ -10,11 +10,7 @@ import BottomSheetPicker from '../components/BottomSheetPicker';
 import SettingsRow from '../components/SettingsRow';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import Switch from '../components/ui/Switch';
-import {
-  useThemePreference,
-  setThemePreference,
-  type ThemePreference,
-} from '../services/themeService';
+import { useThemePreference } from '../services/themeService';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -79,20 +75,11 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
     [t]
   );
 
-  const themeOptions: { label: string; value: ThemePreference }[] = [
-    {
-      label: t('settings.theme.light', { defaultValue: 'Light' }),
-      value: 'Light',
-    },
-    {
-      label: t('settings.theme.dark', { defaultValue: 'Dark' }),
-      value: 'Dark',
-    },
-    {
-      label: t('settings.theme.system', { defaultValue: 'System' }),
-      value: 'System',
-    },
-  ];
+  const themeLabel = {
+    Light: t('settings.theme.light', { defaultValue: 'Light' }),
+    Dark: t('settings.theme.dark', { defaultValue: 'Dark' }),
+    System: t('settings.theme.system', { defaultValue: 'System' }),
+  }[appTheme];
 
   const languagePickerOptions = [
     {
@@ -147,17 +134,13 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
           usesNativeHeader ? 'automatic' : 'never'
         }
       >
+        {/* Appearance opens its own screen, like every other choice with more
+            to say than a value: each option carries a line explaining it,
+            which a picker sheet has nowhere to put. */}
         <SettingsRow
           title={t('settings.theme.title', { defaultValue: 'Theme' })}
-          rightAccessory={
-            <BottomSheetPicker
-              value={appTheme}
-              options={themeOptions}
-              onSelect={setThemePreference}
-              title={t('settings.theme.title', { defaultValue: 'Theme' })}
-              containerStyle={{ flex: 1, maxWidth: 200 }}
-            />
-          }
+          subtitle={themeLabel}
+          onPress={() => navigation.navigate('ProfileTheme')}
         />
 
         {isIOS ? (

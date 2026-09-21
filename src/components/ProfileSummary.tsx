@@ -10,7 +10,6 @@ import { useCSSVariable } from 'uniwind';
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { isLocalDataMode } from '../services/dataMode';
-import { useThemePreference } from '../services/themeService';
 import { fireSelectionHaptic } from '../services/haptics';
 import SettingsRow, { SettingsRowGroup } from './SettingsRow';
 import Icon from './Icon';
@@ -31,28 +30,24 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
     queryFn: fetchProfile,
     enabled,
   });
-  const theme = useThemePreference();
   const [textSecondary, accent] = useCSSVariable([
     '--color-text-secondary',
     '--color-accent-primary',
   ]) as [string, string];
 
   const editable = isLocalDataMode();
-  const name =
-    profile?.full_name || t('profile.title', { defaultValue: 'Profile' });
-  const initials = name
+  // The row is the person, so an empty profile asks for a name rather than
+  // labelling itself "Profile" — a heading the screen already carries. The
+  // prompt is not a name, so it seeds no initials: the avatar falls back to a
+  // glyph instead of standing for a word the user never typed.
+  const fullName = profile?.full_name?.trim() ?? '';
+  const initials = fullName
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0])
     .join('')
     .toUpperCase();
-
-  const themeLabel = {
-    Light: t('settings.theme.light', { defaultValue: 'Light' }),
-    Dark: t('settings.theme.dark', { defaultValue: 'Dark' }),
-    System: t('settings.theme.system', { defaultValue: 'System' }),
-  }[theme];
 
   const openPremium = () => {
     fireSelectionHaptic();
@@ -76,28 +71,37 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
             className="bg-raised rounded-full items-center justify-center"
             style={{ width: 62, height: 62 }}
           >
-            <Text className="text-accent-primary text-xl font-bold">
-              {initials}
-            </Text>
+            {initials ? (
+              <Text className="text-accent-primary text-xl font-bold">
+                {initials}
+              </Text>
+            ) : (
+              <Icon name="person" size={26} color={textSecondary} />
+            )}
           </View>
           <View className="flex-1">
             <Text
-              className="text-text-primary text-xl font-bold"
+              className={`text-xl font-bold ${
+                fullName ? 'text-text-primary' : 'text-text-secondary'
+              }`}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {name}
+              {fullName ||
+                t('profile.namePrompt', { defaultValue: 'Enter your name' })}
             </Text>
-            <Text
-              className="text-text-secondary text-sm mt-1"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {profile?.bio ||
-                t('profile.subtitle', {
-                  defaultValue: 'Your health, goals, and preferences',
-                })}
-            </Text>
+            {/* Only what the person wrote. The old fallback described the
+                screen ("Your health, goals, and preferences"), which said
+                nothing about them and pushed the name off centre. */}
+            {profile?.bio ? (
+              <Text
+                className="text-text-secondary text-sm mt-1"
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {profile.bio}
+              </Text>
+            ) : null}
           </View>
           {editable && (
             <Icon name="chevron-forward" size={12} color={textSecondary} />
@@ -172,10 +176,13 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
 
       <MyLibrarySection enabled={enabled} />
 
-      <SettingsRowGroup
-        title={t('profile.personal', { defaultValue: 'Personal' })}
-      >
-        {editable && (
+      {/* Appearance is an app setting, not a personal one: it lives under App
+          Settings with language and notifications, so this group holds only
+          what belongs to the person. */}
+      {editable && (
+        <SettingsRowGroup
+          title={t('profile.personal', { defaultValue: 'Personal' })}
+        >
           <SettingsRow
             icon="trophy"
             title={t('profile.goals', { defaultValue: 'Goals' })}
@@ -184,14 +191,8 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
             })}
             onPress={() => navigation.navigate('ProfileGoals')}
           />
-        )}
-        <SettingsRow
-          icon="app-settings"
-          title={t('settings.theme.title', { defaultValue: 'Theme' })}
-          subtitle={themeLabel}
-          onPress={() => navigation.navigate('ProfileTheme')}
-        />
-      </SettingsRowGroup>
+        </SettingsRowGroup>
+      )}
     </>
   );
 }

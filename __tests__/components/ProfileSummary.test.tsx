@@ -15,8 +15,11 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../../src/services/api/profileApi', () => ({
-  fetchProfile: jest.fn().mockResolvedValue({ full_name: 'Ada Lovelace' }),
+  fetchProfile: jest.fn(),
 }));
+const { fetchProfile } = require('../../src/services/api/profileApi') as {
+  fetchProfile: jest.Mock;
+};
 
 jest.mock('../../src/services/dataMode', () => ({
   isLocalDataMode: () => true,
@@ -39,7 +42,10 @@ function renderSummary() {
 }
 
 describe('ProfileSummary', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    fetchProfile.mockResolvedValue({ full_name: 'Ada Lovelace' });
+  });
 
   it('keeps My Clients and the purchase row inside the identity card', async () => {
     const { getByText, findByText, UNSAFE_root } = renderSummary();
@@ -75,14 +81,38 @@ describe('ProfileSummary', () => {
     expect(mockNavigate).toHaveBeenCalledWith('ProfilePremium');
   });
 
-  it('opens the goals list and the theme list as screens, not sheets', async () => {
+  it('opens the goals list as a screen, not a sheet', async () => {
     const { getByText, findByText } = renderSummary();
     await findByText('Ada Lovelace');
 
     fireEvent.press(getByText('Goals'));
     expect(mockNavigate).toHaveBeenCalledWith('ProfileGoals');
+  });
 
-    fireEvent.press(getByText('Theme'));
-    expect(mockNavigate).toHaveBeenCalledWith('ProfileTheme');
+  it('shows the name alone, with the bio only when one is written', async () => {
+    fetchProfile.mockResolvedValue({
+      full_name: 'Ada Lovelace',
+      bio: 'Counting on analytical engines',
+    });
+    const { queryByText, findByText } = renderSummary();
+    await findByText('Ada Lovelace');
+
+    expect(queryByText('Counting on analytical engines')).toBeTruthy();
+    expect(queryByText('Your health, goals, and preferences')).toBeNull();
+  });
+
+  it('asks for a name when the profile has none', async () => {
+    fetchProfile.mockResolvedValue({ full_name: '   ' });
+    const { queryByText, findByText } = renderSummary();
+
+    await findByText('Enter your name');
+    expect(queryByText('Profile')).toBeNull();
+  });
+
+  it('leaves appearance to App Settings', async () => {
+    const { queryByText, findByText } = renderSummary();
+    await findByText('Ada Lovelace');
+
+    expect(queryByText('Theme')).toBeNull();
   });
 });

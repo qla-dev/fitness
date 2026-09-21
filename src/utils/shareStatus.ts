@@ -1,3 +1,4 @@
+import type { IconName } from '../components/Icon';
 import type { HeaderItem } from '../hooks/useScreenHeader';
 
 export type ShareStatus = 'public' | 'family' | 'private' | null;
@@ -19,6 +20,22 @@ export const OWNERSHIP_FILTER_LABELS: Record<OwnershipFilter, string> = {
  * permanent bar row on a rarely-changed choice. `noun` names the collection
  * in the accessibility label ("Filter foods, filtered to Mine").
  */
+/** Whose items each filter shows, as a glyph — SF Symbols on the native menu. */
+const OWNERSHIP_FILTER_SYMBOLS: Record<OwnershipFilter, string> = {
+  all: 'square.stack.3d.up',
+  mine: 'person',
+  family: 'person.2',
+  public: 'globe',
+};
+
+/** The same set for the custom-path menu, in the app's own icon names. */
+const OWNERSHIP_FILTER_ICONS: Record<OwnershipFilter, IconName> = {
+  all: 'meal',
+  mine: 'profile',
+  family: 'people',
+  public: 'globe',
+};
+
 export function ownershipFilterHeaderMenu({
   noun,
   identifier,
@@ -66,6 +83,8 @@ export function ownershipFilterHeaderMenu({
         label: showLabel,
         items: (Object.keys(labels) as OwnershipFilter[]).map((option) => ({
           label: labels[option],
+          sfSymbol: OWNERSHIP_FILTER_SYMBOLS[option],
+          icon: OWNERSHIP_FILTER_ICONS[option],
           selected: filter === option,
           onPress: () => onSelect(option),
         })),

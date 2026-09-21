@@ -23,7 +23,9 @@ import { buildSingleExerciseStartPayload } from '../utils/workoutSession';
 import {
   SPORT_ENVIRONMENTS,
   SPORT_GROUPS,
+  getSportEnvironmentIcon,
   getSportEnvironmentLabel,
+  getSportGroupIcon,
   getSportGroupLabel,
   type SportFilter,
   type WorkoutSport,
@@ -64,14 +66,20 @@ const PresetSearchScreen: React.FC<PresetSearchScreenProps> = ({
   // list and a second row would double the header's height.
   const groupOptions = useMemo(
     () => [
-      { value: ALL_SPORTS, label: t('common.all', { defaultValue: 'All' }) },
+      {
+        value: ALL_SPORTS,
+        label: t('common.all', { defaultValue: 'All' }),
+        icon: 'meal' as const,
+      },
       ...SPORT_GROUPS.map((id) => ({
         value: id,
         label: getSportGroupLabel(t, id),
+        icon: getSportGroupIcon(id),
       })),
       ...SPORT_ENVIRONMENTS.map((id) => ({
         value: id,
         label: getSportEnvironmentLabel(t, id),
+        icon: getSportEnvironmentIcon(id),
       })),
     ],
     [t]

@@ -4,6 +4,7 @@ import {
   View,
   Text,
   FlatList,
+  Pressable,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
@@ -30,7 +31,14 @@ import {
 } from '../utils/shareStatus';
 import ShareStatusBadge from '../components/ShareStatusBadge';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
+import { useStartLiveWorkout } from '../hooks/useStartLiveWorkout';
+import { buildPresetStartExercisesPayload } from '../utils/workoutSession';
+import { fireSelectionHaptic } from '../services/haptics';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import type { WorkoutPreset } from '../types/workoutPresets';
 import type { RootStackScreenProps } from '../types/navigation';
@@ -52,6 +60,13 @@ const WorkoutPresetsLibraryScreen: React.FC<
   ]) as [string, string];
   const scrollBottomPadding = insets.bottom + activeWorkoutBarPadding + 16;
   const [searchText, setSearchText] = useState('');
+  const headerOffset = useNativeHeaderOffset();
+  const [accessoryHeight, setAccessoryHeight] = useState(0);
+  // Under a transparent bar and the search that floats with it; both measured,
+  // so the list starts where the Store's does.
+  const contentTopInset = usesNativeHeader
+    ? headerOffset + accessoryHeight + HEADER_CONTENT_GAP
+    : 0;
   const ownershipFilter = useAppPreferencesStore(
     (s) => s.workoutPresetsLibraryOwnershipFilter
   );
@@ -76,6 +91,8 @@ const WorkoutPresetsLibraryScreen: React.FC<
     () => filterByOwnership(presets, ownershipFilter, profile?.id),
     [presets, ownershipFilter, profile?.id]
   );
+
+  const { startLiveWorkout, isStarting } = useStartLiveWorkout(navigation);
 
   const handlePresetPress = useCallback(
     (preset: WorkoutPreset) => {
@@ -184,6 +201,33 @@ const WorkoutPresetsLibraryScreen: React.FC<
           </Text>
         </View>
         <ProgramCountdown presetId={item.id} />
+        {/* The store row's shape: the row opens the program, the button runs
+            it. A program you already own has nothing left to buy, so the word
+            is "Start now" rather than the store's "Start". */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('presetLibrary.startNow', {
+            defaultValue: 'Start now',
+          })}
+          disabled={isStarting}
+          onPress={() => {
+            fireSelectionHaptic();
+            void startLiveWorkout({
+              name: item.name,
+              exercises: buildPresetStartExercisesPayload(item),
+              sourcePresetId: item.id,
+            });
+          }}
+          className="px-3 py-2 rounded-full bg-raised"
+          style={{ opacity: isStarting ? 0.5 : 1 }}
+        >
+          <Text
+            className="text-sm font-semibold"
+            style={{ color: accentColor }}
+          >
+            {t('presetLibrary.startNow', { defaultValue: 'Start now' })}
+          </Text>
+        </Pressable>
       </TouchableOpacity>
     );
   };
@@ -277,6 +321,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
           />
         }
         contentContainerStyle={{
+          paddingTop: contentTopInset,
           paddingBottom: scrollBottomPadding,
           flexGrow: 1,
         }}
@@ -285,6 +330,19 @@ const WorkoutPresetsLibraryScreen: React.FC<
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
+    accessory: isConnected ? (
+      <LibrarySearchBar
+        glass
+        value={searchText}
+        onChangeText={setSearchText}
+        placeholder={t('presetLibrary.search', {
+          defaultValue: 'Search workout programs...',
+        })}
+        isSearching={isSearching}
+      />
+    ) : null,
+    onAccessoryHeight: setAccessoryHeight,
     title: t('profile.library.workout', { defaultValue: 'My Programs' }),
     left: { kind: 'back' },
     right: ownershipFilterHeaderMenu({
@@ -311,16 +369,6 @@ const WorkoutPresetsLibraryScreen: React.FC<
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      {isConnected ? (
-        <LibrarySearchBar
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder={t('presetLibrary.search', {
-            defaultValue: 'Search workout programs...',
-          })}
-          isSearching={isSearching}
-        />
-      ) : null}
       {renderContent()}
     </View>
   );

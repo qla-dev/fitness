@@ -79,8 +79,8 @@ function renderScreen() {
 }
 
 function picker() {
-  // The screen renders two BottomSheetPickers (Theme row + Language row); the
-  // language one is the only one carrying an accessibilityHint prop.
+  // Language is the screen's only BottomSheetPicker; theme moved to a row that
+  // pushes ProfileTheme. The hint check survives as an identity assertion.
   const pickers = screen.getAllByTestId('bottom-sheet-picker');
   const languagePicker = pickers.find(
     (p) => p.props.accessibilityHint !== undefined
@@ -145,8 +145,10 @@ describe('AppSettingsScreen', () => {
     renderScreen();
 
     expect(screen.getByText('Polski · Managed by iOS')).toBeTruthy();
+    // queryAll, not getAll: on iOS the screen now has no picker at all — the
+    // language row defers to iOS Settings and theme opens its own screen.
     const languagePickers = screen
-      .getAllByTestId('bottom-sheet-picker')
+      .queryAllByTestId('bottom-sheet-picker')
       .filter((node) => node.props.accessibilityHint !== undefined);
     expect(languagePickers).toHaveLength(0);
 
@@ -198,6 +200,17 @@ describe('AppSettingsScreen', () => {
     );
     expect(useAppPreferencesStore.getState().languagePreference).toBe('en');
     expect(i18n.resolvedLanguage).toBe('en');
+  });
+
+  it('opens the appearance screen from the Theme row, showing the current choice', () => {
+    const { getByText } = renderScreen();
+
+    expect(getByText('System')).toBeTruthy();
+    fireEvent.press(getByText('Theme'));
+
+    expect(
+      (mockNavigation as { navigate: jest.Mock }).navigate
+    ).toHaveBeenCalledWith('ProfileTheme');
   });
 
   it('navigates to NotificationSettings from the Notifications row', () => {
