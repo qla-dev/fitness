@@ -162,9 +162,15 @@ export default function RunRideRecorder({
     snapshot.ready,
     t,
   ]);
+  // Discarding ends the route's claim on the screen. The auto start runs
+  // once, so without this the throw-away put the screen back to "no session,
+  // route weight still set" and the spinner returned — waiting on an attempt
+  // that had already happened and would never happen again.
+  const [discarded, setDiscarded] = useState(false);
   // Derived, not stored: the route asked for a session and there is not one
   // yet, so the form it would have filled in has nothing left to ask.
-  const autoStarting = !!initialWeightKg && !session && !autoStartFailed;
+  const autoStarting =
+    !!initialWeightKg && !session && !autoStartFailed && !discarded;
 
   const active = session?.phase === 'recording';
   const seconds = session ? elapsedSeconds(session, now) : 0;
@@ -303,7 +309,13 @@ export default function RunRideRecorder({
         {
           text: t('recording.discard', { defaultValue: 'Discard' }),
           style: 'destructive',
-          onPress: () => void perform(discardRecording),
+          // Stays on the screen, unlike the discard that answers a back
+          // press — so the start form has to come back with it.
+          onPress: () =>
+            void perform(async () => {
+              await discardRecording();
+              setDiscarded(true);
+            }),
         },
       ]
     );
@@ -325,6 +337,7 @@ export default function RunRideRecorder({
               center={snapshot.points[snapshot.points.length - 1]}
               segments={routeSegments(snapshot.points)}
               showsUserLocation={!!session && active}
+              appearance="dark"
             />
           </View>
           <View

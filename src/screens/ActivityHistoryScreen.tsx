@@ -224,7 +224,13 @@ export default function ActivityHistoryScreen({
   };
 
   return (
-    <View className="flex-1 bg-background">
+    // The status-bar inset belongs above the bar on the screen-owned header
+    // path, where the bar is the first thing on screen rather than something
+    // the system laid out for us.
+    <View
+      className="flex-1 bg-background"
+      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+    >
       {header}
 
       {isLoading ? (

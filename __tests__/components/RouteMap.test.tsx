@@ -31,10 +31,16 @@ jest.mock('uniwind', () => ({ useCSSVariable: () => '#3B82F6' }));
 
 // Google Maps needs a manifest API key; RouteMap reads its presence from the
 // embedded config. Most tests run with one set so the map branch is exercised.
-const mockExpoConfig: { android?: { config?: { googleMaps?: { apiKey?: string } } } } = {};
+const mockExpoConfig: {
+  android?: { config?: { googleMaps?: { apiKey?: string } } };
+} = {};
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { get expoConfig() { return mockExpoConfig; } },
+  default: {
+    get expoConfig() {
+      return mockExpoConfig;
+    },
+  },
 }));
 
 const setGoogleMapsApiKey = (apiKey: string | undefined) => {
@@ -135,5 +141,20 @@ describe('RouteMap', () => {
     expect(mockGoogleProps.mock.calls[0][0].properties).toEqual(
       expect.objectContaining({ isMyLocationEnabled: true })
     );
+  });
+
+  /**
+   * Under content the notice has nowhere to sit that the readings or the
+   * control panel over the map have not already claimed, so there is nothing
+   * to render rather than a block behind one of them.
+   */
+  it('renders no keyless notice when the map is a background layer', () => {
+    const { queryByText } = render(<RouteMap appearance="dark" />);
+
+    expect(
+      queryByText(
+        'The map is unavailable: this build has no Google Maps API key.'
+      )
+    ).toBeNull();
   });
 });

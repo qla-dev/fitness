@@ -28,6 +28,13 @@ export interface RouteMapProps {
    * the map without it rather than failing.
    */
   showsUserLocation?: boolean;
+  /**
+   * `dark`: the map is a full-bleed background under content rather than a
+   * boxed panel, on a screen that is black whatever the theme (the recorder).
+   * Only the keyless-Android notice reads it — a filled panel of the theme's
+   * surface colour behind the readings is the wrong thing there.
+   */
+  appearance?: 'dark';
 }
 
 /** The camera when there is nothing to centre on yet — the whole world. */
@@ -47,6 +54,7 @@ const ROUTE_WIDTH = 6;
 const RouteMap: React.FC<RouteMapProps> = ({
   center,
   zoom,
+  appearance,
   route,
   segments,
   showsUserLocation = false,
@@ -94,6 +102,12 @@ const RouteMap: React.FC<RouteMapProps> = ({
   }
 
   if (Platform.OS === 'android' && !hasGoogleMapsApiKey()) {
+    // Nothing at all under content: every part of a full-bleed layer is
+    // already spoken for by the readings and the control panel over it, so
+    // the notice could only land behind one of them. A panel of the theme's
+    // surface colour would be worse still on a screen that is black whatever
+    // the theme. The boxed uses below keep the explanation.
+    if (appearance === 'dark') return null;
     return (
       <View className="flex-1 items-center justify-center bg-surface">
         <Text className="text-text-muted text-sm text-center px-6">

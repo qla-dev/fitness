@@ -363,6 +363,14 @@ export interface ScreenHeaderConfig {
   nativeOptions?: Partial<NativeStackNavigationOptions>;
   /** Cross-fade the custom bar when this key changes (view/edit swaps). */
   animateKey?: string;
+  /**
+   * `dark`: the content under the bar is forced dark whatever the theme (the
+   * recorder). The custom bar then draws its items in white and gives the
+   * circles the dark recipe — the theme's text colour is navy on the light
+   * theme and vanished on black, chevron and ring both. The native path is
+   * left alone: the system bar paints its own material behind its items.
+   */
+  appearance?: 'dark';
 }
 
 interface HeaderColors {
@@ -639,11 +647,13 @@ function HeaderBarButton({
   item,
   color,
   badgeColor,
+  appearance,
   onPress,
 }: {
   item: HeaderItem;
   color: string;
   badgeColor?: string;
+  appearance?: 'dark';
   onPress: () => void;
 }) {
   const { t } = useTranslation();
@@ -709,6 +719,7 @@ function HeaderBarButton({
       <HeaderCircleButton
         onPress={onPress}
         disabled={disabled}
+        appearance={appearance}
         accessibilityLabel={itemAccessibilityLabel(item, t)}
       >
         {content}
@@ -835,8 +846,15 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     borderless,
     nativeOptions,
     animateKey,
+    appearance,
   } = config;
   const rightItems = toRightArray(right);
+  // Only the screen-owned bar takes the forced-dark colours; the native
+  // items keep the theme tint the system bar was built around.
+  const customColors: HeaderColors =
+    appearance === 'dark'
+      ? { defaultColor: '#FFFFFF', saveColor: '#FFFFFF' }
+      : colors;
 
   // One-accent invariant: count both `kind:'primary'` and `role:'primary'`.
   if (__DEV__) {
@@ -1088,8 +1106,9 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
       <HeaderBarButton
         key={id}
         item={item}
-        color={itemColor(item, colors)}
+        color={itemColor(item, customColors)}
         badgeColor={accentColor}
+        appearance={appearance}
         onPress={() => handlersRef.current[id]?.()}
       />
     );
@@ -1208,7 +1227,22 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
       ) : (
         bar
       )}
-      {accessory}
+      {/* Wrapped, unlike the native path where the accessory is positioned
+          absolutely: here it is a flex child of the screen's column, and RN
+          gives every ScrollView `flexGrow: 1` in its base style — so a chip
+          row handed over bare claimed a share of the free space and left a
+          band of nothing between the chips and the list under them. A plain
+          View does not grow, and inside it the row has no free space left to
+          take. */}
+      {accessory ? (
+        <View
+          onLayout={({ nativeEvent }) =>
+            onAccessoryHeight?.(nativeEvent.layout.height)
+          }
+        >
+          {accessory}
+        </View>
+      ) : null}
       {menuOverlay}
     </>
   );

@@ -110,6 +110,7 @@ export default function MoreMeasurementsSheet({
       consumedMl={water.consumedMl}
       goalMl={water.goalMl}
       onPress={() => pick('water')}
+      onSheet
     />,
     ...tiles.map((tile) => (
       <MeasurementTileCard

@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import { Platform, Pressable, Text, View } from 'react-native';
+import {
+  MenuView,
+  type MenuAction,
+  type MenuComponentRef,
+} from '@expo/ui/community/menu';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import TileIconSlot from './TileIconSlot';
@@ -27,6 +31,7 @@ export default function WaterTile({
   onPress,
   onDecrease,
   onChangeGoal,
+  onSheet,
 }: {
   consumedMl: number;
   goalMl: number;
@@ -38,6 +43,11 @@ export default function WaterTile({
    */
   onDecrease?: () => void;
   onChangeGoal?: () => void;
+  /**
+   * Same as `MeasurementTileCard`'s: inside a sheet the surface fill is the
+   * sheet's own colour, so the card needs the raised one to show at all.
+   */
+  onSheet?: boolean;
 }) {
   const { t } = useTranslation();
   const [accentPrimary, iconDecorative, mutedColor] = useCSSVariable([
@@ -64,6 +74,15 @@ export default function WaterTile({
   );
 
   const hasMenu = Boolean(onDecrease || onChangeGoal);
+  const menu = useRef<MenuComponentRef>(null);
+  // iOS opens the menu from the system's own long-press recognizer, outside
+  // the responder system, so the tile's handler only has to claim the press.
+  // The Android shim is a JS Pressable wrapped around the tile, and the tile
+  // — the deeper responder — takes the gesture before that one can fire, so
+  // here the tile opens the menu itself. `show()` is a no-op on iOS by design.
+  const handleLongPress = () => {
+    if (Platform.OS === 'android') menu.current?.show();
+  };
   const fill = goalMl > 0 ? consumedMl / goalMl : 0;
   const amount = formatLocalizedNumber(consumedMl, {
     maximumFractionDigits: 0,
@@ -83,10 +102,16 @@ export default function WaterTile({
       // Claiming the long press here is what suppresses the tap — Pressable
       // drops onPress once onLongPress has fired — and it must land before the
       // menu appears, so it waits less than UIKit's own half second.
-      onLongPress={hasMenu ? () => {} : undefined}
+      onLongPress={hasMenu ? handleLongPress : undefined}
       delayLongPress={300}
     >
-      <View className="bg-surface rounded-xl py-3 px-3">
+      <View
+        className={
+          onSheet
+            ? 'bg-raised rounded-xl py-3 px-3'
+            : 'bg-surface rounded-xl py-3 px-3'
+        }
+      >
         {/* The same corner row the measurement tiles carry, so the four line
             up. Left says what the goal is; there is no day-before comparison
             to make, so the right keeps the flat rule. */}
@@ -180,6 +205,7 @@ export default function WaterTile({
       }}
     >
       <MenuView
+        ref={menu}
         style={{ width: cellWidth ?? '100%' }}
         actions={actions}
         shouldOpenOnLongPress

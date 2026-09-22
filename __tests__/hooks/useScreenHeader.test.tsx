@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 
 import { useScreenHeader } from '../../src/hooks/useScreenHeader';
@@ -419,5 +419,63 @@ describe('useScreenHeader haptics', () => {
 
     expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
     expect(mockFireSelectionHaptic).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The accessory is only positioned absolutely on the native path. On the
+ * screen-owned bar it is a flex child of the screen's column, where RN's
+ * `flexGrow: 1` base style on every ScrollView made a chip row claim a share
+ * of the free space and push the list below it down the screen.
+ */
+describe('useScreenHeader accessory (custom path)', () => {
+  function AccessoryScreen({
+    onAccessoryHeight,
+  }: {
+    onAccessoryHeight?: (height: number) => void;
+  }) {
+    const header = useScreenHeader({
+      variant: 'transparent',
+      title: 'History',
+      accessory: <View testID="chips" />,
+      onAccessoryHeight,
+      left: { kind: 'back' },
+    });
+    return <>{header}</>;
+  }
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    __resetAppPreferencesStoreForTests();
+    mockUsesNativeHeader = false;
+    await initializeI18n('en');
+    await i18n.changeLanguage('en');
+  });
+
+  it('wraps the accessory in a non-growing container', () => {
+    const { getByTestId } = render(<AccessoryScreen />);
+
+    const wrapper = getByTestId('chips').parent;
+    // A plain View: no flexGrow of its own, so the row inside has no free
+    // space left to take.
+    const style = StyleSheet.flatten(wrapper?.props.style ?? {}) as {
+      flexGrow?: number;
+      flex?: number;
+    };
+    expect(style.flexGrow ?? 0).toBe(0);
+    expect(style.flex ?? 0).toBe(0);
+  });
+
+  it('reports the accessory height on the custom path too', () => {
+    const onAccessoryHeight = jest.fn();
+    const { getByTestId } = render(
+      <AccessoryScreen onAccessoryHeight={onAccessoryHeight} />
+    );
+
+    fireEvent(getByTestId('chips').parent as never, 'layout', {
+      nativeEvent: { layout: { height: 48 } },
+    });
+
+    expect(onAccessoryHeight).toHaveBeenCalledWith(48);
   });
 });

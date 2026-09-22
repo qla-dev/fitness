@@ -528,14 +528,20 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   );
 
   return (
-    <>
+    // The status-bar inset goes on the container, above the bar, the way
+    // PresetSearch and ExerciseProgram carry it: on the screen-owned header
+    // path the bar is the first thing on screen, and an inset on the scroll
+    // content instead left the bar under the clock with a blank band below.
+    <View
+      className="flex-1 bg-background"
+      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+    >
       {header}
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1 bg-background"
         contentContainerStyle={{
           padding: 16,
-          paddingTop: usesNativeHeader ? 16 : insets.top + 16,
           paddingBottom: insets.bottom + 24,
         }}
         contentInsetAdjustmentBehavior={
@@ -803,6 +809,6 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
           </Text>
         </View>
       </NativePromptSheet>
-    </>
+    </View>
   );
 }

@@ -44,6 +44,7 @@ export default function HeaderCircleButton({
   hitSlop,
   style,
   testID,
+  appearance,
 }: {
   children: ReactNode;
   onPress?: () => void;
@@ -54,6 +55,12 @@ export default function HeaderCircleButton({
   hitSlop?: Insets | number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /**
+   * `dark`: the button sits on content that is black whatever the theme, so
+   * it takes the dark recipe on a white base rather than reading the theme,
+   * whose light-mode text colour is navy and disappears there.
+   */
+  appearance?: 'dark';
 }) {
   const scheme = useColorScheme();
   const textPrimary = useCSSVariable('--color-text-primary') as string;
@@ -61,9 +68,11 @@ export default function HeaderCircleButton({
   // white-on-white fill is invisible and the ring reads as a smudge. Dark
   // keeps Predah's exact numbers, light uses the same structure at a
   // strength that shows on the near-white chrome.
-  const dark = scheme === 'dark';
-  const fill = withAlpha(textPrimary, dark ? 0.08 : 0.05);
-  const ring = withAlpha(textPrimary, dark ? 0.06 : 0.1);
+  const forcedDark = appearance === 'dark';
+  const dark = forcedDark || scheme === 'dark';
+  const base = forcedDark ? '#FFFFFF' : textPrimary;
+  const fill = withAlpha(base, dark ? 0.08 : 0.05);
+  const ring = withAlpha(base, dark ? 0.06 : 0.1);
 
   return (
     <Pressable

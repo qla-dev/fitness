@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { StatusBar, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -23,6 +24,13 @@ export default function RunOrRideScreen({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const accent = useCSSVariable('--color-accent-primary') as string;
+  const focused = useIsFocused();
+
+  // The screen is black whatever the theme, so the root's theme-driven bar
+  // style leaves the clock invisible on the light theme. Mounted only while
+  // focused: a StatusBar element wins over the root's for as long as it is
+  // mounted, and this screen stays mounted under whatever is pushed over it.
+  const statusBar = focused ? <StatusBar barStyle="light-content" /> : null;
 
   // Only an arrival from setup counts down: it is the one case where the
   // session starts by itself and the phone is still in your hand. A resume or
@@ -59,6 +67,8 @@ export default function RunOrRideScreen({
     nativeTitle: '',
     title: '',
     borderless: true,
+    // Forced-dark content under it: see `appearance` on the hook.
+    appearance: 'dark',
     left: { kind: 'back' },
   });
 
@@ -66,26 +76,30 @@ export default function RunOrRideScreen({
   // mid-count, and the readings behind it are not ready to be read yet.
   if (countdown)
     return (
-      <RecordingCountdown
-        color={accent}
-        icon={
-          sport?.icon ??
-          (route.params?.sport === 'ride'
-            ? 'exercise-cycling'
-            : 'exercise-running-filled')
-        }
-        label={
-          sport?.label(t) ??
-          (route.params?.sport === 'ride'
-            ? t('recording.ride', { defaultValue: 'Bike ride' })
-            : t('recording.run', { defaultValue: 'Run' }))
-        }
-        onDone={() => setCountdown(false)}
-      />
+      <>
+        {statusBar}
+        <RecordingCountdown
+          color={accent}
+          icon={
+            sport?.icon ??
+            (route.params?.sport === 'ride'
+              ? 'exercise-cycling'
+              : 'exercise-running-filled')
+          }
+          label={
+            sport?.label(t) ??
+            (route.params?.sport === 'ride'
+              ? t('recording.ride', { defaultValue: 'Bike ride' })
+              : t('recording.run', { defaultValue: 'Run' }))
+          }
+          onDone={() => setCountdown(false)}
+        />
+      </>
     );
 
   return (
     <View className="flex-1" style={{ backgroundColor: '#000' }}>
+      {statusBar}
       {/* The map fills the screen and the header sits over it, so the route is
           never boxed into a panel. It is absolutely positioned rather than a
           flex child for that reason. */}
