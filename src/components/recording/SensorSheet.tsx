@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from '../ui/BottomSheetModal';
 
 import SensorPanel from './SensorPanel';
 import { sheetContainer, useSheetBackdrop } from '../ui/sheetChrome';

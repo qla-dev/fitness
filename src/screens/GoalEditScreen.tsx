@@ -17,6 +17,7 @@ import {
   getProfileGoalLabel,
   getProfileGoalUnit,
   goalMaximum,
+  goalMinimum,
   goalStep,
   isCustomGoalKey,
   readGoalValue,
@@ -61,6 +62,9 @@ export default function GoalEditScreen({
   const label = getProfileGoalLabel(t, goalKey, customNutrients);
   const unit = getProfileGoalUnit(goalKey, customNutrients);
   const maximum = goalMaximum(goalKey);
+  // Same floor ProfileEdit enforces: a 0 kcal target divides every
+  // "remaining" by zero, so calories cannot be stepped or typed down to it.
+  const minimum = goalMinimum(goalKey);
   const stepSize = goalStep(goalKey);
 
   const stored = useMemo(() => {
@@ -82,7 +86,7 @@ export default function GoalEditScreen({
   const valid =
     trimmed.length > 0 &&
     Number.isFinite(numeric) &&
-    numeric >= 0 &&
+    numeric >= minimum &&
     (maximum === undefined || numeric <= maximum);
 
   const save = async () => {
@@ -118,7 +122,7 @@ export default function GoalEditScreen({
   const step = (direction: 1 | -1) => {
     fireSelectionHaptic();
     const base = Number.isFinite(numeric) ? numeric : 0;
-    const next = Math.max(0, base + direction * stepSize);
+    const next = Math.max(minimum, base + direction * stepSize);
     setDraft(String(maximum === undefined ? next : Math.min(next, maximum)));
   };
 
@@ -162,7 +166,7 @@ export default function GoalEditScreen({
         incrementLabel={t('profile.goalIncrease', {
           defaultValue: 'Increase goal',
         })}
-        decrementDisabled={busy || numeric <= 0}
+        decrementDisabled={busy || numeric <= minimum}
         incrementDisabled={
           busy || (maximum !== undefined && numeric >= maximum)
         }
