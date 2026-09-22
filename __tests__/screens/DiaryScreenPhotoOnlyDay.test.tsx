@@ -16,6 +16,13 @@ jest.mock('../../src/hooks', () => ({
   useNutrientDisplayPreferences: () => ({ preferences: [] }),
   useMealTypes: () => ({ mealTypes: [], isLoading: false, isError: false }),
   useFamilyUsers: () => ({ data: [] }),
+  // The hydration tile logs a serving from the grid itself, so the screen
+  // holds the mutation whatever the day contains.
+  useWaterIntakeMutation: () => ({
+    increment: jest.fn(),
+    decrement: jest.fn(),
+    isReady: true,
+  }),
 }));
 
 jest.mock('../../src/hooks/useMeasurements', () => ({
@@ -51,6 +58,15 @@ const mockPhotosByDate = jest.fn(() => ({
 jest.mock('../../src/hooks/useCheckInPhotos', () => ({
   useCheckInPhotoDates: () => ({ dates: [], isLoading: false }),
   useCheckInPhotosByDate: () => mockPhotosByDate(),
+  // PhotoDayCapture records the day straight from the tracker, so the screen
+  // now reaches the mutations too.
+  useCheckInPhotoMutations: () => ({
+    uploadAsync: jest.fn(),
+    deleteAsync: jest.fn(),
+    uploadingType: undefined,
+    isUploading: false,
+    isDeleting: false,
+  }),
 }));
 
 jest.mock('../../src/hooks/useCheckInPhotoSource', () => ({

@@ -116,6 +116,15 @@ jest.mock('../../src/hooks/useCheckInPhotos', () => ({
   useCheckInPhotoDates: (enabled?: boolean) =>
     mockUseCheckInPhotoDates(enabled as never),
   useCheckInPhotosByDate: () => ({ photos: [], isLoading: false }),
+  // PhotoDayCapture records the day straight from the tracker, so the screen
+  // now reaches the mutations too.
+  useCheckInPhotoMutations: () => ({
+    uploadAsync: jest.fn(),
+    deleteAsync: jest.fn(),
+    uploadingType: undefined,
+    isUploading: false,
+    isDeleting: false,
+  }),
 }));
 jest.mock('../../src/hooks/usePreferences', () => ({
   usePreferences: jest.fn(() => ({

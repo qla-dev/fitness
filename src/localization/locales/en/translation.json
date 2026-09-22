@@ -5101,7 +5101,7 @@
     "openPhotoA11y": "View this photo full screen",
     "sincePrevious": "{{delta}} since previous",
     "emptyTitle": "No {{angle}} photos yet",
-    "emptyBody": "Add one above and it will show up here with that day’s weight.",
+    "emptyBody": "Add one on the tracker and it will show up here with that day’s weight.",
     "loadError": "Couldn't load your progress photos.",
     "takePhoto": "Take Photo",
     "chooseLibrary": "Choose from Library",

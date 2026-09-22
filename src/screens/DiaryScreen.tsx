@@ -24,7 +24,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
-import PhotoDaySlots from '../components/PhotoDaySlots';
+import PhotoDayCapture from '../components/PhotoDayCapture';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import DiaryNutritionCard from '../components/DiaryNutritionCard';
@@ -591,17 +591,15 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             navigation.navigate('ProgressPhotos', { date: selectedDate })
           }
         />
-        <PhotoDaySlots
+        {/* Records straight from here. The slots used to hand every tap to the
+            ProgressPhotos screen, which opened on an identical block — two
+            taps and a transition to reach a picker that was already under the
+            thumb. "More" is the history now; adding a photo happens on the day
+            you are looking at, which is this one. */}
+        <PhotoDayCapture
+          date={selectedDate}
           photos={photosByType}
-          onPick={() =>
-            navigation.navigate('ProgressPhotos', { date: selectedDate })
-          }
-          onView={() =>
-            navigation.navigate('ProgressPhotos', { date: selectedDate })
-          }
-          onManage={() =>
-            navigation.navigate('ProgressPhotos', { date: selectedDate })
-          }
+          weight={measurements?.weight ?? null}
         />
         <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
       </ScrollView>
