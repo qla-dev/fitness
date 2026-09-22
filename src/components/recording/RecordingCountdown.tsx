@@ -17,7 +17,13 @@ const SIZE = 240;
 const STROKE = 18;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const SECONDS = 3;
+/**
+ * How long the count runs. Exported because the watch is told to count the
+ * same three seconds — two numbers would drift apart the first time one of
+ * them was tuned.
+ */
+export const COUNTDOWN_SECONDS = 3;
+const SECONDS = COUNTDOWN_SECONDS;
 
 /**
  * The three-second lead-in before a recording starts.

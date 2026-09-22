@@ -113,6 +113,12 @@ interface StepperInputProps {
   };
   /** Compact size for inline use in set rows */
   compact?: boolean;
+  /**
+   * Exact control height, overriding the size the variant would pick. For a
+   * row where the stepper has to match a button beside it — guessing from
+   * padding is what leaves three controls at three heights.
+   */
+  height?: number;
 }
 
 type TextInputFocusEvent = NativeSyntheticEvent<TextInputFocusEventData>;
@@ -131,6 +137,7 @@ function StepperInput({
   inputRef,
   accessibilityLabels,
   compact = false,
+  height,
 }: StepperInputProps) {
   const [accentColor, borderSubtle] = useCSSVariable([
     '--color-accent-primary',
@@ -138,7 +145,7 @@ function StepperInput({
   ]) as [string, string];
   const [isFocused, setIsFocused] = useState(false);
 
-  const size = compact ? 32 : 40;
+  const size = height ?? (compact ? 32 : 40);
   const inputWidth = compact ? 48 : 56;
   const iconSize = compact ? 18 : 20;
   const fontSize = compact ? 16 : 20;

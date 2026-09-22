@@ -12,11 +12,26 @@ import {
 } from '../hooks/useScreenHeader';
 import Button from './ui/Button';
 
+/**
+ * The height every control in the footer row shares, and the gap between
+ * them. Exported so a screen supplying `leading` can size its own controls to
+ * the same number rather than approximating it from padding.
+ */
+export const FOOTER_CONTROL_HEIGHT = 44;
+export const FOOTER_CONTROL_GAP = 8;
+
 interface FooterSaveBarProps {
   onPress: () => void;
   disabled?: boolean;
   busy?: boolean;
   label?: string;
+  /**
+   * A control that belongs beside the action rather than above it — the food
+   * entry screen puts its amount here, because the amount and the button are
+   * one decision and scrolling back up to change a number you are about to
+   * commit is not.
+   */
+  leading?: React.ReactNode;
 }
 
 /**
@@ -29,6 +44,7 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
   disabled,
   busy,
   label,
+  leading,
 }) => {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -53,16 +69,36 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
       className="px-4 py-3 border-t border-border-subtle"
       style={{ paddingBottom: Math.max(insets.bottom, 12) }}
     >
-      <Button
-        variant="primary"
-        onPress={handlePress}
-        disabled={disabled}
-        loading={busy}
-        className="py-3"
-        textClassName="text-sm text-center"
+      <View
+        className="flex-row items-center"
+        style={{ gap: FOOTER_CONTROL_GAP }}
       >
-        {busy ? resolvedBusyLabel : resolvedLabel}
-      </Button>
+        {leading}
+        <View className="flex-1">
+          <Button
+            // Stable across label changes: a test that presses the action by
+            // its copy breaks every time the wording is edited.
+            testID="footer-save-button"
+            variant="primary"
+            onPress={handlePress}
+            disabled={disabled}
+            loading={busy}
+            // Only when something shares the row: on its own the button keeps
+            // the padding-derived height every other form screen has. The
+            // padding is zeroed with it — the button's own py-3.5 plus a line
+            // of text is taller than the row, so the label was being clipped.
+            style={
+              leading
+                ? { height: FOOTER_CONTROL_HEIGHT, paddingVertical: 0 }
+                : undefined
+            }
+            className={leading ? '' : 'py-3'}
+            textClassName="text-sm text-center"
+          >
+            {busy ? resolvedBusyLabel : resolvedLabel}
+          </Button>
+        </View>
+      </View>
     </View>
   );
 };

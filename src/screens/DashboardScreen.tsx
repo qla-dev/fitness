@@ -30,7 +30,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import { addSheetRef } from '../components/AddSheet';
 import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
@@ -466,9 +465,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           sessions={summary.exerciseEntries}
           entryDate={selectedDate}
           distanceUnit={distanceUnit}
-          onAddExercise={() =>
-            addSheetRef.current?.present({ initialMenu: 'exercise' })
-          }
+          // Straight to picking a workout. The Add tab is the food dashboard
+          // and carries no exercise rows, so there is nothing to send this to
+          // but the thing it means: starting one.
+          onAddExercise={() => navigation.navigate('PresetSearch')}
           onPressMore={() => navigation.navigate('ActivityHistory')}
           onPressSession={(session) => {
             if (session.type === 'preset') {

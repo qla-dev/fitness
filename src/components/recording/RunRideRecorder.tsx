@@ -37,6 +37,7 @@ import {
 } from '../../services/recording/recorder';
 import {
   getSensorSnapshot,
+  stopWatchHeartRate,
   subscribeSensors,
 } from '../../services/recording/sensors';
 import {
@@ -143,7 +144,13 @@ export default function RunRideRecorder({
       initialSportId,
       initialGps,
       initialWatch
-    ).catch(() => setAutoStartFailed(true));
+    ).catch(() => {
+      setAutoStartFailed(true);
+      // The watch was started by the countdown, three seconds before this
+      // ran. Nothing is recording it now, so it must not be left in an open
+      // session burning battery on a run that never began.
+      void stopWatchHeartRate();
+    });
   }, [
     initialWeightKg,
     initialSport,

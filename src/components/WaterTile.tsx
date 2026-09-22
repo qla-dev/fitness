@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import TileIconSlot from './TileIconSlot';
@@ -12,15 +14,30 @@ import { fireSelectionHaptic } from '../services/haptics';
  * The bottle fills with the share of the day's goal that has been drunk, so
  * the tile reads at a glance without the number — which is the one thing a
  * measurement tile cannot do, since weight has no "full".
+ *
+ * A tap drinks. Hydration is the one tile on the grid that is logged several
+ * times a day and always in the same direction, so putting a screen between
+ * the thumb and the serving costs three taps for what is one fact. Everything
+ * rarer — taking a serving back, moving the goal — is on the long press, where
+ * the system draws the menu itself.
  */
 export default function WaterTile({
   consumedMl,
   goalMl,
   onPress,
+  onDecrease,
+  onChangeGoal,
 }: {
   consumedMl: number;
   goalMl: number;
   onPress: () => void;
+  /**
+   * Takes one serving back. Supplying this and {@link onChangeGoal} is what
+   * puts the tile on a long-press menu; without them it stays a plain tile,
+   * which is what the More sheet wants — there a tap picks the row.
+   */
+  onDecrease?: () => void;
+  onChangeGoal?: () => void;
 }) {
   const { t } = useTranslation();
   const [accentPrimary, iconDecorative, mutedColor] = useCSSVariable([
@@ -29,12 +46,30 @@ export default function WaterTile({
     '--color-text-muted',
   ]) as [string, string, string];
 
+  // The menu dismisses itself with an animation, and a navigation that starts
+  // inside that animation lands on a screen the menu is still drawn over. The
+  // same wait FoodRowMenu takes, for the same reason.
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The menu's trigger is a SwiftUI host that sizes itself to its content, so
+  // it takes no width from the grid cell and a percentage has nothing to
+  // resolve against — the card came out narrower than every tile around it.
+  // Measuring the cell and handing the host that number is what FoodRowMenu
+  // does, for the same reason.
+  const [cellWidth, setCellWidth] = useState<number | null>(null);
+  useEffect(
+    () => () => {
+      if (pending.current) clearTimeout(pending.current);
+    },
+    []
+  );
+
+  const hasMenu = Boolean(onDecrease || onChangeGoal);
   const fill = goalMl > 0 ? consumedMl / goalMl : 0;
   const amount = formatLocalizedNumber(consumedMl, {
     maximumFractionDigits: 0,
   });
 
-  return (
+  const tile = (
     <Pressable
       testID="water-tile"
       accessibilityRole="button"
@@ -43,6 +78,13 @@ export default function WaterTile({
         fireSelectionHaptic();
         onPress();
       }}
+      // The system opens the menu from its own long-press recognizer, which
+      // does not cancel this one: holding the tile poured a serving as well.
+      // Claiming the long press here is what suppresses the tap — Pressable
+      // drops onPress once onLongPress has fired — and it must land before the
+      // menu appears, so it waits less than UIKit's own half second.
+      onLongPress={hasMenu ? () => {} : undefined}
+      delayLongPress={300}
     >
       <View className="bg-surface rounded-xl py-3 px-3">
         {/* The same corner row the measurement tiles carry, so the four line
@@ -87,7 +129,10 @@ export default function WaterTile({
               }`}
               numberOfLines={1}
             >
-              {amount}
+              {t('measurements.waterAmount', {
+                defaultValue: '{{amount}} ml',
+                amount,
+              })}
             </Text>
             <Text className="text-sm text-text-secondary" numberOfLines={1}>
               {t('measurements.water', { defaultValue: 'Water' })}
@@ -96,5 +141,64 @@ export default function WaterTile({
         </View>
       </View>
     </Pressable>
+  );
+
+  if (!onDecrease && !onChangeGoal) return tile;
+
+  const actions: MenuAction[] = [
+    ...(onDecrease
+      ? [
+          {
+            id: 'decrease',
+            title: t('measurements.waterDecrease', {
+              defaultValue: 'Decrease',
+            }),
+            image: 'minus.circle' as const,
+            attributes: { disabled: consumedMl <= 0 },
+          },
+        ]
+      : []),
+    ...(onChangeGoal
+      ? [
+          {
+            id: 'goal',
+            title: t('measurements.waterChangeGoal', {
+              defaultValue: 'Change goal',
+            }),
+            image: 'target' as const,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <View
+      style={{ alignSelf: 'stretch' }}
+      onLayout={(event) => {
+        const { width } = event.nativeEvent.layout;
+        setCellWidth((current) => (current === width ? current : width));
+      }}
+    >
+      <MenuView
+        style={{ width: cellWidth ?? '100%' }}
+        actions={actions}
+        shouldOpenOnLongPress
+        onPressAction={({ nativeEvent }) => {
+          const action =
+            nativeEvent.event === 'decrease'
+              ? onDecrease
+              : nativeEvent.event === 'goal'
+                ? onChangeGoal
+                : undefined;
+          if (!action) return;
+          if (pending.current) clearTimeout(pending.current);
+          pending.current = setTimeout(action, 250);
+        }}
+      >
+        <View collapsable={false} style={{ width: cellWidth ?? '100%' }}>
+          {tile}
+        </View>
+      </MenuView>
+    </View>
   );
 }

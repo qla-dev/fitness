@@ -31,7 +31,7 @@ interface OnlineResultRowProps {
   onSelect: (item: ExternalFoodItem, providerId?: string) => Promise<void>;
 }
 
-const OnlineResultRow: React.FC<OnlineResultRowProps> = ({
+export const OnlineResultRow: React.FC<OnlineResultRowProps> = ({
   item,
   badge,
   providerId,

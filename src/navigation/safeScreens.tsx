@@ -64,6 +64,9 @@ import ChatScreen from '../screens/ChatScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import CycleSettingsScreen from '../screens/CycleSettingsScreen';
 import CycleOnboardingScreen from '../screens/CycleOnboardingScreen';
+import GoalEditScreen from '../screens/GoalEditScreen';
+import WaterEditScreen from '../screens/WaterEditScreen';
+import MeasurementEditScreen from '../screens/MeasurementEditScreen';
 import SetupWizardScreen from '../screens/SetupWizardScreen';
 import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
 import AppleHealthCheckScreen from '../screens/AppleHealthCheckScreen';
@@ -162,6 +165,9 @@ export const SafeFamilyCopyReview = withErrorBoundary(FamilyCopyReviewScreen, 'F
 
 export const SafeCycleSettings = withErrorBoundary(CycleSettingsScreen, 'CycleSettings', { canGoBack: true });
 export const SafeCycleOnboarding = withErrorBoundary(CycleOnboardingScreen, 'CycleOnboarding', { canGoBack: true });
+export const SafeGoalEdit = withErrorBoundary(GoalEditScreen, 'GoalEdit', { canGoBack: true });
+export const SafeWaterEdit = withErrorBoundary(WaterEditScreen, 'WaterEdit', { canGoBack: true });
+export const SafeMeasurementEdit = withErrorBoundary(MeasurementEditScreen, 'MeasurementEdit', { canGoBack: true });
 export const SafeSetupWizard = withErrorBoundary(SetupWizardScreen, 'SetupWizard', { canGoBack: true });
 export const SafeActivityHistory = withErrorBoundary(ActivityHistoryScreen, 'ActivityHistory', { canGoBack: true });
 export const SafeAppleHealthCheck = withErrorBoundary(AppleHealthCheckScreen, 'AppleHealthCheck', { canGoBack: true });

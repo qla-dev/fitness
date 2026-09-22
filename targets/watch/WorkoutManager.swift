@@ -2,21 +2,6 @@ import Foundation
 import HealthKit
 import WatchConnectivity
 
-/// Sport identifiers cross the WatchConnectivity boundary as plain strings, so
-/// these raw values must stay identical to the RecordingSport union in
-/// src/services/recording/types.ts.
-enum WatchSport: String {
-  case run
-  case ride
-
-  var activityType: HKWorkoutActivityType {
-    switch self {
-    case .run: return .running
-    case .ride: return .cycling
-    }
-  }
-}
-
 /// Message keys shared with the phone. Duplicated by hand in the phone-side
 /// WatchConnectivity module because a watchOS target cannot import from the iOS
 /// module, the same way the Live Activity layout duplicates its intent targets.
@@ -24,7 +9,16 @@ enum WatchMessageKey {
   static let kind = "kind"
   static let heartRate = "bpm"
   static let timestamp = "t"
+  /// The recording profile — "run" or "ride" — which is all an older phone
+  /// build sends and all the phone needs back in a state message.
   static let sport = "sport"
+  /// The catalogue id ("stair-climbing"), so the watch can open the session
+  /// as what it actually is rather than as one of two profiles.
+  static let sportId = "sportId"
+  /// When the phone considers the session to have started, in epoch ms. The
+  /// watch counts down to it; a message that arrives after it is already past
+  /// skips the countdown rather than delaying a session that is under way.
+  static let startAt = "startAt"
   static let state = "state"
 }
 
@@ -46,8 +40,14 @@ enum WatchMessageKind {
 final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var heartRate: Double = 0
   @Published private(set) var isRunning = false
-  @Published private(set) var sport: WatchSport = .run
+  @Published private(set) var sport: WatchSport = WatchSportCatalogue.all[0]
   @Published private(set) var lastError: String?
+  /// Seconds left before the session is considered under way, or nil when
+  /// nothing is counting down. Cosmetic: the workout session and the heart
+  /// rate stream open immediately, so nothing is lost during the count.
+  @Published private(set) var countdown: Int?
+
+  private var countdownTask: Task<Void, Never>?
 
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
@@ -83,7 +83,10 @@ final class WorkoutManager: NSObject, ObservableObject {
     send([
       WatchMessageKey.kind: WatchMessageKind.workoutState,
       WatchMessageKey.state: isRunning ? "running" : "stopped",
-      WatchMessageKey.sport: sport.rawValue,
+      // The profile, which is what the phone keys its own state on; the
+      // catalogue id rides along for anything that wants the real sport.
+      WatchMessageKey.sport: sport.activityType == .cycling ? "ride" : "run",
+      WatchMessageKey.sportId: sport.id,
       WatchMessageKey.timestamp: Date().timeIntervalSince1970 * 1000,
     ])
   }
@@ -116,13 +119,16 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   // MARK: - Session lifecycle
 
-  func start(sport: WatchSport) {
+  /// Starts a session for a sport. `countingDownTo` runs the 3-2-1 overlay:
+  /// the session itself opens straight away either way, so the count never
+  /// costs the wearer any of their workout.
+  func start(sport: WatchSport, countingDownTo startAt: Date? = nil) {
     guard !isRunning else { return }
     self.sport = sport
 
     let configuration = HKWorkoutConfiguration()
     configuration.activityType = sport.activityType
-    configuration.locationType = .outdoor
+    configuration.locationType = sport.locationType
 
     do {
       let session = try HKWorkoutSession(
@@ -145,14 +151,51 @@ final class WorkoutManager: NSObject, ObservableObject {
       }
 
       isRunning = true
+      beginCountdown(to: startAt)
       sendState()
     } catch {
       lastError = error.localizedDescription
     }
   }
 
+  /// Ticks the overlay down to zero. A start that is already in the past — a
+  /// message delivered late, or the watch waking to receive it — shows no
+  /// count at all rather than a stale one.
+  private func beginCountdown(to startAt: Date?) {
+    countdownTask?.cancel()
+    countdownTask = nil
+    guard let startAt else {
+      countdown = nil
+      return
+    }
+    let remaining = Int(ceil(startAt.timeIntervalSinceNow))
+    guard remaining > 0 else {
+      countdown = nil
+      return
+    }
+    countdown = min(remaining, 3)
+    countdownTask = Task { [weak self] in
+      var value = min(remaining, 3)
+      while value > 0 {
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        if Task.isCancelled { return }
+        value -= 1
+        await MainActor.run { self?.countdown = value > 0 ? value : nil }
+      }
+    }
+  }
+
+  /// Started from the watch itself: the wearer is looking at it, so the same
+  /// three seconds apply before the live view replaces the list.
+  func startFromWatch(sport: WatchSport) {
+    start(sport: sport, countingDownTo: Date().addingTimeInterval(3))
+  }
+
   func stop() {
     guard isRunning, let session else { return }
+    countdownTask?.cancel()
+    countdownTask = nil
+    countdown = nil
     session.end()
     isRunning = false
     heartRate = 0
@@ -270,8 +313,13 @@ extension WorkoutManager: WCSessionDelegate {
     Task { @MainActor in
       switch message[WatchMessageKey.kind] as? String {
       case WatchMessageKind.start:
-        let raw = message[WatchMessageKey.sport] as? String ?? WatchSport.run.rawValue
-        start(sport: WatchSport(rawValue: raw) ?? .run)
+        let sport =
+          WatchSportCatalogue.sport(id: message[WatchMessageKey.sportId] as? String)
+          ?? WatchSportCatalogue.fallback(
+            recording: message[WatchMessageKey.sport] as? String)
+        let startAt = (message[WatchMessageKey.startAt] as? Double)
+          .map { Date(timeIntervalSince1970: $0 / 1000) }
+        start(sport: sport, countingDownTo: startAt)
       case WatchMessageKind.stop:
         stop()
       default:

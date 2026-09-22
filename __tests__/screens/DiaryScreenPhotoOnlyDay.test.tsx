@@ -207,11 +207,12 @@ describe('DiaryScreen on a photo-only day', () => {
     expect(screen.queryByText('Add Food')).toBeNull();
   });
 
-  it('shows that day the photo summary it would otherwise hide', () => {
+  // The day's three angles, the same block the photos screen opens on.
+  it('shows that day the photo slots it would otherwise hide', () => {
     mockPhotosByDate.mockReturnValue({ photos: [photo()], isLoading: false });
     renderDiary();
 
-    expect(screen.getByText('Progress photos')).toBeTruthy();
+    expect(screen.getByText('Front')).toBeTruthy();
   });
 
   it('still shows the empty day when nothing at all was recorded', () => {

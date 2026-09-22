@@ -10,6 +10,11 @@ private enum WatchMessageKey {
   static let heartRate = "bpm"
   static let timestamp = "t"
   static let sport = "sport"
+  /// The catalogue id, so the watch opens the session as the sport it is
+  /// rather than as one of the two recording profiles.
+  static let sportId = "sportId"
+  /// Epoch ms the session starts at; the watch counts down to it.
+  static let startAt = "startAt"
   static let state = "state"
 }
 
@@ -39,6 +44,14 @@ private final class WatchLink: NSObject {
     return WCSession.default.isWatchAppInstalled
   }
 
+  /// A watch is paired with this phone, whether or not our app is on it.
+  /// Separate from `isWatchAppInstalled` so the phone can tell "no watch"
+  /// apart from "a watch without our app", which are different things to say.
+  var isPaired: Bool {
+    guard WCSession.isSupported() else { return false }
+    return WCSession.default.isPaired
+  }
+
   func activate() {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
@@ -49,12 +62,14 @@ private final class WatchLink: NSObject {
   /// Commands are best-effort: the watch app has to be reachable to act on
   /// them. Queuing with transferUserInfo would start a workout minutes after
   /// the user asked for one, which is worse than not starting it at all.
-  func send(kind: String, sport: String?) {
+  func send(kind: String, sport: String?, sportId: String?, startAt: Double?) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
     guard session.activationState == .activated, session.isReachable else { return }
     var payload: [String: Any] = [WatchMessageKey.kind: kind]
     if let sport { payload[WatchMessageKey.sport] = sport }
+    if let sportId { payload[WatchMessageKey.sportId] = sportId }
+    if let startAt { payload[WatchMessageKey.startAt] = startAt }
     session.sendMessage(payload, replyHandler: nil, errorHandler: nil)
   }
 
@@ -129,12 +144,15 @@ public final class QlaFitWatchLinkModule: Module {
 
     Property("isWatchAppInstalled") { self.link.isWatchAppInstalled }
 
-    AsyncFunction("startWorkout") { (sport: String) in
-      self.link.send(kind: WatchMessageKind.start, sport: sport)
+    Property("isPaired") { self.link.isPaired }
+
+    AsyncFunction("startWorkout") { (sport: String, sportId: String?, startAt: Double?) in
+      self.link.send(
+        kind: WatchMessageKind.start, sport: sport, sportId: sportId, startAt: startAt)
     }
 
     AsyncFunction("stopWorkout") {
-      self.link.send(kind: WatchMessageKind.stop, sport: nil)
+      self.link.send(kind: WatchMessageKind.stop, sport: nil, sportId: nil, startAt: nil)
     }
   }
 }

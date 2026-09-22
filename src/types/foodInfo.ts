@@ -58,6 +58,12 @@ type ExtraNutrientKey = (typeof EXTRA_NUTRIENT_FIELDS)[number]['key'];
 export interface NutrientDisplayItem {
   /** Application-owned key; custom nutrient names may remain literal. */
   label: string;
+  /**
+   * The nutrient's own key, when it has one. `label` is localized for
+   * display, so anything keyed off the nutrient — an icon, a colour — has to
+   * read this instead. Absent for custom nutrients, which are user-named.
+   */
+  key?: ExtraNutrientKey;
   value: number;
   unit: string;
 }
@@ -85,6 +91,7 @@ export function buildNutrientDisplayList(
       label: options.t
         ? localizeNutrientKey(options.t, field.key)
         : field.label,
+      key: field.key,
       value,
       unit: field.unit,
     };

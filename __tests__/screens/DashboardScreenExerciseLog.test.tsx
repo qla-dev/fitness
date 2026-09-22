@@ -135,10 +135,6 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
 }));
 
-jest.mock('../../src/components/AddSheet', () => ({
-  addSheetRef: { current: null },
-}));
-
 const stub = (testID: string) => {
   const { View } = require('react-native');
   return { __esModule: true, default: () => <View testID={testID} /> };

@@ -88,6 +88,26 @@ const GOAL_MAXIMUMS: Record<string, number> = {
   stand_hours: 24,
 };
 
+/**
+ * How far one tap moves a goal. Two is right for a figure counted in grams;
+ * on one counted in millilitres or paces it would be a stuck button, so the
+ * goals that live on a different scale name their own step — hydration moves
+ * by a serving, steps by a hundred.
+ */
+const GOAL_STEPS: Record<string, number> = {
+  water_goal_ml: 250,
+  steps: 100,
+  target_exercise_calories_burned: 10,
+  calories: 10,
+};
+
+/** The default, for a goal that is not in {@link GOAL_STEPS}. */
+const DEFAULT_GOAL_STEP = 2;
+
+export function goalStep(key: string): number {
+  return GOAL_STEPS[key] ?? DEFAULT_GOAL_STEP;
+}
+
 export function isCustomGoalKey(key: string): boolean {
   return key.startsWith(CUSTOM_GOAL_PREFIX);
 }

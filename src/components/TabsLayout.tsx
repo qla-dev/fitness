@@ -1,6 +1,5 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,6 +11,7 @@ import {
 import DashboardScreen from '../screens/DashboardScreen';
 import DiaryScreen from '../screens/DiaryScreen';
 import TrendsScreen from '../screens/TrendsScreen';
+import AddHubScreen from '../screens/AddHubScreen';
 import ExercisesLibraryScreen from '../screens/ExercisesLibraryScreen';
 import type { TabParamList } from '../types/navigation';
 import {
@@ -54,30 +54,11 @@ function resolveColor(value: string, fallback: string) {
   return value && value !== 'unset' ? value : fallback;
 }
 
-const AddRedirectScreen = ({
-  getLastActiveTab,
-}: {
-  getLastActiveTab: () => NonAddTabName;
-}) => {
-  const navigation = useNavigation();
-
-  useFocusEffect(
-    React.useCallback(() => {
-      const frame = requestAnimationFrame(() => {
-        navigation.navigate(getLastActiveTab() as never);
-      });
-
-      return () => cancelAnimationFrame(frame);
-    }, [getLastActiveTab, navigation])
-  );
-
-  return null;
-};
-
 // Tab screens — no Go Back (tab bar provides navigation)
 const SafeDashboard = withErrorBoundary(DashboardScreen, 'Dashboard');
 const SafeDiary = withErrorBoundary(DiaryScreen, 'Diary');
 const SafeTrends = withErrorBoundary(TrendsScreen, 'Trends');
+const SafeAddHub = withErrorBoundary(AddHubScreen, 'Add');
 const SafeExercises = withErrorBoundary(ExercisesLibraryScreen, 'Exercises');
 
 // Popping a tab-local screen gives the same selection haptic the root stack
@@ -111,11 +92,13 @@ type DiaryStackParamList = {
   DiaryRoot: { selectedDate?: string } | undefined;
 };
 type TrendsStackParamList = { TrendsRoot: undefined };
+type AddStackParamList = { AddRoot: undefined };
 type ExercisesStackParamList = { ExercisesRoot: undefined };
 
 const DashboardStack = createNativeStackNavigator<DashboardStackParamList>();
 const DiaryStack = createNativeStackNavigator<DiaryStackParamList>();
 const TrendsStack = createNativeStackNavigator<TrendsStackParamList>();
+const AddStack = createNativeStackNavigator<AddStackParamList>();
 const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
 
 const NativeTabsOverlayContext = React.createContext<ReturnType<
@@ -210,6 +193,48 @@ function DiaryStackScreen() {
   );
 }
 
+/**
+ * The Add tab's own native stack.
+ *
+ * A search tab needs one: iOS hosts the field in the stack's navigation bar,
+ * so without a stack here there is nowhere for the bar to put it.
+ */
+function AddStackScreen() {
+  const { t } = useTranslation();
+  const { defaultColor } = useHeaderActionColors();
+  const [textPrimary, background] = useCSSVariable([
+    '--color-text-primary',
+    '--color-background',
+  ]) as [string, string];
+  const screenOptions = React.useMemo(
+    () => createIOSNativeHeaderOptions(defaultColor, textPrimary),
+    [defaultColor, textPrimary]
+  );
+
+  return (
+    <View className="flex-1">
+      <AddStack.Navigator
+        screenOptions={screenOptions}
+        screenListeners={popScreenListeners}
+      >
+        <AddStack.Screen
+          name="AddRoot"
+          component={SafeAddHub as React.ComponentType}
+          options={{
+            title: t('navigation.add', { defaultValue: 'Add' }),
+            headerBackButtonDisplayMode: 'minimal',
+            // The screen renders its list as the direct child so the scroll
+            // edge effect is found (see AddHubScreen), which leaves the
+            // background to the navigator.
+            contentStyle: { backgroundColor: background },
+          }}
+        />
+      </AddStack.Navigator>
+      <NativeTabsBannerOverlay />
+    </View>
+  );
+}
+
 function TrendsStackScreen() {
   const { t } = useTranslation();
   const { defaultColor } = useHeaderActionColors();
@@ -275,10 +300,9 @@ function ExercisesStackScreen() {
 }
 
 export function NativeTabsLayout({
-  onAddPress,
   rememberActiveTab,
   getLastActiveTab,
-}: { onAddPress?: () => void } & TabTrackingProps) {
+}: TabTrackingProps) {
   const { t } = useTranslation();
   const [primary, tabActive, tabInactive] = useCSSVariable([
     '--color-accent-primary',
@@ -338,18 +362,13 @@ export function NativeTabsLayout({
           options={{
             tabBarLabel: t('navigation.add', { defaultValue: 'Add' }),
             tabBarIcon: () => ADD_TAB_ICON,
+            // The press is NOT intercepted: iOS 26 turns a search tab's bar
+            // into the search field only when the tab is actually opened, and
+            // the sheet that used to be shown here consumed that press.
             role: 'search',
-            preventsDefault: true,
           }}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              onAddPress?.();
-            },
-          }}
-        >
-          {() => <AddRedirectScreen getLastActiveTab={getLastActiveTab} />}
-        </NativeTab.Screen>
+          component={AddStackScreen}
+        />
         <NativeTab.Screen
           name="Trends"
           component={TrendsStackScreen}
@@ -374,12 +393,10 @@ export function NativeTabsLayout({
 }
 
 export function FallbackTabsLayout({
-  onAddPress,
   rememberActiveTab,
   getLastActiveTab,
-}: { onAddPress?: () => void } & TabTrackingProps) {
+}: TabTrackingProps) {
   const { t } = useTranslation();
-  // The AddSheet is rendered in App.tsx with proper props
   return (
     <FallbackTab.Navigator
       // Start on the last active tab so toggling the Liquid Glass tab bar —
@@ -435,14 +452,8 @@ export function FallbackTabsLayout({
             defaultValue: 'Add',
           }),
         }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            onAddPress?.();
-          },
-        }}
       >
-        {() => <AddRedirectScreen getLastActiveTab={getLastActiveTab} />}
+        {() => <SafeAddHub />}
       </FallbackTab.Screen>
       <FallbackTab.Screen
         name="Trends"
@@ -471,19 +482,16 @@ export function FallbackTabsLayout({
 // Native Liquid Glass tabs are only used on iOS 26+. Older iOS releases
 // intentionally use the same custom tab bar as Android.
 export function TabsLayout({
-  onAddPress,
   rememberActiveTab,
   getLastActiveTab,
-}: { onAddPress?: () => void } & TabTrackingProps) {
+}: TabTrackingProps) {
   const tabs = useNativeIOSTabsActive() ? (
     <NativeTabsLayout
-      onAddPress={onAddPress}
       rememberActiveTab={rememberActiveTab}
       getLastActiveTab={getLastActiveTab}
     />
   ) : (
     <FallbackTabsLayout
-      onAddPress={onAddPress}
       rememberActiveTab={rememberActiveTab}
       getLastActiveTab={getLastActiveTab}
     />

@@ -430,8 +430,11 @@ export async function startRecording(
     publish({ session: next });
     // Best effort and deliberately not awaited into the failure path: a watch
     // that is asleep, unpaired, or without the app installed must not stop a
-    // run from being recorded on the phone.
-    if (watch) void startWatchHeartRate(sport);
+    // run from being recorded on the phone. The catalogue id goes with it so
+    // the watch opens the session as the sport it is — a hike is not a run.
+    // No countdown from here: arriving from setup the phone has already
+    // counted, and `startWatchCountdown` started the watch counting with it.
+    if (watch) void startWatchHeartRate(sport, { sportId: catalogueSport?.id });
   });
 }
 

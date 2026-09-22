@@ -1,6 +1,13 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Text } from 'react-native';
+// Tiles open the MeasurementEdit modal route, so the grid asks for a navigator.
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
 import MeasurementsSummary from '../../src/components/MeasurementsSummary';
 
 jest.mock('../../src/components/Icon', () => 'Icon');

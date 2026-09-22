@@ -9,15 +9,20 @@ import { offRateLimiter } from '../utils/rateLimiter';
 export function useExternalFoodSearch(
   searchText: string,
   providerType: string,
-  options?: { enabled?: boolean; providerId?: string; autoScale?: boolean }
+  options?: {
+    enabled?: boolean;
+    providerId?: string;
+    autoScale?: boolean;
+    minLength?: number;
+  }
 ) {
-  const { enabled = true, providerId, autoScale } = options ?? {};
+  const { enabled = true, providerId, autoScale, minLength = 3 } = options ?? {};
   const debouncedSearch = useDebounce(searchText.trim(), 600);
   // Both the raw and debounced terms must clear the threshold: debounced so
   // typing pauses gate the fetch, raw so shortening the query below the
   // threshold hides online results immediately instead of 600ms later.
   const isSearchActive =
-    searchText.trim().length >= 3 && debouncedSearch.length >= 3;
+    searchText.trim().length >= minLength && debouncedSearch.length >= minLength;
   const isProviderSupported = !!providerType;
 
   const query = useInfiniteQuery({

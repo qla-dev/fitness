@@ -5,11 +5,11 @@ import { useDebounce } from './useDebounce';
 
 export function useFoodSearch(
   searchText: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; minLength?: number }
 ) {
-  const { enabled = true } = options ?? {};
+  const { enabled = true, minLength = 2 } = options ?? {};
   const debouncedSearch = useDebounce(searchText.trim(), 300);
-  const isSearchActive = debouncedSearch.length >= 2;
+  const isSearchActive = debouncedSearch.length >= minLength;
 
   const query = useQuery({
     queryKey: foodSearchQueryKey(debouncedSearch),

@@ -20,7 +20,6 @@ import StepperInput, { useStepperDraft } from '../components/StepperInput';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
 import NativePromptSheet from '../components/ui/NativePromptSheet';
-import Button from '../components/ui/Button';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import {
@@ -149,8 +148,15 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // Warming it up here meant the system indicator stayed lit while you were
   // elsewhere in the app, which reads as being tracked for no reason.
   const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
+  // Paired and carrying our app is what makes the watch usable here. Asking
+  // whether it is streaming — which is what this used to do — could only ever
+  // answer no on this screen: the stream opens with the session being set up,
+  // so a watch on the wrist read as "No watch connected" right up until the
+  // moment the screen was gone.
   const watchConnected =
-    sensors.watchStreaming || sensors.heartRateSource === 'watch';
+    sensors.watchAvailable ||
+    sensors.watchStreaming ||
+    sensors.heartRateSource === 'watch';
   // Wheel size only means anything on a bike, and only a bike sensor uses
   // it: it is what turns wheel revolutions into distance.
   const [wheelEdit, setWheelEdit] = useState<string | null>(null);
@@ -595,11 +601,17 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               },
               {
                 value: 'watch',
+                // Three states, because a paired watch without our app is not
+                // the same as no watch and is fixed by a different thing.
                 label: watchConnected
                   ? t('workoutSetup.watch', { defaultValue: 'Watch' })
-                  : t('workoutSetup.watchDisconnected', {
-                      defaultValue: 'No watch connected',
-                    }),
+                  : sensors.watchNeedsApp
+                    ? t('workoutSetup.watchNeedsApp', {
+                        defaultValue: 'Install the watch app',
+                      })
+                    : t('workoutSetup.watchDisconnected', {
+                        defaultValue: 'No watch connected',
+                      }),
                 icon: 'device-watch',
                 on: watchEnabled && watchConnected,
                 // Nothing to turn on until one is paired.
@@ -722,11 +734,8 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
           defaultValue:
             'A goal is a target, not a limit — the session keeps recording past it until you finish.',
         })}
-        footer={
-          <Button onPress={() => setEditingGoal(null)}>
-            {t('common.done', { defaultValue: 'Done' })}
-          </Button>
-        }
+        footerLabel={t('common.done', { defaultValue: 'Done' })}
+        onFooterPress={() => setEditingGoal(null)}
       >
         <View className="items-center">
           <View style={{ width: 200 }}>

@@ -24,7 +24,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
-import CheckInPhotosSummary from '../components/CheckInPhotosSummary';
+import PhotoDaySlots from '../components/PhotoDaySlots';
 import TabHeader from '../components/TabHeader';
 import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import DiaryNutritionCard from '../components/DiaryNutritionCard';
@@ -39,7 +39,6 @@ import ServingAdjustSheet, {
 } from '../components/ServingAdjustSheet';
 import { NapsCard, SleepTile } from '../components/SleepCards';
 import WaterTile from '../components/WaterTile';
-import WaterRecordSheet from '../components/WaterRecordSheet';
 import StatusView from '../components/StatusView';
 import {
   useCustomNutrients,
@@ -48,6 +47,7 @@ import {
   useMealTypes,
   useNutrientDisplayPreferences,
   useServerConnection,
+  useWaterIntakeMutation,
 } from '../hooks';
 import {
   useCheckInPhotoDates,
@@ -130,12 +130,16 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // Mounted only while open, the way the record sheets are: the tile renders on
   // every diary day and a sheet mounted with it would build its modal and
   // backdrop for a tap most days never get.
-  const [waterOpen, setWaterOpen] = useState(false);
   const { dates: photoDates } = useCheckInPhotoDates(calendarOpened);
   // Owned here rather than inside CheckInPhotosSummary: the empty-day predicate
   // below needs the same answer, and one subscription keeps refetch-on-focus
   // from firing twice for one query.
   const { photos: dayPhotos } = useCheckInPhotosByDate(selectedDate);
+  // The slots take a map by angle, the way the photos screen builds it.
+  const photosByType = useMemo(
+    () => new Map(dayPhotos.map((photo) => [photo.photo_type, photo])),
+    [dayPhotos]
+  );
   const openCalendar = useCallback(() => {
     setCalendarOpened(true);
     calendarRef.current?.present();
@@ -293,6 +297,14 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     useCustomNutrients({ enabled: isConnected });
   const { preferences: nutrientPrefs, refetch: refetchNutrientPrefs } =
     useNutrientDisplayPreferences({ enabled: isConnected });
+
+  // Hydration is logged from the grid itself: one tap on the tile is one
+  // serving, so the mutation belongs to the screen that draws the tile rather
+  // than to the editor it used to open.
+  const water = useWaterIntakeMutation({
+    date: selectedDate,
+    enabled: isConnected,
+  });
 
   const {
     wakeUp,
@@ -502,7 +514,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             consumedMl: summary.waterConsumed,
             goalMl: summary.waterGoal,
           }}
-          onOpenWater={() => setWaterOpen(true)}
+          onOpenWater={() => openWater()}
           // Water, then the night, in the same grid: both are things the body
           // did today, and as cards of their own they sat above and below
           // everything else on the screen.
@@ -511,7 +523,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
               key="water"
               consumedMl={summary.waterConsumed}
               goalMl={summary.waterGoal}
-              onPress={() => setWaterOpen(true)}
+              onPress={() => water.increment()}
+              onDecrease={() => water.decrement()}
+              onChangeGoal={() =>
+                navigation.navigate('GoalEdit', { goalKey: 'water_goal_ml' })
+              }
             />,
             <SleepTile
               key="wake"
@@ -529,15 +545,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
               navigation={navigation}
             />,
           ]}
-        />
-        {/* Below the measurements: both are the same check-in, keyed on
-              (user_id, entry_date) server-side. */}
-        <CheckInPhotosSummary
-          date={selectedDate}
-          photos={dayPhotos}
-          onPress={() =>
-            navigation.navigate('ProgressPhotos', { date: selectedDate })
-          }
         />
         {/* The third intro, over the meals. Its link opens the same list on a
             screen of its own, headed by the day rather than by a meal — the
@@ -571,21 +578,41 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             })
           }
         />
+        {/* Under the meals, with an intro of its own: a shoot is part of the
+            same check-in as the measurements above, but it is recorded on the
+            day rather than read off it, so it sits with what you logged. */}
+        <SectionIntro
+          testID="diary-photos-intro"
+          subtitle={t('diary.photosSubtitle', {
+            defaultValue: 'See how the week actually went',
+          })}
+          actionLabel={t('measurements.more', { defaultValue: 'More' })}
+          onPress={() =>
+            navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+        />
+        <PhotoDaySlots
+          photos={photosByType}
+          onPick={() =>
+            navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+          onView={() =>
+            navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+          onManage={() =>
+            navigation.navigate('ProgressPhotos', { date: selectedDate })
+          }
+        />
         <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
       </ScrollView>
     );
   };
 
-  const renderedContent = renderContent();
+  // Hydration is a modal route, so its close button is a native header item.
+  const openWater = () =>
+    navigation.navigate('WaterEdit', { date: selectedDate });
 
-  const waterSheet = waterOpen ? (
-    <WaterRecordSheet
-      date={selectedDate}
-      consumedMl={summary?.waterConsumed ?? 0}
-      goalMl={summary?.waterGoal ?? 0}
-      onClose={() => setWaterOpen(false)}
-    />
-  ) : null;
+  const renderedContent = renderContent();
 
   if (usesNativeTabs) {
     return (
@@ -607,7 +634,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
             navigation.navigate('FoodEntryView', { entry })
           }
         />
-        {waterSheet}
       </>
     );
   }
@@ -640,7 +666,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         )
       )}
       {renderedContent}
-      {waterSheet}
       <RingCalendarSheet
         ref={calendarRef}
         selectedDate={selectedDate}

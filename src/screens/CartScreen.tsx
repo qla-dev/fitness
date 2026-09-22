@@ -18,21 +18,31 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import { grocerySteps } from '../constants/setupSteps';
-import {
-  makeSamplePlan,
-  planIngredients,
-  recipeCost,
-  type SampleRecipe,
-} from '../services/groceryPlanner';
 import type { GroceryList } from '../services/personalSetup';
 import {
   isSetupWizardOpen,
   openSetupWizardSession,
 } from '../services/setupWizardSession';
-import type { RootStackParamList } from '../types/navigation';
+import type {
+  RootStackParamList,
+  RootStackScreenProps,
+} from '../types/navigation';
 import { formatLocalizedNumber } from '../localization';
 
-export default function CartScreen() {
+/** An empty list, ready to be named. Nothing here depends on the screen. */
+const blank = (): GroceryList => ({
+  id: randomUUID(),
+  name: '',
+  note: '',
+  store: '',
+  archived: false,
+  items: [],
+  createdAt: new Date().toISOString(),
+});
+
+export default function CartScreen({
+  route,
+}: RootStackScreenProps<'Cart'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const native = useNativeIOSHeadersActive();
@@ -40,9 +50,14 @@ export default function CartScreen() {
   const setup = usePersonalSetup();
   const [wizard, setWizard] = useState(false);
   const [archived, setArchived] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [swaps, setSwaps] = useState<Record<number, string>>({});
-  const [draft, setDraft] = useState<GroceryList | null>(null);
+  // Opened on a blank list when the Food dashboard's card asked for one, so
+  // that card lands where its name says rather than on the list of lists.
+  // A blank list when the Food dashboard's card asked for one, or the list the
+  // sample meal plan just composed — either way this screen is where a list is
+  // edited and saved, so it opens straight on the editor.
+  const [draft, setDraft] = useState<GroceryList | null>(
+    () => route.params?.planList ?? (route.params?.newList ? blank() : null)
+  );
   const state = setup.state;
   const focused = useIsFocused();
   const navigation =
@@ -62,33 +77,9 @@ export default function CartScreen() {
           grocery: answers,
           groceryDone: done,
         }));
-        setSwaps({});
-        setOffset(0);
       },
     });
     navigation.navigate('SetupWizard');
-  });
-  const plan = makeSamplePlan(state?.grocery ?? {}, offset);
-  const meals = plan.meals.map(
-    (meal, index) => plan.eligible.find((r) => r.id === swaps[index]) ?? meal
-  );
-  const cost = meals.reduce(
-    (sum, meal) => sum + recipeCost(meal, plan.servings, plan.currency),
-    0
-  );
-  const money = (amount: number) =>
-    formatLocalizedNumber(amount, {
-      style: 'currency',
-      currency: plan.currency,
-    });
-  const blank = (): GroceryList => ({
-    id: randomUUID(),
-    name: '',
-    note: '',
-    store: '',
-    archived: false,
-    items: [],
-    createdAt: new Date().toISOString(),
   });
   const header = useScreenHeader({
     variant: 'transparent',
@@ -100,37 +91,6 @@ export default function CartScreen() {
       onPress: () => setDraft(blank()),
     },
   });
-  const openPlanList = () => {
-    const list = blank();
-    list.name = t('groceries.weekList', { defaultValue: 'This week’s meals' });
-    list.store = String(
-      state?.grocery.customStore ||
-        (state?.grocery.store === 'any' ? '' : state?.grocery.store) ||
-        ''
-    );
-    list.note = t('groceries.sampleNote', {
-      defaultValue:
-        'Sample meal plan. Prices are illustrative estimates; check labels and store prices.',
-    });
-    list.items = planIngredients(meals, plan.servings, plan.currency).map(
-      (i) => ({
-        id: randomUUID(),
-        name: i.name,
-        quantity: `${formatLocalizedNumber(i.amount, { maximumFractionDigits: 1 })} ${i.unit}`,
-        checked: false,
-        price: i.cost,
-      })
-    );
-    setDraft(list);
-  };
-  const swap = (index: number, current: SampleRecipe) => {
-    const next =
-      plan.eligible[
-        (plan.eligible.findIndex((r) => r.id === current.id) + 1) %
-          plan.eligible.length
-      ];
-    if (next) setSwaps((s) => ({ ...s, [index]: next.id }));
-  };
   return (
     <View
       className="flex-1 bg-background"
@@ -176,102 +136,6 @@ export default function CartScreen() {
                 })}
               </Button>
             </View>
-            {state?.groceryDone && (
-              <View className="mb-6">
-                <View className="flex-row justify-between items-center mb-3">
-                  <Text className="text-text-primary text-xl font-bold">
-                    {t('groceries.samplePlan', {
-                      defaultValue: 'Your sample meal plan',
-                    })}
-                  </Text>
-                  <Button
-                    variant="ghost"
-                    onPress={() => {
-                      setOffset((n) => n + 1);
-                      setSwaps({});
-                    }}
-                  >
-                    {t('groceries.shuffle', { defaultValue: 'Shuffle' })}
-                  </Button>
-                </View>
-                <Text className="text-text-secondary mb-3">
-                  {t('groceries.planScope', {
-                    defaultValue:
-                      'One main meal per day · {{servings}} servings · sample prices',
-                    servings: formatLocalizedNumber(plan.servings),
-                  })}
-                </Text>
-                {!Array.isArray(state.grocery.allergies) ||
-                state.grocery.allergies.length === 0 ? (
-                  <Text className="text-text-secondary mb-3">
-                    {t('groceries.allergiesUnknown', {
-                      defaultValue:
-                        'Allergies are unspecified. Review ingredients before using this plan.',
-                    })}
-                  </Text>
-                ) : null}
-                {meals.length ? (
-                  <>
-                    {meals.map((meal, index) => (
-                      <View
-                        key={`${index}-${meal.id}`}
-                        className="bg-surface rounded-2xl p-4 mb-3"
-                      >
-                        <Text className="text-accent-primary text-sm mb-1">
-                          {t('groceries.day', {
-                            defaultValue: 'Day {{day}}',
-                            day: formatLocalizedNumber(index + 1),
-                          })}
-                        </Text>
-                        <Text className="text-text-primary text-lg font-semibold">
-                          {meal.name}
-                        </Text>
-                        <Text className="text-text-secondary mt-1">
-                          {t('groceries.mealMeta', {
-                            defaultValue:
-                              '{{minutes}} min · {{price}} estimated',
-                            minutes: formatLocalizedNumber(meal.minutes),
-                            price: money(
-                              recipeCost(meal, plan.servings, plan.currency)
-                            ),
-                          })}
-                        </Text>
-                        <Text className="text-text-secondary mt-3">
-                          {meal.instructions}
-                        </Text>
-                        <Button
-                          variant="ghost"
-                          disabled={plan.eligible.length < 2}
-                          onPress={() => swap(index, meal)}
-                        >
-                          {t('groceries.swap', { defaultValue: 'Swap meal' })}
-                        </Button>
-                      </View>
-                    ))}
-                    <Text className="text-text-primary font-semibold mb-3">
-                      {t('groceries.total', {
-                        defaultValue: 'Estimated main-meal total: {{price}}',
-                        price: money(cost),
-                      })}
-                    </Text>
-                    <Button onPress={openPlanList}>
-                      {t('groceries.createFromPlan', {
-                        defaultValue: 'Create shopping list',
-                      })}
-                    </Button>
-                  </>
-                ) : (
-                  <View className="bg-surface rounded-2xl p-5">
-                    <Text className="text-text-primary">
-                      {t('groceries.noMatches', {
-                        defaultValue:
-                          'No sample plan matches all your preferences and budget. Custom allergies need a manual ingredient review. Edit preferences or create a blank list.',
-                      })}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
             <View className="flex-row justify-between items-center mb-3">
               <Text className="text-text-primary text-xl font-bold">
                 {t('groceries.yourLists', { defaultValue: 'Your lists' })}

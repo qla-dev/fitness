@@ -16,7 +16,12 @@ import type {
 import type { FoodFormData } from '../components/FoodForm';
 import type { SaveFoodPayload } from '../services/api/foodsApi';
 import type { CompletedSetMap, PrSetMap } from '../stores/activeWorkoutStore';
+import type { GroceryList } from '../services/personalSetup';
 import type { MealTypeKey } from '../utils/mealNutrition';
+import type {
+  MeasurementFieldId,
+  MeasurementUnits,
+} from '../utils/measurementFields';
 import type { AssumedSetValues } from '../utils/workoutSession';
 import type { PhotoType } from './checkInPhotos';
 import type { Exercise } from './exercise';
@@ -85,7 +90,8 @@ export type RootStackParamList = {
   /** A training program's product page, opened from the Exercises store. */
   ExerciseProgram: { programId: string };
   /** The store cart, opened from the cart button in the Exercises store header. */
-  Cart: undefined;
+  /** `newList` opens it straight on a blank list, for the dashboard card. */
+  Cart: { newList?: boolean; planList?: GroceryList } | undefined;
   WorkoutSetup: { sport: RecordingSport; sportId?: string };
   /**
    * Started from `WorkoutSetup`, which passes the sport, the goal and the
@@ -152,6 +158,8 @@ export type RootStackParamList = {
   FoodSearch:
     | {
         date?: string;
+        /** Opening query, typed into the Add tab's search field. */
+        initialQuery?: string;
         pickerMode?: FoodPickerMode;
         /** Optional canonical meal type id to pre-select when logging. */
         mealTypeId?: string;
@@ -241,6 +249,12 @@ export type RootStackParamList = {
         pickerMode?: FoodPickerMode;
         returnDepth?: number;
         initialMode?: 'barcode' | 'label' | 'photo';
+        /**
+         * A barcode already typed elsewhere. The screen looks it up on mount
+         * instead of waiting for the camera, so the sheet that collected it
+         * does not have to live on a route of its own.
+         */
+        lookupBarcode?: string;
         providerId?: string;
         /** Preserved when the scan was started from a meal detail screen. */
         mealTypeId?: string;
@@ -343,6 +357,20 @@ export type RootStackParamList = {
    * `goalKey` so they re-localize with the app language.
    */
   ProfileEdit: { field: 'name' } | { field: 'goal'; goalKey: string };
+  /**
+   * One daily goal, set with steppers. A modal route rather than a sheet so
+   * its header items are the system's, like every other modal in the app.
+   */
+  GoalEdit: { goalKey: string };
+  /** Hydration for one day, counted in servings. Modal, like GoalEdit. */
+  WaterEdit: { date: string };
+  /** One check-in measurement for one day. Modal, like GoalEdit. */
+  MeasurementEdit: {
+    field: MeasurementFieldId;
+    date: string;
+    current?: number | null;
+    units?: Partial<MeasurementUnits>;
+  };
   /** Every editable daily goal as a row, each drilling into `ProfileEdit`. */
   ProfileGoals: undefined;
   /** Appearance options as rows instead of a picker sheet. */

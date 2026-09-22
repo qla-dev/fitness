@@ -78,6 +78,12 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
     'First-run cycle setup wizard route presented above the tab host.',
   SetupWizard:
     'Profile and grocery setup wizard route presented above the tab host.',
+  WaterEdit:
+    'Hydration editor presented as a modal above the tab host, so its close button is a native header item.',
+  MeasurementEdit:
+    'Single-measurement editor presented as a modal above the tab host, so its close button is a native header item.',
+  GoalEdit:
+    'Single-value goal editor presented as a modal above the tab host, so its close button is a native header item.',
   AppleHealthCheck:
     'iOS startup sync settings sheet presented above the tab host.',
   CycleHub:
@@ -685,7 +691,16 @@ describe('native header navigation contract', () => {
       appSource,
       safeScreensSource
     );
-    const rootStackScreenFileSet = new Set(rootStackScreenFiles.values());
+    // Tab-local stacks register their own screens, and those screens declare
+    // headers the same way root-stack ones do. Reading them from TabsLayout
+    // keeps them inside the contract rather than outside its model.
+    const tabScreenFileSet = new Set(
+      extractDefaultImportPaths(tabsSource).values()
+    );
+    const rootStackScreenFileSet = new Set([
+      ...rootStackScreenFiles.values(),
+      ...tabScreenFileSet,
+    ]);
     const screensWithNativeItemsAndReactHeaders = [...rootStackScreenFileSet]
       .filter((relativePath) => {
         const source = readMobileFile(relativePath);

@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { View } from 'react-native';
 import { CARD_GAP } from '../constants/layout';
 import { useCSSVariable } from 'uniwind';
 import MoreMeasurementsSheet from './MoreMeasurementsSheet';
-import MeasurementRecordSheet from './MeasurementRecordSheet';
+import type { RootStackParamList } from '../types/navigation';
 import {
   buildMeasurementTiles,
   MeasurementTileCard,
@@ -49,7 +51,7 @@ interface MeasurementsSummaryProps extends Partial<MeasurementUnits> {
   water: { consumedMl: number; goalMl: number };
   /**
    * Opens the hydration sheet. Water is not a check-in field, so it cannot go
-   * through `MeasurementRecordSheet` with the rest — the screen owns that one.
+   * through `MeasurementEdit` with the rest — the screen owns that one.
    */
   onOpenWater: () => void;
   /**
@@ -87,12 +89,22 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
     ]) as [string, string, string, string, string];
 
   const { t } = useTranslation();
-  const [recording, setRecording] = useState<MeasurementFieldId | null>(null);
-
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const units = useMemo(
     () => ({ weightMode, bodyUnit, heightMode }),
     [weightMode, bodyUnit, heightMode]
   );
+
+  // A modal route rather than a sheet: only a route's header items are the
+  // system's own buttons.
+  const record = (field: MeasurementFieldId) =>
+    navigation.navigate('MeasurementEdit', {
+      field,
+      date,
+      current: measurementValue(measurements, field),
+      units,
+    });
 
   // Weight alone from the registry. Body fat moved behind More: the grid holds
   // four tiles, and hydration earns one of them more than a number most people
@@ -128,7 +140,7 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
         successColor={successColor}
         t={t}
         onPress={() =>
-          tile.fieldId ? setRecording(tile.fieldId) : onPress?.()
+          tile.fieldId ? record(tile.fieldId) : onPress?.()
         }
       />
     )),
@@ -173,17 +185,8 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
           onClose={(picked) => {
             onMoreOpenChange?.(false);
             if (picked === 'water') onOpenWater();
-            else if (picked) setRecording(picked);
+            else if (picked) record(picked);
           }}
-        />
-      )}
-      {recording && (
-        <MeasurementRecordSheet
-          field={recording}
-          date={date}
-          current={measurementValue(measurements, recording)}
-          units={units}
-          onClose={() => setRecording(null)}
         />
       )}
     </View>

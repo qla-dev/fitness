@@ -66,10 +66,6 @@ const PhotoDaySlots: React.FC<PhotoDaySlotsProps> = ({
 
         return (
           <View key={type} className="flex-1">
-            <Text className="text-text-secondary text-xs mb-1 text-center">
-              {label}
-            </Text>
-
             <View
               className="bg-raised rounded-xl overflow-hidden"
               style={{ aspectRatio: 3 / 4 }}
@@ -133,6 +129,13 @@ const PhotoDaySlots: React.FC<PhotoDaySlotsProps> = ({
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Under the frame, where it reads as the caption of the picture
+                it names. Above it, directly beneath the section's own line, it
+                read as a second heading. */}
+            <Text className="text-text-secondary text-xs mt-1 text-center">
+              {label}
+            </Text>
           </View>
         );
       })}

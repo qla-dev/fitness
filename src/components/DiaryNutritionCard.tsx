@@ -16,10 +16,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useCSSVariable } from 'uniwind';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import DashboardCardTitle from './DashboardCardTitle';
 import Icon from './Icon';
 import MacroRingGauge from './MacroRingGauge';
-import GoalRecordSheet from './GoalRecordSheet';
 import ArcGauge, { arcGaugeHeight } from './ArcGauge';
 import ValueSkeleton from './ValueSkeleton';
 import { formatLocalizedNumber } from '../localization';
@@ -27,6 +29,7 @@ import { MOVE_COLOR } from '../constants/activityGoals';
 import { SCREEN_GUTTER } from '../constants/layout';
 import { useIsFocusedWhenNavigable } from '../hooks/useIsFocusedWhenNavigable';
 import { fireSelectionHaptic } from '../services/haptics';
+import type { RootStackParamList } from '../types/navigation';
 import {
   CENTRED_MACRO_KEY,
   MACRO_RINGS,
@@ -252,6 +255,8 @@ export default function DiaryNutritionCard({
   loading?: boolean;
 }) {
   const { t } = useTranslation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // Eaten takes the accent blue rather than --color-calories: the two are a
   // few degrees apart, and with the More link on the row above the card this
   // is the one screen where both are in a single glance.
@@ -304,9 +309,6 @@ export default function DiaryNutritionCard({
   // Twelve of the sixteen are summed across the day's entries, so this is a
   // pass over them per nutrient. Held still across the arc's layout pass and
   // the animation frames that follow it.
-  // Which nutrient's goal is being changed, if any. One sheet for all of
-  // them: they ask the same question in different units.
-  const [editingGoal, setEditingGoal] = useState<string | null>(null);
 
   const rings = useMemo(
     () =>
@@ -509,19 +511,13 @@ export default function DiaryNutritionCard({
                   trackColor={trackColor}
                   Glyph={spec.Glyph}
                   loading={loading}
-                  onPress={() => setEditingGoal(spec.key)}
+                  onPress={() => navigation.navigate('GoalEdit', { goalKey: spec.key })}
                 />
               );
             })}
           </ScrollView>
         </Animated.View>
       </Animated.View>
-      {editingGoal ? (
-        <GoalRecordSheet
-          goalKey={editingGoal}
-          onClose={() => setEditingGoal(null)}
-        />
-      ) : null}
     </View>
   );
 }

@@ -2,6 +2,16 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+// The sample plan reads the setup through react-query; this suite renders the
+// screen without a provider, so it is stubbed like the other data children.
+jest.mock('../../src/components/SampleMealPlan', () => {
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: () => <View testID="sample-meal-plan" />,
+  };
+});
+
 import MealPlansScreen from '../../src/screens/MealPlansScreen';
 import {
   useDeleteMealPlan,

@@ -1,4 +1,5 @@
 import MyLibrarySection from './MyLibrarySection';
+import ProfileSetup from './ProfileSetup';
 import ProfileStats from './ProfileStats';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -11,15 +12,17 @@ import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { isLocalDataMode } from '../services/dataMode';
 import { fireSelectionHaptic } from '../services/haptics';
-import SettingsRow, { SettingsRowGroup } from './SettingsRow';
 import Icon from './Icon';
 import type { RootStackParamList } from '../types/navigation';
 
 /**
  * The Profile card: identity first, then the rows that belong to the person
- * rather than to the app. My Clients and the notification packages sit inside
- * this same card — directly under the name, the way the account rows do on the
- * rest of the suite — instead of in a separate group further down the screen.
+ * rather than to the app. My Clients sits inside this same card, directly
+ * under the name, the way the account rows do on the rest of the suite.
+ *
+ * Goals are not here: Personal setup & goals covers the same ground with the
+ * rest of the person's details, and two rows leading to the same targets is
+ * one more choice than the screen needs.
  */
 export default function ProfileSummary({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
@@ -144,55 +147,12 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           <Icon name="chevron-forward" size={12} color={textSecondary} />
         </Pressable>
 
-        <View className="h-px bg-border-subtle" style={{ marginLeft: 84 }} />
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={openPremium}
-          className="flex-row items-center px-4"
-          style={{ minHeight: 64, gap: 14 }}
-        >
-          <View className="flex-1">
-            <Text className="text-text-primary text-base font-semibold">
-              {t('profile.purchase', {
-                defaultValue: 'Additional Notifications',
-              })}
-            </Text>
-            <Text
-              className="text-text-secondary text-sm mt-0.5"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {t('profile.purchaseSubtitle', {
-                defaultValue: 'Explore notification packages',
-              })}
-            </Text>
-          </View>
-          <Icon name="chevron-forward" size={12} color={textSecondary} />
-        </Pressable>
+        <ProfileSetup enabled={enabled} />
       </View>
 
       <ProfileStats enabled={enabled} />
 
       <MyLibrarySection enabled={enabled} />
-
-      {/* Appearance is an app setting, not a personal one: it lives under App
-          Settings with language and notifications, so this group holds only
-          what belongs to the person. */}
-      {editable && (
-        <SettingsRowGroup
-          title={t('profile.personal', { defaultValue: 'Personal' })}
-        >
-          <SettingsRow
-            icon="trophy"
-            title={t('profile.goals', { defaultValue: 'Goals' })}
-            subtitle={t('profile.goalsSubtitle', {
-              defaultValue: 'Nutrition, hydration, and daily activity targets',
-            })}
-            onPress={() => navigation.navigate('ProfileGoals')}
-          />
-        </SettingsRowGroup>
-      )}
     </>
   );
 }

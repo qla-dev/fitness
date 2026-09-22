@@ -116,14 +116,17 @@ jest.mock('../../src/components/ui/Button', () => {
       disabled,
       loading,
       accessibilityLabel,
+      testID,
     }: {
       children: React.ReactNode;
       onPress?: () => void;
       disabled?: boolean;
       loading?: boolean;
       accessibilityLabel?: string;
+      testID?: string;
     }) => (
       <Pressable
+        testID={testID}
         onPress={disabled || loading ? undefined : onPress}
         accessibilityLabel={accessibilityLabel}
       >
@@ -446,7 +449,7 @@ describe('FoodEntryAddScreen', () => {
       returnDepth: 2,
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockSetPendingMealIngredientSelection).toHaveBeenCalledWith({
@@ -489,7 +492,7 @@ describe('FoodEntryAddScreen', () => {
       returnDepth: 3,
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockSaveFoodAsync).toHaveBeenCalledTimes(1);
@@ -580,7 +583,7 @@ describe('FoodEntryAddScreen', () => {
       });
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockCreateVariant).toHaveBeenCalledTimes(1);
@@ -619,7 +622,7 @@ describe('FoodEntryAddScreen', () => {
       returnDepth: 1,
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockSaveFoodAsync).toHaveBeenCalledTimes(1);
@@ -663,7 +666,7 @@ describe('FoodEntryAddScreen', () => {
       pickerMode: 'meal-builder',
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockSaveFoodAsync).toHaveBeenCalledTimes(1);
@@ -683,7 +686,7 @@ describe('FoodEntryAddScreen', () => {
       pickerMode: 'meal-builder',
     });
 
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockToast.show).toHaveBeenCalledWith({
       type: 'error',
@@ -705,7 +708,7 @@ describe('FoodEntryAddScreen', () => {
       },
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockSetPendingMealPlanSelection).toHaveBeenCalledWith({
@@ -749,7 +752,7 @@ describe('FoodEntryAddScreen', () => {
       },
     });
 
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockSetPendingMealPlanSelection).toHaveBeenCalledWith({
       assignmentIndex: 1,
@@ -840,7 +843,7 @@ describe('FoodEntryAddScreen', () => {
       mealTypeId: 'custom-pw',
     });
 
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddMeal).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -882,7 +885,7 @@ describe('FoodEntryAddScreen', () => {
       mealTypeId: 'custom-l',
     });
 
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddMeal).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -904,7 +907,7 @@ describe('FoodEntryAddScreen', () => {
       date: '2026-05-15',
     });
 
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddMeal).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -939,7 +942,7 @@ describe('FoodEntryAddScreen', () => {
       screen.getByLabelText('Note for this entry'),
       'half portion'
     );
-    fireEvent.press(screen.getByText('Add Meal'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddMeal).toHaveBeenCalledWith(
       expect.objectContaining({ notes: 'half portion' })
@@ -978,7 +981,7 @@ describe('FoodEntryAddScreen', () => {
     expect(screen.getByText('Meal')).toBeTruthy();
     expect(screen.getByText(/· 1 cup per serving/)).toBeTruthy();
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddEntry).toHaveBeenCalledWith({
       saveFoodPayload: undefined,
@@ -1035,6 +1038,58 @@ describe('FoodEntryAddScreen', () => {
 
     expect(screen.getByText('piece (15 g)')).toBeTruthy();
     expect(screen.getByText(/piece \(15 g\) per serving/)).toBeTruthy();
+  });
+
+  it('counts in servings when the serving unit is picked, without changing what is logged', async () => {
+    mockUseFoodVariants.mockReturnValue({
+      variants: [
+        {
+          id: 'variant-1',
+          food_id: 'food-1',
+          serving_size: 100,
+          serving_unit: 'g',
+          serving_description: '100 g',
+          calories: 120,
+          protein: 10,
+          carbs: 4,
+          fat: 0,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    const screen = renderScreen({
+      item: {
+        ...baseLocalItem,
+        servingSize: 100,
+        servingUnit: 'g',
+        servingDescription: '100 g',
+        calories: 120,
+        variantId: 'variant-1',
+      },
+      date: '2026-04-23',
+    });
+
+    // The option reads like the variant rows: the unit, then what one is worth.
+    fireEvent.press(screen.getByText('1 serving (100 g · 120 cal)'));
+
+    // One serving shows as "1", not as the 100 g behind it.
+    expect(screen.getByTestId('quantity-input').props.value).toBe('1');
+
+    // Stepping moves by whole servings.
+    fireEvent.press(screen.getByTestId('footer-save-button'));
+
+    await waitFor(() => {
+      expect(mockAddEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          createEntryPayload: expect.objectContaining({
+            quantity: 100,
+            unit: 'g',
+          }),
+        })
+      );
+    });
   });
 
   it('keeps a 100 g reference available alongside a named local portion', () => {
@@ -1144,7 +1199,7 @@ describe('FoodEntryAddScreen', () => {
       });
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     expect(mockAddEntry).toHaveBeenCalledWith({
       saveFoodPayload: undefined,
@@ -1271,7 +1326,7 @@ describe('FoodEntryAddScreen', () => {
       });
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockAddEntry).toHaveBeenCalledWith({
@@ -1337,7 +1392,7 @@ describe('FoodEntryAddScreen', () => {
       });
     });
 
-    fireEvent.press(screen.getByText('Add Food'));
+    fireEvent.press(screen.getByTestId('footer-save-button'));
 
     await waitFor(() => {
       expect(mockAddEntryAsync).toHaveBeenCalledWith({
@@ -1449,7 +1504,7 @@ describe('FoodEntryAddScreen', () => {
         });
       });
 
-      fireEvent.press(screen.getByText('Add Food'));
+      fireEvent.press(screen.getByTestId('footer-save-button'));
 
       await waitFor(() => {
         expect(mockAddEntry).toHaveBeenCalledWith(
@@ -1494,7 +1549,7 @@ describe('FoodEntryAddScreen', () => {
       });
 
       // For external foods the screen should render without crash
-      expect(screen.getByText('Add Food')).toBeTruthy();
+      expect(screen.getByTestId('footer-save-button')).toBeTruthy();
     });
 
     it('passes displayValues-based selectedUnitSelection when re-opening AdjustNutrition after draft return', async () => {

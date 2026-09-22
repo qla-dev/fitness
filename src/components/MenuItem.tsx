@@ -20,11 +20,18 @@ export default function MenuItem({
   children,
   trailing,
   width,
+  insetLeft = 13,
 }: {
   leading?: ReactNode;
   children: ReactNode;
   trailing?: ReactNode;
   width?: number;
+  /**
+   * The gap before the leading tile. Rows inside a card that already has its
+   * own padding pass 0, so their icons line up with the text above and below
+   * the list rather than sitting 13pt further in.
+   */
+  insetLeft?: number;
 }) {
   const [measuredWidth, setMeasuredWidth] = useState<number>();
   const [trailingWidth, setTrailingWidth] = useState(80);
@@ -37,7 +44,7 @@ export default function MenuItem({
       style={{
         width: width ?? '100%',
         minHeight: 66,
-        paddingLeft: 13,
+        paddingLeft: insetLeft,
         paddingRight: MENU_ITEM_RIGHT_INSET,
         paddingVertical: 10,
         flexDirection: 'row',
@@ -59,7 +66,7 @@ export default function MenuItem({
               : Math.max(
                   0,
                   availableWidth -
-                    13 -
+                    insetLeft -
                     MENU_ITEM_RIGHT_INSET -
                     leadingWidth -
                     trailingSpace

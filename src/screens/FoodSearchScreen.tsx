@@ -184,7 +184,9 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
     }
   }, [refetch, refetchRecentMeals, refetchTopMeals, landingMealsEnabled]);
 
-  const [searchText, setSearchText] = useState('');
+  // Seeded when the Add tab's field was submitted: the query was typed there,
+  // so this screen opens on its results rather than on an empty box.
+  const [searchText, setSearchText] = useState(route.params?.initialQuery ?? '');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loadingFoodId, setLoadingFoodId] = useState<string | null>(null);
 

@@ -52,11 +52,12 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
   const header = (
     <>
       <Icon name={icon} size={18} color={accentPrimary} />
-      {/* The same type as a measurement tile's value above it: both are the
-          headline of their card, and a meal sitting a size smaller and a shade
-          lighter read as secondary to the tiles rather than beside them. */}
+      {/* The type every row in the app is set in, from the dashboard cards to
+          the settings rows: a meal is the name of a card, not a heading over
+          the screen, and a size larger made the meals shout over everything
+          they sit between. */}
       <Text
-        className="text-lg font-bold text-text-primary flex-1"
+        className="text-base font-semibold text-text-primary flex-1"
         numberOfLines={1}
       >
         {label}

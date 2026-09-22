@@ -1,5 +1,4 @@
 import ProfileSummary from '../components/ProfileSummary';
-import ProfileSetup from '../components/ProfileSetup';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
@@ -212,7 +211,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       >
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
-          <ProfileSetup enabled={isConnected} />
 
           {!isLocalDataMode() && (
             <SettingsRow

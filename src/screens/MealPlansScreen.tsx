@@ -20,6 +20,7 @@ import {
   useMealPlans,
   useServerConnection,
 } from '../hooks';
+import SampleMealPlan from '../components/SampleMealPlan';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import type { MealPlanAssignment, MealPlanTemplate } from '../types/mealPlans';
@@ -351,7 +352,16 @@ const MealPlansScreen: React.FC<MealPlansScreenProps> = ({ navigation }) => {
           />
         }
         ListHeaderComponent={
-          mealPlans.length > 0 ? (
+          <>
+            {/* The proposed week sits above the saved plans: it is a plan too,
+                and the grocery screen it used to live on is where the list it
+                produces belongs, not the plan itself. */}
+            <SampleMealPlan
+              onCreateList={(list) =>
+                navigation.navigate('Cart', { planList: list })
+              }
+            />
+            {mealPlans.length > 0 ? (
             <View className="bg-raised rounded-xl px-4 py-3 mb-4">
               <Text className="text-sm text-text-secondary">
                 {t('mealPlans.futureNotice', {
@@ -360,7 +370,8 @@ const MealPlansScreen: React.FC<MealPlansScreenProps> = ({ navigation }) => {
                 })}
               </Text>
             </View>
-          ) : null
+            ) : null}
+          </>
         }
         ListEmptyComponent={
           <StatusView

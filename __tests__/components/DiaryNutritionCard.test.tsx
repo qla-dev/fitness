@@ -1,5 +1,12 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
+// The rings open the GoalEdit modal route, so the card asks for a navigator.
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
 import DiaryNutritionCard from '../../src/components/DiaryNutritionCard';
 import type { DailySummary } from '../../src/types/dailySummary';
 import type { FoodEntry } from '../../src/types/foodEntries';

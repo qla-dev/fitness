@@ -3,8 +3,11 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import type { BleManager, Device, Subscription } from 'react-native-ble-plx';
 import {
   addWatchHeartRateListener,
+  addWatchReachabilityListener,
   addWatchWorkoutStateListener,
+  isWatchAppInstalled,
   isWatchLinkAvailable,
+  isWatchPaired,
   startWatchWorkout,
   stopWatchWorkout,
 } from '@/modules/watch-link';
@@ -46,6 +49,17 @@ interface SensorSnapshot {
   heartRateSource: 'ble' | 'watch' | null;
   /** The paired watch has an open workout session streaming to us. */
   watchStreaming: boolean;
+  /**
+   * A paired watch carrying our watch app — the watch is usable as a heart
+   * rate source, whether or not it is sending anything yet.
+   *
+   * Setup has to ask this one rather than {@link watchStreaming}: nothing
+   * streams until the session being set up has started, so a screen that asks
+   * whether the watch is sending will always answer that there is no watch.
+   */
+  watchAvailable: boolean;
+  /** Paired, but our app is not on it — the one state an install would fix. */
+  watchNeedsApp: boolean;
   cadence: number | null;
   cadenceAt: number;
   speed: number | null;
@@ -62,6 +76,8 @@ let snapshot: SensorSnapshot = {
   heartRateAt: 0,
   heartRateSource: null,
   watchStreaming: false,
+  watchAvailable: false,
+  watchNeedsApp: false,
   cadence: null,
   cadenceAt: 0,
   speed: null,
@@ -447,13 +463,41 @@ const hasBleHeartRateSensor = () =>
 let watchSubscriptions: { remove: () => void }[] = [];
 
 /**
+ * Re-reads whether a watch is there. WCSession activates asynchronously, so
+ * the first read after launch can say no to a watch that is plainly on the
+ * wrist; the reachability event fires when activation completes and whenever
+ * the link changes, which is when this is worth asking again.
+ */
+function refreshWatchAvailability() {
+  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
+  const installed = isWatchAppInstalled();
+  const paired = isWatchPaired() || installed;
+  if (
+    snapshot.watchAvailable === installed &&
+    snapshot.watchNeedsApp === (paired && !installed)
+  )
+    return;
+  update({ watchAvailable: installed, watchNeedsApp: paired && !installed });
+}
+
+// Watched for the life of the process rather than per screen: the answer is a
+// property of the phone, and every surface that asks reads the same snapshot.
+if (Platform.OS === 'ios' && isWatchLinkAvailable()) {
+  addWatchReachabilityListener(refreshWatchAvailability);
+  refreshWatchAvailability();
+}
+
+/**
  * Asks the paired watch to open a workout session and starts feeding its
  * samples into the same pipeline the BLE sensors use.
  *
  * Safe to call on Android and on builds without the watch target: the native
  * module resolves to null and every call becomes a no-op.
  */
-export async function startWatchHeartRate(sport: 'run' | 'ride') {
+export async function startWatchHeartRate(
+  sport: 'run' | 'ride',
+  options?: { sportId?: string; startAt?: number }
+) {
   if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
   if (watchSubscriptions.length > 0) return;
 
@@ -495,12 +539,33 @@ export async function startWatchHeartRate(sport: 'run' | 'ride') {
   );
 
   try {
-    await startWatchWorkout(sport);
+    await startWatchWorkout(sport, options);
   } catch (error) {
     addLog('[Recording sensors] Watch workout start failed', 'WARNING', [
       String(error),
     ]);
   }
+}
+
+/**
+ * Opens the watch session while the phone is still counting down, so the two
+ * count together and the sensor is warm by the time the first metre is run.
+ *
+ * Safe to call before `startRecording`: that function calls
+ * `startWatchHeartRate` too, and the subscription guard makes the second call
+ * a no-op. A recording that then fails to start must call
+ * `stopWatchHeartRate`, or the watch is left in a session with nothing
+ * recording it.
+ */
+export async function startWatchCountdown(
+  sport: 'run' | 'ride',
+  sportId: string | undefined,
+  countdownMs: number
+) {
+  await startWatchHeartRate(sport, {
+    sportId,
+    startAt: Date.now() + countdownMs,
+  });
 }
 
 /** Ends the watch workout and detaches. Never throws into the save path. */

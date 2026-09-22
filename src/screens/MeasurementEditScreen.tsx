@@ -1,48 +1,32 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import NativePromptSheet from './ui/NativePromptSheet';
-import Button from './ui/Button';
-import { MeasurementIcons } from './icons/measurements';
-import PillInput from './ui/PillInput';
+
+import PromptScreen from '../components/ui/PromptScreen';
+import { MeasurementIcons } from '../components/icons/measurements';
+import PillInput from '../components/ui/PillInput';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import { formatLocalizedNumber } from '../localization';
 import { formatDottedDay } from '../utils/dateUtils';
 import {
   measurementFieldById,
   DEFAULT_MEASUREMENT_UNITS,
-  type MeasurementFieldId,
   type MeasurementUnits,
 } from '../utils/measurementFields';
-
-interface MeasurementRecordSheetProps {
-  field: MeasurementFieldId;
-  /** The day being recorded — the diary's selected date, not always today. */
-  date: string;
-  /** Stored value for this field on that day, if any. */
-  current: number | null;
-  units?: Partial<MeasurementUnits>;
-  onClose: () => void;
-}
+import type { RootStackScreenProps } from '../types/navigation';
 
 /**
  * One measurement, one input — the setup wizard's question step, reached by
  * tapping a tile instead of walking a flow. The full form exists for the day
  * you sit down and record everything; this is for the far commoner case of
  * changing the one number you actually stepped on the scale for.
- *
- * Mounted only while open and presents itself, so the tiles behind it cost
- * nothing until one is tapped.
  */
-export default function MeasurementRecordSheet({
-  field,
-  date,
-  current,
-  units,
-  onClose,
-}: MeasurementRecordSheetProps) {
+export default function MeasurementEditScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<'MeasurementEdit'>) {
+  const { field, date, current, units } = route.params;
   const { t } = useTranslation();
 
   const upsert = useUpsertCheckIn();
@@ -54,7 +38,9 @@ export default function MeasurementRecordSheet({
   const definition = useMemo(() => measurementFieldById(field), [field]);
 
   const [value, setValue] = useState(() =>
-    current === null ? '' : definition.toInput(current, resolved)
+    current === null || current === undefined
+      ? ''
+      : definition.toInput(current, resolved)
   );
 
   const parsed = Number(value.replace(',', '.'));
@@ -76,9 +62,7 @@ export default function MeasurementRecordSheet({
           ? definition.toStorage(parsed, resolved)
           : null,
       },
-      // Closing is the caller's business now: the sheet is open for as long
-      // as it is rendered, so a successful save unmounts it.
-      { onSuccess: onClose }
+      { onSuccess: () => navigation.goBack() }
     );
   };
 
@@ -86,25 +70,18 @@ export default function MeasurementRecordSheet({
   const DrawnIcon = MeasurementIcons[definition.kind];
 
   return (
-    <NativePromptSheet
-      open
-      onClose={onClose}
+    <PromptScreen
       hasTextInput
-      dismissOnBackdropPress={false}
+      headerTitle={t('measurements.title', { defaultValue: 'Measurements' })}
       title={definition.label(t)}
       description={t('measurements.recordHintFor', {
         defaultValue: 'This measurement is going to be logged for {{date}}',
         date: formatDottedDay(date),
       })}
-      footer={
-        <Button
-          onPress={save}
-          disabled={invalid || upsert.isPending}
-          loading={upsert.isPending}
-        >
-          {t('common.save', { defaultValue: 'Save' })}
-        </Button>
-      }
+      footerLabel={t('common.save', { defaultValue: 'Save' })}
+      onFooterPress={save}
+      footerDisabled={invalid || upsert.isPending}
+      footerLoading={upsert.isPending}
     >
       <View className="items-center mb-5">
         <DrawnIcon
@@ -114,9 +91,6 @@ export default function MeasurementRecordSheet({
         />
       </View>
       <PillInput
-        // Inside a sheet the input has to be the sheet's own, or the keyboard
-        // covers the field it just focused.
-        InputComponent={BottomSheetTextInput}
         autoFocus
         accessibilityLabel={definition.label(t)}
         value={value}
@@ -136,6 +110,6 @@ export default function MeasurementRecordSheet({
         editable={!upsert.isPending}
         onSubmitEditing={save}
       />
-    </NativePromptSheet>
+    </PromptScreen>
   );
 }

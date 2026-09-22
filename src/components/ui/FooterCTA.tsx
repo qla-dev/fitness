@@ -2,7 +2,10 @@ import { useContext, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { useCSSVariable } from 'uniwind';
 import Button from './Button';
+import LiquidGlassSurface from '../LiquidGlassSurface';
+import { canUseLiquidGlass } from '../../utils/liquidGlass';
 import { fireSelectionHaptic } from '../../services/haptics';
 
 /** The gap under the button once the keyboard has taken the space below it. */
@@ -58,6 +61,7 @@ export default function FooterCTA({
   loading,
   absolute = false,
   sticky = true,
+  glass = false,
   onHeightChange,
 }: {
   label: ReactNode;
@@ -75,14 +79,55 @@ export default function FooterCTA({
    * on top of that threw the footer to the top of the sheet.
    */
   sticky?: boolean;
+  /**
+   * Renders the action as an interactive glass capsule rather than a filled
+   * button — the same material and press response as the tab bar. Ignored
+   * where Liquid Glass is unavailable, which keeps Android and older iOS on
+   * the filled button instead of a flat grey imitation of glass.
+   */
+  glass?: boolean;
   /** Reports the footer's height, for callers that pad a scroll view by it. */
   onHeightChange?: (height: number) => void;
 }) {
   const bottomInset = useOptionalBottomInset();
+  const accent = useCSSVariable('--color-accent-primary') as string;
+  const usesGlass = glass && canUseLiquidGlass();
+
+  const press = () => {
+    fireSelectionHaptic();
+    onPress();
+  };
+
+  const action = usesGlass ? (
+    // Tinted rather than clear: the action keeps its accent fill and white
+    // label, and the glass only adds the material and the press response.
+    <LiquidGlassSurface
+      isInteractive
+      tintColor={accent}
+      style={{ borderRadius: 999, overflow: 'hidden' }}
+    >
+      <Button
+        variant="ghost"
+        className="rounded-full"
+        textClassName="text-white"
+        loading={loading}
+        disabled={disabled}
+        onPress={press}
+      >
+        {label}
+      </Button>
+    </LiquidGlassSurface>
+  ) : (
+    <Button loading={loading} disabled={disabled} onPress={press}>
+      {label}
+    </Button>
+  );
 
   const bar = (
     <View
-      className="px-5 pt-3 bg-background border-t border-border"
+      // The glass capsule separates itself from the content by its own
+      // material, so the rule above it is one line too many.
+      className={`px-5 pt-3 bg-background ${usesGlass ? '' : 'border-t border-border'}`}
       style={{ paddingBottom: footerCtaRestingPadding(bottomInset) }}
       onLayout={
         onHeightChange
@@ -90,16 +135,7 @@ export default function FooterCTA({
           : undefined
       }
     >
-      <Button
-        loading={loading}
-        disabled={disabled}
-        onPress={() => {
-          fireSelectionHaptic();
-          onPress();
-        }}
-      >
-        {label}
-      </Button>
+      {action}
     </View>
   );
 

@@ -1,0 +1,186 @@
+import { useMemo, useRef, useState } from 'react';
+import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCSSVariable } from 'uniwind';
+
+import PromptScreen from '../components/ui/PromptScreen';
+import SheetStepper from '../components/ui/SheetStepper';
+import WaterBottleIcon from '../components/icons/measurements/WaterBottleIcon';
+import { MACRO_RINGS } from '../constants/macroRings';
+import { useCustomNutrients } from '../hooks';
+import { goalsQueryKey } from '../hooks/queryKeys';
+import { fetchDailyGoals } from '../services/api/goalsApi';
+import { localApiFetch } from '../services/local/localApi';
+import {
+  customGoalName,
+  getProfileGoalLabel,
+  getProfileGoalUnit,
+  goalMaximum,
+  goalStep,
+  isCustomGoalKey,
+  readGoalValue,
+} from '../constants/profileGoals';
+import { getTodayDate } from '../utils/dateUtils';
+import { formatLocalizedNumber } from '../localization';
+import { fireSelectionHaptic } from '../services/haptics';
+import type { RootStackScreenProps } from '../types/navigation';
+
+/**
+ * One goal, edited on its own.
+ *
+ * A modal route rather than a bottom sheet, for one reason: only a route gets
+ * the navigator's header, and only that header's items are real system
+ * buttons. Drawn inside a sheet they can only ever be an imitation — a circle
+ * with a hand-written radius and an opacity change where the system has a
+ * material and a press animation.
+ */
+export default function GoalEditScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<'GoalEdit'>) {
+  const { goalKey } = route.params;
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { customNutrients } = useCustomNutrients();
+  // The macros carry their own mark and colour on the Tracker; a goal without
+  // one — a micronutrient, a custom nutrient — takes the accent and no glyph,
+  // rather than borrowing another nutrient's identity.
+  const macro = MACRO_RINGS.find((ring) => ring.key === goalKey);
+  const [accentPrimary, macroColor] = useCSSVariable([
+    '--color-accent-primary',
+    macro?.colorVar ?? '--color-accent-primary',
+  ]) as [string, string];
+  const tint = macro ? macroColor : accentPrimary;
+  const today = getTodayDate();
+  const goalsQuery = useQuery({
+    queryKey: goalsQueryKey(today),
+    queryFn: () => fetchDailyGoals(today),
+  });
+
+  const label = getProfileGoalLabel(t, goalKey, customNutrients);
+  const unit = getProfileGoalUnit(goalKey, customNutrients);
+  const maximum = goalMaximum(goalKey);
+  const stepSize = goalStep(goalKey);
+
+  const stored = useMemo(() => {
+    const value = readGoalValue(goalsQuery.data, goalKey);
+    return value === undefined ? '' : String(value);
+  }, [goalsQuery.data, goalKey]);
+
+  // The stored value arrives with its query, usually after the first render.
+  // Holding the edit as a nullable draft lets the number show what is on file
+  // until the user changes it, without an effect copying one into the other.
+  const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const saving = useRef(false);
+  const value = draft ?? stored;
+
+  const trimmed = value.trim();
+  const numeric = Number(trimmed.replace(',', '.'));
+  const valid =
+    trimmed.length > 0 &&
+    Number.isFinite(numeric) &&
+    numeric >= 0 &&
+    (maximum === undefined || numeric <= maximum);
+
+  const save = async () => {
+    if (saving.current || !valid || busy || !goalsQuery.data) return;
+    saving.current = true;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const body: Record<string, unknown> = isCustomGoalKey(goalKey)
+        ? {
+            custom_nutrients: {
+              ...goalsQuery.data?.custom_nutrients,
+              [customGoalName(goalKey)]: numeric,
+            },
+          }
+        : { [goalKey]: numeric };
+      await localApiFetch({ endpoint: '/api/goals', method: 'PUT', body });
+      await queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          ['goals', 'dailySummary', 'daily-summary'].includes(
+            String(queryKey[0])
+          ),
+      });
+      navigation.goBack();
+    } catch {
+      setFailed(true);
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  };
+
+  const step = (direction: 1 | -1) => {
+    fireSelectionHaptic();
+    const base = Number.isFinite(numeric) ? numeric : 0;
+    const next = Math.max(0, base + direction * stepSize);
+    setDraft(String(maximum === undefined ? next : Math.min(next, maximum)));
+  };
+
+  return (
+    <PromptScreen
+      headerTitle={t('profile.goals', { defaultValue: 'Goals' })}
+      title={label}
+      description={t('profile.goalsHelp', {
+        defaultValue:
+          'New goals apply from today onward. Previous days keep their goals.',
+      })}
+      footerLabel={t('profile.changeTodayGoal', {
+        defaultValue: "Change today's goal",
+      })}
+      onFooterPress={() => void save()}
+      footerDisabled={!valid || busy}
+      footerLoading={busy}
+    >
+      <SheetStepper
+        badge={
+          goalKey === 'water_goal_ml' ? (
+            // Hydration carries no macro ring, but it has a mark of its own:
+            // the bottle the tracker tile draws, filled here because a goal
+            // has no "so far".
+            <WaterBottleIcon
+              size={72}
+              color={tint}
+              accentColor={tint}
+              fill={1}
+            />
+          ) : macro ? (
+            <macro.Glyph size={44} color={tint} accentColor={tint} />
+          ) : null
+        }
+        tint={tint}
+        value={trimmed === '' ? '—' : formatLocalizedNumber(numeric)}
+        unit={unit || undefined}
+        decrementLabel={t('profile.goalDecrease', {
+          defaultValue: 'Decrease goal',
+        })}
+        incrementLabel={t('profile.goalIncrease', {
+          defaultValue: 'Increase goal',
+        })}
+        decrementDisabled={busy || numeric <= 0}
+        incrementDisabled={
+          busy || (maximum !== undefined && numeric >= maximum)
+        }
+        onDecrement={() => step(-1)}
+        onIncrement={() => step(1)}
+      />
+      {failed ? (
+        <View className="mt-4">
+          <Text
+            accessibilityRole="alert"
+            className="text-text-primary text-sm text-center"
+          >
+            {t('profile.goalsSaveFailed', {
+              defaultValue: 'Could not save goals. Please try again.',
+            })}
+          </Text>
+        </View>
+      ) : null}
+    </PromptScreen>
+  );
+}

@@ -19,7 +19,7 @@ import { FoodImageSourceProvider } from './src/components/FoodImageSourceProvide
 import { LightboxProvider } from './src/components/LightboxProvider';
 import { Uniwind, useUniwind, useCSSVariable } from 'uniwind';
 
-import { queryClient, serverConnectionQueryKey, serverConfigsQueryKey, useSyncHealthData, useCycleMode } from './src/hooks';
+import { queryClient, serverConnectionQueryKey, serverConfigsQueryKey, useSyncHealthData } from './src/hooks';
 import { useAppStartup } from './src/hooks/useAppStartup';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import { useAppLanguageForegroundSync } from './src/hooks/useAppLanguageForegroundSync';
@@ -103,6 +103,9 @@ import {
   SafeFamilyCopyReview,
   SafeCycleSettings,
   SafeCycleOnboarding,
+  SafeGoalEdit,
+  SafeWaterEdit,
+  SafeMeasurementEdit,
   SafeSetupWizard,
   SafeActivityHistory,
   SafeAppleHealthCheck,
@@ -122,7 +125,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import Toast from 'react-native-toast-message';
 import { FullWindowOverlay } from 'react-native-screens';
 import type { RootStackParamList } from './src/types/navigation';
-import AddSheet, { addSheetRef } from './src/components/AddSheet';
+import { AddActionsProvider } from './src/components/AddActionsContext';
 import { toastConfig } from './src/components/ui/toastConfig';
 import { TabsLayout } from './src/components/TabsLayout';
 import { createIOSSmallNativeHeaderOptions } from './src/utils/nativeHeaderItems';
@@ -185,7 +188,14 @@ function AppContent() {
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
+    handleTypeBarcode,
     handleAiMealScan,
+    handleLogMeal,
+    handleNewFood,
+    handleNewMeal,
+    handleOpenMealPlans,
+    handleNewGroceryList,
+    handleNewMealPlan,
     handleOpenGroceryList,
     handleStartWorkout,
     handleLogWorkout,
@@ -194,15 +204,53 @@ function AppContent() {
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,
-    handleAddSheetDismissWithoutAction,
   } = useAddSheetActions({ syncMutation });
 
-  const { enabled: cycleEnabled, mode: cycleMode, discreetMode: cycleDiscreet } = useCycleMode();
-  const cycleSheetLabel = cycleDiscreet
-    ? t('addSheet.wellness', { defaultValue: 'Wellness' })
-    : cycleMode === 'pregnant' || cycleMode === 'postpartum'
-      ? t('addSheet.logPregnancyEntry', { defaultValue: 'Log Pregnancy Entry' })
-      : t('addSheet.logCycle', { defaultValue: 'Log Cycle' });
+  // The Add tab is a screen inside the tab navigator; these actions are owned
+  // up here, because they need the diary date, the draft prompt and the sync
+  // mutation. Memoised so the screen does not re-render on every shell render.
+  const addActions = useMemo(
+    () => ({
+      addFood: handleAddFood,
+      logMeal: handleLogMeal,
+      newFood: handleNewFood,
+      newMeal: handleNewMeal,
+      mealPlans: handleOpenMealPlans,
+      newGroceryList: handleNewGroceryList,
+      newMealPlan: handleNewMealPlan,
+      barcodeScan: handleBarcodeScan,
+      typeBarcode: handleTypeBarcode,
+      aiMealScan: handleAiMealScan,
+      startWorkout: handleStartWorkout,
+      logWorkout: handleLogWorkout,
+      addActivity: handleAddActivity,
+      groceryList: handleOpenGroceryList,
+      progressPhotos: handleAddProgressPhotos,
+      askSparky: handleAskSparky,
+      openCycle: handleOpenCycle,
+      syncHealthData: () => void handleSyncHealthData(),
+    }),
+    [
+      handleAddFood,
+      handleBarcodeScan,
+      handleTypeBarcode,
+      handleAiMealScan,
+      handleLogMeal,
+      handleNewFood,
+      handleNewMeal,
+      handleOpenMealPlans,
+      handleNewGroceryList,
+      handleNewMealPlan,
+      handleStartWorkout,
+      handleLogWorkout,
+      handleAddActivity,
+      handleOpenGroceryList,
+      handleAddProgressPhotos,
+      handleAskSparky,
+      handleOpenCycle,
+      handleSyncHealthData,
+    ]
+  );
 
   const [primary, chromeBorder, bgPrimary, textPrimary] = useCSSVariable([
     '--color-accent-primary',
@@ -300,6 +348,7 @@ function AppContent() {
   if (!initialRoute) return null;
 
   return (
+    <AddActionsProvider value={addActions}>
     <NavigationContainer
       ref={rootNavigationRef}
       theme={navigationTheme}
@@ -368,7 +417,6 @@ function AppContent() {
           <Stack.Screen name="Tabs" options={{ gestureEnabled: false }}>
             {() => (
               <TabsLayout
-                onAddPress={() => addSheetRef.current?.present()}
                 rememberActiveTab={rememberActiveTab}
                 getLastActiveTab={getLastActiveTab}
               />
@@ -531,7 +579,11 @@ function AppContent() {
             component={SafeFoodScan}
             options={createStackScreenOptions(t('screens.scanFood', { defaultValue: 'Scan Food' }), {
               presentation: 'modal',
-              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+              // No native bar at all: the screen draws its own back and
+              // flashlight buttons over the preview, and a transparent header
+              // on top of them swallowed the taps as well as repeating the
+              // title over the camera.
+              headerShown: false,
             })}
           />
           <Stack.Screen
@@ -839,6 +891,35 @@ function AppContent() {
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),
             })}
           />
+          {/* Modal, like the wizard: that presentation is what gives the
+              screen the system's own sheet chrome and native header items. */}
+          <Stack.Screen
+            name="GoalEdit"
+            component={SafeGoalEdit}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          <Stack.Screen
+            name="WaterEdit"
+            component={SafeWaterEdit}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          <Stack.Screen
+            name="MeasurementEdit"
+            component={SafeMeasurementEdit}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
           <Stack.Screen
             name="SetupWizard"
             component={SafeSetupWizard}
@@ -910,7 +991,6 @@ function AppContent() {
             })}
           />
         </Stack.Navigator>
-        <AddSheet ref={addSheetRef} onAddFood={handleAddFood} onStartWorkout={handleStartWorkout} onAddActivity={handleAddActivity} onLogWorkout={handleLogWorkout} onSyncHealthData={handleSyncHealthData} onBarcodeScan={handleBarcodeScan} onAiMealScan={handleAiMealScan} onGroceryList={handleOpenGroceryList} onAddProgressPhotos={handleAddProgressPhotos} onAskSparky={handleAskSparky} onOpenCycle={handleOpenCycle} showCycleCard={cycleEnabled} cycleLabel={cycleSheetLabel} onDismissWithoutAction={handleAddSheetDismissWithoutAction} />
         <ReauthModal
           visible={showReauthModal}
           expiredConfigId={expiredConfigId}
@@ -950,6 +1030,7 @@ function AppContent() {
         </LightboxProvider>
       </SafeAreaProvider>
     </NavigationContainer>
+    </AddActionsProvider>
   );
 }
 

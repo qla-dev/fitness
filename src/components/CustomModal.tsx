@@ -41,6 +41,12 @@ interface Props {
    * sheet they vanish into it and an input reads as bare text.
    */
   background?: 'surface' | 'background';
+  /**
+   * Whether tapping the dimmed area closes the sheet. Off for a sheet you type
+   * in: the first tap outside the field goes to dismissing the keyboard, and
+   * closing on the same tap reads as the sheet giving up on your input.
+   */
+  dismissOnBackdropPress?: boolean;
 }
 
 /**
@@ -48,6 +54,10 @@ interface Props {
  * bar rather than over it.
  */
 const FULL_HEIGHT_SNAP_POINTS = ['100%'];
+
+/** Matches the system form-sheet corner, and the close chip matches its chips. */
+const SHEET_CORNER_RADIUS = 44;
+const CLOSE_CHIP_SIZE = 44;
 
 /** Edge-attached, content-sized sheet with native-inspired header chrome. */
 const CustomModal = forwardRef<CustomModalRef, Props>(
@@ -61,6 +71,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
       onClose,
       fullHeight,
       background = 'surface',
+      dismissOnBackdropPress = true,
     },
     ref
   ) => {
@@ -68,7 +79,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
     const { t } = useTranslation();
     const Container = fullHeight ? View : BottomSheetView;
     const containerStyle = fullHeight ? { flex: 1 } : { paddingBottom: 16 };
-    const backdrop = useSheetBackdrop();
+    const backdrop = useSheetBackdrop({ dismissOnPress: dismissOnBackdropPress });
     const insets = useSafeAreaInsets();
     const [surface, pageBackground, raised, foreground, muted] = useCSSVariable(
       [
@@ -104,8 +115,10 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
         onAnimate={onAnimate}
         backgroundStyle={{
           backgroundColor: background === 'surface' ? surface : pageBackground,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
+          // The radius iOS gives a form sheet on 26. A tighter corner is what
+          // makes a JS sheet read as not-quite-native beside a real one.
+          borderTopLeftRadius: SHEET_CORNER_RADIUS,
+          borderTopRightRadius: SHEET_CORNER_RADIUS,
         }}
         handleIndicatorStyle={{ backgroundColor: muted, width: 36, height: 5 }}
       >
@@ -129,9 +142,9 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
                 else sheet.current?.dismiss();
               }}
               style={({ pressed }) => ({
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: CLOSE_CHIP_SIZE,
+                height: CLOSE_CHIP_SIZE,
+                borderRadius: CLOSE_CHIP_SIZE / 2,
                 backgroundColor: raised,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -140,7 +153,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
             >
               <Icon
                 name="close"
-                size={18}
+                size={20}
                 weight="semibold"
                 color={foreground}
               />
@@ -152,7 +165,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
             >
               {title}
             </Text>
-            <View style={{ width: 36 }} />
+            <View style={{ width: CLOSE_CHIP_SIZE }} />
           </View>
           {children}
         </Container>

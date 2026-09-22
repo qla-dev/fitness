@@ -63,6 +63,13 @@ jest.mock('../../src/hooks', () => ({
     isLoading: false,
     isError: false,
   })),
+  // The water tile logs a serving straight from the grid; this suite renders
+  // without a QueryClientProvider, so the real mutation would throw.
+  useWaterIntakeMutation: jest.fn(() => ({
+    increment: jest.fn(),
+    decrement: jest.fn(),
+    isReady: true,
+  })),
 }));
 
 jest.mock('../../src/hooks/useMeasurements', () => ({
@@ -172,10 +179,6 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
 }));
 
-jest.mock('../../src/components/AddSheet', () => ({
-  addSheetRef: { current: null },
-}));
-
 jest.mock('../../src/components/CalendarSheet', () => {
   const { View } = require('react-native');
   return { __esModule: true, default: () => <View testID="calendar-sheet" /> };
@@ -252,14 +255,6 @@ jest.mock('../../src/components/ExerciseSummary', () => {
   return {
     __esModule: true,
     default: () => <View testID="exercise-summary" />,
-  };
-});
-
-jest.mock('../../src/components/WaterRecordSheet', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: () => <View testID="water-record-sheet" />,
   };
 });
 
@@ -652,18 +647,22 @@ describe('DiaryScreen custom queries', () => {
   test.each([
     ['native tabs', true],
     ['the fallback path', false],
-  ])('opens the hydration sheet on %s', (_label, native) => {
+  ])('opens the hydration editor on %s', (_label, native) => {
     mockUseNativeIOSTabsActive.mockReturnValue(native);
 
-    const { getByTestId, queryByTestId } = renderScreen();
+    const { getByTestId } = renderScreen();
 
-    expect(queryByTestId('water-record-sheet')).toBeNull();
     fireEvent.press(getByTestId('open-water'));
-    expect(getByTestId('water-record-sheet')).toBeTruthy();
+    // A modal route rather than a sheet inside this screen: only a route's
+    // header items are the system's own buttons.
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('WaterEdit', {
+      date: expect.any(String),
+    });
   });
 
-  // Two intros, each introducing the block beneath it: the macros under the
-  // title, the body measurements further down over their own tiles.
+  // An intro over each block it introduces: the macros under the title, the
+  // body measurements over their tiles, the meals, and the photo shoot under
+  // them.
   test('offers a subtitle row over each block it introduces', () => {
     const { getByTestId, getByText, getAllByLabelText } = renderScreen();
 
@@ -676,9 +675,12 @@ describe('DiaryScreen custom queries', () => {
     expect(getByTestId('diary-meals-intro')).toBeTruthy();
     expect(getByText('diary.mealsSubtitle')).toBeTruthy();
 
-    // AI has its own action; measurements and meals keep More.
+    expect(getByTestId('diary-photos-intro')).toBeTruthy();
+    expect(getByText('diary.photosSubtitle')).toBeTruthy();
+
+    // AI has its own action; measurements, meals and photos keep More.
     expect(getAllByLabelText('diary.askAI')).toHaveLength(1);
-    expect(getAllByLabelText('measurements.more')).toHaveLength(2);
+    expect(getAllByLabelText('measurements.more')).toHaveLength(3);
   });
 
   test('hides the native family diaries action while disconnected', () => {

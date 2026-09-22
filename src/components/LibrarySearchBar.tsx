@@ -17,6 +17,10 @@ interface LibrarySearchBarProps {
    * glass controls. Off iOS 26 this falls back to the filled row.
    */
   glass?: boolean;
+  /** Fires on the keyboard's search key, for a field that opens results. */
+  onSubmitEditing?: () => void;
+  /** Fires when the field takes focus, for a screen that changes with it. */
+  onFocus?: () => void;
   testID?: string;
 }
 
@@ -26,6 +30,8 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
   placeholder,
   isSearching = false,
   glass = false,
+  onSubmitEditing,
+  onFocus,
   testID,
 }) => {
   const [accentColor, textMuted] = useCSSVariable([
@@ -55,11 +61,15 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
           placeholderTextColor={textMuted}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => {
+            setIsFocused(true);
+            onFocus?.();
+          }}
           onBlur={() => setIsFocused(false)}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
+          onSubmitEditing={onSubmitEditing}
           testID={testID}
         />
       </View>

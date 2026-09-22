@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
@@ -7,7 +8,6 @@ import { useCSSVariable } from 'uniwind';
 import TileIconSlot from './TileIconSlot';
 import { HeightIcon } from './icons/measurements';
 import { AgeIcon } from './icons/profile';
-import MeasurementRecordSheet from './MeasurementRecordSheet';
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { usePreferences } from '../hooks/usePreferences';
@@ -15,6 +15,7 @@ import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import { measurementFieldById } from '../utils/measurementFields';
 import { getTodayDate } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
+import type { RootStackParamList } from '../types/navigation';
 
 /** Years between a stored date of birth and today, or null when unusable. */
 export const ageFromDateOfBirth = (
@@ -50,7 +51,8 @@ const EMPTY = '—';
  */
 export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
-  const [editingHeight, setEditingHeight] = useState(false);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const today = getTodayDate();
   const [accentPrimary, iconDecorative] = useCSSVariable([
     '--color-accent-primary',
@@ -114,7 +116,14 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
             }),
       onPress: () => {
         fireSelectionHaptic();
-        setEditingHeight(true);
+        // Recorded against today: height is not tied to a day the way a
+        // weigh-in is, and this screen has no date of its own to record for.
+        navigation.navigate('MeasurementEdit', {
+          field: 'height',
+          date: today,
+          current: storedHeight,
+          units: { heightMode },
+        });
       },
     },
   ];
@@ -173,17 +182,6 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
           );
         })}
       </View>
-      {editingHeight && (
-        <MeasurementRecordSheet
-          field="height"
-          // Recorded against today: height is not tied to a day the way a
-          // weigh-in is, and this screen has no date of its own to record for.
-          date={today}
-          current={storedHeight}
-          units={{ heightMode }}
-          onClose={() => setEditingHeight(false)}
-        />
-      )}
     </>
   );
 }

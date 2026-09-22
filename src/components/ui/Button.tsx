@@ -34,6 +34,8 @@ interface ButtonProps extends Omit<PressableProps, 'children'> {
    * width its container gives it.
    */
   loading?: boolean;
+  /** Tint for the loading spinner; the default reads on a filled button. */
+  spinnerColor?: string;
   children: React.ReactNode;
   className?: string;
   textClassName?: string;
@@ -95,6 +97,7 @@ const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   tone = 'accent',
   loading = false,
+  spinnerColor = '#fff',
   children,
   className = '',
   textClassName = '',
@@ -126,7 +129,7 @@ const Button: React.FC<ButtonProps> = ({
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color="#fff" />
+        <ActivityIndicator size="small" color={spinnerColor} />
       ) : typeof children === 'string' ? (
         <Text className={`text-base ${textClass} ${textClassName}`}>
           {children}

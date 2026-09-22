@@ -416,8 +416,8 @@
     "syncHealth": "Sync Health Data",
     "logPregnancyEntry": "Log Pregnancy Entry",
     "logCycle": "Log Cycle",
-    "logFood": "Log Food",
-    "scanBarcode": "Scan Barcode",
+    "logFood": "Log food",
+    "scanBarcode": "Scan barcode",
     "aiMeal": "AI meal",
     "groceryList": "Grocery list"
   },
@@ -1062,7 +1062,8 @@
     "subtitle": "Keep a track of your habits",
     "macrosSubtitle": "Need help in your optimal metrics?",
     "askAI": "Ask AI",
-    "mealsSubtitle": "Log your every meal, fast"
+    "mealsSubtitle": "Log your every meal, fast",
+    "photosSubtitle": "See how the week actually went"
   },
   "medications": {
     "title": "Medications",
@@ -2152,6 +2153,8 @@
     "waterAmount": "{{amount}} ml",
     "waterRemove": "Remove a serving",
     "waterAdd": "Add a serving",
+    "waterDecrease": "Decrease",
+    "waterChangeGoal": "Change goal",
     "waterServing": "{{amount}} {{unit}}",
     "waterPerTap": "per tap",
     "waterNoContainer": "Set up a water container to start tracking hydration.",
@@ -3155,6 +3158,7 @@
       "useToday": "Use Today",
       "now": "Now",
       "clear": "Clear",
+      "log": "Log",
       "addFood": "Add Food",
       "addMeal": "Add Meal",
       "removeFavorite": "Remove from favorites",
@@ -3175,6 +3179,8 @@
     },
     "pickers": {
       "selectServing": "Select Serving",
+      "servingOption_one": "{{formattedCount}} serving ({{amount}} · {{calories}} cal)",
+      "servingOption_other": "{{formattedCount}} servings ({{amount}} · {{calories}} cal)",
       "selectMeal": "Select Meal"
     }
   },
@@ -5691,6 +5697,36 @@
       "goals": "Goals",
       "custom": "Custom"
     },
-    "watchDisconnected": "No watch connected"
+    "watchDisconnected": "No watch connected",
+    "watchNeedsApp": "Install the watch app"
+  },
+  "addHub": {
+    "searchPlaceholder": "Search food or meals",
+    "recent": "Recent searches",
+    "clearRecent": "Clear",
+    "removeRecent": "Remove {{query}} from recent searches",
+    "noResults": "Nothing matches “{{query}}”.",
+    "savedFoods": "My food",
+    "recentFoods": "Recently logged",
+    "noRecentFoods": "Foods you log will show up here.",
+    "onlineDatabase": "Online database",
+    "searching": "Searching for food and meals",
+    "searchTitle": "Log food for today",
+    "subtitle": "Every way to log what you ate today",
+    "title": "Food dashboard",
+    "logMeal": "Log meal",
+    "typeBarcode": "Type barcode",
+    "newFood": "Create food",
+    "newMeal": "Create meal",
+    "scanCode": "Scan code",
+    "typeCode": "Type code",
+    "typeCodeHint": "Enter the barcode digits and the food is looked up the same way a scan would be.",
+    "newGroceryList": "Create grocery list",
+    "newMealPlan": "Create meal plan",
+    "groceryLists": "My lists",
+    "mealPlans": "My plans",
+    "logFoodOrMeal": "Log food",
+    "aiHelp": "AI help",
+    "typeCodeTitle": "Type barcode"
   }
 }

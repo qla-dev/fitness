@@ -5,6 +5,7 @@ import MacroCompositionRing from './MacroCompositionRing';
 import ProgressRing from './ProgressRing';
 import { getNetCarbsValue } from '../utils/nutrientUtils';
 import { localizeNutrientKey } from '../utils/nutrientLocalization';
+import { MACRO_RINGS } from '../constants/macroRings';
 import { formatLocalizedNumber } from '../localization';
 
 export interface NutritionGoalPercentages {
@@ -86,6 +87,7 @@ const NutritionMacroCard: React.FC<NutritionMacroCardProps> = ({
   const macros = [
     {
       key: 'protein',
+      Glyph: MACRO_RINGS.find((ring) => ring.key === 'protein')?.Glyph,
       label: localizeNutrientKey(t, 'protein'),
       value: protein,
       color: proteinColor,
@@ -94,6 +96,7 @@ const NutritionMacroCard: React.FC<NutritionMacroCardProps> = ({
     },
     {
       key: 'carbs',
+      Glyph: MACRO_RINGS.find((ring) => ring.key === 'carbs')?.Glyph,
       label: carbsLabel,
       value: displayCarbs,
       color: carbsColor,
@@ -102,6 +105,7 @@ const NutritionMacroCard: React.FC<NutritionMacroCardProps> = ({
     },
     {
       key: 'fat',
+      Glyph: MACRO_RINGS.find((ring) => ring.key === 'fat')?.Glyph,
       label: localizeNutrientKey(t, 'fat'),
       value: fat,
       color: fatColor,
@@ -195,10 +199,25 @@ const NutritionMacroCard: React.FC<NutritionMacroCardProps> = ({
                 goalPct != null ? Math.max(0, Math.min(goalPct, 100)) : 0;
               return (
                 <View key={macro.key}>
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-text-secondary text-sm">
-                      {macro.label}
-                    </Text>
+                  <View className="flex-row items-center justify-between mb-1">
+                    {/* The mark alone, no tile behind it: these rows are a
+                        chart's legend, and three filled badges would compete
+                        with the bars they label. */}
+                    <View className="flex-row items-center flex-1 gap-1.5">
+                      {macro.Glyph ? (
+                        <macro.Glyph
+                          size={16}
+                          color={macro.color}
+                          accentColor={macro.color}
+                        />
+                      ) : null}
+                      <Text
+                        className="text-text-secondary text-sm"
+                        numberOfLines={1}
+                      >
+                        {macro.label}
+                      </Text>
+                    </View>
                     <Text className="text-text-primary text-sm font-medium">
                       {formatLocalizedNumber(Math.round(macro.value))}g
                       {macro.goal && macro.goal > 0

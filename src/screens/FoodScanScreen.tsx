@@ -38,7 +38,10 @@ import {
 import { selectDisplayVariant } from '../utils/foodDetails';
 import { getApiErrorMessage } from '../services/api/errors';
 import { TimeoutError } from '../utils/concurrency';
-import { fireSuccessHaptic } from '../services/haptics';
+import {
+  fireSelectionHaptic,
+  fireSuccessHaptic,
+} from '../services/haptics';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { toFormString } from '../types/foodInfo';
 import { useActiveAiServiceSetting } from '../hooks/useActiveAiServiceSetting';
@@ -57,7 +60,6 @@ const SCAN_SEGMENTS: ScanMode[] = ['barcode', 'label', 'photo'];
 const GUIDE_WIDTH = 280;
 const GUIDE_HEIGHT = 160;
 
-const GUIDE_BOTTOM_MARGIN = 120;
 // Longest edge sent for analysis. A label-filling crop reads correctly well
 // below this; capping bounds upload size without costing accuracy.
 const LABEL_MAX_DIMENSION = 1600;
@@ -122,6 +124,9 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
   const [manualBarcode, setManualBarcode] = useState('');
   const [photoGateVisible, setPhotoGateVisible] = useState(false);
   const introCheckedRef = useRef(false);
+  // A barcode typed on the Food dashboard: looked up the moment this screen
+  // arrives, so the camera is never the thing the user is waiting on.
+  const typedLookupRef = useRef(false);
   const cameraRef = useRef<CameraView>(null);
   const date = lookupParams?.date;
   const pickerMode = lookupParams?.pickerMode ?? 'log-entry';
@@ -604,6 +609,18 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
   // Triggered via effect (not just segment change) so deep-link entries
   // with `initialMode: 'photo'` still hit the gate.
   useEffect(() => {
+    const typed = lookupParams?.lookupBarcode?.trim();
+    if (!typed || typedLookupRef.current) return;
+    typedLookupRef.current = true;
+    scanLock.current = true;
+    setScanned(true);
+    setLoading(true);
+    void performBarcodeLookup(typed);
+    // Arrival only; the barcode does not change while the screen is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (isCaptureBarcodeMode) return;
     if (scanMode !== 'photo') return;
     if (aiSettingQuery.isLoading) return;
@@ -729,12 +746,6 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
     navigation.replace('FoodSearch', { date });
   };
 
-  const handleShowManualEntry = () => {
-    scanLock.current = true;
-    setManualEntryVisible(true);
-    setScanned(true);
-  };
-
   const handleDismissManualEntry = () => {
     setManualEntryVisible(false);
     setManualBarcode('');
@@ -775,8 +786,14 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
     );
   }
 
+  const typingOnly = false;
+
   return (
-    <View className="flex-1 flex-col justify-center">
+    <View
+      className={`flex-1 flex-col justify-center${typingOnly ? '' : ' bg-background'}`}
+    >
+      {typingOnly ? null : (
+        <>
       <CameraView
         ref={cameraRef}
         onBarcodeScanned={
@@ -807,7 +824,6 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
             style={{
               width: GUIDE_WIDTH,
               height: GUIDE_HEIGHT,
-              marginBottom: GUIDE_BOTTOM_MARGIN,
             }}
           >
             <View
@@ -859,7 +875,10 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
         style={{ top: Platform.OS === 'android' ? insets.top + 8 : 16 }}
       >
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            fireSelectionHaptic();
+            navigation.goBack();
+          }}
           accessibilityRole="button"
           accessibilityLabel={t('foodScan.accessibility.back', {
             defaultValue: 'Go back',
@@ -870,7 +889,10 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
           <Icon name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setFlashlight(!flashlight)}
+          onPress={() => {
+            fireSelectionHaptic();
+            setFlashlight(!flashlight);
+          }}
           accessibilityRole="button"
           accessibilityLabel={
             flashlight
@@ -1087,20 +1109,33 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
           className="absolute bottom-0 left-0 right-0 items-center gap-4"
           style={{ paddingBottom: Math.max(insets.bottom + 8, 24) }}
         >
-          <View className="bg-black/50 rounded-lg mx-8 self-stretch">
-            <SegmentedControl
-              segments={scanSegments}
-              activeKey={scanMode}
-              onSelect={handleSegmentChange}
-            />
-          </View>
+          {/* A switch with one position is not a switch: with only Barcode
+              available it named the mode rather than offering a choice. */}
+          {scanSegments.length > 1 ? (
+            <View className="bg-black/50 rounded-lg mx-8 self-stretch">
+              <SegmentedControl
+                segments={scanSegments}
+                activeKey={scanMode}
+                onSelect={handleSegmentChange}
+              />
+            </View>
+          ) : null}
 
           {!(scanMode === 'barcode' && (notFoundBarcode || lookupError)) &&
           !(scanMode === 'photo' && photoGateVisible) ? (
             <View className="h-20 items-center justify-center self-stretch">
-              {scanMode === 'barcode' ? (
+              {/* Only in capture mode. Everywhere else typing a barcode is
+                  its own card on the Food dashboard, which opens this screen
+                  straight on the sheet without starting the camera — but a
+                  capture is reached from a food's own barcode field, which
+                  has no such card behind it. */}
+              {isCaptureBarcodeMode && scanMode === 'barcode' ? (
                 <TouchableOpacity
-                  onPress={handleShowManualEntry}
+                  onPress={() => {
+                    scanLock.current = true;
+                    setManualEntryVisible(true);
+                    setScanned(true);
+                  }}
                   accessibilityRole="button"
                   accessibilityLabel={t('foodScan.barcode.typeInstead', {
                     defaultValue: 'Type Barcode Instead',
@@ -1234,6 +1269,8 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
           ) : null}
         </View>
       ) : null}
+        </>
+      )}
 
       <Modal
         visible={manualEntryVisible}

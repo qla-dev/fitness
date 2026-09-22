@@ -500,6 +500,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
   const isSaving = isPending || isUpdatePending;
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: isEditMode
       ? t('mealBuilder.editTitle', { defaultValue: 'Edit Meal' })
       : t('mealBuilder.createTitle', { defaultValue: 'Create Meal' }),

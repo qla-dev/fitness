@@ -369,16 +369,11 @@ describe('FoodScanScreen', () => {
     });
   });
 
-  it('does not fire a success haptic for manual barcode lookup success', async () => {
+  // A barcode typed on the Food dashboard arrives as a param and is looked up
+  // on mount. No haptic: the user did the finding, the scanner did not.
+  it('does not fire a success haptic for a typed barcode lookup', async () => {
     mockLookupBarcodeV2.mockResolvedValue(existingFoodResult);
-    const screen = renderScreen();
-
-    fireEvent.press(screen.getByText('Type Barcode Instead'));
-    fireEvent.changeText(
-      screen.getByPlaceholderText('Barcode number'),
-      '012345678905'
-    );
-    fireEvent.press(screen.getByText('Look Up'));
+    renderScreenWithRoute({ lookupBarcode: '012345678905' });
 
     await waitFor(() => {
       expect(mockNavigation.replace).toHaveBeenCalledWith(
@@ -549,9 +544,11 @@ describe('FoodScanScreen', () => {
       expect(captureNavigation.goBack).toHaveBeenCalledTimes(1);
     });
 
-    it('hides the Label and Photo segments', () => {
+    // Capture mode is barcode-only, so there is no choice to offer and the
+    // switch is not drawn at all.
+    it('hides the mode switch entirely', () => {
       const screen = renderCapture();
-      expect(screen.getByText('Barcode')).toBeTruthy();
+      expect(screen.queryByText('Barcode')).toBeNull();
       expect(screen.queryByText('Label')).toBeNull();
       expect(screen.queryByText('Photo')).toBeNull();
     });

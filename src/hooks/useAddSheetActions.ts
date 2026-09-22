@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
@@ -93,31 +93,20 @@ interface AddSheetActionsArgs {
 
 /**
  * Owns the AddSheet's actions and their navigation plumbing: resolving the
- * diary date the sheet was opened over, routing each sheet row to its screen,
- * draft/active-workout conflict prompts, manual health sync, and returning the
- * user to their last content tab after a dismissal without an action.
+ * diary date the action is logged against, routing each one to its screen,
+ * draft/active-workout conflict prompts, and manual health sync. They are
+ * supplied to the Add tab through AddActionsContext: the screen is inside the
+ * tab navigator and these need the navigator above it.
  */
 export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
   const { t } = useTranslation();
   const lastActiveTabRef = useRef<NonAddTabName>('Dashboard');
-  const addSheetDismissNavigationTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
   const rememberActiveTab = useCallback((routeName: string) => {
     if ((NON_ADD_TABS as readonly string[]).includes(routeName)) {
       lastActiveTabRef.current = routeName as NonAddTabName;
     }
   }, []);
   const getLastActiveTab = useCallback(() => lastActiveTabRef.current, []);
-
-  useEffect(() => {
-    return () => {
-      if (addSheetDismissNavigationTimeoutRef.current != null) {
-        clearTimeout(addSheetDismissNavigationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const getActiveDiaryDate = useCallback(() => {
     const rootOrTabState = rootNavigationRef.isReady()
@@ -167,6 +156,44 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     const date = getActiveDiaryDate();
     navigateFromSheet('FoodScan', { date, initialMode: 'photo' });
   }, [getActiveDiaryDate, navigateFromSheet]);
+
+  const handleLogMeal = useCallback(() => {
+    navigateFromSheet('MealsLibrary');
+  }, [navigateFromSheet]);
+
+  // A barcode typed by hand — a worn label, a box already in the bin. The
+  // sheet that collects it belongs to the screen that offered it, so only the
+  // lookup comes here.
+  const handleTypeBarcode = useCallback(
+    (barcode: string) => {
+      const date = getActiveDiaryDate();
+      navigateFromSheet('FoodScan', { date, lookupBarcode: barcode });
+    },
+    [getActiveDiaryDate, navigateFromSheet]
+  );
+
+  // Creating, as opposed to finding: a food the provider does not have, or a
+  // meal built from foods you already keep.
+  const handleNewFood = useCallback(() => {
+    const date = getActiveDiaryDate();
+    navigateFromSheet('FoodForm', { mode: 'create-food', date });
+  }, [getActiveDiaryDate, navigateFromSheet]);
+
+  const handleNewMeal = useCallback(() => {
+    navigateFromSheet('MealAdd', {});
+  }, [navigateFromSheet]);
+
+  const handleOpenMealPlans = useCallback(() => {
+    navigateFromSheet('MealPlans');
+  }, [navigateFromSheet]);
+
+  const handleNewGroceryList = useCallback(() => {
+    navigateFromSheet('Cart', { newList: true });
+  }, [navigateFromSheet]);
+
+  const handleNewMealPlan = useCallback(() => {
+    navigateFromSheet('MealPlanForm', undefined);
+  }, [navigateFromSheet]);
 
   const handleOpenGroceryList = useCallback(() => {
     navigateFromSheet('Cart');
@@ -323,43 +350,20 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     syncMutation.mutate(params);
   }, [syncMutation, t]);
 
-  const handleAddSheetDismissWithoutAction = useCallback(() => {
-    if (!rootNavigationRef.isReady()) return;
-
-    const navigateBackToPreviousTab = () => {
-      if (!rootNavigationRef.isReady()) return;
-
-      rootNavigationRef.dispatch(
-        CommonActions.navigate('Tabs', {
-          screen: lastActiveTabRef.current,
-        })
-      );
-    };
-
-    if (addSheetDismissNavigationTimeoutRef.current != null) {
-      clearTimeout(addSheetDismissNavigationTimeoutRef.current);
-      addSheetDismissNavigationTimeoutRef.current = null;
-    }
-
-    // Native tabs can briefly re-select the Add route while the bottom sheet
-    // dismissal animation settles. These idempotent retries keep the user on
-    // the last content tab without depending on one exact UIKit transition tick.
-    navigateBackToPreviousTab();
-
-    requestAnimationFrame(navigateBackToPreviousTab);
-    addSheetDismissNavigationTimeoutRef.current = setTimeout(() => {
-      addSheetDismissNavigationTimeoutRef.current = null;
-      navigateBackToPreviousTab();
-    }, 150);
-  }, []);
-
   return {
     getActiveDiaryDate,
     rememberActiveTab,
     getLastActiveTab,
     handleAddFood,
     handleBarcodeScan,
+    handleTypeBarcode,
     handleAiMealScan,
+    handleLogMeal,
+    handleNewFood,
+    handleNewMeal,
+    handleOpenMealPlans,
+    handleNewGroceryList,
+    handleNewMealPlan,
     handleOpenGroceryList,
     handleStartWorkout,
     handleLogWorkout,
@@ -368,6 +372,5 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     handleAskSparky,
     handleOpenCycle,
     handleSyncHealthData,
-    handleAddSheetDismissWithoutAction,
   };
 }

@@ -9,6 +9,10 @@ import Animated, {
 import { useCSSVariable } from 'uniwind';
 import Button from './ui/Button';
 import VerifiedBadge from './VerifiedBadge';
+import MenuItem, { MenuItemDivider } from './MenuItem';
+import MenuItemIcon from './MenuItemIcon';
+import { MACRO_RINGS, type MacroRingSpec } from '../constants/macroRings';
+import { withAlpha } from '../utils/colors';
 import {
   buildNutrientDisplayList,
   type NutrientDisplayItem,
@@ -82,6 +86,44 @@ export const FoodNutritionHeader: React.FC<FoodNutritionHeaderProps> = ({
     </View>
   );
 };
+
+/**
+ * The Tracker's key for a nutrient key.
+ *
+ * The display list is camelCase and the rings are snake_case, and fiber is
+ * named differently again. Matching on the label instead looked right only
+ * for fiber, whose English name happens to survive the round trip — every
+ * other row lost its glyph the moment the label was localized.
+ */
+const RING_KEYS: Record<string, string> = {
+  fiber: 'dietary_fiber',
+  saturatedFat: 'saturated_fat',
+  transFat: 'trans_fat',
+  monounsaturatedFat: 'monounsaturated_fat',
+  polyunsaturatedFat: 'polyunsaturated_fat',
+  vitaminA: 'vitamin_a',
+  vitaminC: 'vitamin_c',
+};
+
+function ringFor(key: string | undefined): MacroRingSpec | undefined {
+  if (!key) return undefined;
+  const ringKey = RING_KEYS[key] ?? key;
+  return MACRO_RINGS.find((ring) => ring.key === ringKey);
+}
+
+/**
+ * A nutrient's drawn mark on a tile washed in the same colour — the badges
+ * the food dashboard's cards carry, so a nutrient is identified by its colour
+ * here exactly as it is by its ring on the Tracker.
+ */
+function NutrientIcon({ spec }: { spec: MacroRingSpec }) {
+  const color = useCSSVariable(spec.colorVar) as string;
+  return (
+    <MenuItemIcon backgroundColor={withAlpha(color, 0.14)}>
+      <spec.Glyph size={22} color={color} accentColor={color} />
+    </MenuItemIcon>
+  );
+}
 
 interface FoodNutrientBreakdownProps {
   values: FoodDisplayValues;
@@ -164,20 +206,37 @@ export const FoodNutrientBreakdown: React.FC<FoodNutrientBreakdownProps> = ({
     return rows;
   }, [customNutrients, customNutrientDefs]);
 
-  const renderRow = (nutrient: NutrientDisplayItem, showBorder: boolean) => (
-    <View
-      key={nutrient.label}
-      className={`flex-row justify-between py-1 ${showBorder ? 'border-b border-border-subtle' : ''}`}
-    >
-      <Text className="text-text-secondary text-sm">
-        {localizedNutrientLabel(nutrient.label)}
-      </Text>
-      <Text className="text-text-primary text-sm">
-        {Math.round(scale(nutrient.value))}
-        {nutrient.unit}
-      </Text>
-    </View>
-  );
+  // The app's menu row, carrying each nutrient's own drawn glyph. These used
+  // to be bare label/value lines — the one list in the app that read like a
+  // table rather than like every other list of rows.
+  const renderRow = (nutrient: NutrientDisplayItem, showBorder: boolean) => {
+    const spec = ringFor(nutrient.key);
+    return (
+      <View key={nutrient.label}>
+        <MenuItem
+          // The card around this list already holds the page's margin; a row
+          // inset again put the glyphs 13pt in from everything above them.
+          insetLeft={0}
+          leading={spec ? <NutrientIcon spec={spec} /> : null}
+          trailing={
+            <Text className="text-text-primary text-base">
+              {Math.round(scale(nutrient.value))}
+              {nutrient.unit}
+            </Text>
+          }
+        >
+          <Text
+            className="text-base font-semibold text-text-primary"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {localizedNutrientLabel(nutrient.label)}
+          </Text>
+        </MenuItem>
+        {showBorder ? <MenuItemDivider inset={51} /> : null}
+      </View>
+    );
+  };
 
   const hasAdditional =
     additionalNutrients.length > 0 || customNutrientRows.length > 0;
