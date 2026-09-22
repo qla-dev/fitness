@@ -7,6 +7,7 @@ import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import type { CompletedSetMap } from '../stores/activeWorkoutStore';
 import { formatElapsed } from '../utils/workoutSession';
 import Icon, { type IconName } from './Icon';
+import HeaderCircleButton from './ui/HeaderCircleButton';
 import KeyboardCollapsible from './KeyboardCollapsible';
 import LiquidGlassSurface, {
   createLiquidGlassPillStyle,
@@ -60,7 +61,9 @@ interface ActiveWorkoutHeaderProps {
 /**
  * Header action button. With Liquid Glass active it floats on its own round
  * glass surface, matching the native iOS 26 bar buttons every native-header
- * screen gets; otherwise it stays a flat pressable icon.
+ * screen gets; off it, the same circle `useScreenHeader` gives the bars this
+ * screen sits beside — this header is its own, so it did not get one and its
+ * back and kebab were the only bare glyphs left in the app.
  */
 function HeaderIconButton({
   icon,
@@ -77,21 +80,29 @@ function HeaderIconButton({
   onPress: () => void;
   accessibilityLabel: string;
 }) {
+  if (!usesGlass)
+    return (
+      <HeaderCircleButton
+        onPress={onPress}
+        accessibilityLabel={accessibilityLabel}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Icon name={icon} size={22} color={color} />
+      </HeaderCircleButton>
+    );
+
   const button = (
     <Pressable
       onPress={onPress}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className={
-        usesGlass ? 'h-[38px] w-[38px] items-center justify-center' : 'p-2'
-      }
+      className="h-[38px] w-[38px] items-center justify-center"
     >
       <Icon name={icon} size={22} color={color} />
     </Pressable>
   );
 
-  if (!usesGlass) return button;
   return (
     <LiquidGlassSurface
       style={createLiquidGlassPillStyle(chromeBorder, {
