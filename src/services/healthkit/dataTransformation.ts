@@ -22,7 +22,15 @@ import {
   type DirectTransformer,
   type ValueTransformer,
 } from '../shared/dataTransformation';
-import { DIETARY_HK_MAP, DIETARY_ENERGY_IDENTIFIER } from './writebackMappers';
+import {
+  DIETARY_HK_MAP,
+  DIETARY_ENERGY_IDENTIFIER,
+  WORKOUT_BRAND_NAME_KEY,
+  WORKOUT_WRITEBACK_VERSION_KEY,
+  WORKOUT_WRITEBACK_VERSION_KEY_LEGACY,
+  WORKOUT_WATCH_ORIGIN_KEY,
+  WORKOUT_WATCH_ORIGIN_PHONE,
+} from './writebackMappers';
 
 // ============================================================================
 // Own-app exclusion (read/write feedback-loop guard)
@@ -41,6 +49,56 @@ export const setOwnBundleId = (id: string | null): void => {
 const isOwnRecord = (rec: Record<string, unknown>): boolean => {
   if (!ownBundleId) return false;
   return (rec.sourceBundleId as string | undefined) === ownBundleId;
+};
+
+const workoutMetadata = (
+  rec: Record<string, unknown>
+): Record<string, unknown> | undefined =>
+  rec.metadata as Record<string, unknown> | undefined;
+
+/**
+ * Workouts that must not be imported, for the two different reasons a workout
+ * can already be accounted for.
+ *
+ * Deliberately NOT isOwnRecord. HealthKit files the qla.fit watch app's own
+ * recordings under the phone app's bundle id, so a bundle-id test cannot tell
+ * "writeback saved this from the diary" apart from "our watch recorded this" —
+ * and it answered yes to both, so a workout started on the watch never reached
+ * the diary at all. It showed up only as the day's Apple Exercise Time total,
+ * which reads like the workout was logged under the wrong name.
+ *
+ * The writeback marker is exact where the bundle id was a guess: every
+ * HKWorkout writeback saves carries it (see saveWorkout in writeback.ts), and
+ * nothing else does.
+ *
+ * A watch workout the PHONE started is skipped for the other reason: the
+ * phone's recorder is already saving that session to the diary itself, so
+ * importing the watch's copy of the same effort would log it twice.
+ */
+const isAlreadyLoggedWorkout = (rec: Record<string, unknown>): boolean => {
+  const metadata = workoutMetadata(rec);
+  if (!metadata) return false;
+  if (
+    metadata[WORKOUT_WRITEBACK_VERSION_KEY] !== undefined ||
+    metadata[WORKOUT_WRITEBACK_VERSION_KEY_LEGACY] !== undefined
+  )
+    return true;
+  return metadata[WORKOUT_WATCH_ORIGIN_KEY] === WORKOUT_WATCH_ORIGIN_PHONE;
+};
+
+/**
+ * What the workout calls itself, when it carries a name of its own.
+ *
+ * HKWorkoutBrandName is the key Apple Health renders in place of the activity
+ * type, so honouring it is what makes an imported session read "CrossFit"
+ * rather than "Cross Training" — the watch stamps the sport the wearer
+ * actually picked, and other apps stamp theirs.
+ */
+const workoutBrandName = (rec: Record<string, unknown>): string | undefined => {
+  const brand = workoutMetadata(rec)?.[WORKOUT_BRAND_NAME_KEY];
+  if (typeof brand !== 'string') return undefined;
+  const trimmed = brand.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 };
 
 // ============================================================================
@@ -583,19 +641,27 @@ const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
   },
 
   Workout: (rec, record, _metricConfig, output) => {
-    // Don't re-import a workout qla.fit wrote. Exercise writeback saves the
-    // diary's own sessions as HKWorkouts, and without this the next inbound sync
-    // reads them straight back as a second copy of every logged workout — the
-    // same feedback loop the Hydration and Nutrition transformers guard against.
-    // Worse than those two, because a writeback re-save allocates a fresh UUID,
-    // so the import (which keys on source_id) would add another row per edit.
-    if (isOwnRecord(rec)) return;
+    // Don't re-import a workout that is already in the diary — writeback's own
+    // saves, and the watch's copy of a session the phone recorded. Without it
+    // the next inbound sync reads them back as a second copy of every logged
+    // workout, the same feedback loop the Hydration and Nutrition transformers
+    // guard against. Worse than those two, because a writeback re-save
+    // allocates a fresh UUID, so the import (which keys on source_id) would add
+    // another row per edit.
+    if (isAlreadyLoggedWorkout(rec)) return;
     if (!rec.startTime || !rec.endTime) return;
 
     const activityType = rec.activityType as number | undefined;
+    // What KIND of effort this was — Apple's enum, in Apple's wording.
     const activityTypeName = activityType
       ? ACTIVITY_MAP[activityType] || `Workout type ${activityType}`
       : 'Workout Session';
+    // What it is CALLED, which is the better answer when the workout carries
+    // one: the watch stamps the sport the wearer picked, so a session started
+    // as CrossFit reads "CrossFit" instead of ACTIVITY_MAP's rendering of
+    // .crossTraining as "Cross Training". Names from other apps are theirs and
+    // stay literal, like every other piece of provider content.
+    const workoutName = workoutBrandName(rec) ?? activityTypeName;
 
     // Handle duration which might be an object { unit: 's', quantity: 123 }
     let durationInSeconds = 0;
@@ -630,7 +696,7 @@ const DIRECT_TRANSFORMERS: Record<string, DirectTransformer> = {
       endTime: rec.endTime as string,
       duration: durationInSeconds,
       activityType: activityTypeName,
-      title: activityTypeName,
+      title: workoutName,
       caloriesBurned: (rec.totalEnergyBurned as number) || 0,
       distance: parseFloat((totalDistanceMeters / 1000).toFixed(2)),
       ...(typeof rec.totalSteps === 'number' &&

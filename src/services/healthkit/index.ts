@@ -1410,12 +1410,29 @@ const handleWorkout: RecordHandler = async (
         ).sourceRevision?.source?.name,
       };
       if (totalSteps !== undefined) record.totalSteps = totalSteps;
-      // Forward timezone metadata so the transform layer can attach it to output records
+      // Forward the workout's metadata whole, not just its timezone. The
+      // transform layer reads two keys out of it that decide the record's
+      // fate: QlaFitWritebackVersion, which marks a workout our own writeback
+      // saved and must not read back in, and HKWorkoutBrandName, which is what
+      // the workout is actually called. Rebuilding the field from the
+      // flattened timezone alone dropped both, which is why the echo guard had
+      // to fall back to matching bundle ids — and that guard cannot tell our
+      // writeback apart from a workout the qla.fit watch app recorded, so it
+      // silently ate every watch-started session.
+      const rawMetadata = (
+        w as unknown as { metadata?: Record<string, unknown> }
+      ).metadata;
       const tz = (w as unknown as { metadataTimeZone?: string })
         .metadataTimeZone;
-      if (tz) {
-        record.metadata = { HKTimeZone: tz };
-      }
+      const metadata = rawMetadata
+        ? {
+            ...rawMetadata,
+            ...(tz && !rawMetadata.HKTimeZone ? { HKTimeZone: tz } : {}),
+          }
+        : tz
+          ? { HKTimeZone: tz }
+          : undefined;
+      if (metadata) record.metadata = metadata;
 
       // Elevation is not a totals field on the workout; it arrives as metadata.
       const elevation = w as unknown as {

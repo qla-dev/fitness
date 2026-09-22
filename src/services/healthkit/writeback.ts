@@ -28,6 +28,8 @@ import {
   DIETARY_ENERGY_IDENTIFIER,
   DIETARY_WATER_IDENTIFIER,
   WORKOUT_TYPE_IDENTIFIER,
+  WORKOUT_BRAND_NAME_KEY,
+  WORKOUT_WRITEBACK_VERSION_KEY,
   type NutrientSampleDescriptor,
   type WaterSampleDescriptor,
   type WorkoutSampleDescriptor,
@@ -289,8 +291,8 @@ const saveWorkout = async (
   // is the same traceability marker the nutrition writer stamps (no clientRecordId
   // on iOS).
   const metadata: Record<string, string | number> = {
-    HKWorkoutBrandName: descriptor.title,
-    QlaFitWritebackVersion: version,
+    [WORKOUT_BRAND_NAME_KEY]: descriptor.title,
+    [WORKOUT_WRITEBACK_VERSION_KEY]: version,
   };
   try {
     const saved = await saveWorkoutSample(

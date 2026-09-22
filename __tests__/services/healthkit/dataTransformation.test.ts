@@ -1378,10 +1378,19 @@ describe('Nutrition correlation transformer', () => {
   });
 });
 
-describe('own-app exclusion for workouts (exercise writeback loop guard)', () => {
+describe('already-logged exclusion for workouts (writeback loop guard)', () => {
   afterEach(() => setOwnBundleId(null));
 
-  const workout = (sourceBundleId: string, uuid: string) => ({
+  const WORKOUT_CONFIG = {
+    recordType: 'Workout' as const,
+    unit: 'min',
+    type: 'exercise_session',
+  };
+
+  const workout = (
+    uuid: string,
+    extra: Record<string, unknown> = {}
+  ) => ({
     startTime: '2024-01-15T08:00:00Z',
     endTime: '2024-01-15T08:30:00Z',
     activityType: 37, // running
@@ -1389,33 +1398,98 @@ describe('own-app exclusion for workouts (exercise writeback loop guard)', () =>
     totalEnergyBurned: 300,
     totalDistance: 5000,
     uuid,
-    sourceBundleId,
+    sourceBundleId: 'com.sparky.app',
+    ...extra,
   });
 
-  test('skips a workout this app wrote, keeps another app\u2019s', () => {
+  const idsOf = (result: TransformOutput[]) =>
+    result.map((r) => (r as TransformOutput & { source_id: string }).source_id);
+
+  test('skips a workout our own writeback saved', () => {
     // Without this, exercise writeback would hand every logged workout straight
     // back to the diary as a second, provider-sourced copy on the next sync.
-    setOwnBundleId('com.sparky.app');
     const result = transformHealthRecords(
       [
-        workout('com.sparky.app', 'ours'),
-        workout('com.other.app', 'theirs'),
+        workout('ours', { metadata: { QlaFitWritebackVersion: 1 } }),
+        workout('theirs'),
       ],
-      { recordType: 'Workout', unit: 'min', type: 'exercise_session' }
+      WORKOUT_CONFIG
     );
-    expect(result).toHaveLength(1);
-    expect((result[0] as TransformOutput & { source_id: string }).source_id)
-      .toBe('theirs');
+    expect(idsOf(result)).toEqual(['theirs']);
   });
 
-  test('keeps our own workouts when no bundle id was injected', () => {
-    // currentAppSource() can throw on an unsupported device; the guard is then
-    // off and reading must still work rather than silently dropping everything.
-    const result = transformHealthRecords([workout('com.sparky.app', 'ours')], {
-      recordType: 'Workout',
-      unit: 'min',
-      type: 'exercise_session',
-    });
+  test('skips writeback saved before the rebrand renamed the marker', () => {
+    // Workouts written under the old key are still in people's HealthKit
+    // stores; forgetting them would re-import every one of them.
+    const result = transformHealthRecords(
+      [workout('ours', { metadata: { SparkyWritebackVersion: 1 } })],
+      WORKOUT_CONFIG
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  test('imports a workout the watch recorded on its own', () => {
+    // The regression this guard was rewritten for: HealthKit files the watch
+    // app's recordings under the PHONE's bundle id, so the old bundle-id test
+    // called them ours and dropped them. A session started on the watch exists
+    // nowhere else — the import is its only way into the diary.
+    setOwnBundleId('com.sparky.app');
+    const result = transformHealthRecords(
+      [workout('watch', { metadata: { QlaFitWatchOrigin: 'watch' } })],
+      WORKOUT_CONFIG
+    );
+    expect(idsOf(result)).toEqual(['watch']);
+  });
+
+  test('skips a watch workout the phone started and is already saving', () => {
+    // Phone-started sessions are recorded and saved by the phone itself, so
+    // the watch's copy of the same effort would be a duplicate.
+    setOwnBundleId('com.sparky.app');
+    const result = transformHealthRecords(
+      [workout('phone-led', { metadata: { QlaFitWatchOrigin: 'phone' } })],
+      WORKOUT_CONFIG
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  test('keeps a workout carrying no metadata at all', () => {
+    // Another app's workout, and the shape every pre-metadata record has.
+    const result = transformHealthRecords([workout('theirs')], WORKOUT_CONFIG);
+    expect(idsOf(result)).toEqual(['theirs']);
+  });
+
+  test('names a workout by its brand name over the activity type', () => {
+    // HKWorkoutBrandName is what Apple Health shows and what the watch stamps
+    // with the sport that was picked, so a CrossFit session must not arrive as
+    // ACTIVITY_MAP's rendering of .crossTraining.
+    const result = transformHealthRecords(
+      [
+        workout('crossfit', {
+          activityType: 11, // crossTraining
+          metadata: {
+            HKWorkoutBrandName: 'CrossFit',
+            QlaFitWatchOrigin: 'watch',
+          },
+        }),
+      ],
+      WORKOUT_CONFIG
+    );
     expect(result).toHaveLength(1);
+    const session = result[0] as TransformOutput & {
+      title: string;
+      activityType: string;
+    };
+    expect(session.title).toBe('CrossFit');
+    // The kind it was stays Apple's, because that is what it describes.
+    expect(session.activityType).toBe('Cross Training');
+  });
+
+  test('falls back to the activity type when no brand name is stamped', () => {
+    const result = transformHealthRecords(
+      [workout('plain', { activityType: 11 })],
+      WORKOUT_CONFIG
+    );
+    expect((result[0] as TransformOutput & { title: string }).title)
+      .toBe('Cross Training');
   });
 });

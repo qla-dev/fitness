@@ -29,6 +29,30 @@ enum WatchMessageKind {
   static let stop = "stop"
 }
 
+/// Metadata the watch stamps on the HKWorkout it saves, read back by the
+/// phone's HealthKit importer. Duplicated by hand from
+/// src/services/healthkit/writebackMappers.ts, for the same reason the message
+/// keys above are: a watchOS target cannot import from the React Native side.
+enum WatchWorkoutMetadataKey {
+  /// Apple's own key for a workout's display name — the Health app renders it
+  /// in place of the activity type, and so does the importer. Without it a
+  /// CrossFit session reaches the diary as "Cross Training", because the only
+  /// thing that crosses into HealthKit is the numeric activity type and
+  /// `.crossTraining` is Apple's name for it, not the one the wearer picked.
+  static let brandName = "HKWorkoutBrandName"
+  /// Which side started the session. See `WatchWorkoutOrigin`.
+  static let origin = "QlaFitWatchOrigin"
+}
+
+enum WatchWorkoutOrigin {
+  /// The phone started this session and its own recorder is saving it to the
+  /// diary, so the importer must skip this copy or the effort is logged twice.
+  static let phone = "phone"
+  /// Started on the watch, phone uninvolved. The HealthKit import is the only
+  /// way this session ever reaches the diary, so it must not be skipped.
+  static let watch = "watch"
+}
+
 /// Owns the watch-side workout session and streams heart rate to the phone.
 ///
 /// HKLiveWorkoutBuilder is the only way to get beat-to-beat heart rate on
@@ -48,6 +72,12 @@ final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var countdown: Int?
 
   private var countdownTask: Task<Void, Never>?
+
+  /// Which side started the session now running, stamped onto the saved
+  /// workout so the phone's importer knows whether the diary already has it.
+  /// Defaults to `watch`: a session whose origin we somehow lost is better
+  /// imported (and, at worst, deduplicated by hand) than silently dropped.
+  private var origin: String = WatchWorkoutOrigin.watch
 
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
@@ -122,9 +152,14 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// Starts a session for a sport. `countingDownTo` runs the 3-2-1 overlay:
   /// the session itself opens straight away either way, so the count never
   /// costs the wearer any of their workout.
-  func start(sport: WatchSport, countingDownTo startAt: Date? = nil) {
+  func start(
+    sport: WatchSport,
+    countingDownTo startAt: Date? = nil,
+    origin: String = WatchWorkoutOrigin.watch
+  ) {
     guard !isRunning else { return }
     self.sport = sport
+    self.origin = origin
 
     let configuration = HKWorkoutConfiguration()
     configuration.activityType = sport.activityType
@@ -207,18 +242,41 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   /// Ends collection and saves the workout so the run also lands in Apple
   /// Health, then tears down. Called once the session reports .ended.
+  ///
+  /// The metadata is how the saved workout identifies itself to the phone's
+  /// importer: the brand name carries the sport the wearer actually picked,
+  /// and the origin says whether the phone is already saving this session to
+  /// the diary itself. A failed metadata write is logged but not fatal — the
+  /// workout is still worth saving, it just reaches the diary under Apple's
+  /// name for its activity type.
   private func finish() {
     guard let builder else { return }
+    // Read off the main actor here and carried into the completions as plain
+    // strings: a [String: Any] is not Sendable, and building the dictionary
+    // inside the closure keeps it from crossing an isolation boundary.
+    let brandName = sport.name
+    let workoutOrigin = origin
     builder.endCollection(withEnd: Date()) { [weak self] _, error in
       if let error {
         Task { @MainActor in self?.lastError = error.localizedDescription }
         return
       }
-      builder.finishWorkout { [weak self] _, error in
-        Task { @MainActor in
-          if let error { self?.lastError = error.localizedDescription }
-          self?.session = nil
-          self?.builder = nil
+      let metadata: [String: Any] = [
+        WatchWorkoutMetadataKey.brandName: brandName,
+        WatchWorkoutMetadataKey.origin: workoutOrigin,
+      ]
+      builder.addMetadata(metadata) { _, metadataError in
+        if let metadataError {
+          Task { @MainActor in
+            self?.lastError = metadataError.localizedDescription
+          }
+        }
+        builder.finishWorkout { _, error in
+          Task { @MainActor in
+            if let error { self?.lastError = error.localizedDescription }
+            self?.session = nil
+            self?.builder = nil
+          }
         }
       }
     }
@@ -322,7 +380,9 @@ extension WorkoutManager: WCSessionDelegate {
             recording: message[WatchMessageKey.sport] as? String)
         let startAt = (message[WatchMessageKey.startAt] as? Double)
           .map { Date(timeIntervalSince1970: $0 / 1000) }
-        start(sport: sport, countingDownTo: startAt)
+        start(
+          sport: sport, countingDownTo: startAt,
+          origin: WatchWorkoutOrigin.phone)
       case WatchMessageKind.stop:
         stop()
       default:

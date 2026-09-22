@@ -328,6 +328,44 @@ export const WORKOUT_ACTIVITY_TYPE_BY_KIND: Record<
 /** HKWorkout's own sample type — the delete scope for everything we write here. */
 export const WORKOUT_TYPE_IDENTIFIER = 'HKWorkoutTypeIdentifier' as const;
 
+/**
+ * Metadata keys carried on an HKWorkout, written on one side and read on the
+ * other. They live here because the writer (writeback.ts), the reader
+ * (index.ts) and the import guard (dataTransformation.ts) all need the same
+ * strings, and a typo in any one of them fails silently rather than loudly.
+ *
+ * HKWorkoutBrandName is Apple's own key for a workout's display name: the
+ * Health app renders it in place of the activity type. Writeback stamps the
+ * diary's session name into it, and the importer prefers it over ACTIVITY_MAP
+ * for the same reason Apple does — it is what the workout is called, where the
+ * enum is only what kind of thing it was.
+ *
+ * QlaFitWritebackVersion marks a workout this app wrote FROM the diary. It is
+ * the echo guard: without it the next inbound sync reads our own writeback
+ * back in as a second copy of every session the diary already holds.
+ *
+ * The watch keys are stamped by the watchOS target (WorkoutManager.swift) and
+ * duplicated by hand there, the same way the WatchConnectivity message keys
+ * are — a watchOS target cannot import from this module.
+ */
+export const WORKOUT_BRAND_NAME_KEY = 'HKWorkoutBrandName' as const;
+export const WORKOUT_WRITEBACK_VERSION_KEY = 'QlaFitWritebackVersion' as const;
+/**
+ * The pre-rebrand spelling of the same marker. Workouts written before the
+ * qla.fit rename still carry it, and the echo guard has to keep answering for
+ * them or the next sync reads every one of them back in as a duplicate.
+ */
+export const WORKOUT_WRITEBACK_VERSION_KEY_LEGACY =
+  'SparkyWritebackVersion' as const;
+export const WORKOUT_WATCH_ORIGIN_KEY = 'QlaFitWatchOrigin' as const;
+/**
+ * A watch workout the PHONE started. The phone's own recorder is already
+ * saving that session to the diary, so importing the watch's copy would make a
+ * second one. A session started on the watch carries 'watch' instead, exists
+ * nowhere else, and is the one this import path exists for.
+ */
+export const WORKOUT_WATCH_ORIGIN_PHONE = 'phone' as const;
+
 export interface WorkoutSampleDescriptor {
   /** Diary session id, for the content signature and the log line. */
   sessionId: string;

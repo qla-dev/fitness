@@ -23,7 +23,10 @@ import {
 import { useExerciseHistory } from '../hooks/useExerciseHistory';
 import { usePreferences } from '../hooks/usePreferences';
 import { useServerConnection } from '../hooks/useServerConnection';
-import { getWorkoutSummary } from '../utils/workoutSession';
+import {
+  getWorkoutSummary,
+  isProviderDayTotal,
+} from '../utils/workoutSession';
 import { getAppLocale } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -83,17 +86,33 @@ export default function ActivityHistoryScreen({
     useExerciseHistory();
   const [filter, setFilter] = useState<string>(ALL);
 
+  // This screen answers "what did I do", so the health importer's per-day
+  // totals are dropped before anything reads the list: they are Apple's rings
+  // filed as exercise entries, and shown here they read as a workout logged
+  // under a provider's metric name — an "Apple Exercise Time" row sitting
+  // between two runs, with a workout's icon and a workout's detail screen.
+  // Their figures still reach the day through the dashboard and the exercise
+  // stats, which read them deliberately.
+  //
+  // Dropped after paging rather than in the query: the history endpoint has no
+  // notion of them, and at most a couple exist per synced day, so no page ever
+  // thins out enough to matter.
+  const logged = useMemo(
+    () => sessions.filter((session) => !isProviderDayTotal(session)),
+    [sessions]
+  );
+
   // Chips are derived from what the history actually holds, so the row never
   // offers a filter that would come back empty.
   const filters = useMemo(() => {
     const names = new Map<string, string>();
-    for (const session of sessions) {
+    for (const session of logged) {
       const { name } = getWorkoutSummary(session, t);
       const key = name.trim().toLowerCase();
       if (key && !names.has(key)) names.set(key, name.trim());
     }
     return [...names.entries()].map(([value, label]) => ({ value, label }));
-  }, [sessions, t]);
+  }, [logged, t]);
 
   // Manual logging lives where the log itself lives: the two entry points
   // the add sheet used to hold — an activity (duration & distance) and a
@@ -192,12 +211,12 @@ export default function ActivityHistoryScreen({
   const visible = useMemo(
     () =>
       filter === ALL
-        ? sessions
-        : sessions.filter(
+        ? logged
+        : logged.filter(
             (session) =>
               getWorkoutSummary(session, t).name.trim().toLowerCase() === filter
           ),
-    [sessions, filter, t]
+    [logged, filter, t]
   );
 
   // Grouped by month, preserving the newest-first order the history arrives in

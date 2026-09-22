@@ -187,6 +187,31 @@ export interface ExerciseStats {
 }
 
 const APPLE_EXERCISE_TIME_NAME = 'Apple Exercise Time';
+const ACTIVE_CALORIES_NAME = 'Active Calories';
+
+/**
+ * Whether a session is one of the per-day totals the health importer files as
+ * an exercise, rather than an effort the user actually did.
+ *
+ * The importer has to store them as exercise entries — that is how their
+ * minutes and energy reach the day's figures — but they are Apple's rings, not
+ * workouts: a day total has no clock time of its own, no calories in the case
+ * of exercise minutes, and a name that is the metric's rather than anything
+ * the user would recognise. Anywhere that lists what someone DID has to leave
+ * them out, or the list reads as though a walk was logged under the name of a
+ * provider metric.
+ *
+ * Their names are the literal strings the importer writes (healthRepository's
+ * ACTIVE_ENERGY and APPLE_EXERCISE_TIME_NAME), not display text, so they are
+ * matched literally and are deliberately not translated.
+ */
+export function isProviderDayTotal(
+  session: ExerciseSessionResponse
+): boolean {
+  if (session.type === 'preset') return false;
+  const name = session.exercise_snapshot?.name;
+  return name === APPLE_EXERCISE_TIME_NAME || name === ACTIVE_CALORIES_NAME;
+}
 
 /**
  * The providers whose workouts are already counted in a daily exercise-time
@@ -233,7 +258,7 @@ export function calculateExerciseStats(
       durationMinutes += session.total_duration_minutes;
     } else {
       const isActiveCals =
-        session.exercise_snapshot?.name === 'Active Calories';
+        session.exercise_snapshot?.name === ACTIVE_CALORIES_NAME;
       // Apple's daily exercise minutes: time, and no energy of its own — the
       // energy for those minutes is already inside Active Calories, so adding
       // its (zero) calories anywhere would be the start of a double count.
