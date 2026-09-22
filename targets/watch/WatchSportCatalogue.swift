@@ -44,6 +44,13 @@ enum WatchSportGroup: String, CaseIterable, Identifiable {
   }
 }
 
+/// How long the 3-2-1 runs. The phone counts the same three seconds before it
+/// starts recording (COUNTDOWN_SECONDS in RecordingCountdown.tsx), so a
+/// session started from either side ends its count at the same moment.
+enum WatchCountdown {
+  static let seconds: TimeInterval = 3
+}
+
 enum WatchSportCatalogue {
   /// In the phone's order: the two GPS-recorded sports first, because they are
   /// the ones a session is usually started as.

@@ -173,9 +173,10 @@ final class WorkoutManager: NSObject, ObservableObject {
       countdown = nil
       return
     }
-    countdown = min(remaining, 3)
+    let capped = min(remaining, Int(WatchCountdown.seconds))
+    countdown = capped
     countdownTask = Task { [weak self] in
-      var value = min(remaining, 3)
+      var value = capped
       while value > 0 {
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         if Task.isCancelled { return }
@@ -188,7 +189,9 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// Started from the watch itself: the wearer is looking at it, so the same
   /// three seconds apply before the live view replaces the list.
   func startFromWatch(sport: WatchSport) {
-    start(sport: sport, countingDownTo: Date().addingTimeInterval(3))
+    start(
+      sport: sport,
+      countingDownTo: Date().addingTimeInterval(WatchCountdown.seconds))
   }
 
   func stop() {
