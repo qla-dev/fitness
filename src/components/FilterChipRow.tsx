@@ -3,11 +3,11 @@ import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 
 import Icon, { type IconName } from './Icon';
-import LiquidGlassSurface from './LiquidGlassSurface';
+import LiquidGlassSurface, { useGlassChipFill } from './LiquidGlassSurface';
 import { fireSelectionHaptic } from '../services/haptics';
 
 /** Pill height, matching the system's own filter chips. */
-const CHIP_HEIGHT = 36;
+export const CHIP_HEIGHT = 36;
 const GUTTER = 16;
 
 export interface FilterChipOption {
@@ -36,6 +36,7 @@ const FilterChipRow: React.FC<{
   /** The option that means "no filter" — re-tapping it does nothing. */
   clearValue: string;
 }> = ({ value, options, onChange, clearValue }) => {
+  const chipFill = useGlassChipFill();
   const [accentPrimary, accentText, textPrimary] = useCSSVariable([
     '--color-accent-primary',
     '--color-accent-text',
@@ -60,6 +61,7 @@ const FilterChipRow: React.FC<{
             style={{
               height: CHIP_HEIGHT,
               borderRadius: CHIP_HEIGHT / 2,
+              ...chipFill(selected),
               overflow: 'hidden',
             }}
           >
@@ -107,6 +109,7 @@ export const ToggleChipRow: React.FC<{
   options: (FilterChipOption & { on: boolean; disabled?: boolean })[];
   onToggle: (value: string) => void;
 }> = ({ options, onToggle }) => {
+  const chipFill = useGlassChipFill();
   const [accentPrimary, accentText, textPrimary] = useCSSVariable([
     '--color-accent-primary',
     '--color-accent-text',
@@ -128,6 +131,7 @@ export const ToggleChipRow: React.FC<{
           style={{
             height: CHIP_HEIGHT,
             borderRadius: CHIP_HEIGHT / 2,
+            ...chipFill(option.on),
             overflow: 'hidden',
             opacity: option.disabled ? 0.5 : 1,
           }}

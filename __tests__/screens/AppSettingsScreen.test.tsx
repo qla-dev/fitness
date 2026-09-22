@@ -90,6 +90,7 @@ function picker() {
   }
   return languagePicker.props as {
     accessibilityHint?: string;
+    containerStyle?: { flex?: number; minWidth?: number };
     onSelect?: (value: string | number) => Promise<unknown> | void;
   };
 }
@@ -116,10 +117,21 @@ describe('AppSettingsScreen', () => {
 
     expect(getByText('Language')).toBeTruthy();
     expect(
-      getByText(
-        'Use your device language or choose a language for qla.fit.'
-      )
+      getByText('Use your device language or choose a language for qla.fit.')
     ).toBeTruthy();
+  });
+
+  /**
+   * The row's trailing slot is absolutely positioned and sizes itself to its
+   * content, so a flexed trigger filled the row's height while its label
+   * resolved against a zero-width parent and disappeared.
+   */
+  it('gives the language trigger a width rather than flexing it', () => {
+    renderScreen();
+
+    const style = picker().containerStyle;
+    expect(style?.flex).toBeUndefined();
+    expect(style?.minWidth).toBeGreaterThan(0);
   });
 
   it('announces the English picker hint in English UI', () => {

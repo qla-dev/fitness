@@ -12,7 +12,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import CompactActivityRow from '../components/CompactActivityRow';
-import LiquidGlassSurface from '../components/LiquidGlassSurface';
+import LiquidGlassSurface, {
+  useGlassChipFill,
+} from '../components/LiquidGlassSurface';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   useNativeHeaderOffset,
@@ -68,6 +70,7 @@ export default function ActivityHistoryScreen({
   // measured, so no height is written down here.
   const contentTopInset = usesNativeHeader ? headerOffset + accessoryHeight : 0;
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
+  const chipFill = useGlassChipFill();
   const { isConnected } = useServerConnection();
   const { preferences } = usePreferences({ enabled: isConnected });
   const distanceUnit =
@@ -127,6 +130,7 @@ export default function ActivityHistoryScreen({
                   height: CHIP_HEIGHT,
                   borderRadius: CHIP_HEIGHT / 2,
                   overflow: 'hidden',
+                  ...chipFill(selected),
                 }}
               >
                 <Pressable

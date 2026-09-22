@@ -184,7 +184,18 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
                   'settings.language.pickerHint',
                   'Opens language selection menu'
                 )}
-                containerStyle={{ flex: 1, maxWidth: 200 }}
+                // A width rather than `flex: 1`. The row's trailing slot is
+                // absolutely positioned and sizes itself to its content, so
+                // `flex` there filled the row's HEIGHT — two lines of subtitle
+                // tall — while the label, which is `flex-1` inside the
+                // trigger, resolved against a zero-width parent and vanished,
+                // leaving a tall empty box with a chevron in it. Android only:
+                // iOS sends this row to the system settings instead.
+                containerStyle={{
+                  minWidth: 140,
+                  maxWidth: 200,
+                  alignSelf: 'center',
+                }}
               />
             }
           />

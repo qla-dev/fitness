@@ -9,6 +9,31 @@ import { canUseLiquidGlass } from '../utils/liquidGlass';
 export const LIQUID_GLASS_HORIZONTAL_MARGIN = 20;
 export const LIQUID_GLASS_VERTICAL_GAP = 6;
 
+/**
+ * The fill a chip needs where there is no glass to be its surface.
+ *
+ * `LiquidGlassSurface`'s own untinted fallback is `--color-chrome`, which is
+ * what a bar floating over content wants — and on the true-black dark theme
+ * that is black at 90%, so a chip painted with it vanished into the page and
+ * only the selected one, which has the accent tint, still read as a control.
+ * A chip is not chrome: it sits ON the page and has to lift off it, which is
+ * `--color-raised` — the same fill `LibrarySearchBar` drops back to.
+ *
+ * The hook returns the per-chip function, so a row can call it once and
+ * apply it inside its own map. It gives back nothing on the glass path (a
+ * background there would cover the material) and nothing for a selected
+ * chip, whose tint is already its fill.
+ */
+export function useGlassChipFill(): (selected: boolean) => ViewStyle | null {
+  const raised = useCSSVariable('--color-raised') as string;
+  const glass = canUseLiquidGlass();
+  return React.useCallback(
+    (selected: boolean) =>
+      selected || glass ? null : { backgroundColor: raised },
+    [glass, raised]
+  );
+}
+
 export function createLiquidGlassPillStyle(
   chromeBorder: string,
   overrides: ViewStyle = {}

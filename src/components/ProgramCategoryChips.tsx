@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 
-import LiquidGlassSurface from './LiquidGlassSurface';
+import LiquidGlassSurface, { useGlassChipFill } from './LiquidGlassSurface';
 import { fireSelectionHaptic } from '../services/haptics';
 import Icon, { type IconName } from './Icon';
 import {
@@ -27,6 +27,7 @@ const ProgramCategoryChips: React.FC<{
   onChange: (category: ProgramCategoryId | null) => void;
 }> = ({ category, onChange }) => {
   const { t } = useTranslation();
+  const chipFill = useGlassChipFill();
   const [accentPrimary, accentText, textPrimary] = useCSSVariable([
     '--color-accent-primary',
     '--color-accent-text',
@@ -56,6 +57,7 @@ const ProgramCategoryChips: React.FC<{
           height: CHIP_HEIGHT,
           borderRadius: CHIP_HEIGHT / 2,
           overflow: 'hidden',
+          ...chipFill(selected),
         }}
       >
         <TouchableOpacity
