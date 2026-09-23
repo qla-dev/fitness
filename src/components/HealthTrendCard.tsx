@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import Animated, {
   Easing,
@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Line, Path } from 'react-native-svg';
+import CardPressable from './CardPressable';
 import DashboardCardTitle from './DashboardCardTitle';
 import ValueSkeleton from './ValueSkeleton';
 import Icon, { type IconName } from './Icon';
@@ -231,29 +232,35 @@ export default function HealthTrendCard({
   };
 
   return (
-    <View className="bg-surface rounded-3xl p-4 mb-3">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={title}
-        onPress={onOpen}
-      >
-        <View className="flex-row items-center gap-2 mb-3">
-          <Icon name={icon} size={20} color={color} />
-          <View className="flex-1">
-            <DashboardCardTitle>{title}</DashboardCardTitle>
-          </View>
-          <Icon name="chevron-forward" size={18} color={color} />
+    // The card itself is the target, not a region inside it: the chevron is an
+    // 18pt glyph in the corner of a card several hundred points wide, and the
+    // press this invites is on the card. `CardPressable` is the same object the
+    // dashboard's cards use, so these open the same way and tap the same way
+    // rather than being a second, quieter copy of it.
+    <CardPressable
+      onPress={onOpen}
+      accessibilityLabel={title}
+      className="bg-surface rounded-3xl p-4 mb-3"
+    >
+      <View className="flex-row items-center gap-2 mb-3">
+        <Icon name={icon} size={20} color={color} />
+        <View className="flex-1">
+          <DashboardCardTitle>{title}</DashboardCardTitle>
         </View>
-        {body()}
-        <Text style={{ color }} className="text-sm font-medium mt-2">
-          {t('dashboard.trendPeriod', {
-            count: days,
-            defaultValue: 'Last {{count}} days',
-            defaultValue_one: 'Last {{count}} day',
-            defaultValue_other: 'Last {{count}} days',
-          })}
-        </Text>
-      </Pressable>
-    </View>
+        {/* Kept as a plain glyph, tinted to the trend rather than muted: the
+            card carries the press, so a pressable chevron would put a hole in
+            it that fires a second haptic for one tap. */}
+        <Icon name="chevron-forward" size={18} color={color} />
+      </View>
+      {body()}
+      <Text style={{ color }} className="text-sm font-medium mt-2">
+        {t('dashboard.trendPeriod', {
+          count: days,
+          defaultValue: 'Last {{count}} days',
+          defaultValue_one: 'Last {{count}} day',
+          defaultValue_other: 'Last {{count}} days',
+        })}
+      </Text>
+    </CardPressable>
   );
 }
