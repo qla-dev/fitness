@@ -237,6 +237,7 @@ export function useSleepRange({ range, enabled = true }: UseSleepRangeOptions) {
   return {
     sleep: query.data ?? EMPTY_SUMMARY,
     isLoading: query.isLoading,
+    isPlaceholderData: query.isPlaceholderData,
     isError: query.isError && !isForbidden,
     refetch: query.refetch,
   };

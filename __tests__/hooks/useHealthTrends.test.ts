@@ -85,6 +85,43 @@ afterEach(() => {
 });
 
 describe('useHealthTrends', () => {
+  test('marks previous-range rows until the first load completes, but not cached switches', async () => {
+    // @ts-expect-error partial row is enough for the fields the hook reads
+    mockFetchMeasurementsRange.mockResolvedValue([measurementRow]);
+    const { result, rerender } = renderHook(
+      ({ range }: { range: 'm' | '6m' }) =>
+        useHealthTrends({ range, activeTrends: ['steps'] }),
+      {
+        initialProps: { range: 'm' as 'm' | '6m' },
+        wrapper: createQueryWrapper(queryClient),
+      }
+    );
+    await waitFor(() => expect(result.current.steps.isLoading).toBe(false));
+    expect(result.current.isPlaceholderData).toBe(false);
+
+    let finish!: (
+      rows: Awaited<ReturnType<typeof fetchMeasurementsRange>>
+    ) => void;
+    mockFetchMeasurementsRange.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    rerender({ range: '6m' });
+    expect(result.current.steps.isLoading).toBe(false);
+    expect(result.current.isPlaceholderData).toBe(true);
+    expect(result.current.steps.data.at(-1)?.steps).toBe(5000);
+
+    await act(async () => finish([]));
+    await waitFor(() => expect(result.current.isPlaceholderData).toBe(false));
+    rerender({ range: 'm' });
+    expect(result.current.isPlaceholderData).toBe(false);
+    expect(result.current.steps.data.at(-1)?.steps).toBe(5000);
+    rerender({ range: '6m' });
+    expect(result.current.isPlaceholderData).toBe(false);
+  });
+
   test('returns all three series from one call', async () => {
     // @ts-expect-error partial row is enough for the fields the hook reads
     mockFetchMeasurementsRange.mockResolvedValue([measurementRow]);

@@ -92,6 +92,7 @@ export function useMeasurementsRange({
     stepsData: query.data?.stepsData ?? EMPTY_STEPS,
     weightData: query.data?.weightData ?? EMPTY_WEIGHT,
     isLoading: query.isLoading,
+    isPlaceholderData: query.isPlaceholderData,
     isError: query.isError,
     refetch: query.refetch,
   };

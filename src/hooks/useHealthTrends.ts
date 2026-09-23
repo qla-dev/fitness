@@ -28,6 +28,7 @@ export type SleepTrendSeries = HealthTrendSeries<SleepTimelineDay> &
   Omit<SleepTimelineSummary, 'days'>;
 
 interface HealthTrends {
+  isPlaceholderData: boolean;
   steps: HealthTrendSeries<StepsDataPoint>;
   weight: HealthTrendSeries<WeightDataPoint>;
   sleep: SleepTrendSeries;
@@ -53,6 +54,7 @@ export function useHealthTrends({
     stepsData,
     weightData,
     isLoading: isMeasurementsLoading,
+    isPlaceholderData: isMeasurementsPlaceholder,
     isError: isMeasurementsError,
     refetch: refetchMeasurements,
   } = useMeasurementsRange({ range, enabled: isMeasurementsEnabled });
@@ -60,6 +62,7 @@ export function useHealthTrends({
   const {
     sleep,
     isLoading: isSleepLoading,
+    isPlaceholderData: isSleepPlaceholder,
     isError: isSleepError,
     refetch: refetchSleep,
   } = useSleepRange({ range, enabled: isSleepEnabled });
@@ -67,6 +70,7 @@ export function useHealthTrends({
   const {
     waterData,
     isLoading: isWaterLoading,
+    isPlaceholderData: isWaterPlaceholder,
     isError: isWaterError,
     refetch: refetchWater,
   } = useWaterRange({ range, enabled: isWaterEnabled });
@@ -87,6 +91,10 @@ export function useHealthTrends({
   ]);
 
   return {
+    isPlaceholderData:
+      (isMeasurementsEnabled && isMeasurementsPlaceholder) ||
+      (isSleepEnabled && isSleepPlaceholder) ||
+      (isWaterEnabled && isWaterPlaceholder),
     // Steps and weight share one request, so they necessarily share its fetch state.
     steps: {
       data: stepsData,

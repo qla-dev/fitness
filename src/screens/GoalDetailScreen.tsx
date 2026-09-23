@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActivityMetricChart from '../components/ActivityMetricChart';
@@ -11,6 +11,7 @@ import SleepTimelineChart from '../components/SleepTimelineChart';
 import StepsBarChart from '../components/StepsBarChart';
 import WaterBarChart from '../components/WaterBarChart';
 import WeightLineChart from '../components/WeightLineChart';
+import ValueSkeleton from '../components/ValueSkeleton';
 import {
   useDailySummary,
   useHealthTrends,
@@ -366,7 +367,17 @@ export default function GoalDetailScreen({
    * two weigh-ins averages those two, and a missing day is missing, not a day
    * you weighed nothing.
    */
+  // Placeholder rows belong to the previous range; only the chart may use
+  // them for its transition, never the selected range's headline.
+  const rangeSummaryPending =
+    range !== 'd' &&
+    (showActivityHistory
+      ? activityHistory.isLoading || activityHistory.isPlaceholderData
+      : trend !== null &&
+        (trends[trend].isLoading || trends.isPlaceholderData));
+
   const summaryValue = useMemo(() => {
+    if (rangeSummaryPending) return undefined;
     if (range === 'd') return today?.value;
     const recorded = rangeSeries.filter((value) => value > 0);
     if (recorded.length === 0) return undefined;
@@ -377,7 +388,7 @@ export default function GoalDetailScreen({
     // nights — so both stay an average of the days that have one.
     if (AVERAGED_METRICS.has(metric)) return total / recorded.length;
     return total / SUMMARY_PERIODS[range];
-  }, [range, today?.value, rangeSeries, metric]);
+  }, [range, today?.value, rangeSeries, metric, rangeSummaryPending]);
 
   /**
    * The headline as text, in whatever shape the metric writes itself. Sleep
@@ -389,7 +400,8 @@ export default function GoalDetailScreen({
     if (range === 'd') return today?.text;
     if (trend === 'sleep') return formatSleepDuration(summaryValue, t);
     return formatLocalizedNumber(summaryValue, {
-      maximumFractionDigits: activity?.precision ?? (trend === 'weight' ? 1 : 0),
+      maximumFractionDigits:
+        activity?.precision ?? (trend === 'weight' ? 1 : 0),
     });
   }, [summaryValue, range, today?.text, trend, activity?.precision, t]);
 
@@ -473,9 +485,7 @@ export default function GoalDetailScreen({
             </View>
           ) : null}
 
-          {isLoading && !today ? (
-            <ActivityIndicator className="my-8" />
-          ) : today ? (
+          {today || isLoading ? (
             <View testID="goal-detail-summary" className="px-4">
               {/* What the figure is — Today, or the average it stands for.
                   Which days it covers is the line under the number, so this
@@ -487,22 +497,28 @@ export default function GoalDetailScreen({
                 {summaryLabel}
               </Text>
               <View className="flex-row items-end gap-2">
-                <Text className="text-3xl font-bold text-text-primary">
-                  {summaryText ?? today.text}
-                </Text>
+                <View className="min-h-9 justify-center">
+                  {rangeSummaryPending || (isLoading && !today) ? (
+                    <ValueSkeleton width={96} height={30} />
+                  ) : (
+                    <Text className="text-3xl font-bold text-text-primary">
+                      {summaryText ?? (range === 'd' ? today?.text : '—')}
+                    </Text>
+                  )}
+                </View>
                 {/* The metric's unit where it has one, and its name where it
                     does not: "1,478 Steps" reads the way the Health app writes
                     it, and it is why the charts below drop their own heading —
                     it was saying the same word again, a gap further down. */}
                 <Text className="text-sm text-text-secondary mb-1">
-                  {today.unit || title}
+                  {today?.unit || title}
                 </Text>
               </View>
               <Text className="text-xs text-text-muted mt-0.5">
                 {summaryPeriod}
               </Text>
 
-              {today.goal > 0 ? (
+              {today && today.goal > 0 && summaryValue !== undefined ? (
                 <>
                   <View
                     className="bg-raised rounded-full overflow-hidden mt-2"

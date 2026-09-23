@@ -87,6 +87,7 @@ export function useActivityRange({
   return {
     data: query.data ?? EMPTY_ACTIVITY,
     isLoading: query.isLoading,
+    isPlaceholderData: query.isPlaceholderData,
     isError: query.isError,
     refetch: query.refetch,
   };

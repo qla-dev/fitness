@@ -52,6 +52,7 @@ export function useWaterRange({ range, enabled = true }: UseWaterRangeOptions) {
   return {
     waterData: query.data ?? EMPTY_WATER,
     isLoading: query.isLoading,
+    isPlaceholderData: query.isPlaceholderData,
     isError: query.isError,
     refetch: query.refetch,
   };
