@@ -212,7 +212,7 @@ describe('getAggregatedStepsByDate (statistics collection)', () => {
     expect(mockQueryStatisticsCollection).not.toHaveBeenCalled();
   });
 
-  test('issues ONE collection query for the whole range, anchored at local midnight', async () => {
+  test('buckets the whole range in one day query, anchored at local midnight', async () => {
     await initHealthConnect();
 
     const startDate = localDate(2024, 1, 15);
@@ -225,7 +225,9 @@ describe('getAggregatedStepsByDate (statistics collection)', () => {
 
     const result = await getAggregatedStepsByDate(startDate, endDate);
 
-    expect(mockQueryStatisticsCollection).toHaveBeenCalledTimes(1);
+    // One query for the DAYS — not one per day, which is the guarantee that
+    // matters here — plus the hour-bucketed read below it. The Move ring has
+    // paid for its own breakdown the same way since it got one.
     expect(mockQueryStatisticsCollection).toHaveBeenCalledWith(
       'HKQuantityTypeIdentifierStepCount',
       ['cumulativeSum'],
@@ -233,6 +235,10 @@ describe('getAggregatedStepsByDate (statistics collection)', () => {
       { day: 1 },
       { filter: { date: { startDate, endDate } }, unit: 'count' }
     );
+    const dayQueries = mockQueryStatisticsCollection.mock.calls.filter(
+      (call) => (call[3] as { day?: number })?.day === 1
+    );
+    expect(dayQueries).toHaveLength(1);
     expect(result).toHaveLength(3);
     expect(result[0]).toMatchObject({
       date: toLocalDateString(localDate(2024, 1, 15)),

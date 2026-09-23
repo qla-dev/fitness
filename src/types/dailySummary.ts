@@ -26,6 +26,8 @@ export interface DailySummary {
   fiber: MacroSummary;
   stepCalories: number; // Server-computed step calories using stride formula
   exerciseMinutes: number;
+  /** The day's steps by hour, where the provider could break them down. */
+  hourlySteps?: number[];
   /** The day's active energy by hour, where the provider could break it down. */
   hourlyMove?: number[];
   /** The day's standing hours as 24 flags, from the Stand ring's own records. */

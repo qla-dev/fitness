@@ -119,6 +119,9 @@ export function buildDailySummary(
     // The charts want the hours behind the ring, under the names the health
     // records carry. Undefined where the provider gave no breakdown, which the
     // chart reports as unavailable rather than drawing an empty day.
+    // 'step' is the type the importer stores the aggregate under, the same
+    // key its hourly slots ride on.
+    hourlySteps: hourlyActivity?.step,
     hourlyMove: hourlyActivity?.['Active Calories'],
     hourlyStand: hourlyActivity?.apple_stand_hours,
     hourlyExercise: hourlyActivity?.apple_exercise_time,

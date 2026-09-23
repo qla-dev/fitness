@@ -627,15 +627,46 @@ const getAggregatedDataByDateDetailed = async (
   }
 };
 
-export const getAggregatedStepsByDateDetailed = (
+export const getAggregatedStepsByDateDetailed = async (
   startDate: Date,
   endDate: Date
-) =>
-  getAggregatedDataByDateDetailed(
+): Promise<HealthKitReadResult<AggregatedHealthRecord>> => {
+  const result = await getAggregatedDataByDateDetailed(
     startDate,
     endDate,
     AGGREGATION_CONFIGS.steps
   );
+  if (result.records.length === 0) return result;
+  // The day's steps by hour, read the same way the Move ring's are: the same
+  // quantity at a finer grain, alongside the total rather than as a metric of
+  // its own. It is what lets a goal's Day range draw the day instead of one
+  // bar that says what the number above it already said.
+  try {
+    const hourly = await queryHourlyByDay(
+      AGGREGATION_CONFIGS.steps.identifier,
+      startDate,
+      endDate,
+      AGGREGATION_CONFIGS.steps.unit
+    );
+    return {
+      ...result,
+      records: result.records.map((record) => {
+        const hours = hourly.get(record.date);
+        return hours ? { ...record, hourly: hours.map(Math.round) } : record;
+      }),
+    };
+  } catch (error) {
+    // The total is the goal; losing its breakdown costs a chart, so it must
+    // not cost the metric.
+    addLog(
+      `[HealthKitService] Hourly steps unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      'DEBUG'
+    );
+    return result;
+  }
+};
 
 export const getAggregatedStepsByDate = (startDate: Date, endDate: Date) =>
   getAggregatedStepsByDateDetailed(startDate, endDate).then(
