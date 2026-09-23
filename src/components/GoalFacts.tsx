@@ -192,6 +192,13 @@ export default function GoalFacts({
       >
         {t('goalFacts.heading', { defaultValue: 'Patterns & perspective' })}
       </Text>
+      {/* The cover leads for every goal: it says what the metric is before
+          the cards below measure it. */}
+      <CoverFact
+        title={copy.coverTitle}
+        body={copy.coverBody}
+        image={covers[metric]}
+      />
       {metric === 'steps' ? (
         <>
           <SmallGraphFact
@@ -242,11 +249,6 @@ export default function GoalFacts({
                 periods.lastYear
               ),
             ]}
-          />
-          <CoverFact
-            title={copy.coverTitle}
-            body={copy.coverBody}
-            image={covers[metric]}
           />
           <SmallGraphFact
             {...common}
@@ -312,11 +314,6 @@ export default function GoalFacts({
             labels={Array.from({ length: 28 }, (_, i) =>
               dateLabel(addDays(date, i - 27))
             )}
-          />
-          <CoverFact
-            title={copy.coverTitle}
-            body={copy.coverBody}
-            image={covers[metric]}
           />
           <SmallGraphFact
             {...common}

@@ -876,15 +876,45 @@ export const getAggregatedActiveCaloriesByDate = (
     (result) => result.records
   );
 
-export const getAggregatedDistanceByDateDetailed = (
+export const getAggregatedDistanceByDateDetailed = async (
   startDate: Date,
   endDate: Date
-) =>
-  getAggregatedDataByDateDetailed(
+): Promise<HealthKitReadResult<AggregatedHealthRecord>> => {
+  const result = await getAggregatedDataByDateDetailed(
     startDate,
     endDate,
     AGGREGATION_CONFIGS.distance
   );
+  if (result.records.length === 0) return result;
+  // The day's distance by hour, read the way steps are, so the distance goal's
+  // Day range can draw the day rather than one bar repeating the total.
+  // Metres, rounded like the total beside them.
+  try {
+    const hourly = await queryHourlyByDay(
+      AGGREGATION_CONFIGS.distance.identifier,
+      startDate,
+      endDate,
+      AGGREGATION_CONFIGS.distance.unit
+    );
+    return {
+      ...result,
+      records: result.records.map((record) => {
+        const hours = hourly.get(record.date);
+        return hours ? { ...record, hourly: hours.map(Math.round) } : record;
+      }),
+    };
+  } catch (error) {
+    // The total is the goal; losing its breakdown costs a chart, so it must
+    // not cost the metric.
+    addLog(
+      `[HealthKitService] Hourly distance unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      'DEBUG'
+    );
+    return result;
+  }
+};
 
 export const getAggregatedDistanceByDate = (startDate: Date, endDate: Date) =>
   getAggregatedDistanceByDateDetailed(startDate, endDate).then(

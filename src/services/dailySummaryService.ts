@@ -125,6 +125,7 @@ export function buildDailySummary(
     hourlyMove: hourlyActivity?.['Active Calories'],
     hourlyStand: hourlyActivity?.apple_stand_hours,
     hourlyExercise: hourlyActivity?.apple_exercise_time,
+    hourlyDistance: hourlyActivity?.distance,
     totalCaloriesBurned,
     exerciseMinutesGoal: goals.target_exercise_duration_minutes || 0,
     exerciseCaloriesGoal: goals.target_exercise_calories_burned || 0,

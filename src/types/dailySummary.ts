@@ -34,6 +34,8 @@ export interface DailySummary {
   hourlyStand?: number[];
   /** The day's exercise minutes by hour, as the provider broke them down. */
   hourlyExercise?: number[];
+  /** The day's walking and running distance by hour, in metres. */
+  hourlyDistance?: number[];
   /**
    * Resting + active energy for the day. Distinct from the Move ring, which is
    * active energy alone — this is the figure the Health app prints as the

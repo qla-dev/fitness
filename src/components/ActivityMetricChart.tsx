@@ -123,6 +123,12 @@ interface ActivityMetricChartProps {
   plotHeight?: number;
   /** Draws the scale down the left, the way the range charts do. */
   showYAxis?: boolean;
+  /**
+   * Decimal places for every figure the chart prints. Whole numbers by
+   * default; distance passes its own, since an hour of walking is a fraction
+   * of a kilometre and rounding it to 0 or 1 says nothing.
+   */
+  precision?: number;
   /** Opens this metric's own screen. Omitted where there is nothing to open. */
   onOpen?: () => void;
 }
@@ -141,6 +147,7 @@ export default function ActivityMetricChart({
   bare = false,
   plotHeight = DEFAULT_PLOT_HEIGHT,
   showYAxis = false,
+  precision = 0,
   onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
@@ -154,7 +161,7 @@ export default function ActivityMetricChart({
   const selectedIndex =
     selection && selection.key === selectionKey ? selection.index : null;
   const number = (amount: number) =>
-    formatLocalizedNumber(amount, { maximumFractionDigits: 0 });
+    formatLocalizedNumber(amount, { maximumFractionDigits: precision });
   const hasSamples =
     hourlyValues?.some((amount) => amount != null && Number.isFinite(amount)) ??
     false;
@@ -255,7 +262,7 @@ export default function ActivityMetricChart({
               className="text-text-muted text-xs absolute right-1"
               style={{ top: baseline - span * fraction - 7 }}
             >
-              {number(Math.round(max * fraction))}
+              {number(max * fraction)}
             </Text>
           ))}
         </View>

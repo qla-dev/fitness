@@ -244,9 +244,10 @@ export default function GoalDetailScreen({
    * The day broken into hours, where the metric can answer "when".
    *
    * Exercise comes from the logged sessions; the rest from the provider's own
-   * breakdown, which the importer attaches beside each day's total. Steps is
-   * the newest of them — HealthKit always had the hours, the importer simply
-   * never asked for them.
+   * breakdown, which the importer attaches beside each day's total. Steps and
+   * distance are the newest of them — HealthKit always had the hours, the
+   * importer simply never asked for them. Distance arrives in metres and is
+   * converted here, as the day total above it is.
    *
    * Water and weight are absent for different reasons: the diary stores water
    * as a day's total rather than as the pours that made it, and a weight is a
@@ -262,7 +263,11 @@ export default function GoalDetailScreen({
           ? summary?.hourlyStand
           : metric === 'steps'
             ? summary?.hourlySteps
-            : undefined;
+            : metric === 'distance'
+              ? summary?.hourlyDistance?.map((metres) =>
+                  distanceFromKm(metres / 1000, distanceUnit)
+                )
+              : undefined;
 
   /**
    * Day draws the day, not one bar.
@@ -563,6 +568,7 @@ export default function GoalDetailScreen({
                   unit={today?.unit ?? ''}
                   hourlyValues={hourlyForMetric}
                   binary={metric === 'stand'}
+                  precision={activity?.precision ?? 0}
                   showValue={false}
                   // The size, the scale and the box the range charts have, so
                   // tapping D swaps the chart without moving the page.
