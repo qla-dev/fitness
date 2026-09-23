@@ -1,14 +1,8 @@
-import { useEffect } from 'react';
 import DashboardCardTitle from './DashboardCardTitle';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
 import Animated, {
-  Easing,
   useAnimatedProps,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Line, Rect } from 'react-native-svg';
@@ -18,6 +12,7 @@ import CardPressable from './CardPressable';
 import ChartCaption from './ChartCaption';
 import Icon, { type IconName } from './Icon';
 import { CHART_GRID_LINE_COLOR, CHART_X_AXIS_BAND } from '../constants/charts';
+import { useChartRise } from '../hooks/useChartRise';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -33,7 +28,6 @@ const gridFractions = [0, 1 / 3, 2 / 3, 1];
 const hourTicks = [0, 6, 12, 18];
 /** The chart's internal width; the SVG is stretched to whatever it is given. */
 const VIEWBOX_WIDTH = 288;
-const GROW_MS = 650;
 
 /**
  * One hour's bar, growing out of the baseline.
@@ -187,27 +181,12 @@ export default function ActivityMetricChart({
   // time the screen is focused, so the bars rise on every visit rather than
   // only the first — and so the chart has something to show from the first
   // frame instead of appearing when the hourly data lands.
-  const isFocused = useIsFocused();
-  const reducedMotion = useReducedMotion();
-  const progress = useSharedValue(0);
-  const shapeKey = `${total}:${max}:${hasSamples}`;
-
-  useEffect(() => {
-    if (!hasSamples) {
-      progress.value = 0;
-      return;
-    }
-    if (!isFocused) return;
-    if (reducedMotion) {
-      progress.value = 1;
-      return;
-    }
-    progress.value = 0;
-    progress.value = withTiming(1, {
-      duration: GROW_MS,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isFocused, hasSamples, reducedMotion, shapeKey, progress]);
+  //
+  // This chart set the gesture and the range charts now share the hook, which
+  // is the point: the picker swaps one for another in the same slot, and they
+  // have to move the same way for that to read as a range changing rather than
+  // as an image being swapped.
+  const progress = useChartRise(`${total}:${max}`, hasSamples);
 
   const hourLabels = (
     <View

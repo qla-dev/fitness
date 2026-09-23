@@ -28,3 +28,14 @@ export const CHART_GRID_LINE_COLOR = 'hsla(0, 0%, 0%, 0.25)';
 
 /** The band an x-axis label sits in, below the plot and inside its box. */
 export const CHART_X_AXIS_BAND = 18;
+
+/**
+ * How long a chart's series takes to rise out of its axis, everywhere one does.
+ *
+ * The hourly chart picked this first and it is the one that reads right, so it
+ * is the number the range charts match rather than each carrying its own. The
+ * bar and line charts used to hand Victory a 300ms path tween instead, which
+ * is a different gesture at a different speed in the same slot: tapping D felt
+ * like the day being drawn and tapping W felt like an image being swapped.
+ */
+export const CHART_RISE_MS = 650;

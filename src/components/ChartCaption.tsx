@@ -14,7 +14,12 @@ import { View } from 'react-native';
  *
  * A component rather than the same class list in four files, which is exactly
  * how those four drifted to 32, 40 and 44 points apart from each other.
+ *
+ * Exactly one line of `text-sm` and no margin around it. It used to reserve
+ * half again that much, which on the goal screen opened a band of nothing
+ * between the figure and the plot it belongs to — the two read as separate
+ * blocks rather than as one number and its history.
  */
 export default function ChartCaption({ children }: { children?: ReactNode }) {
-  return <View className="h-6 justify-center my-1">{children}</View>;
+  return <View className="h-5 justify-center">{children}</View>;
 }

@@ -1,19 +1,15 @@
-import { Canvas, Group, Rect } from '@shopify/react-native-skia';
+import { Canvas, Rect } from '@shopify/react-native-skia';
 import ChartSurface from './ChartSurface';
 import ChartCaption from './ChartCaption';
 import type { TFunction } from 'i18next';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
-import {
-  useDerivedValue,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 import { useCSSVariable } from 'uniwind';
 
+import { useChartRise } from '../hooks/useChartRise';
 import { usePreferences } from '../hooks/usePreferences';
+import ChartRiseGroup from './charts/ChartRiseGroup';
 import type {
   HealthTrendDateRange,
   HealthTrendSeries,
@@ -301,25 +297,10 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
   }
 
   // The night draws itself up out of the axis whenever a range lands, the same
-  // gesture the bar and line charts make — see `useChartRise`, which does it by
-  // handing Victory a flat frame. There is no Victory here to hand anything to,
-  // so the whole Skia group is scaled about the foot of the plot instead, which
-  // is the same movement from the viewer's side.
-  const reducedMotion = useReducedMotion();
-  const rise = useSharedValue(0);
-  useEffect(() => {
-    if (reducedMotion) {
-      rise.value = 1;
-      return;
-    }
-    rise.value = 0;
-    rise.value = withTiming(1, { duration: 400 });
-  }, [data, range, reducedMotion, rise]);
-  const riseTransform = useDerivedValue(() => [
-    { translateY: PLOT_HEIGHT },
-    { scaleY: rise.value },
-    { translateY: -PLOT_HEIGHT },
-  ]);
+  // gesture at the same speed as the bar and line charts beside it. This chart
+  // has always scaled its own Skia group rather than animating each block; the
+  // others do it that way now too, so all three share the one hook.
+  const rise = useChartRise(`${range}:${data.length}`, data.length > 0);
 
   const touchLayout: ChartTouchLayout = useMemo(() => {
     if (plotWidth <= 0 || layout.columns.length === 0)
@@ -441,7 +422,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
                 most of the block outright.
               */}
               <Canvas style={{ flex: 1 }}>
-                <Group transform={riseTransform}>
+                <ChartRiseGroup progress={rise} baseline={PLOT_HEIGHT}>
                   {layout.columns.flatMap((column) =>
                     column.blocks.map((block, blockIndex) => (
                       <Rect
@@ -456,7 +437,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
                       />
                     ))
                   )}
-                </Group>
+                </ChartRiseGroup>
               </Canvas>
 
               <ChartTouchOverlay

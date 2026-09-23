@@ -18,6 +18,7 @@ import { RANGE_X_TICKS } from '../types/healthTrends';
 import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
 import ChartCaption from './ChartCaption';
 import { useChartRise } from '../hooks/useChartRise';
+import ChartRiseGroup from './charts/ChartRiseGroup';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -101,9 +102,9 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
 
   const hasData = useMemo(() => data.length > 0, [data]);
 
-  // Pinned from the real readings rather than left to Victory to derive, so
-  // the flat frame the rise starts from cannot drag the axis and flash a
-  // different scale on the way in. These are the bounds Victory would compute
+  // Pinned from the real readings rather than left to Victory to derive, so the
+  // axis is fixed for the whole rise: the line scales about the baseline while
+  // the scale beside it holds still. These are the bounds Victory would compute
   // for itself, written out.
   const yDomain = useMemo((): [number, number] | undefined => {
     if (!data.length) return undefined;
@@ -116,17 +117,15 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
     return [low, high];
   }, [data]);
 
-  // A line's floor is the bottom of its domain, not zero: a weight flattened to
-  // zero would start below the plot and fly in from off-screen rather than rise
-  // out of the axis.
-  const flattenWeight = useCallback(
-    (point: WeightDataPoint): WeightDataPoint => ({
-      ...point,
-      weight: yDomain ? yDomain[0] : point.weight,
-    }),
-    [yDomain]
+  // The line draws itself up out of the axis whenever a range lands, the same
+  // gesture at the same speed as the bars and the hourly chart. Scaling what is
+  // drawn needs no flattened copy of the readings: the old one had to be pinned
+  // to the foot of the domain so a weight did not fall below the plot and fly
+  // back in from off-screen, and it still never replayed for a cached range.
+  const rise = useChartRise(
+    `${range}:${data.length}:${yDomain?.[0] ?? 0}:${yDomain?.[1] ?? 0}`,
+    hasData
   );
-  const series = useChartRise(data, flattenWeight);
 
   const formatXLabel = formatXLabelForRange(range);
 
@@ -219,7 +218,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
       ) : (
         <View style={{ height: PLOT_HEIGHT }}>
           <CartesianChart
-            data={series}
+            data={data}
             xKey="day"
             yKeys={['weight']}
             {...(yDomain ? { domain: { y: yDomain } } : {})}
@@ -247,14 +246,18 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
                   points={points.weight}
                   onChange={handleTouchLayoutChange}
                 />
-                <LineSeriesMark
-                  points={points.weight}
-                  color={accentColor}
-                  strokeWidth={2}
-                  animate={{ type: 'timing', duration: 300 }}
-                  curveType="cardinal"
-                  connectMissingData
-                />
+                {/* No `animate`: one shape throughout, risen by the group
+                    above it. Victory's path tween would be a second animation
+                    of the same mark on a different clock. */}
+                <ChartRiseGroup progress={rise} baseline={chartBounds.bottom}>
+                  <LineSeriesMark
+                    points={points.weight}
+                    color={accentColor}
+                    strokeWidth={2}
+                    curveType="cardinal"
+                    connectMissingData
+                  />
+                </ChartRiseGroup>
               </>
             )}
           </CartesianChart>

@@ -1,58 +1,73 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useReducedMotion } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import {
+  Easing,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+
+import { CHART_RISE_MS } from '../constants/charts';
+import { useIsFocusedWhenNavigable } from './useIsFocusedWhenNavigable';
 
 /**
- * Makes a chart's series grow out of its baseline whenever the data changes.
+ * How far a chart's series has risen out of its axis: 0 flat on the baseline,
+ * 1 the data as recorded.
  *
- * Victory animates between paths, not from nothing: `useAnimatedPath` seeds the
- * path it is animating *from* with the path it is first handed, so a chart that
- * mounts — or that is handed a new range — simply appears at full height. That
- * is the right behaviour for a value ticking up in place, and the wrong one for
- * the range picker, where tapping W should feel like the week being drawn
- * rather than like a different image being swapped in.
+ * Every chart on the goal screen shares this one value so the range picker
+ * swaps between charts that move the same way. It is driven straight from
+ * Reanimated, and the marks are scaled about the foot of the plot — see
+ * `ChartRiseGroup` — rather than handed to a charting library to interpolate.
  *
- * So the flat shape is committed for one frame and the real one the frame
- * after, and Victory's own 300ms tween does the rest. A frame rather than a
- * microtask is the whole trick: both shapes inside one commit are one path as
- * far as Skia is concerned, and nothing animates.
+ * That is the whole reason this exists in this shape. It used to commit a flat
+ * copy of the series for one frame and let Victory tween the two paths, which
+ * fought the library on both ends: Skia will only interpolate between paths
+ * whose verbs match, so a flattened bar had to be given a sliver of height to
+ * keep its rounded corners from collapsing into a plain rectangle, and a
+ * flattened line had to be pinned to the bottom of its own domain so it did not
+ * fly in from off-screen. Neither dodge was reliable, and a range whose data was
+ * already cached came back with the same array identity and so never replayed at
+ * all. Scaling the drawn group needs none of it: there is one shape throughout,
+ * the library animates nothing, and the gesture is the same for bars, lines and
+ * stacked blocks.
  *
- * Keyed on the array's identity, the same signal the tooltip reset already
- * trusts — a new range and a pull-to-refresh both hand down a new array, and
- * both are worth redrawing. A caller that rebuilds the array on every render
- * would cancel the pending frame every render and never reveal anything, so
- * the range hooks return a shared constant while they are empty rather than
- * `?? []`.
+ * Replayed on every focus and whenever `shapeKey` changes, so returning to a
+ * range draws it again instead of revealing it already finished. `shapeKey`
+ * should name the window AND what is in it — the range alone would sit still
+ * while a query resolved under it.
  *
- * `flatten` decides what "flat" means, because it is not always zero: a bar
- * chart's floor is the axis, but a weight line lives in a domain that starts
- * near the reading, and dropping it to zero would send it below the plot and
- * fly it back in from off-screen.
+ * `hasData` holds the value at 0 while there is nothing to draw, so the rise
+ * belongs to the frame the data lands on rather than to the empty state before
+ * it.
  */
-export function useChartRise<T>(data: T[], flatten: (point: T) => T): T[] {
+export function useChartRise(
+  shapeKey: string,
+  hasData: boolean
+): SharedValue<number> {
+  // Not `useIsFocused`: these charts are mounted in tests without a container,
+  // and a presentational chart should not drag a navigator into one.
+  const isFocused = useIsFocusedWhenNavigable();
   const reducedMotion = useReducedMotion();
-  // The dataset whose flat frame has already been drawn. Anything else is a
-  // dataset still owed its one frame, so `risen` is derived rather than stored
-  // and the two can never disagree.
-  const [risenFor, setRisenFor] = useState<T[] | null>(null);
-  const risen = risenFor === data;
+  const progress = useSharedValue(0);
 
-  // `data` belongs in the dependencies, not just `risen`. Keyed on `risen`
-  // alone, a dataset that arrived while the previous frame was still in flight
-  // left the effect with unchanged dependencies and nothing scheduled, and the
-  // chart stayed flat under a correctly scaled axis until the screen was left
-  // and re-entered.
   useEffect(() => {
-    if (risen) return;
-    const frame = requestAnimationFrame(() => setRisenFor(data));
-    return () => cancelAnimationFrame(frame);
-  }, [risen, data]);
+    if (!hasData) {
+      progress.value = 0;
+      return;
+    }
+    if (!isFocused) return;
+    // Someone who has asked the system for less movement gets the chart it is
+    // drawing, not a chart on its way in.
+    if (reducedMotion) {
+      progress.value = 1;
+      return;
+    }
+    progress.value = 0;
+    progress.value = withTiming(1, {
+      duration: CHART_RISE_MS,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [isFocused, hasData, reducedMotion, shapeKey, progress]);
 
-  const flat = useMemo(() => data.map(flatten), [data, flatten]);
-
-  // Someone who has asked the system for less movement gets the chart it is
-  // drawing, not a chart on its way in. The same answer `ActivityMetricChart`
-  // gives its hourly bars.
-  if (reducedMotion) return data;
-
-  return risen ? data : flat;
+  return progress;
 }

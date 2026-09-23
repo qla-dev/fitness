@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import ChartSurface from './ChartSurface';
+import ChartRiseGroup from './charts/ChartRiseGroup';
+import { useChartRise } from '../hooks/useChartRise';
 import { useTranslation } from 'react-i18next';
 import { View, Text } from 'react-native';
 import { CartesianChart, Bar } from 'victory-native';
@@ -116,6 +118,10 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
     }
     return undefined;
   }, [data, goal]);
+
+  // The same rise the goal screen's charts make, at the same speed: this is the
+  // same daily-bar chart with a range picker over it, so it moves the same way.
+  const rise = useChartRise(`${range}:${data.length}:${maxVal ?? 0}`, hasData);
 
   const formatXLabel = formatXLabelForRange(range);
 
@@ -238,14 +244,19 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
                     points={points.value}
                     onChange={handleTouchLayoutChange}
                   />
-                  <Bar
-                    points={points.value}
-                    chartBounds={chartBounds}
-                    color={accentColor}
-                    innerPadding={RANGE_INNER_PADDING[range]}
-                    animate={{ type: 'timing', duration: 300 }}
-                    roundedCorners={{ topLeft: 6, topRight: 6 }}
-                  />
+                  {/* Neither `animate` nor `roundedCorners` — see
+                      `StepsBarChart`, which this chart is the nutrition copy
+                      of: the group rises the bars instead of Victory tweening
+                      their path, and a radius clamped to half a narrow bar's
+                      width domed every top into a tail. */}
+                  <ChartRiseGroup progress={rise} baseline={chartBounds.bottom}>
+                    <Bar
+                      points={points.value}
+                      chartBounds={chartBounds}
+                      color={accentColor}
+                      innerPadding={RANGE_INNER_PADDING[range]}
+                    />
+                  </ChartRiseGroup>
                   {goalY !== null && (
                     <SkiaLine
                       p1={{ x: chartBounds.left, y: goalY }}

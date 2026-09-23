@@ -27,6 +27,7 @@ import ChartTouchOverlay, {
 import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
 import ChartCaption from './ChartCaption';
 import { useChartRise } from '../hooks/useChartRise';
+import ChartRiseGroup from './charts/ChartRiseGroup';
 
 /**
  * The copy a daily-bar chart needs. Supplied by hydration, which is the same
@@ -94,21 +95,6 @@ const StepsTooltip: React.FC<{ text: string }> = ({ text }) => (
 );
 
 /**
- * How tall a bar stands before it grows: a hair above the axis, not on it.
- *
- * Zero would be the obvious answer and it is the one that broke the animation.
- * Victory clamps a bar's corner radius to half its height, so a bar of height
- * zero is rounded by zero — a plain rectangle, four lines — while a real bar is
- * a rounded one built from conics. Skia will only interpolate between paths
- * whose verbs match, so the tween out of a zero-height frame failed every time
- * and the bars snapped to full height instead of rising. Any height above zero
- * rounds by at least a half point, which is enough to keep the two shapes the
- * same. This one is about three hundredths of a pixel: far too small to see,
- * and the animation starts from it rather than from nothing.
- */
-const FLAT_BAR_FRACTION = 0.0001;
-
-/**
  * Builds the tooltip copy from the semantically selected data point. The text
  * is derived from the current `t` translator and the current application
  * locale on every render, so an already-visible tooltip can never retain stale
@@ -154,28 +140,21 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
 
   const hasData = useMemo(() => data.some((d) => d.steps > 0), [data]);
 
-  // Pinned from the real data, not from whatever is being drawn: the flat
-  // frame's domain would be [0, 0], and the axis would flash a column of
-  // zeroes on the way in. It is the same domain Victory derives for itself
-  // from the real points, so nothing about the scale changes.
+  // Written out rather than left to Victory to derive, so the axis is fixed for
+  // the whole rise: the bars scale about the baseline while the scale beside
+  // them holds still. These are the bounds Victory would compute for itself
+  // from the same points.
   const yMax = useMemo(
     () => data.reduce((highest, point) => Math.max(highest, point.steps), 0),
     [data]
   );
 
-  // Scaled to the domain rather than a fixed count, so the starting height is
-  // the same sliver whether the axis tops out at ten or at ten thousand.
-  const flattenBar = useCallback(
-    (point: StepsDataPoint): StepsDataPoint => ({
-      ...point,
-      steps: yMax * FLAT_BAR_FRACTION,
-    }),
-    [yMax]
-  );
-
   // The bars grow out of the axis each time a range lands, rather than
-  // appearing at full height — the gesture the hourly chart already has.
-  const series = useChartRise(data, flattenBar);
+  // appearing at full height — the gesture the hourly chart already has, at the
+  // same speed. The window and its contents both name the shape, so a range
+  // whose rows were already cached still redraws, and one still loading rises
+  // on the frame its rows arrive rather than before them.
+  const rise = useChartRise(`${range}:${data.length}:${yMax}`, hasData);
 
   const formatXLabel = formatXLabelForRange(range);
 
@@ -269,7 +248,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
       ) : (
         <View style={{ height: PLOT_HEIGHT }}>
           <CartesianChart
-            data={series}
+            data={data}
             xKey="day"
             yKeys={['steps']}
             domain={{ y: [0, yMax] }}
@@ -298,14 +277,26 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
                   points={points.steps}
                   onChange={handleTouchLayoutChange}
                 />
-                <Bar
-                  points={points.steps}
-                  chartBounds={chartBounds}
-                  color={color ?? accentColor}
-                  innerPadding={RANGE_INNER_PADDING[range]}
-                  animate={{ type: 'timing', duration: 300 }}
-                  roundedCorners={{ topLeft: 6, topRight: 6 }}
-                />
+                {/* No `animate`: the bars carry one shape throughout and
+                    the group above rises them out of the axis. Victory's own
+                    path tween would be a second animation of the same marks,
+                    on a different curve and a different clock.
+
+                    No `roundedCorners` either. Victory clamps a corner radius
+                    to half the bar's width, so at six points the rounding only
+                    stayed a corner on the week's wide bars: across a month the
+                    bars are a few points wide and the radius ate the whole top,
+                    doming each one into a tail. A day's total is a level, and a
+                    level is read off a flat edge — which is what the hourly
+                    chart beside it has always drawn. */}
+                <ChartRiseGroup progress={rise} baseline={chartBounds.bottom}>
+                  <Bar
+                    points={points.steps}
+                    chartBounds={chartBounds}
+                    color={color ?? accentColor}
+                    innerPadding={RANGE_INNER_PADDING[range]}
+                  />
+                </ChartRiseGroup>
               </>
             )}
           </CartesianChart>

@@ -476,7 +476,7 @@ export default function GoalDetailScreen({
           {isLoading && !today ? (
             <ActivityIndicator className="my-8" />
           ) : today ? (
-            <View testID="goal-detail-summary" className="px-4 pb-1">
+            <View testID="goal-detail-summary" className="px-4">
               {/* What the figure is — Today, or the average it stands for.
                   Which days it covers is the line under the number, so this
                   one stays short. */}

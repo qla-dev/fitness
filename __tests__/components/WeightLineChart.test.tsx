@@ -81,16 +81,25 @@ describe('WeightLineChart', () => {
     expect(screen.queryByTestId('scatter-mark')).toBeNull();
   });
 
-  it("keeps the weight line's stroke, curve, and animation settings", () => {
+  it("keeps the weight line's stroke and curve settings", () => {
     renderChart(weightSeries(3));
 
     const line = screen.getByTestId('line-mark');
     expect(line.props.strokeWidth).toBe(2);
     expect(line.props.curveType).toBe('cardinal');
     expect(line.props.connectMissingData).toBe(true);
-    expect(line.props.animate).toEqual({ type: 'timing', duration: 300 });
     // The global `uniwind` mock resolves every CSS variable to this value.
     expect(line.props.color).toBe('#888888');
+  });
+
+  it('leaves the mark unanimated, because the rise scales it instead', () => {
+    // Victory would tween between the two paths it is handed, on its own
+    // curve and its own clock. The line is scaled about the foot of the plot
+    // by `useChartRise` now — one shape throughout — and a second animation
+    // of the same mark would fight it.
+    renderChart(weightSeries(3));
+
+    expect(screen.getByTestId('line-mark').props.animate).toBeUndefined();
   });
 
   // The pager only reaches Weight with an empty window through its fallback, when no shown
