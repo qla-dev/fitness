@@ -23,6 +23,7 @@ type ChartTouchOverlayProps = {
   layout: ChartTouchLayout;
   onSelect: (index: number) => void;
   onClear?: () => void;
+  selectedIndex?: number | null;
   testIDPrefix?: string;
 };
 
@@ -183,6 +184,7 @@ const ChartTouchOverlay: React.FC<ChartTouchOverlayProps> = ({
   layout,
   onSelect,
   onClear,
+  selectedIndex,
   testIDPrefix,
 }) => {
   const zones = useMemo(
@@ -230,17 +232,18 @@ const ChartTouchOverlay: React.FC<ChartTouchOverlayProps> = ({
   const resetGesture = () => {
     clearActivationTimeout();
 
-    const shouldClear =
-      isSelectionActiveRef.current || selectedIndexRef.current != null;
-
     startPointRef.current = null;
     lastPointRef.current = null;
     isSelectionActiveRef.current = false;
     selectedIndexRef.current = null;
+  };
 
-    if (shouldClear) {
-      onClear?.();
+  const finishGesture = () => {
+    // A tap selects too; a drag cancelled before activation still scrolls.
+    if (startPointRef.current && !isSelectionActiveRef.current) {
+      updateSelection(lastPointRef.current, true);
     }
+    resetGesture();
   };
 
   useEffect(() => {
@@ -265,6 +268,7 @@ const ChartTouchOverlay: React.FC<ChartTouchOverlayProps> = ({
     resetGesture();
 
     if (!point || !isPointInsideChartBounds(point, chartBounds)) {
+      onClear?.();
       return;
     }
 
@@ -312,15 +316,30 @@ const ChartTouchOverlay: React.FC<ChartTouchOverlayProps> = ({
       testID={testIDPrefix}
       onTouchStart={beginTrackingTouch}
       onTouchMove={handleTouchMove}
-      onTouchEnd={resetGesture}
+      onTouchEnd={finishGesture}
       onTouchCancel={resetGesture}
       onMoveShouldSetResponderCapture={() => isSelectionActiveRef.current}
       onMoveShouldSetResponder={() => isSelectionActiveRef.current}
       onResponderMove={handleTouchMove}
-      onResponderRelease={resetGesture}
+      onResponderRelease={finishGesture}
       onResponderTerminate={resetGesture}
       onResponderTerminationRequest={() => !isSelectionActiveRef.current}
-    />
+    >
+      {selectedIndex != null && layout.points[selectedIndex] ? (
+        <View
+          pointerEvents="none"
+          testID={testIDPrefix ? `${testIDPrefix}-selection-line` : undefined}
+          style={{
+            position: 'absolute',
+            left: layout.points[selectedIndex].x - 1,
+            top: chartBounds.top,
+            height: chartBounds.bottom - chartBounds.top,
+            width: 2,
+            backgroundColor: '#8E8E93',
+          }}
+        />
+      ) : null}
+    </View>
   );
 };
 

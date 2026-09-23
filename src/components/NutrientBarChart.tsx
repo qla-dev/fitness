@@ -15,10 +15,7 @@ import {
 } from './charts/chartFormatting';
 import { formatLocalizedNumber } from '../localization';
 import type { TrendRange } from '../hooks/useNutritionTrends';
-import {
-  RANGE_INNER_PADDING,
-  RANGE_X_TICKS,
-} from '../types/healthTrends';
+import { RANGE_INNER_PADDING, RANGE_X_TICKS } from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -270,6 +267,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
             }}
           </CartesianChart>
           <ChartTouchOverlay
+            selectedIndex={selectedIndex}
             layout={touchLayout}
             onSelect={handleSelectBar}
             onClear={handleClearSelection}

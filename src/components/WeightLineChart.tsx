@@ -10,6 +10,8 @@ import {
   CHART_LABEL_FONT_SIZE,
   formatXLabelForRange,
   formatTooltipDate,
+  niceTickDomain,
+  Y_TICK_COUNT,
 } from './charts/chartFormatting';
 import LineSeriesMark from './charts/LineSeriesMark';
 import type { WeightDataPoint } from '../hooks/useMeasurementsRange';
@@ -104,8 +106,8 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
 
   // Pinned from the real readings rather than left to Victory to derive, so the
   // axis is fixed for the whole rise: the line scales about the baseline while
-  // the scale beside it holds still. These are the bounds Victory would compute
-  // for itself, written out.
+  // the scale beside it holds still. Both ends are widened to the ticks either
+  // side of the readings, so the plot starts and ends on a gridline.
   const yDomain = useMemo((): [number, number] | undefined => {
     if (!data.length) return undefined;
     let low = data[0].weight;
@@ -114,7 +116,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
       if (point.weight < low) low = point.weight;
       if (point.weight > high) high = point.weight;
     }
-    return [low, high];
+    return niceTickDomain(low, high, Y_TICK_COUNT);
   }, [data]);
 
   // The line draws itself up out of the axis whenever a range lands, the same
@@ -191,15 +193,19 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
       <WeightTooltip text={tooltipText} />
 
       {isLoading ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {t('common.loading', { defaultValue: 'Loading...' })}
           </Text>
         </View>
       ) : isError ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {t('charts.weight.loadFailed', {
               defaultValue: 'Failed to load weight data',
@@ -207,8 +213,10 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
           </Text>
         </View>
       ) : !hasData ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {t('charts.weight.empty', {
               defaultValue: 'No weight data for this period',
@@ -233,7 +241,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
             yAxis={[
               {
                 font,
-                tickCount: 5,
+                tickCount: Y_TICK_COUNT,
                 labelColor: textMuted,
                 lineColor: CHART_GRID_LINE_COLOR,
               },
@@ -262,6 +270,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
             )}
           </CartesianChart>
           <ChartTouchOverlay
+            selectedIndex={selectedIndex}
             layout={touchLayout}
             onSelect={handleSelectPoint}
             onClear={handleClearSelection}

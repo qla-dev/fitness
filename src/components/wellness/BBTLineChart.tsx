@@ -169,6 +169,7 @@ const BBTLineChart: React.FC<BBTLineChartProps> = ({ data, isLoading }) => {
         </CartesianChart>
 
         <ChartTouchOverlay
+          selectedIndex={selectedIndex}
           layout={touchLayout}
           onSelect={onTouch}
           onClear={onTouchEnd}

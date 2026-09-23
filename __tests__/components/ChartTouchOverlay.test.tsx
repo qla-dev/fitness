@@ -47,6 +47,33 @@ describe('ChartTouchOverlay', () => {
     ]);
   });
 
+  it('keeps a tap selection and its guide after release, and moves both on the next tap', () => {
+    function Chart() {
+      const [selected, setSelected] = React.useState<number | null>(null);
+      return (
+        <ChartTouchOverlay
+          layout={layout}
+          selectedIndex={selected}
+          onSelect={setSelected}
+          onClear={() => setSelected(null)}
+          testIDPrefix="touch-overlay"
+        />
+      );
+    }
+    const screen = render(<Chart />);
+    const overlay = screen.getByTestId('touch-overlay');
+    fireEvent(overlay, 'touchStart', createTouchEvent(25, 20));
+    fireEvent(overlay, 'touchEnd', createTouchEvent(25, 20));
+    expect(
+      screen.getByTestId('touch-overlay-selection-line').props.style
+    ).toMatchObject({ left: 29, top: 5, height: 40 });
+    fireEvent(overlay, 'touchStart', createTouchEvent(45, 20));
+    fireEvent(overlay, 'touchEnd', createTouchEvent(45, 20));
+    expect(
+      screen.getByTestId('touch-overlay-selection-line').props.style.left
+    ).toBe(49);
+  });
+
   it('waits for the long press delay before selecting a zone', () => {
     const onSelect = jest.fn();
     const onClear = jest.fn();
@@ -79,7 +106,7 @@ describe('ChartTouchOverlay', () => {
       createTouchEvent(25, 20)
     );
 
-    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(onClear).not.toHaveBeenCalled();
   });
 
   it('cancels activation when the touch turns into a drag before the delay', () => {

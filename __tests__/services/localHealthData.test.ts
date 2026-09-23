@@ -31,6 +31,31 @@ beforeEach(async () => {
   jest.clearAllMocks();
 });
 
+test('step comparison history carries hours from the same source as the selected daily total', async () => {
+  const chosenHours = Array(24).fill(200);
+  await request('/api/health-data', [
+    {
+      type: 'step',
+      date,
+      source: 'HealthKit',
+      value: 4800,
+      hourly: chosenHours,
+    },
+    {
+      type: 'step',
+      date,
+      source: 'Other',
+      value: 2400,
+      hourly: Array(24).fill(100),
+    },
+  ]);
+  const rows = await request<LocalRecord[]>(
+    `/api/measurements/check-in-measurements-range/${date}/${date}`
+  );
+  expect(rows[0].steps).toBe(4800);
+  expect(rows[0].hourly_steps).toEqual(chosenHours);
+});
+
 test('imports into local storage without a server, preserves manual data and updates repeated imports', async () => {
   await request('/api/measurements/check-in', {
     entry_date: date,

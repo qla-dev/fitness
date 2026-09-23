@@ -88,3 +88,53 @@ export const formatChartYLabel = (value: number): string =>
         maximumFractionDigits: 0,
       }).format(value)
     : formatLocalizedNumber(value);
+
+// d3's tick step for a span, the rule Victory's axis applies to its domain:
+// the span over the tick count, rounded to 1, 2 or 5 times a power of ten.
+const tickStep = (span: number, tickCount: number): number => {
+  const rough = span / Math.max(1, tickCount);
+  const power = 10 ** Math.floor(Math.log10(rough));
+  const error = rough / power;
+  const factor =
+    error >= Math.sqrt(50)
+      ? 10
+      : error >= Math.sqrt(10)
+        ? 5
+        : error >= Math.sqrt(2)
+          ? 2
+          : 1;
+  return factor * power;
+};
+
+/**
+ * Widens a y domain out to the ticks either side of it, so the plot's top and
+ * bottom edges are gridlines.
+ *
+ * Left at the data's own extremes, the highest value landed between two ticks:
+ * the top gridline stopped short of the plot and the vertical grid ran on past
+ * it, leaving a row of loose tails above the chart.
+ */
+export const niceTickDomain = (
+  min: number,
+  max: number,
+  tickCount: number
+): [number, number] => {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+    return [min, max];
+  }
+  let low = min;
+  let high = max;
+  // As d3's `nice()`: a wider domain can pick a coarser step, so settle it.
+  for (let pass = 0; pass < 10; pass += 1) {
+    const step = tickStep(high - low, tickCount);
+    const nextLow = Math.floor(low / step) * step;
+    const nextHigh = Math.ceil(high / step) * step;
+    if (nextLow === low && nextHigh === high) break;
+    low = nextLow;
+    high = nextHigh;
+  }
+  return [low, high];
+};
+
+/** The y tick count the range charts ask Victory for, and nice their domain to. */
+export const Y_TICK_COUNT = 5;

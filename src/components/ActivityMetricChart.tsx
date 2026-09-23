@@ -1,4 +1,6 @@
 import DashboardCardTitle from './DashboardCardTitle';
+import { useState } from 'react';
+import ChartTouchOverlay, { type ChartTouchLayout } from './ChartTouchOverlay';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import Animated, {
@@ -143,6 +145,14 @@ export default function ActivityMetricChart({
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
   const locale = useAppLocale();
+  const [plotWidth, setPlotWidth] = useState(0);
+  const [selection, setSelection] = useState<{
+    key: string;
+    index: number;
+  } | null>(null);
+  const selectionKey = JSON.stringify(hourlyValues);
+  const selectedIndex =
+    selection && selection.key === selectionKey ? selection.index : null;
   const number = (amount: number) =>
     formatLocalizedNumber(amount, { maximumFractionDigits: 0 });
   const hasSamples =
@@ -176,6 +186,25 @@ export default function ActivityMetricChart({
     hour: '2-digit',
     minute: '2-digit',
   });
+  const gutter = showYAxis ? Y_AXIS_WIDTH : 0;
+  const touchLayout: ChartTouchLayout = {
+    chartBounds: {
+      left: gutter,
+      right: plotWidth,
+      top: BASELINE_INSET,
+      bottom: baseline,
+    },
+    points: Array.from({ length: 24 }, (_, hour) => ({
+      x: gutter + ((hour + 0.5) / 24) * (plotWidth - gutter),
+      xValue: hour,
+      y: baseline,
+      yValue: hourlyValues?.[hour] ?? null,
+    })),
+  };
+  const selectionText =
+    selectedIndex == null
+      ? ''
+      : `${hourFormatter.format(new Date(2000, 0, 1, selectedIndex))} · ${hourlyValues?.[selectedIndex] == null ? '—' : number(hourlyValues[selectedIndex]!)} ${unit}`;
 
   // 0 = flat on the baseline, 1 = the day as recorded. Reset and replayed each
   // time the screen is focused, so the bars rise on every visit rather than
@@ -207,7 +236,11 @@ export default function ActivityMetricChart({
   );
 
   const plot = (
-    <View className="flex-row" style={{ height: plotArea }}>
+    <View
+      className="flex-row"
+      style={{ height: plotArea }}
+      onLayout={(event) => setPlotWidth(event.nativeEvent.layout.width)}
+    >
       {/* The scale, when the chart is standing in for a range chart: the same
           four lines the grid draws, written down the left so the bars can be
           read against a number rather than against each other. */}
@@ -290,6 +323,15 @@ export default function ActivityMetricChart({
           );
         })}
       </Svg>
+      {bare && hasSamples && plotWidth > gutter ? (
+        <ChartTouchOverlay
+          layout={touchLayout}
+          selectedIndex={selectedIndex}
+          onSelect={(index) => setSelection({ key: selectionKey, index })}
+          onClear={() => setSelection(null)}
+          testIDPrefix="hourly-touch-overlay"
+        />
+      ) : null}
       {!hasSamples && (
         <View className="absolute inset-0 items-center justify-center px-4">
           <Text className="text-text-muted text-sm text-center bg-surface px-2 py-1">
@@ -305,7 +347,11 @@ export default function ActivityMetricChart({
   if (bare) {
     return (
       <View>
-        <ChartCaption />
+        <ChartCaption>
+          <Text className="text-text-secondary text-sm text-center">
+            {selectionText}
+          </Text>
+        </ChartCaption>
         <View style={{ height: plotHeight }}>
           {plot}
           {hourLabels}

@@ -14,10 +14,7 @@ import type {
   HealthTrendDateRange,
   HealthTrendSeries,
 } from '../types/healthTrends';
-import {
-  RANGE_INNER_PADDING,
-  RANGE_X_TICKS,
-} from '../types/healthTrends';
+import { RANGE_INNER_PADDING, RANGE_X_TICKS } from '../types/healthTrends';
 import {
   SLEEP_STAGE_LANES,
   type SleepStageLane,
@@ -56,8 +53,8 @@ type SleepTimelineChartProps = SleepTimelineAggregates &
      * the chart is the content rather than one card among several.
      */
     bare?: boolean;
-  /** Drops the chart's own heading, for a screen that names the metric itself. */
-  hideTitle?: boolean;
+    /** Drops the chart's own heading, for a screen that names the metric itself. */
+    hideTitle?: boolean;
   };
 
 const PLOT_HEIGHT = CHART_PLOT_HEIGHT;
@@ -441,6 +438,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
               </Canvas>
 
               <ChartTouchOverlay
+                selectedIndex={selectedIndex}
                 layout={touchLayout}
                 onSelect={handleSelectColumn}
                 onClear={handleClearSelection}

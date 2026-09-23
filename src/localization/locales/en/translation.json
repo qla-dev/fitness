@@ -5752,5 +5752,92 @@
     "logFoodOrMeal": "Log food",
     "aiHelp": "AI help",
     "typeCodeTitle": "Type barcode"
+  },
+  "goalFacts": {
+    "noData": "Your comparisons will appear as you record more data.",
+    "steps": {
+      "coverTitle": "Every walk has a story",
+      "coverBody": "The familiar route, the longer way home, the little detour: see how everyday steps become your own rhythm.",
+      "aboutTitle": "About steps",
+      "aboutBody": "Steps count the walking and running your device records throughout the day. Your recent trend compares the last 15 days with the 13 days before them. Month and year cards average recorded days only; a missing day is not treated as zero.",
+      "trendTitle": "Your walking rhythm",
+      "detailTitle": "Daily pace",
+      "recentComparison": "Your recent daily average, compared with the 13 days before it.",
+      "yearComparison": "Your daily step average this year and last year.",
+      "monthComparison": "Your daily step average this month and last month.",
+      "paceComparison": "Your pace through completed hours, alongside your typical day."
+    },
+    "move": {
+      "coverTitle": "Find your everyday energy",
+      "coverBody": "A walk to the shop, a dance in the kitchen, a workout you love. Movement can fit into the day you already have.",
+      "aboutTitle": "Reading your Move goal",
+      "aboutBody": "Move tracks active energy, measured in kilocalories. It is different from total energy, which also includes the energy your body uses at rest. Device estimates help you compare your own days; they are not an exact measure of effort.",
+      "trendTitle": "Your energy over two fortnights",
+      "detailTitle": "Your weekly energy budget"
+    },
+    "exercise": {
+      "coverTitle": "Make room for your kind of movement",
+      "coverBody": "A favourite route or a familiar training session can become something to look forward to. Find the pattern that fits your week.",
+      "aboutTitle": "Minutes with meaning",
+      "aboutBody": "Exercise minutes come from recorded workouts and your health provider. A provider may count only minutes that meet its activity criteria, so exercise time can differ from the time you spent in a session.",
+      "trendTitle": "How your training time is changing",
+      "detailTitle": "How often you showed up"
+    },
+    "stand": {
+      "coverTitle": "Give your day a change of scenery",
+      "coverBody": "Open the window, refill a glass, take a short break from the desk. Small transitions can give a long day a different shape.",
+      "aboutTitle": "An hour is a window",
+      "aboutBody": "Stand hours count hours that contain qualifying standing activity. They do not mean you stood for the full hour. Use the daily pattern to spot long stretches without a recorded standing break.",
+      "trendTitle": "Your standing rhythm",
+      "detailTitle": "Weekdays and weekends"
+    },
+    "distance": {
+      "coverTitle": "See how far the little journeys go",
+      "coverBody": "The corner shop, a park loop, a new path: your recorded distance turns separate outings into a bigger picture.",
+      "aboutTitle": "Distance tells another story",
+      "aboutBody": "Distance describes how far you travelled, while steps describe how many steps were recorded. Your device may estimate distance from movement or GPS. Different routes and recording methods can give different results.",
+      "trendTitle": "Your daily distance is taking shape",
+      "detailTitle": "The journeys add up"
+    },
+    "water": {
+      "coverTitle": "A place for every refill",
+      "coverBody": "A glass by breakfast, a bottle in your bag, a refill at your desk. Make logging a drink part of the moment you enjoy it.",
+      "aboutTitle": "What your water chart includes",
+      "aboutBody": "This chart shows the water logged in your diary and imported from your health provider. It is a record of what was entered, so an empty day does not necessarily mean you drank nothing. Your goal is a personal setting, not a measurement of your hydration.",
+      "trendTitle": "Your refill rhythm",
+      "detailTitle": "A week of refills at a time"
+    },
+    "weight": {
+      "coverTitle": "Look for the longer story",
+      "coverBody": "Give each weigh-in some context. A sequence of readings is a more useful picture than a single point on the scale.",
+      "aboutTitle": "Make readings comparable",
+      "aboutBody": "The scale captures one moment. Comparing readings taken on the same scale and at a similar time makes the pattern easier to follow. These cards use recorded weigh-ins only, and never fill a missing day with zero.",
+      "trendTitle": "A calmer view of your weight trend",
+      "detailTitle": "The range of your recorded weigh-ins"
+    },
+    "sleep": {
+      "coverTitle": "Make space for the night",
+      "coverBody": "Let the day fade into a quieter rhythm. Your sleep history is a place to notice the nights that fit the routine you want.",
+      "aboutTitle": "Time in bed and time asleep",
+      "aboutBody": "Time in bed is the interval between going to bed and getting up. Time asleep is the part your device estimates you spent sleeping. They are different readings. These facts compare time asleep and leave out nights without that measurement.",
+      "trendTitle": "How your nights are changing",
+      "detailTitle": "Your shortest and longest nights"
+    },
+    "ml": "ml",
+    "previous14": "Previous 14 days",
+    "last14": "Last 14 days",
+    "loadFailed": "Could not load comparisons. Try opening this screen again.",
+    "lowest": "Lowest · last 28 days",
+    "highest": "Highest · last 28 days",
+    "weekdays": "Weekday average",
+    "weekends": "Weekend average",
+    "last7": "Last 7 days",
+    "previous7": "Previous 7 days",
+    "heading": "Patterns & perspective",
+    "previous13": "Previous 13 days",
+    "last15": "Last 15 days",
+    "typical": "Previous 28 days · average",
+    "activeDays_one": "{{formattedCount}} day with exercise",
+    "activeDays_other": "{{formattedCount}} days with exercise"
   }
 }

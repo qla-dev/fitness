@@ -17,14 +17,15 @@ export const CHART_PLOT_HEIGHT = 306;
 /**
  * The grid's colour and opacity, on every chart that draws one.
  *
- * This is Victory's own default, which the range charts have drawn since they
- * were written — they never passed `lineColor`, so nobody had a name for it.
- * It is written down here and passed in explicitly so the hourly chart, which
+ * A mid grey at half opacity, so it reads on light and on the true-black dark
+ * theme alike. It used to be Victory's default 25% black, which was faint on
+ * light and all but vanished on dark. It is passed in explicitly so the hourly
+ * chart, which
  * draws its grid by hand in SVG, can match rather than approximate: it used to
  * draw dotted lines tinted with the metric's own colour, which read as a
  * different chart rather than as the same chart over a shorter range.
  */
-export const CHART_GRID_LINE_COLOR = 'hsla(0, 0%, 0%, 0.25)';
+export const CHART_GRID_LINE_COLOR = 'hsla(0, 0%, 50%, 0.5)';
 
 /** The band an x-axis label sits in, below the plot and inside its box. */
 export const CHART_X_AXIS_BAND = 18;

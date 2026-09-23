@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
+import CoverFact from '../components/CoverFact';
 import Icon, { type IconName } from '../components/Icon';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -561,7 +562,6 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const accentColor = useCSSVariable('--color-accent-primary') as string;
 
   // The Liquid Glass toggle only exists on iOS 26+ devices with the glass APIs,
   // so its card is gated on the same capability check the setting uses.
@@ -718,43 +718,14 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
         }
       >
         {features.map((feature) => (
-          <View
+          <CoverFact
             key={feature.headline}
-            className="bg-surface rounded-xl mb-4 overflow-hidden"
-          >
-            {feature.hero}
-
-            <View className="p-4">
-              <Text className="text-xs font-semibold tracking-wider text-accent-primary mb-1">
-                {feature.eyebrow}
-              </Text>
-              <Text className="text-lg font-bold text-text-primary mb-1">
-                {feature.headline}
-              </Text>
-              <Text className="text-text-secondary text-sm leading-5 mb-4">
-                {feature.body}
-              </Text>
-
-              {feature.cta ? (
-                <Pressable
-                  onPress={feature.cta.onPress}
-                  className="flex-row items-center self-end"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text className="text-sm font-semibold text-accent-primary">
-                    {feature.cta.label}
-                  </Text>
-                  <Icon
-                    name="chevron-forward"
-                    size={14}
-                    color={accentColor}
-                    weight="semibold"
-                    style={{ marginLeft: 4 }}
-                  />
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
+            title={feature.headline}
+            body={feature.body}
+            eyebrow={feature.eyebrow}
+            hero={feature.hero}
+            cta={feature.cta}
+          />
         ))}
       </ScrollView>
     </View>

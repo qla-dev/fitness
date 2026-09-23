@@ -11,13 +11,12 @@ import {
   formatXLabelForRange,
   formatTooltipDate,
   formatChartYLabel,
+  niceTickDomain,
+  Y_TICK_COUNT,
 } from './charts/chartFormatting';
 import type { StepsDataPoint } from '../hooks/useMeasurementsRange';
 import type { HealthTrendDateRange } from '../types/healthTrends';
-import {
-  RANGE_INNER_PADDING,
-  RANGE_X_TICKS,
-} from '../types/healthTrends';
+import { RANGE_INNER_PADDING, RANGE_X_TICKS } from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -142,10 +141,15 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
 
   // Written out rather than left to Victory to derive, so the axis is fixed for
   // the whole rise: the bars scale about the baseline while the scale beside
-  // them holds still. These are the bounds Victory would compute for itself
-  // from the same points.
+  // them holds still. The top is rounded up to the next tick so the plot ends
+  // on a gridline.
   const yMax = useMemo(
-    () => data.reduce((highest, point) => Math.max(highest, point.steps), 0),
+    () =>
+      niceTickDomain(
+        0,
+        data.reduce((highest, point) => Math.max(highest, point.steps), 0),
+        Y_TICK_COUNT
+      )[1],
     [data]
   );
 
@@ -219,15 +223,19 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
       <StepsTooltip text={tooltipText} />
 
       {isLoading ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {t('common.loading', { defaultValue: 'Loading...' })}
           </Text>
         </View>
       ) : isError ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {labels?.loadFailed ??
               t('charts.steps.loadFailed', {
@@ -236,8 +244,10 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
           </Text>
         </View>
       ) : !hasData ? (
-        <View style={{ height: PLOT_HEIGHT }}
-          className="justify-center items-center">
+        <View
+          style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center"
+        >
           <Text className="text-text-muted text-sm">
             {labels?.empty ??
               t('charts.steps.empty', {
@@ -263,7 +273,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
             yAxis={[
               {
                 font,
-                tickCount: 5,
+                tickCount: Y_TICK_COUNT,
                 labelColor: textMuted,
                 lineColor: CHART_GRID_LINE_COLOR,
                 formatYLabel,
@@ -301,6 +311,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
             )}
           </CartesianChart>
           <ChartTouchOverlay
+            selectedIndex={selectedIndex}
             layout={touchLayout}
             onSelect={handleSelectBar}
             onClear={handleClearSelection}

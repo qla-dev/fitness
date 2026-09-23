@@ -12,6 +12,7 @@ import StepsBarChart from '../components/StepsBarChart';
 import WaterBarChart from '../components/WaterBarChart';
 import WeightLineChart from '../components/WeightLineChart';
 import ValueSkeleton from '../components/ValueSkeleton';
+import GoalFacts from '../components/GoalFacts';
 import {
   useDailySummary,
   useHealthTrends,
@@ -615,6 +616,15 @@ export default function GoalDetailScreen({
             </View>
           ) : null}
         </View>
+        <GoalFacts
+          metric={metric}
+          date={date}
+          title={title}
+          icon={chrome.icon}
+          color={chrome.color}
+          weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
+        />
       </ScrollView>
     </View>
   );

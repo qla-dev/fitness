@@ -18,6 +18,8 @@ export interface CheckInMeasurement {
 }
 
 export interface CheckInMeasurementRange {
+  /** Provider hourly steps for the same source as this day's count, when available. */
+  hourly_steps?: number[];
   id: string;
   user_id: string;
   entry_date: string;

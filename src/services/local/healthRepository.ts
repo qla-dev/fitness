@@ -481,6 +481,7 @@ export function localMeasurements(
   // there was added to the provider's, and the dashboard read thousands more
   // than the Health app for the same day.
   const importedSteps = new Map<string, Map<string, number>>();
+  const stepHours = new Map<string, Map<string, number[]>>();
   for (const record of imported) {
     const field = measurementFields[String(record.type)];
     const date = String(record.entry_date);
@@ -494,6 +495,16 @@ export function localMeasurements(
       const source = String(record.source ?? 'Health');
       bySource.set(source, Number(record.value ?? 0));
       importedSteps.set(date, bySource);
+      const hoursBySource = stepHours.get(date) ?? new Map<string, number[]>();
+      if (Array.isArray(record.hourly) && record.hourly.length === 24) {
+        hoursBySource.set(
+          source,
+          record.hourly.map((value) => Number(value) || 0)
+        );
+      } else {
+        hoursBySource.delete(source);
+      }
+      stepHours.set(date, hoursBySource);
     } else if (firstManualByDay.get(date)?.[field] == null) {
       row[field] = record.value;
     }
@@ -507,6 +518,11 @@ export function localMeasurements(
     // count the same walk twice. A day the provider answered for is its
     // answer — a manual count only stands where it never did.
     row.steps = Math.max(...bySource.values());
+    const selectedSource = [...bySource].find(
+      ([, value]) => value === row.steps
+    )?.[0];
+    if (selectedSource)
+      row.hourly_steps = stepHours.get(date)?.get(selectedSource);
   }
   return [...days.values()];
 }
