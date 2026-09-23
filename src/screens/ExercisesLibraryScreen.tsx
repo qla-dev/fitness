@@ -27,6 +27,8 @@ import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
+import { useTabPress } from '../hooks/useTabPress';
+import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import { useExternalExerciseSearch } from '../hooks/useExternalExerciseSearch';
 import { suggestedExercisesQueryKey } from '../hooks/queryKeys';
@@ -170,6 +172,13 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   // `importingId` only disables the rows after a re-render; the ref blocks a
   // second tap landing before that.
   const importInFlight = useRef(false);
+  const listRef = useRef<FlatList>(null);
+  // Re-tapping the active tab returns to the top, like every other tab. Inert
+  // in the pushed copy of this screen, which is not a tab root.
+  const { topOffset, onScroll } = useScrollTopOffset();
+  useTabPress(navigation, () =>
+    listRef.current?.scrollToOffset({ offset: topOffset.current, animated: true })
+  );
   const handleImportPress = useCallback(
     async (item: ExternalExerciseItem) => {
       if (importInFlight.current) return;
@@ -506,7 +515,10 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
 
     return (
       <FlatList
+        ref={listRef}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={rows}
         keyExtractor={(row) => row.key}
         renderItem={({ item: row }) => {

@@ -54,6 +54,8 @@ import {
   useCheckInPhotosByDate,
 } from '../hooks/useCheckInPhotos';
 import { useCustomMeasurementsByDate } from '../hooks/useCustomMeasurements';
+import { useTabPress } from '../hooks/useTabPress';
+import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useMeasurements } from '../hooks/useMeasurements';
 import { usePreferences } from '../hooks/usePreferences';
@@ -107,15 +109,14 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   );
 
   // Re-tapping the active Diary tab acts as a quick return to today's
-  // entries and the top of the screen.
-  useEffect(() => {
-    return navigation.addListener('tabPress', () => {
-      if (navigation.isFocused()) {
-        goToToday();
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      }
-    });
-  }, [navigation, goToToday]);
+  // entries and the top of the screen. Through the hook rather than this
+  // screen's own navigation: under the native tab bar the screen sits in a
+  // tab-local stack that never sees `tabPress`.
+  const { topOffset, onScroll } = useScrollTopOffset();
+  useTabPress(navigation, () => {
+    goToToday();
+    scrollViewRef.current?.scrollTo({ y: topOffset.current, animated: true });
+  });
 
   useEffect(() => {
     navigation.setParams({ selectedDate });
@@ -428,6 +429,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           gap: CARD_GAP,
         }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}

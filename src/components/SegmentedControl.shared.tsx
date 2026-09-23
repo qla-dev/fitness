@@ -13,7 +13,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import LiquidGlassSurface from './LiquidGlassSurface';
-import type { Segment } from '../types/segmentedControl';
+import {
+  SEGMENTED_CONTROL_HEIGHT,
+  type Segment,
+  type SegmentedControlSize,
+} from '../types/segmentedControl';
 
 export type { Segment } from '../types/segmentedControl';
 
@@ -25,10 +29,19 @@ type SegmentedControlProps<T extends string> = {
    * Names the control for screen readers on both platforms.
    */
   label?: string;
+  /** See `SegmentedControlSize`. Defaults to `regular`. */
+  size?: SegmentedControlSize;
 };
 
-/** Track padding, and so the inset of the pill inside it. */
-const TRACK_PADDING = 4;
+/**
+ * Track padding, and so the inset of the pill inside it. The compact track is
+ * shorter, so its pill needs a proportionally tighter inset or the fill ends
+ * up a sliver inside a band of track.
+ */
+const TRACK_PADDING: Record<SegmentedControlSize, number> = {
+  regular: 4,
+  compact: 3,
+};
 const ACTIVE_FILL = '#E5E5EA';
 const ACTIVE_TEXT = '#1C1C1E';
 
@@ -56,9 +69,15 @@ const SegmentedControl = <T extends string>({
   activeKey,
   onSelect,
   label,
+  size = 'regular',
 }: SegmentedControlProps<T>) => {
   const reducedMotion = useReducedMotion();
   const [trackWidth, setTrackWidth] = useState(0);
+  const trackPadding = TRACK_PADDING[size];
+  // Given rather than grown from the labels, so this control occupies the same
+  // room on its first frame as on every frame after — see the note on
+  // SEGMENTED_CONTROL_HEIGHT.
+  const trackHeight = SEGMENTED_CONTROL_HEIGHT[size];
 
   const activeIndex = Math.max(
     0,
@@ -66,7 +85,7 @@ const SegmentedControl = <T extends string>({
   );
   const segmentWidth =
     segments.length > 0
-      ? (trackWidth - TRACK_PADDING * 2) / segments.length
+      ? (trackWidth - trackPadding * 2) / segments.length
       : 0;
 
   // Driven from an effect rather than assigned during render: a shared value
@@ -164,7 +183,8 @@ const SegmentedControl = <T extends string>({
         style={{
           flexDirection: 'row',
           borderRadius: 999,
-          padding: TRACK_PADDING,
+          padding: trackPadding,
+          height: trackHeight,
         }}
         onLayout={onTrackLayout}
       >
@@ -176,9 +196,9 @@ const SegmentedControl = <T extends string>({
             style={[
               {
                 position: 'absolute',
-                left: TRACK_PADDING,
-                top: TRACK_PADDING,
-                bottom: TRACK_PADDING,
+                left: trackPadding,
+                top: trackPadding,
+                bottom: trackPadding,
                 width: segmentWidth,
               },
               pillStyle,
@@ -205,13 +225,13 @@ const SegmentedControl = <T extends string>({
                 if (!dragging.current)
                   scale.set(reducedMotion ? 1 : withSpring(1, TRAVEL));
               }}
-              className="flex-1 px-3 py-3 items-center justify-center"
+              className="flex-1 px-3 items-center justify-center"
               activeOpacity={0.7}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
             >
               <Text
-                className={`text-sm font-medium ${
+                className={`${size === 'compact' ? 'text-xs' : 'text-sm'} font-medium ${
                   selected ? '' : 'text-text-muted'
                 }`}
                 style={selected ? { color: ACTIVE_TEXT } : undefined}

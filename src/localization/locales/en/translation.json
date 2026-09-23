@@ -5089,7 +5089,7 @@
       "viewAll": "View all",
       "openA11y": "View progress photos"
     },
-    "title": "Progress Photos",
+    "title": "History of progress",
     "angle": {
       "front": "Front",
       "back": "Back",
@@ -5136,9 +5136,6 @@
     "angleCount": "{{taken}} of {{total}}",
     "openDayA11y": "Open the progress photos for this day",
     "missingAngleA11y": "No {{angle}} photo on this day",
-    "historySection": "History",
-    "historyDescription": "Your photos for this angle, newest first.",
-    "historyDescriptionCapped": "Your {{limit}} most recent. Compare or Time-lapse look further back.",
     "slotSheetTitle": "Progress photo",
     "removeTitle": "Remove photo?",
     "removeMessage": "This deletes the photo from this day.",

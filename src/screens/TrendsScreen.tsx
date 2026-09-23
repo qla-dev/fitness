@@ -28,6 +28,8 @@ import {
   setNativeTabHeaderActions,
   type NativeTabHeaderNavigation,
 } from '../utils/nativeHeaderDatePicker';
+import { useTabPress } from '../hooks/useTabPress';
+import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import type { HealthTrendDateRange } from '../types/healthTrends';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 
@@ -91,8 +93,23 @@ export default function TrendsScreen({ navigation }: Props) {
       defaultColor
     );
   }, [navigation, usesNativeTabs, defaultColor, startWorkout, t]);
+  // Layout effect plus focus effect, matching Dashboard and Diary exactly.
+  // An earlier attempt at the first-open shift dropped the focus sync from
+  // here on the theory that setting header options twice was what moved the
+  // content; Dashboard does the same two calls and does not move, so that was
+  // wrong, and dropping it only made this the odd one out.
   useLayoutEffect(syncHeader, [syncHeader]);
-  useFocusEffect(syncHeader);
+  const { topOffset, onScroll } = useScrollTopOffset();
+  // Re-tapping the active Goals tab returns to the top, like every other tab.
+  useTabPress(navigation, () =>
+    scrollRef.current?.scrollTo({ y: topOffset.current, animated: true })
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      syncHeader();
+    }, [syncHeader])
+  );
   const refresh = async () => {
     setRefreshing(true);
     try {
@@ -138,6 +155,7 @@ export default function TrendsScreen({ navigation }: Props) {
           paddingBottom: 16 + bottomPadding,
         }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
@@ -173,6 +191,10 @@ export default function TrendsScreen({ navigation }: Props) {
 
   const renderedContent = renderContent();
 
+  // Wrapped exactly as Dashboard and Diary wrap theirs. Returning it bare was
+  // another attempt at the first-open shift, on the theory that a wrapper kept
+  // iOS from finding the scroll view; it changed nothing, and the two tabs
+  // that do not shift both wrap.
   if (usesNativeTabs) {
     return (
       <View collapsable={false} className="flex-1 bg-background">

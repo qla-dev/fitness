@@ -45,6 +45,10 @@ export default function TrendRangeSelector({
       activeKey={range}
       onSelect={onSelect}
       label={t('goalDetail.rangeLabel', { defaultValue: 'Range' })}
+      // Compact everywhere this appears — Goals, a goal's detail and the
+      // nutrient trends. It is a setting on the chart below it, not a heading
+      // for it, so it should not carry the weight of one.
+      size="compact"
     />
   );
 }

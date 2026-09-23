@@ -26,6 +26,8 @@ import { useAddActions } from '../components/AddActionsContext';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
+import { useTabPress } from '../hooks/useTabPress';
+import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import { isLocalDataMode } from '../services/dataMode';
 import { useCycleMode } from '../hooks';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -99,6 +101,12 @@ export default function AddHubScreen() {
   // The native field, so the cards that mean "find something" can put the
   // cursor in it rather than opening another screen with another field.
   const searchBar = useRef<SearchBarCommands>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const { topOffset, onScroll } = useScrollTopOffset();
+  // Re-tapping the active tab returns to the top, like every other tab.
+  useTabPress(navigation, () =>
+    scrollRef.current?.scrollTo({ y: topOffset.current, animated: true })
+  );
   // Flipped by state rather than by calling focus() from the card's handler:
   // that handler lives in an array the render maps over, and a closure reading
   // a ref from there is what the refs rule is there to catch.
@@ -406,7 +414,10 @@ export default function AddHubScreen() {
   // focused was replaced by another one on another screen.
   const content = (
     <ScrollView
+      ref={scrollRef}
       showsVerticalScrollIndicator={false}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       contentInsetAdjustmentBehavior={usesNativeTabs ? "automatic" : "never"}

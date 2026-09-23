@@ -6,7 +6,11 @@ import {
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import { useCSSVariable } from 'uniwind';
-import type { Segment } from '../types/segmentedControl';
+import {
+  SEGMENTED_CONTROL_HEIGHT,
+  type Segment,
+  type SegmentedControlSize,
+} from '../types/segmentedControl';
 
 export type { Segment } from '../types/segmentedControl';
 
@@ -17,19 +21,28 @@ export type { Segment } from '../types/segmentedControl';
  * behind it only stacked a second sheet of glass under the one the control
  * already draws, and the padding that wrapper added left the picker's own glass
  * squeezed inside a pill it did not fill. Nothing wraps it and nothing frames
- * it: the control keeps the intrinsic height of its `controlSize` and `Host`
- * matches it, rather than a hardcoded frame it has to draw its glass inside.
+ * it beyond the height below.
+ *
+ * That height is given rather than measured. `Host` used to size itself to its
+ * content vertically, and a self-sizing host reports its height back to React
+ * Native a frame or two after mount — so everything under it rendered at the
+ * wrong offset first and dropped into place once the measurement arrived. On
+ * the Goals tab this control is the first thing in the scroll view, so the
+ * whole page visibly shifted on every first open. A fixed frame has nothing
+ * left to report.
  */
 export default function SegmentedControl<T extends string>({
   segments,
   activeKey,
   onSelect,
   label,
+  size = 'regular',
 }: {
   segments: Segment<T>[];
   activeKey: T;
   onSelect: (key: T) => void;
   label?: string;
+  size?: SegmentedControlSize;
 }) {
   const [textPrimary, textMuted] = useCSSVariable([
     '--color-text-primary',
@@ -37,12 +50,15 @@ export default function SegmentedControl<T extends string>({
   ]) as string[];
 
   return (
-    <Host matchContents={{ vertical: true }}>
+    <Host style={{ height: SEGMENTED_CONTROL_HEIGHT[size] }}>
       <Picker<T>
         label={label ?? 'Options'}
         selection={activeKey}
         onSelectionChange={onSelect}
-        modifiers={[pickerStyle('segmented'), controlSize('small')]}
+        modifiers={[
+          pickerStyle('segmented'),
+          controlSize(size === 'compact' ? 'mini' : 'small'),
+        ]}
       >
         {segments.map((segment) => (
           <Text

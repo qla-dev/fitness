@@ -15,6 +15,7 @@ import Icon from '../components/Icon';
 import SafeImage from '../components/SafeImage';
 import ProgressPhotoViewer from '../components/ProgressPhotoViewer';
 import PhotoDayWeight from '../components/PhotoDayWeight';
+import EmptyContent from '../components/EmptyContent';
 import SegmentedControl, { type Segment } from '../components/SegmentedControl';
 import StatusView from '../components/StatusView';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -127,14 +128,13 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
   // Cut after the deltas, never before: the oldest visible row still compares
   // against the shoot before it, even though that one falls off the list.
   const rows = allRows.slice(0, HISTORY_PREVIEW_LIMIT);
-  const isCapped = allRows.length > HISTORY_PREVIEW_LIMIT;
 
   // Gated on the whole history, not the preview: the description points at
   // these two for anything older, so they must not be off when it does.
   const canCompare = allRows.length >= 2;
 
   const header = useScreenHeader({
-    title: t('progressPhotos.title', { defaultValue: 'Progress Photos' }),
+    title: t('progressPhotos.title', { defaultValue: 'History of progress' }),
     left: { kind: 'back' },
   });
 
@@ -211,9 +211,9 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
   const renderBody = () => {
     if (isLoading) {
       return (
-        <View className="py-16 items-center">
+        <EmptyContent>
           <ActivityIndicator size="small" color={accentPrimary} />
-        </View>
+        </EmptyContent>
       );
     }
 
@@ -235,7 +235,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
 
     if (rows.length === 0) {
       return (
-        <View className="py-12 items-center px-6">
+        <EmptyContent testID="progress-photos-empty">
           <Icon name="camera" size={40} color={mutedColor} />
           <Text className="text-text-primary text-base font-semibold mt-3 text-center">
             {t('progressPhotos.emptyTitle', {
@@ -249,7 +249,7 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
                 'Add one on the tracker and it will show up here with that day’s weight.',
             })}
           </Text>
-        </View>
+        </EmptyContent>
       );
     }
 
@@ -271,21 +271,10 @@ const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
     >
       {header}
 
+      {/* No heading or blurb over the control: the screen's own title says
+          what this is, and a second "History" under it was the same word
+          twice. */}
       <View className="px-4 pt-4 pb-3">
-        <Text className="text-text-secondary text-xs font-semibold mb-1 uppercase">
-          {t('progressPhotos.historySection', { defaultValue: 'History' })}
-        </Text>
-        <Text className="text-text-muted text-xs mb-2">
-          {isCapped
-            ? t('progressPhotos.historyDescriptionCapped', {
-                defaultValue:
-                  'Your {{limit}} most recent. Compare or Time-lapse look further back.',
-                limit: HISTORY_PREVIEW_LIMIT,
-              })
-            : t('progressPhotos.historyDescription', {
-                defaultValue: 'Your photos for this angle, newest first.',
-              })}
-        </Text>
         <SegmentedControl
           segments={segments}
           activeKey={angle}

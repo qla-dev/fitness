@@ -8,7 +8,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import React, {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -58,6 +57,8 @@ import {
   useWidgetSync,
 } from '../hooks';
 import { useCheckInPhotoDates } from '../hooks/useCheckInPhotos';
+import { useTabPress } from '../hooks/useTabPress';
+import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import { useOpenStartWorkout } from '../hooks/useOpenStartWorkout';
 import { useHeaderActionColors } from '../hooks/useHeaderActionColors';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
@@ -102,15 +103,14 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   );
 
   // Re-tapping the active Dashboard tab acts as a quick return to
-  // today's summary and the top of the screen.
-  useEffect(() => {
-    return navigation.addListener('tabPress', () => {
-      if (navigation.isFocused()) {
-        goToToday();
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      }
-    });
-  }, [navigation, goToToday]);
+  // today's summary and the top of the screen. Through the hook rather than
+  // this screen's own navigation: under the native tab bar the screen sits in
+  // a tab-local stack that never sees `tabPress`.
+  const { topOffset, onScroll } = useScrollTopOffset();
+  useTabPress(navigation, () => {
+    goToToday();
+    scrollViewRef.current?.scrollTo({ y: topOffset.current, animated: true });
+  });
   // The photo-day markers are fetched on first calendar open rather than at
   // mount: a user who never opens the picker should not pay a request for it.
   const [calendarOpened, setCalendarOpened] = useState(false);
@@ -372,6 +372,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           paddingBottom: 16 + activeWorkoutBarPadding,
         }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}

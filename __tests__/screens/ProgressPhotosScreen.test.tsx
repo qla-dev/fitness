@@ -250,31 +250,21 @@ describe('ProgressPhotosScreen', () => {
       expect(getAllByText('-1 kg since previous')).toHaveLength(7);
     });
 
-    it('says it is capped only when there is more history than fits', () => {
+    it('carries no heading or blurb over the control', () => {
+      // The screen's own title says what this is; a "History" heading under it
+      // was the same word twice, and the line under that described a cap the
+      // list already shows by ending.
       setGallery(shoots(10));
 
-      const { getByText } = renderScreen();
+      const { queryByText } = renderScreen();
 
-      expect(
-        getByText(
-          'Your 7 most recent. Compare or Time-lapse look further back.'
-        )
-      ).toBeTruthy();
-    });
-
-    it('describes the section plainly when nothing is cut', () => {
-      setGallery(shoots(3));
-
-      const { getByText, queryByText } = renderScreen();
-
-      expect(
-        getByText('Your photos for this angle, newest first.')
-      ).toBeTruthy();
+      expect(queryByText('History')).toBeNull();
       expect(queryByText(/most recent/)).toBeNull();
+      expect(queryByText(/newest first/)).toBeNull();
     });
 
     it('keeps compare and time-lapse live on a long history', () => {
-      // They are what the description sends you to for anything older, so
+      // They are what a long history sends you to for anything older, so
       // gating them on the preview rather than the whole history would switch
       // them off for exactly the people who need them.
       setGallery(shoots(10));
