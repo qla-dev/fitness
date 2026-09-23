@@ -14,6 +14,9 @@ export type ActivityDataPoint = {
   value: number;
 };
 
+/** The empty series as one array, not a fresh one per render — see `useMeasurementsRange`. */
+const EMPTY_ACTIVITY: ActivityDataPoint[] = [];
+
 /**
  * Which column of the day's row each metric reads.
  *
@@ -82,7 +85,7 @@ export function useActivityRange({
   useRefetchOnFocus(query.refetch, enabled);
 
   return {
-    data: query.data ?? [],
+    data: query.data ?? EMPTY_ACTIVITY,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

@@ -7,8 +7,7 @@ import { Line as SkiaLine } from '@shopify/react-native-skia';
 import { useCSSVariable } from 'uniwind';
 import {
   makeChartFont,
-  formatXLabel7d,
-  formatXLabel30d90d,
+  formatXLabelForRange,
   formatTooltipDate,
   formatChartYLabel,
 } from './charts/chartFormatting';
@@ -17,7 +16,6 @@ import type { TrendRange } from '../hooks/useNutritionTrends';
 import {
   RANGE_INNER_PADDING,
   RANGE_X_TICKS,
-  RANGE_LABELS_WEEKDAYS,
 } from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
@@ -119,9 +117,7 @@ const NutrientBarChart: React.FC<NutrientBarChartProps> = ({
     return undefined;
   }, [data, goal]);
 
-  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
-    ? formatXLabel7d
-    : formatXLabel30d90d;
+  const formatXLabel = formatXLabelForRange(range);
 
   const [tooltipResetKey, setTooltipResetKey] = useState({ data, range });
   if (tooltipResetKey.data !== data || tooltipResetKey.range !== range) {

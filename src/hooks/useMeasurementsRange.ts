@@ -15,6 +15,20 @@ export type WeightDataPoint = {
   weight: number;
 };
 
+/**
+ * The empty series, as one array rather than a fresh one per render.
+ *
+ * `?? []` looks harmless and is not: while the query is loading it hands every
+ * render a new array, and everything downstream keys on identity — the charts'
+ * tooltip reset, their `useMemo`s, and `useChartRise`, which cancelled and
+ * rescheduled its reveal on every render and so never revealed anything. The
+ * chart sat empty under a correctly scaled axis until you left the screen and
+ * came back, because only then was the data cached and the identity stable from
+ * the first render. `useSleepRange` has always returned a constant for this.
+ */
+const EMPTY_STEPS: StepsDataPoint[] = [];
+const EMPTY_WEIGHT: WeightDataPoint[] = [];
+
 interface UseMeasurementsRangeOptions {
   range: HealthTrendDateRange;
   enabled?: boolean;
@@ -75,8 +89,8 @@ export function useMeasurementsRange({
   useRefetchOnFocus(query.refetch, enabled);
 
   return {
-    stepsData: query.data?.stepsData ?? [],
-    weightData: query.data?.weightData ?? [],
+    stepsData: query.data?.stepsData ?? EMPTY_STEPS,
+    weightData: query.data?.weightData ?? EMPTY_WEIGHT,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

@@ -9,6 +9,9 @@ export type WaterDataPoint = {
   waterMl: number;
 };
 
+/** The empty series as one array, not a fresh one per render — see `useMeasurementsRange`. */
+const EMPTY_WATER: WaterDataPoint[] = [];
+
 interface UseWaterRangeOptions {
   range: HealthTrendDateRange;
   enabled?: boolean;
@@ -47,7 +50,7 @@ export function useWaterRange({ range, enabled = true }: UseWaterRangeOptions) {
   });
 
   return {
-    waterData: query.data ?? [],
+    waterData: query.data ?? EMPTY_WATER,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

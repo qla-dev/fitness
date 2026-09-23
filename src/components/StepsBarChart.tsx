@@ -8,8 +8,7 @@ import { useCSSVariable } from 'uniwind';
 import {
   makeChartFont,
   CHART_LABEL_FONT_SIZE,
-  formatXLabel7d,
-  formatXLabel30d90d,
+  formatXLabelForRange,
   formatTooltipDate,
   formatChartYLabel,
 } from './charts/chartFormatting';
@@ -18,7 +17,6 @@ import type { HealthTrendDateRange } from '../types/healthTrends';
 import {
   RANGE_INNER_PADDING,
   RANGE_X_TICKS,
-  RANGE_LABELS_WEEKDAYS,
 } from '../types/healthTrends';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
@@ -159,9 +157,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
     [data]
   );
 
-  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
-    ? formatXLabel7d
-    : formatXLabel30d90d;
+  const formatXLabel = formatXLabelForRange(range);
 
   // Reset a lingering selection when the dataset or range changes. Done during
   // render (instead of in an effect) so the tooltip is already cleared on the

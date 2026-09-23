@@ -21,7 +21,6 @@ import type {
 import {
   RANGE_INNER_PADDING,
   RANGE_X_TICKS,
-  RANGE_LABELS_WEEKDAYS,
 } from '../types/healthTrends';
 import {
   SLEEP_STAGE_LANES,
@@ -42,8 +41,7 @@ import ChartTouchOverlay, {
 import {
   CHART_LABEL_FONT_SIZE,
   formatTooltipDate,
-  formatXLabel30d90d,
-  formatXLabel7d,
+  formatXLabelForRange,
 } from './charts/chartFormatting';
 import {
   buildSleepTimelineLayout,
@@ -374,9 +372,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
         })
       : '';
 
-  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
-    ? formatXLabel7d
-    : formatXLabel30d90d;
+  const formatXLabel = formatXLabelForRange(range);
   const xLabelIndices = buildXLabelIndices(data.length, RANGE_X_TICKS[range]);
 
   // The plot's own height, so a range switch does not collapse the surface and

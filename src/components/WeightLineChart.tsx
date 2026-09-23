@@ -8,14 +8,13 @@ import { formatLocalizedNumber } from '../localization/i18n';
 import {
   makeChartFont,
   CHART_LABEL_FONT_SIZE,
-  formatXLabel7d,
-  formatXLabel30d90d,
+  formatXLabelForRange,
   formatTooltipDate,
 } from './charts/chartFormatting';
 import LineSeriesMark from './charts/LineSeriesMark';
 import type { WeightDataPoint } from '../hooks/useMeasurementsRange';
 import type { HealthTrendDateRange } from '../types/healthTrends';
-import { RANGE_X_TICKS, RANGE_LABELS_WEEKDAYS } from '../types/healthTrends';
+import { RANGE_X_TICKS } from '../types/healthTrends';
 import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
 import ChartCaption from './ChartCaption';
 import { useChartRise } from '../hooks/useChartRise';
@@ -129,9 +128,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   );
   const series = useChartRise(data, flattenWeight);
 
-  const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
-    ? formatXLabel7d
-    : formatXLabel30d90d;
+  const formatXLabel = formatXLabelForRange(range);
 
   // Reset a lingering selection when the dataset, range, or unit changes. Done
   // during render (instead of in an effect) so the tooltip is already cleared on

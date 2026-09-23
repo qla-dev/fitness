@@ -60,6 +60,19 @@ export const RANGE_LABELS_WEEKDAYS: ReadonlySet<HealthTrendDateRange> = new Set(
 );
 
 /**
+ * Ranges whose axis is labelled with month names rather than dates.
+ *
+ * The same argument one step further out: six ticks across six months or a
+ * year landed on arbitrary days, which reads as a claim about those dates
+ * rather than about the months they sit in. A month range keeps dates, because
+ * across thirty days the month barely changes and the day is the information.
+ */
+export const RANGE_LABELS_MONTHS: ReadonlySet<HealthTrendDateRange> = new Set([
+  '6m',
+  'y',
+]);
+
+/**
  * A trend's data plus its fetch state.
  */
 export type HealthTrendSeries<TPoint> = {
