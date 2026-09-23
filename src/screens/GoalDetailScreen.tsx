@@ -13,6 +13,7 @@ import WaterBarChart from '../components/WaterBarChart';
 import WeightLineChart from '../components/WeightLineChart';
 import ValueSkeleton from '../components/ValueSkeleton';
 import GoalFacts from '../components/GoalFacts';
+import GoalApps from '../components/GoalApps';
 import {
   useDailySummary,
   useHealthTrends,
@@ -200,6 +201,43 @@ export default function GoalDetailScreen({
   const changeGoalAction = (() => {
     const key = GOAL_KEY_BY_METRIC[metric];
     if (!key) return undefined;
+    // Move is burned energy, and the day's burn is active energy on top of
+    // BMR, so the button asks which one before opening an editor. It is the
+    // system's own menu, the same one the water tile opens on long press. BMR
+    // is a check-in measurement rather than a goal, so it opens that editor
+    // for the day on screen.
+    if (metric === 'move') {
+      return {
+        kind: 'menu' as const,
+        sfSymbol: 'target',
+        ionicon: 'locate-outline',
+        accessibilityLabel: t('goalDetail.changeGoal', {
+          defaultValue: 'Change goal',
+        }),
+        identifier: 'goal-detail-change-goal',
+        items: [
+          {
+            label: t('goalDetail.moveMenu.active', {
+              defaultValue: 'Active energy goal',
+            }),
+            sfSymbol: 'flame',
+            icon: 'flame' as const,
+            onPress: () => navigation.navigate('GoalEdit', { goalKey: key }),
+          },
+          {
+            label: t('goalDetail.moveMenu.bmr', { defaultValue: 'BMR' }),
+            sfSymbol: 'bed.double',
+            icon: 'sleep-bedtime' as const,
+            onPress: () =>
+              navigation.navigate('MeasurementEdit', {
+                field: 'bmr',
+                date,
+                current: measurements?.bmr ?? null,
+              }),
+          },
+        ],
+      };
+    }
     return {
       kind: 'icon' as const,
       sfSymbol: 'target',
@@ -631,6 +669,7 @@ export default function GoalDetailScreen({
           weightUnit={weightUnit}
           distanceUnit={distanceUnit}
         />
+        <GoalApps metric={metric} title={title} />
       </ScrollView>
     </View>
   );

@@ -5583,6 +5583,10 @@
     "history": "History",
     "rangeLabel": "Range",
     "changeGoal": "Change goal",
+    "moveMenu": {
+      "active": "Active energy goal",
+      "bmr": "BMR"
+    },
     "dailyAverage": "Daily average",
     "weeklyAverage": "Weekly average",
     "monthlyAverage": "Monthly average",
@@ -5752,6 +5756,10 @@
     "logFoodOrMeal": "Log food",
     "aiHelp": "AI help",
     "typeCodeTitle": "Type barcode"
+  },
+  "goalApps": {
+    "heading": "Apps for: {{goal}}",
+    "openStore": "Opens the app in the store"
   },
   "goalFacts": {
     "noData": "Your comparisons will appear as you record more data.",
