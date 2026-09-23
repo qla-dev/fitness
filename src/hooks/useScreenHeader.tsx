@@ -58,6 +58,14 @@ export const IOS_NATIVE_HEADER_HEIGHT = 44;
  */
 export const HEADER_CONTENT_GAP = 12;
 
+/**
+ * The air under the screen-owned bar's hairline, which the bar carries itself
+ * so no screen has to remember it. Deliberately small: most screens already
+ * pad their content by 16, and this is added to that — it exists for the ones
+ * that pad by nothing and had their first row sitting on the line.
+ */
+const HEADER_BAR_BOTTOM_GAP = 8;
+
 export const SAVE_LABEL = 'Save';
 export const SAVING_LABEL = 'Saving…';
 
@@ -1166,6 +1174,9 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        // See HEADER_BAR_BOTTOM_GAP: the air under the hairline belongs to
+        // the bar rather than to each of the 85 screens that render it.
+        marginBottom: HEADER_BAR_BOTTOM_GAP,
       }}
     >
       {/* The title is a separate, absolutely-positioned layer centered on the
