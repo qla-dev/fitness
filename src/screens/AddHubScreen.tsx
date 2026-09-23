@@ -10,7 +10,10 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useKeyboardState } from 'react-native-keyboard-controller';
+import {
+  KeyboardStickyView,
+  useKeyboardState,
+} from 'react-native-keyboard-controller';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import type { SearchBarCommands } from 'react-native-screens';
 import { useCSSVariable } from 'uniwind';
@@ -102,12 +105,9 @@ export default function AddHubScreen() {
   // cursor in it rather than opening another screen with another field.
   const searchBar = useRef<SearchBarCommands>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const { scrollToTop, onScroll, onScrollBeginDrag } =
-    useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } = useScrollTopOffset();
   // Re-tapping the active tab returns to the top, like every other tab.
-  useTabPress(navigation, () =>
-    scrollToTop(scrollRef.current)
-  );
+  useTabPress(navigation, () => scrollToTop(scrollRef.current));
   // Flipped by state rather than by calling focus() from the card's handler:
   // that handler lives in an array the render maps over, and a closure reading
   // a ref from there is what the refs rule is there to catch.
@@ -141,14 +141,14 @@ export default function AddHubScreen() {
   const { recentFoods } = useFoods();
   const [green, blue, orange, pink, textSecondary, accent, favoriteGold] =
     useCSSVariable([
-    '--color-cat-green',
-    '--color-cat-blue',
-    '--color-cat-orange',
-    '--color-cat-pink',
-    '--color-text-secondary',
-    '--color-accent-primary',
-    '--color-favorite-gold',
-  ]) as string[];
+      '--color-cat-green',
+      '--color-cat-blue',
+      '--color-cat-orange',
+      '--color-cat-pink',
+      '--color-text-secondary',
+      '--color-accent-primary',
+      '--color-favorite-gold',
+    ]) as string[];
 
   const recents = useSyncExternalStore(
     subscribeRecentSearches,
@@ -427,11 +427,13 @@ export default function AddHubScreen() {
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      contentInsetAdjustmentBehavior={usesNativeTabs ? "automatic" : "never"}
+      contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingBottom:
-          Math.max(insets.bottom, keyboardHeight) + 32 + activeWorkoutBarPadding,
+          Math.max(insets.bottom, keyboardHeight) +
+          32 +
+          activeWorkoutBarPadding,
         gap: CARD_GAP,
         // Content shorter than the screen still fills it, which is what lets
         // the search's loader and its empty state centre themselves in the
@@ -439,18 +441,6 @@ export default function AddHubScreen() {
         flexGrow: 1,
       }}
     >
-      {usesNativeTabs ? null : (
-        <LibrarySearchBar
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('addHub.searchPlaceholder', {
-            defaultValue: 'Search food or meals',
-          })}
-          onFocus={() => setSearchOpen(true)}
-          onSubmitEditing={() => void recordRecentSearch(query)}
-        />
-      )}
-
       {searching ? (
         <AddHubSearchState
           query={query}
@@ -547,10 +537,39 @@ export default function AddHubScreen() {
     );
   }
 
+  // The field iOS 26 gives a search tab, built by hand: pinned to the bottom
+  // of the screen rather than sitting at the top of the list, and carried up
+  // by the keyboard so it stays under the thumb typing into it. The lift is
+  // `KeyboardStickyView`'s, not a margin of our own — the window is
+  // `adjustResize`, so a hand-rolled offset would move the bar a second time
+  // over a layout that had already shrunk. The results appear ABOVE it, which
+  // is why the scroll content grows to fill the screen — see `flexGrow`.
+  const bottomSearch = (
+    <KeyboardStickyView
+      className="bg-background"
+      style={{
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 4,
+      }}
+    >
+      <LibrarySearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t('addHub.searchPlaceholder', {
+          defaultValue: 'Search food or meals',
+        })}
+        onFocus={() => setSearchOpen(true)}
+        onSubmitEditing={() => void recordRecentSearch(query)}
+      />
+    </KeyboardStickyView>
+  );
+
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {header}
       {content}
+      {bottomSearch}
       {typeCodeSheet}
     </View>
   );

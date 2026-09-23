@@ -13,7 +13,15 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
 
-export const TAB_BAR_HEIGHT = 56;
+/**
+ * The pill's own height. The bar around it adds the gap below and the safe
+ * area, which is what {@link TAB_BAR_HEIGHT} covers.
+ */
+const PILL_HEIGHT = 60;
+/** Between the pill and the screen's bottom inset, and beside the circle. */
+const PILL_GAP = 8;
+
+export const TAB_BAR_HEIGHT = PILL_HEIGHT + PILL_GAP;
 
 const TAB_ICONS: Record<string, IconName> = {
   Dashboard: 'exercise-weights',
@@ -38,113 +46,132 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       '--color-accent-primary',
     ]) as [string, string, string, string, string];
 
+  // The tab bar iOS 26 draws: the content tabs in one floating pill, and the
+  // food button as its own circle beside it rather than a notch punched
+  // through the middle. Add is pulled out of the row for that reason — it
+  // opens a screen, it is not a place you are.
+  const tabRoutes = state.routes.filter((route) => route.name !== 'Add');
+  const addRoute = state.routes.find((route) => route.name === 'Add');
+
+  const pressHandlers = (route: (typeof state.routes)[number]) => {
+    const isFocused = state.routes[state.index]?.key === route.key;
+    return {
+      onPress: () => {
+        fireSelectionHaptic();
+        const event = navigation.emit({
+          type: 'tabPress',
+          target: route.key,
+          canPreventDefault: true,
+        });
+
+        if (!event.defaultPrevented && !isFocused) {
+          navigation.navigate(route.name, route.params);
+        }
+      },
+      onLongPress: () => {
+        navigation.emit({ type: 'tabLongPress', target: route.key });
+      },
+    };
+  };
+
   return (
     <View
-      className="flex-row items-end overflow-visible"
+      className="flex-row items-end"
       style={{
-        backgroundColor: chrome,
-        borderTopColor: chromeBorder,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        paddingBottom: Math.max(insets.bottom, 4),
+        paddingHorizontal: 12,
+        paddingBottom: Math.max(insets.bottom, PILL_GAP),
+        gap: PILL_GAP,
+        backgroundColor: 'transparent',
       }}
+      pointerEvents="box-none"
     >
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-        const isAddButton = route.name === 'Add';
+      <View
+        className="flex-1 flex-row items-center overflow-hidden"
+        style={{
+          height: PILL_HEIGHT,
+          borderRadius: PILL_HEIGHT / 2,
+          backgroundColor: chrome,
+          borderColor: chromeBorder,
+          borderWidth: StyleSheet.hairlineWidth,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.12,
+              shadowRadius: 8,
+            },
+            android: { elevation: 3 },
+          }),
+        }}
+      >
+        {tabRoutes.map((route) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.routes[state.index]?.key === route.key;
+          const label =
+            typeof options.tabBarLabel === 'string'
+              ? options.tabBarLabel
+              : (options.title ?? route.name);
+          const iconName = TAB_ICONS[route.name];
+          const tintColor = isFocused ? tabActive : tabInactive;
 
-        const onPress = () => {
-          fireSelectionHaptic();
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-
-          if (!event.defaultPrevented && !isFocused) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
-
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress',
-            target: route.key,
-          });
-        };
-
-        if (isAddButton) {
           return (
-            <View
+            <TouchableOpacity
               key={route.key}
-              className="flex-1 items-center justify-end pb-1"
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : undefined}
+              accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+              {...pressHandlers(route)}
+              className="flex-1 items-center justify-center gap-0.5"
             >
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={
-                  options.tabBarAccessibilityLabel ??
-                  t('navigation.add', { defaultValue: 'Add' })
-                }
-                onPress={onPress}
-                onLongPress={onLongPress}
-                activeOpacity={0.8}
-                className="w-14 h-14 rounded-full items-center justify-center -mt-5"
-                style={{
-                  backgroundColor: accentPrimary,
-                  ...Platform.select({
-                    ios: {
-                      shadowColor: '#000',
-                      shadowOffset: { width: 2, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 6,
-                    },
-                    android: {
-                      elevation: 4,
-                    },
-                  }),
-                }}
+              {iconName && (
+                <Icon
+                  name={iconName}
+                  size={22}
+                  color={tintColor}
+                  weight={isFocused ? 'bold' : 'regular'}
+                />
+              )}
+              <Text
+                className={`text-[11px] ${isFocused ? 'font-semibold' : 'font-medium'}`}
+                style={{ color: tintColor }}
+                numberOfLines={1}
               >
-                <Icon name="food" size={26} color="#FFFFFF" weight="bold" />
-              </TouchableOpacity>
-            </View>
+                {label}
+              </Text>
+            </TouchableOpacity>
           );
-        }
+        })}
+      </View>
 
-        const label =
-          typeof options.tabBarLabel === 'string'
-            ? options.tabBarLabel
-            : (options.title ?? route.name);
-        const iconName = TAB_ICONS[route.name];
-        const tintColor = isFocused ? tabActive : tabInactive;
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : undefined}
-            accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            className="flex-1 items-center justify-center pt-2 pb-1 gap-0.5"
-          >
-            {iconName && (
-              <Icon
-                name={iconName}
-                size={24}
-                color={tintColor}
-                weight={isFocused ? 'bold' : 'regular'}
-              />
-            )}
-            <Text
-              className={`text-xs ${isFocused ? 'font-semibold' : 'font-medium'}`}
-              style={{ color: tintColor }}
-              numberOfLines={1}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+      {addRoute ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={
+            descriptors[addRoute.key]?.options.tabBarAccessibilityLabel ??
+            t('navigation.add', { defaultValue: 'Add' })
+          }
+          {...pressHandlers(addRoute)}
+          activeOpacity={0.8}
+          className="items-center justify-center"
+          style={{
+            width: PILL_HEIGHT,
+            height: PILL_HEIGHT,
+            borderRadius: PILL_HEIGHT / 2,
+            backgroundColor: accentPrimary,
+            ...Platform.select({
+              ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.18,
+                shadowRadius: 8,
+              },
+              android: { elevation: 4 },
+            }),
+          }}
+        >
+          <Icon name="food" size={24} color="#FFFFFF" weight="bold" />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
