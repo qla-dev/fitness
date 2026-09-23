@@ -6,8 +6,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Pressable,
-  RefreshControl,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -264,7 +264,7 @@ const LibraryScreen: React.FC<SharedLibraryProps> = ({
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
             tintColor={accentColor}

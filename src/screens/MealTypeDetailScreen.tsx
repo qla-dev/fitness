@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import FoodNutritionSummary from '../components/FoodNutritionSummary';
@@ -214,7 +215,7 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={accentColor}

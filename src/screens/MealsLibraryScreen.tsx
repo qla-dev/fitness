@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, RefreshControl } from 'react-native';
+import { View, FlatList } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import StatusView from '../components/StatusView';
@@ -232,7 +233,7 @@ const MealsLibraryScreen: React.FC<MealsLibraryScreenProps> = ({
         ListEmptyComponent={renderEmpty}
         keyboardShouldPersistTaps="handled"
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={accentColor}

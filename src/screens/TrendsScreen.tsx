@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -99,10 +100,11 @@ export default function TrendsScreen({ navigation }: Props) {
   // content; Dashboard does the same two calls and does not move, so that was
   // wrong, and dropping it only made this the odd one out.
   useLayoutEffect(syncHeader, [syncHeader]);
-  const { topOffset, onScroll } = useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } =
+    useScrollTopOffset();
   // Re-tapping the active Goals tab returns to the top, like every other tab.
   useTabPress(navigation, () =>
-    scrollRef.current?.scrollTo({ y: topOffset.current, animated: true })
+    scrollToTop(scrollRef.current)
   );
 
   useFocusEffect(
@@ -156,11 +158,17 @@ export default function TrendsScreen({ navigation }: Props) {
         }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
+        onScrollBeginDrag={onScrollBeginDrag}
+        // Without this, scrollTo cannot reach the top of a scroll view whose
+        // inset is the automatic one: RN clamps a programmatic offset against
+        // the EXPLICIT contentInset, which is zero here, so every negative y —
+        // and the real top is negative — was silently pinned to 0.
+        scrollToOverflowEnabled
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={refreshing}
             onRefresh={refresh}
             tintColor={accent}

@@ -3,10 +3,10 @@ import {
   Alert,
   FlatList,
   Pressable,
-  RefreshControl,
   Text,
   View,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -345,7 +345,7 @@ const MealPlansScreen: React.FC<MealPlansScreenProps> = ({ navigation }) => {
           flexGrow: 1,
         }}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={accentColor}

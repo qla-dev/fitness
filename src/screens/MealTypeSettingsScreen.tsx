@@ -10,11 +10,11 @@ import {
   View,
   Text,
   ScrollView,
-  RefreshControl,
   TouchableOpacity,
   Alert,
   type AccessibilityActionEvent,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1131,7 +1131,7 @@ const MealTypeSettingsScreen: React.FC<MealTypeSettingsScreenProps> = () => {
             usesNativeHeader ? 'automatic' : 'never'
           }
           refreshControl={
-            <RefreshControl
+            <HapticRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={accentColor}

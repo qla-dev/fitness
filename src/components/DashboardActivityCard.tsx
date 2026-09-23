@@ -20,6 +20,7 @@ import { formatCompactCount } from '../utils/compactNumber';
 import type { ActivityGoalKey } from '../constants/activityGoals';
 import Icon, { type IconName } from './Icon';
 import { ACTIVITY_RING_COLORS } from '../constants/activityRings';
+import { fireRefreshHaptic } from '../services/haptics';
 import ValueSkeleton from './ValueSkeleton';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -167,7 +168,12 @@ export default function DashboardActivityCard({
             })}
             accessibilityState={{ disabled: isPending, busy: isPending }}
             disabled={isPending}
-            onPress={() => void sync()}
+            // The same tap a pull-to-refresh gives, because it is the same
+            // act: this button is the pull for a card you cannot pull.
+            onPress={() => {
+              fireRefreshHaptic();
+              void sync();
+            }}
             hitSlop={12}
             // Fixed box so swapping the icon for the spinner cannot nudge the
             // title or change the card's height mid-sync.

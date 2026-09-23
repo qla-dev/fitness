@@ -4,9 +4,9 @@ import {
   View,
   Text,
   SectionList,
-  RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
@@ -184,7 +184,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
             usesNativeHeader ? 'automatic' : 'never'
           }
           refreshControl={
-            <RefreshControl
+            <HapticRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={accentColor}

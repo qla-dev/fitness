@@ -16,11 +16,11 @@ import React, {
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
-  RefreshControl,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import {
   Directions,
   Gesture,
@@ -106,10 +106,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   // today's summary and the top of the screen. Through the hook rather than
   // this screen's own navigation: under the native tab bar the screen sits in
   // a tab-local stack that never sees `tabPress`.
-  const { topOffset, onScroll } = useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } =
+    useScrollTopOffset();
   useTabPress(navigation, () => {
     goToToday();
-    scrollViewRef.current?.scrollTo({ y: topOffset.current, animated: true });
+    scrollToTop(scrollViewRef.current);
   });
   // The photo-day markers are fetched on first calendar open rather than at
   // mount: a user who never opens the picker should not pay a request for it.
@@ -373,11 +374,17 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
+        onScrollBeginDrag={onScrollBeginDrag}
+        // Without this, scrollTo cannot reach the top of a scroll view whose
+        // inset is the automatic one: RN clamps a programmatic offset against
+        // the EXPLICIT contentInset, which is zero here, so every negative y —
+        // and the real top is negative — was silently pinned to 0.
+        scrollToOverflowEnabled
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={accentColor || '#3B82F6'}

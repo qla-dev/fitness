@@ -6,9 +6,9 @@ import {
   FlatList,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
@@ -173,11 +173,18 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   // second tap landing before that.
   const importInFlight = useRef(false);
   const listRef = useRef<FlatList>(null);
+  /**
+   * The store's scroller. This screen renders one container or the other —
+   * the program shelves at the tab root, the exercise list in the copy pushed
+   * from Library — so only one of these is ever mounted.
+   */
+  const storeRef = useRef<ScrollView>(null);
   // Re-tapping the active tab returns to the top, like every other tab. Inert
   // in the pushed copy of this screen, which is not a tab root.
-  const { topOffset, onScroll } = useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } =
+    useScrollTopOffset();
   useTabPress(navigation, () =>
-    listRef.current?.scrollToOffset({ offset: topOffset.current, animated: true })
+    scrollToTop(storeRef.current ?? listRef.current)
   );
   const handleImportPress = useCallback(
     async (item: ExternalExerciseItem) => {
@@ -493,9 +500,17 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       // vertical one of its own or the page cannot move at all.
       return (
         <ScrollView
+          // The store is its own scroller, so it needs the same return-to-top
+          // wiring the list below has — the tab root renders this branch, and
+          // re-tapping the tab did nothing at all without it.
+          ref={storeRef}
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          onScrollBeginDrag={onScrollBeginDrag}
+          scrollToOverflowEnabled
+          scrollEventThrottle={16}
           contentContainerStyle={{
             paddingTop: contentTopInset,
             paddingBottom: scrollBottomPadding,
@@ -518,6 +533,12 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         ref={listRef}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
+        onScrollBeginDrag={onScrollBeginDrag}
+        // Without this, scrollTo cannot reach the top of a scroll view whose
+        // inset is the automatic one: RN clamps a programmatic offset against
+        // the EXPLICIT contentInset, which is zero here, so every negative y —
+        // and the real top is negative — was silently pinned to 0.
+        scrollToOverflowEnabled
         scrollEventThrottle={16}
         data={rows}
         keyExtractor={(row) => row.key}
@@ -578,7 +599,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
         }}
         onEndReachedThreshold={0.5}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={isSearching}
             onRefresh={refetch}
             tintColor={textPrimary}

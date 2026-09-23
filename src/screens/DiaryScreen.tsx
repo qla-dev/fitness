@@ -12,7 +12,8 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import {
   Directions,
   Gesture,
@@ -112,10 +113,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // entries and the top of the screen. Through the hook rather than this
   // screen's own navigation: under the native tab bar the screen sits in a
   // tab-local stack that never sees `tabPress`.
-  const { topOffset, onScroll } = useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } =
+    useScrollTopOffset();
   useTabPress(navigation, () => {
     goToToday();
-    scrollViewRef.current?.scrollTo({ y: topOffset.current, animated: true });
+    scrollToTop(scrollViewRef.current);
   });
 
   useEffect(() => {
@@ -430,11 +432,17 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
+        onScrollBeginDrag={onScrollBeginDrag}
+        // Without this, scrollTo cannot reach the top of a scroll view whose
+        // inset is the automatic one: RN clamps a programmatic offset against
+        // the EXPLICIT contentInset, which is zero here, so every negative y —
+        // and the real top is negative — was silently pinned to 0.
+        scrollToOverflowEnabled
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
         automaticallyAdjustsScrollIndicatorInsets={usesNativeTabs}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
             tintColor={accentColor}

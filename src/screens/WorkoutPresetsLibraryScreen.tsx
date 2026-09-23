@@ -6,8 +6,8 @@ import {
   FlatList,
   Pressable,
   TouchableOpacity,
-  RefreshControl,
 } from 'react-native';
+import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import LibrarySearchBar from '../components/LibrarySearchBar';
@@ -314,7 +314,7 @@ const WorkoutPresetsLibraryScreen: React.FC<
         }}
         onEndReachedThreshold={0.5}
         refreshControl={
-          <RefreshControl
+          <HapticRefreshControl
             refreshing={isSearching}
             onRefresh={refetch}
             tintColor={accentColor}

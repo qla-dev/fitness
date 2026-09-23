@@ -102,10 +102,11 @@ export default function AddHubScreen() {
   // cursor in it rather than opening another screen with another field.
   const searchBar = useRef<SearchBarCommands>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const { topOffset, onScroll } = useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } =
+    useScrollTopOffset();
   // Re-tapping the active tab returns to the top, like every other tab.
   useTabPress(navigation, () =>
-    scrollRef.current?.scrollTo({ y: topOffset.current, animated: true })
+    scrollToTop(scrollRef.current)
   );
   // Flipped by state rather than by calling focus() from the card's handler:
   // that handler lives in an array the render maps over, and a closure reading
@@ -417,6 +418,12 @@ export default function AddHubScreen() {
       ref={scrollRef}
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
+      onScrollBeginDrag={onScrollBeginDrag}
+      // Without this, scrollTo cannot reach the top of a scroll view whose
+      // inset is the automatic one: RN clamps a programmatic offset against
+      // the EXPLICIT contentInset, which is zero here, so every negative y —
+      // and the real top is negative — was silently pinned to 0.
+      scrollToOverflowEnabled
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
