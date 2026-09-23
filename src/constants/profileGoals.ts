@@ -1,4 +1,7 @@
 import type { TFunction } from 'i18next';
+import type { IconName } from '../components/Icon';
+import { activityGoalByKey, MOVE_COLOR } from './activityGoals';
+import { HEALTH_TREND_COLORS } from './healthTrends';
 import { getNutrientLabel, NUTRIENT_META } from './nutrients';
 import type { UserCustomNutrient } from '../hooks/useCustomNutrients';
 import type { DailyGoals } from '../types/goals';
@@ -18,7 +21,11 @@ export const CUSTOM_GOAL_PREFIX = 'custom:';
  * resolved by {@link getProfileGoalSectionTitle} with literal `t()` keys so the
  * i18n audit can still see every key statically.
  */
-export type ProfileGoalSectionId = 'nutrition' | 'activity' | 'custom';
+export type ProfileGoalSectionId =
+  | 'nutrition'
+  | 'activity'
+  | 'body'
+  | 'custom';
 
 export interface ProfileGoalSection {
   id: ProfileGoalSectionId;
@@ -53,10 +60,26 @@ const ACTIVITY_GOAL_KEYS = [
   'stand_hours',
 ] as const;
 
+/**
+ * The two goals that are about the body rather than the day.
+ *
+ * Their own section because neither belongs under "Hydration & activity":
+ * sleep is not activity, and a target weight is not a daily target at all —
+ * it is a destination you move toward over weeks, which is why it reads as a
+ * target rather than as a percentage wherever it is shown.
+ */
+const BODY_GOAL_KEYS = ['target_weight', 'sleep_goal_hours'] as const;
+
 export const PROFILE_GOAL_SECTIONS: ProfileGoalSection[] = [
   { id: 'nutrition', keys: [...NUTRITION_GOAL_KEYS] },
   { id: 'activity', keys: [...ACTIVITY_GOAL_KEYS] },
+  { id: 'body', keys: [...BODY_GOAL_KEYS] },
 ];
+
+/** Goals held in kilograms, which the editors show in the user's own unit. */
+export function isWeightGoalKey(key: string): boolean {
+  return key === 'target_weight';
+}
 
 export function getProfileGoalSectionTitle(
   t: TFunction,
@@ -69,6 +92,8 @@ export function getProfileGoalSectionTitle(
       return t('profile.goalsActivity', {
         defaultValue: 'Hydration & activity',
       });
+    case 'body':
+      return t('profile.goalsBody', { defaultValue: 'Body & sleep' });
     case 'custom':
       return t('profile.goalsCustom', { defaultValue: 'Custom nutrients' });
   }
@@ -81,11 +106,15 @@ const ACTIVITY_GOAL_UNITS: Record<string, string> = {
   target_exercise_duration_minutes: 'min',
   steps: '',
   stand_hours: 'h',
+  sleep_goal_hours: 'h',
 };
 
 /** Inclusive upper bounds for goals a larger number cannot mean. */
 const GOAL_MAXIMUMS: Record<string, number> = {
   stand_hours: 24,
+  // A night is 24 hours long; a weight target beyond half a tonne is a typo.
+  sleep_goal_hours: 24,
+  target_weight: 500,
 };
 
 /**
@@ -99,6 +128,9 @@ const GOAL_STEPS: Record<string, number> = {
   steps: 100,
   target_exercise_calories_burned: 10,
   calories: 10,
+  // Half an hour is the unit people actually move a sleep target by.
+  sleep_goal_hours: 0.5,
+  target_weight: 1,
 };
 
 /** The default, for a goal that is not in {@link GOAL_STEPS}. */
@@ -115,6 +147,9 @@ export function goalStep(key: string): number {
  */
 const GOAL_MINIMUMS: Record<string, number> = {
   calories: 1,
+  // Zero is not a target for either of these, it is an unset one.
+  sleep_goal_hours: 1,
+  target_weight: 1,
 };
 
 export function isCustomGoalKey(key: string): boolean {
@@ -155,6 +190,10 @@ export function getProfileGoalLabel(
       return t('dashboard.activitySteps', { defaultValue: 'Steps' });
     case 'stand_hours':
       return t('dashboard.activityStand', { defaultValue: 'Stand' });
+    case 'sleep_goal_hours':
+      return t('profile.goalSleep', { defaultValue: 'Sleep' });
+    case 'target_weight':
+      return t('profile.goalTargetWeight', { defaultValue: 'Target weight' });
     default:
       return getNutrientLabel(t, key);
   }
@@ -162,7 +201,13 @@ export function getProfileGoalLabel(
 
 export function getProfileGoalUnit(
   key: string,
-  customNutrients: UserCustomNutrient[] = []
+  customNutrients: UserCustomNutrient[] = [],
+  /**
+   * The unit weights are shown in. A weight goal is stored in kilograms and
+   * shown in whichever unit the user reads every other weight in, so this is
+   * the one goal whose unit is not a property of the goal itself.
+   */
+  weightUnit: 'kg' | 'lbs' = 'kg'
 ): string {
   if (isCustomGoalKey(key)) {
     const name = customGoalName(key);
@@ -170,6 +215,7 @@ export function getProfileGoalUnit(
       customNutrients.find((nutrient) => nutrient.name === name)?.unit ?? ''
     );
   }
+  if (isWeightGoalKey(key)) return weightUnit;
   return ACTIVITY_GOAL_UNITS[key] ?? NUTRIENT_META[key]?.unit ?? '';
 }
 
@@ -190,4 +236,44 @@ export function readGoalValue(
   return typeof value === 'number' && Number.isFinite(value)
     ? value
     : undefined;
+}
+
+/**
+ * The mark a non-nutrient goal carries in its editor.
+ *
+ * Nutrient goals already have one — the macro ring's own glyph — and hydration
+ * draws its bottle, so those two paths stay where they are. Everything else
+ * showed a bare number under a title, which reads as an unfinished screen
+ * rather than as a goal. Colours come from the registries that already own
+ * them, so a goal's mark cannot drift from the card it was opened from.
+ */
+const PROFILE_GOAL_GLYPHS: Record<
+  string,
+  { icon: IconName; color: string }
+> = {
+  // The bottle in GoalEditScreen takes precedence over this icon; the entry
+  // is here for the COLOUR, so hydration's own blue reaches its badge and the
+  // button that commits it rather than the generic accent.
+  water_goal_ml: { icon: 'hydration', color: HEALTH_TREND_COLORS.water },
+  target_exercise_calories_burned: { icon: 'flame', color: MOVE_COLOR },
+  target_exercise_duration_minutes: {
+    icon: 'exercise-running',
+    color: activityGoalByKey('exercise').color,
+  },
+  stand_hours: {
+    icon: 'exercise-walking',
+    color: activityGoalByKey('stand').color,
+  },
+  steps: { icon: 'exercise-walking', color: HEALTH_TREND_COLORS.steps },
+  sleep_goal_hours: {
+    icon: 'sleep-bedtime',
+    color: HEALTH_TREND_COLORS.sleep,
+  },
+  target_weight: { icon: 'scale', color: HEALTH_TREND_COLORS.weight },
+};
+
+export function getProfileGoalGlyph(
+  key: string
+): { icon: IconName; color: string } | null {
+  return PROFILE_GOAL_GLYPHS[key] ?? null;
 }

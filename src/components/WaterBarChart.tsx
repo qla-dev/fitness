@@ -20,6 +20,7 @@ export default function WaterBarChart({
   range,
   color,
   bare,
+  hideTitle,
 }: {
   data: WaterDataPoint[];
   isLoading: boolean;
@@ -27,6 +28,8 @@ export default function WaterBarChart({
   range: HealthTrendDateRange;
   color?: string;
   bare?: boolean;
+  /** Forwarded: the goal screen names the metric beside its value. */
+  hideTitle?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -63,6 +66,7 @@ export default function WaterBarChart({
       labels={labels}
       color={color}
       bare={bare}
+      hideTitle={hideTitle}
     />
   );
 }

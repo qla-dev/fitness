@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { fetchWaterRange } from '../services/api/measurementsApi';
 import { waterRangeQueryKey } from './queryKeys';
 import { RANGE_DAYS, type HealthTrendDateRange } from '../types/healthTrends';
@@ -28,6 +28,11 @@ export function useWaterRange({ range, enabled = true }: UseWaterRangeOptions) {
 
   const query = useQuery({
     queryKey: waterRangeQueryKey(startDate, today),
+    // The previous range stays on screen while the next one loads, which is
+    // what lets the chart morph rather than cut. Without it the query has no
+    // rows for a new key, the chart unmounts for its loading state, and the
+    // bars it would have animated between never share a mounted chart.
+    placeholderData: keepPreviousData,
     queryFn: () => fetchWaterRange(startDate, today),
     enabled,
     select: (rows): WaterDataPoint[] => {

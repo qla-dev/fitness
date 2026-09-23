@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { fetchMeasurementsRange } from '../services/api/measurementsApi';
 import { useRefetchOnFocus } from './useRefetchOnFocus';
 import { measurementsRangeQueryKey } from './queryKeys';
@@ -30,6 +30,11 @@ export function useMeasurementsRange({
 
   const query = useQuery({
     queryKey: measurementsRangeQueryKey(startDate, today),
+    // The previous range stays on screen while the next one loads, which is
+    // what lets the chart morph rather than cut. Without it the query has no
+    // rows for a new key, the chart unmounts for its loading state, and the
+    // bars it would have animated between never share a mounted chart.
+    placeholderData: keepPreviousData,
     queryFn: () => fetchMeasurementsRange(startDate, today),
     enabled,
     select: (data) => {

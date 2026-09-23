@@ -5205,6 +5205,9 @@
     "goalsNutrition": "Nutrition",
     "goalsActivity": "Hydration & activity",
     "goalsCustom": "Custom nutrients",
+    "goalsBody": "Body & sleep",
+    "goalSleep": "Sleep",
+    "goalTargetWeight": "Target weight",
     "goalNotSet": "Not set",
     "goalPlaceholder": "Enter a value",
     "namePlaceholder": "Enter your name",
@@ -5578,7 +5581,13 @@
     "noGoal": "No goal set",
     "byHour": "By hour",
     "history": "History",
-    "rangeLabel": "Range"
+    "rangeLabel": "Range",
+    "changeGoal": "Change goal",
+    "dailyAverage": "Daily average",
+    "weeklyAverage": "Weekly average",
+    "monthlyAverage": "Monthly average",
+    "total": "Total",
+    "average": "Average"
   },
   "diaryNutrition": {
     "allMacros": "All macros",

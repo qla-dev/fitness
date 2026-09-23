@@ -25,6 +25,7 @@ export default function ActivityTrendChart({
   range,
   distanceUnit,
   bare,
+  hideTitle,
 }: {
   metric: ActivityGoalKey;
   data: ActivityDataPoint[];
@@ -34,6 +35,8 @@ export default function ActivityTrendChart({
   /** Only read for distance, which is the one metric stored in another unit. */
   distanceUnit?: 'km' | 'miles';
   bare?: boolean;
+  /** Forwarded: the goal screen names the metric beside its value. */
+  hideTitle?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -126,6 +129,7 @@ export default function ActivityTrendChart({
     <StepsBarChart
       data={points}
       isLoading={isLoading}
+      hideTitle={hideTitle}
       isError={isError}
       range={range}
       labels={labels}

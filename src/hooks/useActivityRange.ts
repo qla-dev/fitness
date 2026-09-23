@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   fetchActivityRange,
   type ActivityRangeDay,
@@ -58,6 +58,11 @@ export function useActivityRange({
 
   const query = useQuery({
     queryKey: activityRangeQueryKey(startDate, today),
+    // The previous range stays on screen while the next one loads, which is
+    // what lets the chart morph rather than cut. Without it the query has no
+    // rows for a new key, the chart unmounts for its loading state, and the
+    // bars it would have animated between never share a mounted chart.
+    placeholderData: keepPreviousData,
     queryFn: () => fetchActivityRange(startDate, today),
     enabled: enabled && column != null,
     select: (rows): ActivityDataPoint[] => {

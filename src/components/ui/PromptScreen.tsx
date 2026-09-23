@@ -36,6 +36,7 @@ export default function PromptScreen({
   onFooterPress,
   footerDisabled,
   footerLoading,
+  footerTint,
   hasTextInput = false,
   children,
 }: {
@@ -54,6 +55,8 @@ export default function PromptScreen({
   onFooterPress: () => void;
   footerDisabled?: boolean;
   footerLoading?: boolean;
+  /** The action's fill, for a screen that is about one coloured thing. */
+  footerTint?: string;
   /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
   children: React.ReactNode;
@@ -108,6 +111,7 @@ export default function PromptScreen({
         onPress={onFooterPress}
         disabled={footerDisabled}
         loading={footerLoading}
+        tint={footerTint}
       />
     </View>
   );

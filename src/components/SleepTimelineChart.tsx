@@ -1,9 +1,16 @@
-import { Canvas, Rect } from '@shopify/react-native-skia';
+import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import ChartSurface from './ChartSurface';
+import ChartCaption from './ChartCaption';
 import type { TFunction } from 'i18next';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
+import {
+  useDerivedValue,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useCSSVariable } from 'uniwind';
 
 import { usePreferences } from '../hooks/usePreferences';
@@ -43,6 +50,7 @@ import {
   chooseSleepClockAnchorMinutes,
   MINUTES_PER_DAY,
 } from './charts/sleepTimelineLayout';
+import { CHART_PLOT_HEIGHT } from '../constants/charts';
 
 type SleepTimelineAggregates = Omit<SleepTimelineSummary, 'days'>;
 
@@ -54,9 +62,11 @@ type SleepTimelineChartProps = SleepTimelineAggregates &
      * the chart is the content rather than one card among several.
      */
     bare?: boolean;
+  /** Drops the chart's own heading, for a screen that names the metric itself. */
+  hideTitle?: boolean;
   };
 
-const PLOT_HEIGHT = 150;
+const PLOT_HEIGHT = CHART_PLOT_HEIGHT;
 
 /**
  * Wide enough for the longest label the axis can produce, "12 AM". Dropping the ":00"
@@ -245,6 +255,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
   isError,
   range,
   bare,
+  hideTitle,
 }) => {
   const { t } = useTranslation();
   const { preferences } = usePreferences();
@@ -290,6 +301,27 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
     setSelectionResetKey({ data, range });
     setSelectedIndex(null);
   }
+
+  // The night draws itself up out of the axis whenever a range lands, the same
+  // gesture the bar and line charts make — see `useChartRise`, which does it by
+  // handing Victory a flat frame. There is no Victory here to hand anything to,
+  // so the whole Skia group is scaled about the foot of the plot instead, which
+  // is the same movement from the viewer's side.
+  const reducedMotion = useReducedMotion();
+  const rise = useSharedValue(0);
+  useEffect(() => {
+    if (reducedMotion) {
+      rise.value = 1;
+      return;
+    }
+    rise.value = 0;
+    rise.value = withTiming(1, { duration: 400 });
+  }, [data, range, reducedMotion, rise]);
+  const riseTransform = useDerivedValue(() => [
+    { translateY: PLOT_HEIGHT },
+    { scaleY: rise.value },
+    { translateY: -PLOT_HEIGHT },
+  ]);
 
   const touchLayout: ChartTouchLayout = useMemo(() => {
     if (plotWidth <= 0 || layout.columns.length === 0)
@@ -347,32 +379,41 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
     : formatXLabel30d90d;
   const xLabelIndices = buildXLabelIndices(data.length, RANGE_X_TICKS[range]);
 
+  // The plot's own height, so a range switch does not collapse the surface and
+  // spring it back while the new range loads — see PLOT_HEIGHT.
   const renderPlaceholder = (message: string) => (
-    <View className="h-50 justify-center items-center">
+    <View
+      style={{ height: PLOT_HEIGHT }}
+      className="justify-center items-center"
+    >
       <Text className="text-text-muted text-sm">{message}</Text>
     </View>
   );
 
   return (
     <ChartSurface bare={bare}>
-      <Text className="text-text-primary text-lg font-semibold mb-2">
-        {t('charts.sleep.title', { defaultValue: 'Sleep' })}
-      </Text>
+      {hideTitle ? null : (
+        <Text className="text-text-primary text-lg font-semibold mb-2">
+          {t('charts.sleep.title', { defaultValue: 'Sleep' })}
+        </Text>
+      )}
 
       <View className="flex-row mb-1">
         <SleepStatTile label={statLabels[0]} testID="sleep-stat-time-in-bed" />
         <SleepStatTile label={statLabels[1]} testID="sleep-stat-time-asleep" />
       </View>
 
-      {/* Fixed height so selecting a night swaps the copy without reflowing the plot. */}
-      <View className="h-5 justify-center mb-1">
+      {/* Fixed height so selecting a night swaps the copy without reflowing the
+          plot, and the same fixed height every other chart reserves above its
+          plot — see `ChartCaption`. */}
+      <ChartCaption>
         <Text
           className="text-text-muted text-xs"
           testID="sleep-timeline-subtitle"
         >
           {selectedLabels?.clockRange ?? rangeLabel}
         </Text>
-      </View>
+      </ChartCaption>
 
       {isLoading ? (
         renderPlaceholder(t('common.loading', { defaultValue: 'Loading...' }))
@@ -404,20 +445,22 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
                 most of the block outright.
               */}
               <Canvas style={{ flex: 1 }}>
-                {layout.columns.flatMap((column) =>
-                  column.blocks.map((block, blockIndex) => (
-                    <Rect
-                      key={`${column.dayIndex}-${blockIndex}`}
-                      x={column.x}
-                      y={block.y}
-                      width={column.width}
-                      height={block.height}
-                      color={
-                        stageColors[SLEEP_STAGE_LANES.indexOf(block.stage)]
-                      }
-                    />
-                  ))
-                )}
+                <Group transform={riseTransform}>
+                  {layout.columns.flatMap((column) =>
+                    column.blocks.map((block, blockIndex) => (
+                      <Rect
+                        key={`${column.dayIndex}-${blockIndex}`}
+                        x={column.x}
+                        y={block.y}
+                        width={column.width}
+                        height={block.height}
+                        color={
+                          stageColors[SLEEP_STAGE_LANES.indexOf(block.stage)]
+                        }
+                      />
+                    ))
+                  )}
+                </Group>
               </Canvas>
 
               <ChartTouchOverlay

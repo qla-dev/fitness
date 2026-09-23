@@ -26,6 +26,9 @@ import ChartTouchOverlay, {
   createChartTouchLayoutSignature,
   type ChartTouchLayout,
 } from './ChartTouchOverlay';
+import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
+import ChartCaption from './ChartCaption';
+import { useChartRise } from '../hooks/useChartRise';
 
 /**
  * The copy a daily-bar chart needs. Supplied by hydration, which is the same
@@ -53,6 +56,8 @@ type StepsBarChartProps = {
    * the chart is the content rather than one card among several.
    */
   bare?: boolean;
+  /** Drops the chart's own heading, for a screen that names the metric itself. */
+  hideTitle?: boolean;
   /**
    * Bar fill, for a metric that owns a colour elsewhere in the app — Move's
    * red, Exercise's green. Defaults to the accent, which is what steps and
@@ -66,19 +71,35 @@ const font = makeChartFont(CHART_LABEL_FONT_SIZE);
 
 const formatYLabel = (value: number) => formatChartYLabel(value);
 
+/**
+ * The plot area's height, shared by the chart and by every state that stands
+ * in for it.
+ *
+ * Each range is its own query, so switching one starts a fetch with no cached
+ * rows and the chart briefly has nothing to draw. When the loading, error and
+ * empty states were shorter than the plot, that moment collapsed the card and
+ * sprang it back — which reads as the chart disappearing rather than as the
+ * range changing. Holding one height means the surface stays put and only the
+ * bars redraw.
+ */
+const PLOT_HEIGHT = CHART_PLOT_HEIGHT;
 const DEFAULT_TOOLTIP = '';
 
 /**
  * Reserved whether or not a bar is selected, so picking one cannot shift the
- * chart. Its margins are even: it used to sit 12 below the title and 4 above
- * the chart, which read as a gap under the heading rather than as a line of
- * its own — obvious once the surrounding card came off.
+ * chart — see `ChartCaption`, which is the slot every chart keeps here.
  */
 const StepsTooltip: React.FC<{ text: string }> = ({ text }) => (
-  <View className="h-6 justify-center my-1">
+  <ChartCaption>
     <Text className="text-text-secondary text-sm text-center">{text}</Text>
-  </View>
+  </ChartCaption>
 );
+
+/** What a bar looks like before it grows. See `useChartRise`. */
+const flattenBar = (point: StepsDataPoint): StepsDataPoint => ({
+  ...point,
+  steps: 0,
+});
 
 /**
  * Builds the tooltip copy from the semantically selected data point. The text
@@ -112,6 +133,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   isError,
   range,
   bare,
+  hideTitle,
 }) => {
   const { t } = useTranslation();
   const [accentColor, textMuted] = useCSSVariable([
@@ -124,6 +146,18 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
   );
 
   const hasData = useMemo(() => data.some((d) => d.steps > 0), [data]);
+
+  // The bars grow out of the axis each time a range lands, rather than
+  // appearing at full height — the gesture the hourly chart already has.
+  const series = useChartRise(data, flattenBar);
+  // Pinned from the real data, not from whatever is being drawn: the flat
+  // frame's domain would be [0, 0], and the axis would flash a column of
+  // zeroes on the way in. It is the same domain Victory derives for itself
+  // from the real points, so nothing about the scale changes.
+  const yMax = useMemo(
+    () => data.reduce((highest, point) => Math.max(highest, point.steps), 0),
+    [data]
+  );
 
   const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
     ? formatXLabel7d
@@ -178,20 +212,27 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
 
   return (
     <ChartSurface bare={bare}>
-      <Text className="text-text-primary text-lg font-semibold mb-2">
-        {labels?.title ?? t('charts.steps.title', { defaultValue: 'Steps' })}
-      </Text>
+      {/* Dropped where the screen already names the metric beside its value:
+          the title then said it a second time, and the gap it left pushed the
+          plot down the page. */}
+      {hideTitle ? null : (
+        <Text className="text-text-primary text-lg font-semibold mb-2">
+          {labels?.title ?? t('charts.steps.title', { defaultValue: 'Steps' })}
+        </Text>
+      )}
 
       <StepsTooltip text={tooltipText} />
 
       {isLoading ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {t('common.loading', { defaultValue: 'Loading...' })}
           </Text>
         </View>
       ) : isError ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {labels?.loadFailed ??
               t('charts.steps.loadFailed', {
@@ -200,7 +241,8 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
           </Text>
         </View>
       ) : !hasData ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {labels?.empty ??
               t('charts.steps.empty', {
@@ -209,17 +251,18 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
           </Text>
         </View>
       ) : (
-        <View style={{ height: 175 }}>
+        <View style={{ height: PLOT_HEIGHT }}>
           <CartesianChart
-            data={data}
+            data={series}
             xKey="day"
             yKeys={['steps']}
-            domain={{ y: [0] }}
+            domain={{ y: [0, yMax] }}
             domainPadding={{ left: 25, right: 25 }}
             xAxis={{
               font,
               tickCount: RANGE_X_TICKS[range],
               labelColor: textMuted,
+              lineColor: CHART_GRID_LINE_COLOR,
               formatXLabel,
             }}
             yAxis={[
@@ -227,6 +270,7 @@ const StepsBarChart: React.FC<StepsBarChartProps> = ({
                 font,
                 tickCount: 5,
                 labelColor: textMuted,
+                lineColor: CHART_GRID_LINE_COLOR,
                 formatYLabel,
               },
             ]}

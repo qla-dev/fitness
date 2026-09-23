@@ -15,12 +15,24 @@ import Svg, { Line, Rect } from 'react-native-svg';
 import { formatLocalizedNumber, useAppLocale } from '../localization';
 import CardChevron from './CardChevron';
 import CardPressable from './CardPressable';
+import ChartCaption from './ChartCaption';
 import Icon, { type IconName } from './Icon';
+import { CHART_GRID_LINE_COLOR, CHART_X_AXIS_BAND } from '../constants/charts';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
-/** The foot of the plot: where every bar starts and a flat day stays. */
-const BAR_BASELINE = 80;
+/** The dashboard card's plot height, which this component was built around. */
+const DEFAULT_PLOT_HEIGHT = 88;
+/** Room above the tallest bar and below the baseline, so neither touches an edge. */
+const BASELINE_INSET = 8;
+/** The gutter the scale is written in, when there is one. */
+const Y_AXIS_WIDTH = 34;
+/** Where the grid lines sit, as a share of the plot from the baseline up. */
+const gridFractions = [0, 1 / 3, 2 / 3, 1];
+/** Where the vertical grid lines sit, which is where the hour labels start. */
+const hourTicks = [0, 6, 12, 18];
+/** The chart's internal width; the SVG is stretched to whatever it is given. */
+const VIEWBOX_WIDTH = 288;
 const GROW_MS = 650;
 
 /**
@@ -36,12 +48,15 @@ const GROW_MS = 650;
 function HourBar({
   x,
   height,
+  baseline,
   rx,
   color,
   progress,
 }: {
   x: number;
   height: number;
+  /** Where the bar stands, which moves with the plot's height. */
+  baseline: number;
   rx: number;
   color: string;
   progress: SharedValue<number>;
@@ -49,7 +64,7 @@ function HourBar({
   const animatedProps = useAnimatedProps(() => {
     'worklet';
     const grown = height * progress.value;
-    return { y: BAR_BASELINE - grown, height: grown };
+    return { y: baseline - grown, height: grown };
   });
   return (
     <AnimatedRect
@@ -87,6 +102,31 @@ interface ActivityMetricChartProps {
    * happen to agree.
    */
   showValue?: boolean;
+  /**
+   * Drops every scrap of card chrome, for a screen where this is not a card
+   * but one of several charts a range picker swaps between.
+   *
+   * It is not only about the icon and the title. A card stacks its parts down
+   * the page — heading, figure, plot, hour labels, total — so its height is the
+   * plot plus however much chrome it happens to carry, which is what left the
+   * Day range visibly taller than the week beside it despite the two sharing a
+   * plot height. Bare mirrors a range chart's box instead: one reserved caption
+   * line, then a plot of exactly `plotHeight` with the hour labels *inside* it,
+   * the way Victory draws its own x-axis. The two then occupy the same space to
+   * the point.
+   *
+   * The day's total goes with the chrome, because the screen that uses this
+   * prints it as the headline immediately above.
+   */
+  bare?: boolean;
+  /**
+   * The plot's height. The dashboard card keeps the short default; the goal
+   * screen passes the shared chart height, so its Day range is the same size
+   * as the ranges either side of it.
+   */
+  plotHeight?: number;
+  /** Draws the scale down the left, the way the range charts do. */
+  showYAxis?: boolean;
   /** Opens this metric's own screen. Omitted where there is nothing to open. */
   onOpen?: () => void;
 }
@@ -102,6 +142,9 @@ export default function ActivityMetricChart({
   binary = false,
   formatTotal,
   showValue = true,
+  bare = false,
+  plotHeight = DEFAULT_PLOT_HEIGHT,
+  showYAxis = false,
   onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
@@ -120,6 +163,15 @@ export default function ActivityMetricChart({
       amount != null && Number.isFinite(amount) ? sum + amount : sum,
     0
   );
+  // The box the bars are drawn in. Bare keeps the hour labels inside the height
+  // it was given, so the whole chart measures `plotHeight` and not a label row
+  // more; the card hangs them underneath as it always has.
+  const plotArea = plotHeight - (bare ? CHART_X_AXIS_BAND : 0);
+  // The foot of the plot, and the height a full bar stands. Both derive from
+  // the box so the tallest bar tops out exactly on the highest grid line — it
+  // used to stop eight points short of the line labelled with its own value.
+  const baseline = plotArea - BASELINE_INSET;
+  const span = baseline - BASELINE_INSET;
   const max = Math.max(
     1,
     ...(hourlyValues ?? []).filter(
@@ -156,6 +208,133 @@ export default function ActivityMetricChart({
       easing: Easing.out(Easing.cubic),
     });
   }, [isFocused, hasSamples, reducedMotion, shapeKey, progress]);
+
+  const hourLabels = (
+    <View
+      className="flex-row"
+      // Indented past the scale so the hours line up with the plot rather than
+      // with the labels beside it.
+      style={[
+        showYAxis ? { marginLeft: Y_AXIS_WIDTH } : null,
+        bare ? { height: CHART_X_AXIS_BAND } : { marginTop: 4 },
+      ]}
+    >
+      {hourTicks.map((hour) => (
+        <Text key={hour} className="text-text-muted text-xs flex-1">
+          {hourFormatter.format(new Date(2000, 0, 1, hour))}
+        </Text>
+      ))}
+    </View>
+  );
+
+  const plot = (
+    <View className="flex-row" style={{ height: plotArea }}>
+      {/* The scale, when the chart is standing in for a range chart: the same
+          four lines the grid draws, written down the left so the bars can be
+          read against a number rather than against each other. */}
+      {showYAxis ? (
+        <View
+          style={{ width: Y_AXIS_WIDTH, height: plotArea }}
+          pointerEvents="none"
+        >
+          {gridFractions.map((fraction) => (
+            <Text
+              key={fraction}
+              className="text-text-muted text-xs absolute right-1"
+              style={{ top: baseline - span * fraction - 7 }}
+            >
+              {number(Math.round(max * fraction))}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      <Svg
+        width={showYAxis ? undefined : '100%'}
+        height={plotArea}
+        style={showYAxis ? { flex: 1 } : undefined}
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${plotArea}`}
+        preserveAspectRatio="none"
+        accessible={false}
+      >
+        {/* Bare draws the grid the range charts draw — solid, grey, ruled both
+            ways — because the picker swaps this chart for one of those in the
+            same slot, and a dotted grid tinted with the metric's own colour
+            read as a different kind of chart rather than as a shorter range.
+            The card keeps the tinted dots: there it sits among other cards
+            rather than among other ranges of itself. */}
+        {bare
+          ? hourTicks.map((hour) => {
+              const x = (hour / 24) * VIEWBOX_WIDTH;
+              return (
+                <Line
+                  key={`v${hour}`}
+                  x1={x}
+                  x2={x}
+                  y1={baseline - span}
+                  y2={baseline}
+                  stroke={CHART_GRID_LINE_COLOR}
+                  strokeWidth={1}
+                />
+              );
+            })
+          : null}
+        {gridFractions.map((fraction) => {
+          const y = baseline - span * fraction;
+          return (
+            <Line
+              key={fraction}
+              x1={0}
+              x2={VIEWBOX_WIDTH}
+              y1={y}
+              y2={y}
+              stroke={bare ? CHART_GRID_LINE_COLOR : color}
+              strokeWidth={1}
+              {...(bare ? {} : { strokeOpacity: 0.18, strokeDasharray: '1 3' })}
+            />
+          );
+        })}
+        {Array.from({ length: 24 }, (_, hour) => {
+          const amount = hourlyValues?.[hour];
+          if (amount == null || !Number.isFinite(amount) || amount <= 0)
+            return null;
+          const height = binary ? span : Math.max(2, (amount / max) * span);
+          return (
+            <HourBar
+              key={hour}
+              x={hour * 12 + 2}
+              height={height}
+              baseline={baseline}
+              rx={binary ? 4 : 1}
+              color={color}
+              progress={progress}
+            />
+          );
+        })}
+      </Svg>
+      {!hasSamples && (
+        <View className="absolute inset-0 items-center justify-center px-4">
+          <Text className="text-text-muted text-sm text-center bg-surface px-2 py-1">
+            {t('dashboard.hourlyActivityUnavailable', {
+              defaultValue: 'Hourly data unavailable',
+            })}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  if (bare) {
+    return (
+      <View>
+        <ChartCaption />
+        <View style={{ height: plotHeight }}>
+          {plot}
+          {hourLabels}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <CardPressable accessibilityLabel={title} onPress={onOpen}>
       <View className="flex-row items-center gap-2">
@@ -175,60 +354,8 @@ export default function ActivityMetricChart({
       ) : (
         <View className="mb-3" />
       )}
-      <View style={{ height: 88 }}>
-        <Svg
-          width="100%"
-          height={88}
-          viewBox="0 0 288 88"
-          preserveAspectRatio="none"
-          accessible={false}
-        >
-          {[8, 32, 56, 80].map((y) => (
-            <Line
-              key={y}
-              x1={0}
-              x2={288}
-              y1={y}
-              y2={y}
-              stroke={color}
-              strokeOpacity={0.18}
-              strokeDasharray="1 3"
-            />
-          ))}
-          {Array.from({ length: 24 }, (_, hour) => {
-            const amount = hourlyValues?.[hour];
-            if (amount == null || !Number.isFinite(amount) || amount <= 0)
-              return null;
-            const height = binary ? 72 : Math.max(2, (amount / max) * 72);
-            return (
-              <HourBar
-                key={hour}
-                x={hour * 12 + 2}
-                height={height}
-                rx={binary ? 4 : 1}
-                color={color}
-                progress={progress}
-              />
-            );
-          })}
-        </Svg>
-        {!hasSamples && (
-          <View className="absolute inset-0 items-center justify-center px-4">
-            <Text className="text-text-muted text-sm text-center bg-surface px-2 py-1">
-              {t('dashboard.hourlyActivityUnavailable', {
-                defaultValue: 'Hourly data unavailable',
-              })}
-            </Text>
-          </View>
-        )}
-      </View>
-      <View className="flex-row mt-1">
-        {[0, 6, 12, 18].map((hour) => (
-          <Text key={hour} className="text-text-muted text-xs flex-1">
-            {hourFormatter.format(new Date(2000, 0, 1, hour))}
-          </Text>
-        ))}
-      </View>
+      {plot}
+      {hourLabels}
       {hasSamples ? (
         <Text
           style={{ color }}

@@ -21,7 +21,12 @@ export default function ChartSurface({
   children: ReactNode;
 }) {
   return (
-    <View className={bare ? 'px-1 my-2' : 'bg-surface rounded-xl p-4 my-2'}>
+    // Bare carries no padding of its own: the screens that use it already pad
+    // their body, the 4px it used to add horizontally put the plot a hair
+    // inside whatever sat above it, and the vertical margin opened a gap under
+    // the figure the chart belongs to. Boxed keeps both, because there it is
+    // one card among several and needs the separation.
+    <View className={bare ? '' : 'bg-surface rounded-xl p-4 my-2'}>
       {children}
     </View>
   );

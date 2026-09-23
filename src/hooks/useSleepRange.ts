@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { isValidTimeZone, todayInZone } from '@workspace/shared';
 import { ApiError } from '../services/api/errors';
 import { fetchSleepEntries } from '../services/api/sleepApi';
@@ -216,6 +216,11 @@ export function useSleepRange({ range, enabled = true }: UseSleepRangeOptions) {
 
   const query = useQuery({
     queryKey: sleepRangeQueryKey(startDate, today),
+    // The previous range stays on screen while the next one loads, which is
+    // what lets the chart morph rather than cut. Without it the query has no
+    // rows for a new key, the chart unmounts for its loading state, and the
+    // bars it would have animated between never share a mounted chart.
+    placeholderData: keepPreviousData,
     queryFn: () => fetchSleepEntries(startDate, today),
     enabled,
     select: (entries) =>

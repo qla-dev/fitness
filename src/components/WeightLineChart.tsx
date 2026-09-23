@@ -16,6 +16,9 @@ import LineSeriesMark from './charts/LineSeriesMark';
 import type { WeightDataPoint } from '../hooks/useMeasurementsRange';
 import type { HealthTrendDateRange } from '../types/healthTrends';
 import { RANGE_X_TICKS, RANGE_LABELS_WEEKDAYS } from '../types/healthTrends';
+import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
+import ChartCaption from './ChartCaption';
+import { useChartRise } from '../hooks/useChartRise';
 import ChartTouchOverlay, {
   ChartLayoutReporter,
   EMPTY_CHART_TOUCH_LAYOUT,
@@ -33,17 +36,31 @@ type WeightLineChartProps = {
    * the chart is the content rather than one card among several.
    */
   bare?: boolean;
+  /** Drops the chart's own heading, for a screen that names the metric itself. */
+  hideTitle?: boolean;
   unit: string;
 };
 
 const font = makeChartFont(CHART_LABEL_FONT_SIZE);
 
+/**
+ * The plot area's height, shared by the chart and by every state that stands
+ * in for it.
+ *
+ * Each range is its own query, so switching one starts a fetch with no cached
+ * rows and the chart briefly has nothing to draw. When the loading, error and
+ * empty states were shorter than the plot, that moment collapsed the card and
+ * sprang it back — which reads as the chart disappearing rather than as the
+ * range changing. Holding one height means the surface stays put and only the
+ * bars redraw.
+ */
+const PLOT_HEIGHT = CHART_PLOT_HEIGHT;
 const DEFAULT_TOOLTIP = '';
 
 const WeightTooltip: React.FC<{ text: string }> = ({ text }) => (
-  <View className="h-6 justify-center mt-3 mb-1">
+  <ChartCaption>
     <Text className="text-text-secondary text-sm text-center">{text}</Text>
-  </View>
+  </ChartCaption>
 );
 
 /**
@@ -70,6 +87,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   isError,
   range,
   bare,
+  hideTitle,
   unit,
 }) => {
   const { t } = useTranslation();
@@ -83,6 +101,33 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
   );
 
   const hasData = useMemo(() => data.length > 0, [data]);
+
+  // Pinned from the real readings rather than left to Victory to derive, so
+  // the flat frame the rise starts from cannot drag the axis and flash a
+  // different scale on the way in. These are the bounds Victory would compute
+  // for itself, written out.
+  const yDomain = useMemo((): [number, number] | undefined => {
+    if (!data.length) return undefined;
+    let low = data[0].weight;
+    let high = data[0].weight;
+    for (const point of data) {
+      if (point.weight < low) low = point.weight;
+      if (point.weight > high) high = point.weight;
+    }
+    return [low, high];
+  }, [data]);
+
+  // A line's floor is the bottom of its domain, not zero: a weight flattened to
+  // zero would start below the plot and fly in from off-screen rather than rise
+  // out of the axis.
+  const flattenWeight = useCallback(
+    (point: WeightDataPoint): WeightDataPoint => ({
+      ...point,
+      weight: yDomain ? yDomain[0] : point.weight,
+    }),
+    [yDomain]
+  );
+  const series = useChartRise(data, flattenWeight);
 
   const formatXLabel = RANGE_LABELS_WEEKDAYS.has(range)
     ? formatXLabel7d
@@ -141,20 +186,24 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
 
   return (
     <ChartSurface bare={bare}>
-      <Text className="text-text-primary text-lg font-semibold mb-2">
-        {t('charts.weight.title', { defaultValue: 'Weight' })}
-      </Text>
+      {hideTitle ? null : (
+        <Text className="text-text-primary text-lg font-semibold mb-2">
+          {t('charts.weight.title', { defaultValue: 'Weight' })}
+        </Text>
+      )}
 
       <WeightTooltip text={tooltipText} />
 
       {isLoading ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {t('common.loading', { defaultValue: 'Loading...' })}
           </Text>
         </View>
       ) : isError ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {t('charts.weight.loadFailed', {
               defaultValue: 'Failed to load weight data',
@@ -162,7 +211,8 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
           </Text>
         </View>
       ) : !hasData ? (
-        <View className="h-50 justify-center items-center">
+        <View style={{ height: PLOT_HEIGHT }}
+          className="justify-center items-center">
           <Text className="text-text-muted text-sm">
             {t('charts.weight.empty', {
               defaultValue: 'No weight data for this period',
@@ -170,16 +220,18 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
           </Text>
         </View>
       ) : (
-        <View style={{ height: 175 }}>
+        <View style={{ height: PLOT_HEIGHT }}>
           <CartesianChart
-            data={data}
+            data={series}
             xKey="day"
             yKeys={['weight']}
+            {...(yDomain ? { domain: { y: yDomain } } : {})}
             domainPadding={{ left: 25, right: 25 }}
             xAxis={{
               font,
               tickCount: RANGE_X_TICKS[range],
               labelColor: textMuted,
+              lineColor: CHART_GRID_LINE_COLOR,
               formatXLabel,
             }}
             yAxis={[
@@ -187,6 +239,7 @@ const WeightLineChart: React.FC<WeightLineChartProps> = ({
                 font,
                 tickCount: 5,
                 labelColor: textMuted,
+                lineColor: CHART_GRID_LINE_COLOR,
               },
             ]}
           >

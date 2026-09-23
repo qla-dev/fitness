@@ -19,8 +19,11 @@ import {
   goalMaximum,
   goalMinimum,
   isCustomGoalKey,
+  isWeightGoalKey,
   readGoalValue,
 } from '../constants/profileGoals';
+import { usePreferences } from '../hooks/usePreferences';
+import { weightFromKg, weightToKg } from '../utils/unitConversions';
 import { getTodayDate } from '../utils/dateUtils';
 import type { RootStackScreenProps } from '../types/navigation';
 
@@ -68,9 +71,24 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   const label = isGoal
     ? getProfileGoalLabel(t, goalKey, customNutrients)
     : t('profile.name', { defaultValue: 'Name' });
-  const unit = isGoal ? getProfileGoalUnit(goalKey, customNutrients) : '';
-  const maximum = isGoal ? goalMaximum(goalKey) : undefined;
-  const minimum = isGoal ? goalMinimum(goalKey) : 0;
+  // See GoalEditScreen: a weight goal is stored in kilograms and edited in the
+  // user's own unit, so its value, bounds and unit label all convert here.
+  const { preferences } = usePreferences();
+  const weightUnit: 'kg' | 'lbs' =
+    preferences?.default_weight_unit === 'lbs' ? 'lbs' : 'kg';
+  const isWeight = isGoal && isWeightGoalKey(goalKey);
+  const toDisplay = (kg: number) =>
+    isWeight ? Math.round(weightFromKg(kg, weightUnit) * 10) / 10 : kg;
+  const toStored = (shown: number) =>
+    isWeight ? weightToKg(shown, weightUnit) : shown;
+
+  const unit = isGoal
+    ? getProfileGoalUnit(goalKey, customNutrients, weightUnit)
+    : '';
+  const storedMaximum = isGoal ? goalMaximum(goalKey) : undefined;
+  const maximum =
+    storedMaximum === undefined ? undefined : toDisplay(storedMaximum);
+  const minimum = isGoal ? toDisplay(goalMinimum(goalKey)) : 0;
 
   const storedName = profileQuery.data?.full_name ?? '';
   const storedGoal = readGoalValue(goalsQuery.data, goalKey);
@@ -79,9 +97,10 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
       isGoal
         ? storedGoal === undefined
           ? ''
-          : String(storedGoal)
+          : String(toDisplay(storedGoal))
         : storedName,
-    [isGoal, storedGoal, storedName]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isGoal, storedGoal, storedName, isWeight, weightUnit]
   );
 
   // The stored value arrives with its query, which usually resolves after the
@@ -124,7 +143,7 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
                 [customGoalName(goalKey)]: numeric,
               },
             }
-          : { [goalKey]: numeric };
+          : { [goalKey]: toStored(numeric) };
         await localApiFetch({ endpoint: '/api/goals', method: 'PUT', body });
         await queryClient.invalidateQueries({
           predicate: ({ queryKey }) =>

@@ -7,6 +7,7 @@ import { useCSSVariable } from 'uniwind';
 import PromptScreen from '../components/ui/PromptScreen';
 import SheetStepper from '../components/ui/SheetStepper';
 import WaterBottleIcon from '../components/icons/measurements/WaterBottleIcon';
+import Icon from '../components/Icon';
 import { MACRO_RINGS } from '../constants/macroRings';
 import { useCustomNutrients } from '../hooks';
 import { goalsQueryKey } from '../hooks/queryKeys';
@@ -15,13 +16,17 @@ import { localApiFetch } from '../services/local/localApi';
 import {
   customGoalName,
   getProfileGoalLabel,
+  getProfileGoalGlyph,
   getProfileGoalUnit,
   goalMaximum,
   goalMinimum,
   goalStep,
   isCustomGoalKey,
+  isWeightGoalKey,
   readGoalValue,
 } from '../constants/profileGoals';
+import { usePreferences } from '../hooks/usePreferences';
+import { weightFromKg, weightToKg } from '../utils/unitConversions';
 import { getTodayDate } from '../utils/dateUtils';
 import { formatLocalizedNumber } from '../localization';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -52,25 +57,43 @@ export default function GoalEditScreen({
     '--color-accent-primary',
     macro?.colorVar ?? '--color-accent-primary',
   ]) as [string, string];
-  const tint = macro ? macroColor : accentPrimary;
+  // A goal that is neither a macro nor hydration carries the mark and colour
+  // of the card it was opened from, rather than a bare number under a title.
+  const glyph = getProfileGoalGlyph(goalKey);
+  const tint = macro ? macroColor : (glyph?.color ?? accentPrimary);
   const today = getTodayDate();
   const goalsQuery = useQuery({
     queryKey: goalsQueryKey(today),
     queryFn: () => fetchDailyGoals(today),
   });
 
+  // A weight goal is stored in kilograms and edited in whatever unit the user
+  // reads weights in, so the value, the bounds and the unit label all cross the
+  // same boundary. Everything else passes through untouched.
+  const { preferences } = usePreferences();
+  const weightUnit: 'kg' | 'lbs' =
+    preferences?.default_weight_unit === 'lbs' ? 'lbs' : 'kg';
+  const isWeight = isWeightGoalKey(goalKey);
+  const toDisplay = (kg: number) =>
+    isWeight ? Math.round(weightFromKg(kg, weightUnit) * 10) / 10 : kg;
+  const toStored = (shown: number) =>
+    isWeight ? weightToKg(shown, weightUnit) : shown;
+
   const label = getProfileGoalLabel(t, goalKey, customNutrients);
-  const unit = getProfileGoalUnit(goalKey, customNutrients);
-  const maximum = goalMaximum(goalKey);
+  const unit = getProfileGoalUnit(goalKey, customNutrients, weightUnit);
+  const storedMaximum = goalMaximum(goalKey);
+  const maximum =
+    storedMaximum === undefined ? undefined : toDisplay(storedMaximum);
   // Same floor ProfileEdit enforces: a 0 kcal target divides every
   // "remaining" by zero, so calories cannot be stepped or typed down to it.
-  const minimum = goalMinimum(goalKey);
+  const minimum = toDisplay(goalMinimum(goalKey));
   const stepSize = goalStep(goalKey);
 
   const stored = useMemo(() => {
     const value = readGoalValue(goalsQuery.data, goalKey);
-    return value === undefined ? '' : String(value);
-  }, [goalsQuery.data, goalKey]);
+    return value === undefined ? '' : String(toDisplay(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goalsQuery.data, goalKey, isWeight, weightUnit]);
 
   // The stored value arrives with its query, usually after the first render.
   // Holding the edit as a nullable draft lets the number show what is on file
@@ -102,7 +125,7 @@ export default function GoalEditScreen({
               [customGoalName(goalKey)]: numeric,
             },
           }
-        : { [goalKey]: numeric };
+        : { [goalKey]: toStored(numeric) };
       await localApiFetch({ endpoint: '/api/goals', method: 'PUT', body });
       await queryClient.invalidateQueries({
         predicate: ({ queryKey }) =>
@@ -140,6 +163,8 @@ export default function GoalEditScreen({
       onFooterPress={() => void save()}
       footerDisabled={!valid || busy}
       footerLoading={busy}
+      // The goal's own colour, the same one the badge above it carries.
+      footerTint={tint}
     >
       <SheetStepper
         badge={
@@ -155,6 +180,8 @@ export default function GoalEditScreen({
             />
           ) : macro ? (
             <macro.Glyph size={44} color={tint} accentColor={tint} />
+          ) : glyph ? (
+            <Icon name={glyph.icon} size={56} color={glyph.color} />
           ) : null
         }
         tint={tint}

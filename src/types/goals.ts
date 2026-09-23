@@ -1,6 +1,18 @@
 export interface DailyGoals {
   steps?: number;
   stand_hours?: number;
+  /**
+   * Hours asleep a night. Hours rather than minutes because that is the unit
+   * the goal is thought in and set in; the readings it is compared against are
+   * seconds, and convert at the edge.
+   */
+  sleep_goal_hours?: number;
+  /**
+   * Target weight in KILOGRAMS, like every other weight the app stores. The
+   * editors convert to and from the user's unit, so someone on pounds sets it
+   * in pounds and it lands here in kg.
+   */
+  target_weight?: number;
   calories: number;
   protein: number;
   carbs: number;

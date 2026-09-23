@@ -62,6 +62,7 @@ export default function FooterCTA({
   absolute = false,
   sticky = true,
   glass = false,
+  tint,
   onHeightChange,
 }: {
   label: ReactNode;
@@ -86,11 +87,19 @@ export default function FooterCTA({
    * the filled button instead of a flat grey imitation of glass.
    */
   glass?: boolean;
+  /**
+   * The action's fill, when it should not be the app accent. A screen that is
+   * about one thing — a goal, with its own colour on the card it was opened
+   * from — carries that colour through to the button that commits it, so the
+   * screen reads as that goal rather than as a generic form.
+   */
+  tint?: string;
   /** Reports the footer's height, for callers that pad a scroll view by it. */
   onHeightChange?: (height: number) => void;
 }) {
   const bottomInset = useOptionalBottomInset();
   const accent = useCSSVariable('--color-accent-primary') as string;
+  const fill = tint ?? accent;
   const usesGlass = glass && canUseLiquidGlass();
 
   const press = () => {
@@ -103,7 +112,7 @@ export default function FooterCTA({
     // label, and the glass only adds the material and the press response.
     <LiquidGlassSurface
       isInteractive
-      tintColor={accent}
+      tintColor={fill}
       style={{ borderRadius: 999, overflow: 'hidden' }}
     >
       <Button
@@ -118,7 +127,12 @@ export default function FooterCTA({
       </Button>
     </LiquidGlassSurface>
   ) : (
-    <Button loading={loading} disabled={disabled} onPress={press}>
+    <Button
+      loading={loading}
+      disabled={disabled}
+      onPress={press}
+      style={tint ? { backgroundColor: tint } : undefined}
+    >
       {label}
     </Button>
   );
