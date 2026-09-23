@@ -23,7 +23,7 @@ const PILL_GAP = 8;
 
 export const TAB_BAR_HEIGHT = PILL_HEIGHT + PILL_GAP;
 
-const TAB_ICONS: Record<string, IconName> = {
+export const TAB_ICONS: Record<string, IconName> = {
   Dashboard: 'exercise-weights',
   Diary: 'checklist',
   Trends: 'chart-bar',
@@ -52,6 +52,12 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
   // opens a screen, it is not a place you are.
   const tabRoutes = state.routes.filter((route) => route.name !== 'Add');
   const addRoute = state.routes.find((route) => route.name === 'Add');
+
+  // The Add tab hands its own bottom row to the screen: a way back to the tab
+  // you came from, and the search field, in the bar's place. Keeping the tabs
+  // as well would stack two bars on top of each other and push the field —
+  // the one thing that screen is for — up off the thumb.
+  if (state.routes[state.index]?.name === 'Add') return null;
 
   const pressHandlers = (route: (typeof state.routes)[number]) => {
     const isFocused = state.routes[state.index]?.key === route.key;
