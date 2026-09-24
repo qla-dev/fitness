@@ -100,6 +100,7 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var requestInFlight = false
   private var acceptedStartAt: Double?
   private var lastPhoneCommandAt: Double = 0
+  private var launchConfirmationTask: Task<Void, Never>?
 
   override init() {
     super.init()
@@ -130,13 +131,31 @@ final class WorkoutManager: NSObject, ObservableObject {
   private func sendState() {
     send([
       WatchMessageKey.kind: WatchMessageKind.workoutState,
-      WatchMessageKey.state: isRunning ? "running" : "stopped",
+      WatchMessageKey.state: isRunning && (session?.state == .running || session?.state == .paused) ? "running" : "stopped",
+      WatchMessageKey.startAt: acceptedStartAt ?? -1,
       // The profile, which is what the phone keys its own state on; the
       // catalogue id rides along for anything that wants the real sport.
       WatchMessageKey.sport: sport.activityType == .cycling ? "ride" : "run",
       WatchMessageKey.sportId: sport.id,
       WatchMessageKey.timestamp: Date().timeIntervalSince1970 * 1000,
     ])
+  }
+
+  func startFromPhoneLaunch(_ configuration: HKWorkoutConfiguration) {
+    if !isRunning && !isFinishing {
+      let sport = WatchSportCatalogue.all.first {
+        $0.activityType == configuration.activityType && $0.locationType == configuration.locationType
+      } ?? WatchSportCatalogue.fallback(recording: configuration.activityType == .cycling ? "ride" : "run")
+      acceptedStartAt = nil
+      start(sport: sport, origin: WatchWorkoutOrigin.phone, launchConfiguration: configuration)
+      launchConfirmationTask?.cancel()
+      launchConfirmationTask = Task { [weak self] in
+        try? await Task.sleep(nanoseconds: 30_000_000_000)
+        guard !Task.isCancelled, let self, self.acceptedStartAt == nil else { return }
+        self.stop()
+      }
+    }
+    requestPhoneWorkout()
   }
 
   func requestPhoneWorkout() {
@@ -179,7 +198,20 @@ final class WorkoutManager: NSObject, ObservableObject {
         phoneWorkoutRequested = true
         return
       }
-      guard !isRunning else { return }
+      if isRunning {
+        // The OS may already have started this session before connectivity woke.
+        if isPhoneWorkout && acceptedStartAt == nil {
+          let requestedSport = WatchSportCatalogue.sport(id: message["sportId"] as? String)
+            ?? WatchSportCatalogue.fallback(recording: message["sport"] as? String)
+          guard requestedSport.activityType == sport.activityType else { return }
+          sport = requestedSport
+          acceptedStartAt = startValue
+          launchConfirmationTask?.cancel()
+          beginCountdown(to: startValue.map { Date(timeIntervalSince1970: $0 / 1000) })
+        }
+        sendState()
+        return
+      }
       if let startValue, startValue == acceptedStartAt { return }
       await requestAuthorization()
       guard lastPhoneCommandAt == requestedAt else { return }
@@ -188,6 +220,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       start(sport: sport, countingDownTo: startValue.map { Date(timeIntervalSince1970: $0 / 1000) },
         origin: WatchWorkoutOrigin.phone)
       if isRunning { acceptedStartAt = startValue }
+      sendState()
       if let metrics = message["metrics"] as? [String: Any] {
         await handlePhoneMessage(["kind": "metrics", "metrics": metrics])
       }
@@ -248,7 +281,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   func start(
     sport: WatchSport,
     countingDownTo startAt: Date? = nil,
-    origin: String = WatchWorkoutOrigin.watch
+    origin: String = WatchWorkoutOrigin.watch,
+    launchConfiguration: HKWorkoutConfiguration? = nil
   ) {
     guard !isRunning, !isFinishing, session == nil else { return }
     self.sport = sport
@@ -263,9 +297,11 @@ final class WorkoutManager: NSObject, ObservableObject {
     isPaused = false
     lastError = nil
 
-    let configuration = HKWorkoutConfiguration()
-    configuration.activityType = sport.activityType
-    configuration.locationType = sport.locationType
+    let configuration = launchConfiguration ?? HKWorkoutConfiguration()
+    if launchConfiguration == nil {
+      configuration.activityType = sport.activityType
+      configuration.locationType = sport.locationType
+    }
 
     do {
       let session = try HKWorkoutSession(
@@ -327,12 +363,15 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// Started from the watch itself: the wearer is looking at it, so the same
   /// three seconds apply before the live view replaces the list.
   func startFromWatch(sport: WatchSport) {
+    guard !isRunning, !isFinishing else { return }
+    acceptedStartAt = nil
     start(
       sport: sport,
       countingDownTo: Date().addingTimeInterval(WatchCountdown.seconds))
   }
 
   func stop() {
+    launchConfirmationTask?.cancel()
     guard isRunning, let session else { return }
     countdownTask?.cancel()
     countdownTask = nil
@@ -435,6 +474,7 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
       lastError = error.localizedDescription
       isRunning = false
       isFinishing = false
+      acceptedStartAt = nil
       session = nil
       builder = nil
       sendState()

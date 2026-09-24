@@ -1,4 +1,5 @@
 import React from 'react';
+import { isProviderDayTotal } from '../utils/workoutSession';
 import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable } from 'react-native';
 import type { ExerciseSessionResponse } from '@workspace/shared';
@@ -27,7 +28,11 @@ const ExerciseSummary: React.FC<ExerciseSummaryProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  if (exerciseEntries.length === 0) {
+  const logged = exerciseEntries.filter(
+    (session) => !isProviderDayTotal(session)
+  );
+
+  if (logged.length === 0) {
     const emptyContent = (
       <Text className="text-text-muted text-base">
         {t('exerciseSummary.tapToAdd', { defaultValue: 'Tap to add exercise' })}
@@ -59,7 +64,7 @@ const ExerciseSummary: React.FC<ExerciseSummaryProps> = ({
       <DashboardCardTitle className="mb-3">
         {t('exerciseSummary.title', { defaultValue: 'Exercise' })}
       </DashboardCardTitle>
-      {exerciseEntries.map((session, index) => (
+      {logged.map((session, index) => (
         <SwipeableExerciseRow
           key={session.id || index}
           session={session}

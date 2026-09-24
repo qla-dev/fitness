@@ -4,9 +4,9 @@ import HealthKit
 
 final class WatchAppDelegate: NSObject, WKApplicationDelegate {
   func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
-    // Fetch the current command after waking. Its exact sport wins over the
-    // generic launch configuration; a stopped phone cannot start a late workout.
-    Task { @MainActor in WorkoutManager.shared.requestPhoneWorkout() }
+    // A background launch must open its HealthKit session immediately; waiting
+    // for WatchConnectivity first can leave the app asleep without a workout.
+    Task { @MainActor in WorkoutManager.shared.startFromPhoneLaunch(workoutConfiguration) }
   }
 }
 

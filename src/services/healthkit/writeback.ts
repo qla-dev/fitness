@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addLog } from '../LogService';
 import { fetchDailySummary } from '../api/dailySummaryApi';
 import { resolveCollapsedFoodEntries } from '../../utils/loggedMealCollapse';
+import { recordingHealthSource } from '../../utils/workoutSession';
 import {
   loadHealthPreference,
   saveHealthPreference,
@@ -90,8 +91,7 @@ const hydrationSigKey = (date: string): string =>
   `writebackHydrationSig:${date}`;
 const exerciseUuidsKey = (date: string): string =>
   `writebackExerciseUuids:${date}`;
-const exerciseSigKey = (date: string): string =>
-  `writebackExerciseSig:${date}`;
+const exerciseSigKey = (date: string): string => `writebackExerciseSig:${date}`;
 
 // Order-independent djb2 content signature (shared formula with Android), so an
 // unchanged day can be skipped without any HealthKit writes. Excludes UUID/version —
@@ -136,9 +136,7 @@ const nutritionSignature = (
 // workout write puts into HealthKit, to force a one-time rewrite of written days.
 const EXERCISE_WRITE_SCHEMA = 'workout-v1';
 
-const exerciseSignature = (
-  descriptors: WorkoutSampleDescriptor[]
-): string => {
+const exerciseSignature = (descriptors: WorkoutSampleDescriptor[]): string => {
   const projections = descriptors
     .map((d) =>
       JSON.stringify({
@@ -336,11 +334,17 @@ const writeExerciseForDate = async (
   // with no duration, and anything that would land in the future.
   const descriptors = sessionsToWorkouts(
     date,
-    summary.exerciseSessions ?? []
+    // The watch already saved these to HealthKit. Exporting the phone's diary
+    // copy would create a second HKWorkout for the same effort.
+    (summary.exerciseSessions ?? []).filter(
+      (session) => recordingHealthSource(session) !== 'HealthKit'
+    )
   ).map(workoutToSampleDescriptor);
 
   const signature = exerciseSignature(descriptors);
-  if (signature === (await loadHealthPreference<string>(exerciseSigKey(date)))) {
+  if (
+    signature === (await loadHealthPreference<string>(exerciseSigKey(date)))
+  ) {
     addLog(`[Writeback] Exercise ${date}: unchanged — skipped`, 'DEBUG');
     return;
   }

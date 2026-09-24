@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { StatusBar, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 
-import { startWatchCountdown } from '../services/recording/sensors';
-
 import RunRideRecorder from '../components/recording/RunRideRecorder';
-import RecordingCountdown, {
-  COUNTDOWN_SECONDS,
-} from '../components/recording/RecordingCountdown';
+import RecordingCountdown from '../components/recording/RecordingCountdown';
 import { WORKOUT_SPORTS } from '../constants/workoutSports';
 import type { RootStackScreenProps } from '../types/navigation';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -39,26 +35,6 @@ export default function RunOrRideScreen({
   const sport = WORKOUT_SPORTS.find(
     (entry) => entry.id === route.params?.sportId
   );
-
-  // The wrist counts with the phone rather than after it. The recorder mounts
-  // once this count is over and starts the watch itself if this failed or was
-  // never sent, so the worst case is a watch that joins three seconds late.
-  const countdownSentRef = useRef(false);
-  useEffect(() => {
-    if (!countdown || countdownSentRef.current) return;
-    if (route.params?.watch === false) return;
-    countdownSentRef.current = true;
-    void startWatchCountdown(
-      route.params?.sport ?? 'run',
-      route.params?.sportId,
-      COUNTDOWN_SECONDS * 1000
-    );
-  }, [
-    countdown,
-    route.params?.watch,
-    route.params?.sport,
-    route.params?.sportId,
-  ]);
 
   // Transparent and titleless: the map is the screen, and a bar with a name on
   // it would be chrome over something that is already saying what it is.

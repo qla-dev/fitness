@@ -123,7 +123,7 @@ export const isWatchReachable = (): boolean => native?.isReachable ?? false;
 
 /**
  * Launches the paired watch app through HealthKit, then supplies the exact
- * sport over WatchConnectivity. Live heart rate confirms the sensor is ready.
+ * sport over WatchConnectivity. Resolves only after the matching workout is running.
  *
  * `sportId` is the catalogue id from `WORKOUT_SPORTS`, which is what decides
  * the HealthKit activity type and the name the watch shows; without it the

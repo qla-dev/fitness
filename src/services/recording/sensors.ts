@@ -461,6 +461,15 @@ const hasBleHeartRateSensor = () =>
   );
 
 let watchSubscriptions: { remove: () => void }[] = [];
+let watchStartPromise: Promise<void> | null = null;
+let watchGeneration = 0;
+
+export class WatchWorkoutStartError extends Error {
+  constructor() {
+    super('Apple Watch did not confirm a running workout');
+    this.name = 'WatchWorkoutStartError';
+  }
+}
 
 /**
  * Re-reads whether a watch is there. WCSession activates asynchronously, so
@@ -491,15 +500,18 @@ if (Platform.OS === 'ios' && isWatchLinkAvailable()) {
  * Asks the paired watch to open a workout session and starts feeding its
  * samples into the same pipeline the BLE sensors use.
  *
- * Safe to call on Android and on builds without the watch target: the native
- * module resolves to null and every call becomes a no-op.
+ * A selected watch must acknowledge a running session before this resolves.
  */
 export async function startWatchHeartRate(
   sport: 'run' | 'ride',
   options?: { sportId?: string; startAt?: number }
 ) {
-  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
-  if (watchSubscriptions.length > 0) return;
+  if (Platform.OS !== 'ios') return;
+  if (!isWatchLinkAvailable()) throw new WatchWorkoutStartError();
+  if (watchStartPromise) return watchStartPromise;
+  if (watchSubscriptions.length > 0 && snapshot.watchStreaming) return;
+  watchSubscriptions.forEach((subscription) => subscription.remove());
+  const generation = ++watchGeneration;
 
   const heartRate = addWatchHeartRateListener(({ bpm, timestamp }) => {
     if (!Number.isFinite(bpm) || bpm <= 0) return;
@@ -538,38 +550,34 @@ export async function startWatchHeartRate(
       subscription !== null
   );
 
-  try {
-    await startWatchWorkout(sport, options);
-  } catch (error) {
-    addLog('[Recording sensors] Watch workout start failed', 'WARNING', [
-      String(error),
-    ]);
-  }
-}
-
-/**
- * Opens the watch session while the phone is still counting down, so the two
- * count together and the sensor is warm by the time the first metre is run.
- *
- * Safe to call before `startRecording`: that function calls
- * `startWatchHeartRate` too, and the subscription guard makes the second call
- * a no-op. A recording that then fails to start must call
- * `stopWatchHeartRate`, or the watch is left in a session with nothing
- * recording it.
- */
-export async function startWatchCountdown(
-  sport: 'run' | 'ride',
-  sportId: string | undefined,
-  countdownMs: number
-) {
-  await startWatchHeartRate(sport, {
-    sportId,
-    startAt: Date.now() + countdownMs,
-  });
+  const pending = (async () => {
+    try {
+      await startWatchWorkout(sport, options);
+      if (generation !== watchGeneration)
+        throw new Error('Watch start cancelled');
+      update({ watchStreaming: true });
+    } catch (error) {
+      if (generation === watchGeneration) {
+        watchSubscriptions.forEach((subscription) => subscription.remove());
+        watchSubscriptions = [];
+        update({ watchStreaming: false });
+      }
+      addLog('[Recording sensors] Watch workout start failed', 'WARNING', [
+        String(error),
+      ]);
+      throw new WatchWorkoutStartError();
+    } finally {
+      if (generation === watchGeneration) watchStartPromise = null;
+    }
+  })();
+  watchStartPromise = pending;
+  return pending;
 }
 
 /** Ends the watch workout and detaches. Never throws into the save path. */
 export async function stopWatchHeartRate() {
+  ++watchGeneration;
+  watchStartPromise = null;
   watchSubscriptions.forEach((subscription) => subscription.remove());
   watchSubscriptions = [];
   if (snapshot.watchStreaming || snapshot.heartRateSource === 'watch')

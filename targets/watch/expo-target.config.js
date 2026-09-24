@@ -1,3 +1,4 @@
+/* global __dirname */
 const {
   isDevVariant,
   DEV_BUNDLE_IDENTIFIER,
@@ -28,6 +29,8 @@ const syncInfoPlist = (companionBundleIdentifier) => {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <key>CFBundleDisplayName</key>
+    <string>qla.fitWatch</string>
     <key>WKApplication</key>
     <true/>
     <key>WKCompanionAppBundleIdentifier</key>
@@ -59,6 +62,7 @@ module.exports = () => {
   return {
     type: 'watch',
     name: 'qlafitWatch',
+    displayName: 'qla.fitWatch',
     bundleIdentifier: `${companionBundleIdentifier}.watchkitapp`,
     icon: '../../assets/icons/logo-v3.jpg',
     deploymentTarget: '10.0',

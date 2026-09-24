@@ -39,6 +39,9 @@ private final class WatchLink: NSObject {
   private var startCompletion: ((Error?) -> Void)?
   private var dashboard: [String: Any]? = UserDefaults.standard.dictionary(forKey: "watchDashboard")
   private var metrics: [String: Any]?
+  private var launchTimeout: DispatchWorkItem?
+  private var launchAttempts = 0
+  private var launchedAttempt = 0
 
   var isReachable: Bool {
     guard WCSession.isSupported() else { return false }
@@ -65,40 +68,78 @@ private final class WatchLink: NSObject {
     session.activate()
   }
 
-  // All mutable link state is confined to the main queue, including delegates.
+  // A launch completion is not confirmation of a running workout. Resolve only
+  // after the watch acknowledges this request's startAt from HKWorkoutSession.
   func start(sport: String, sportId: String?, startAt: Double?, completion: @escaping (Error?) -> Void) {
-    startCompletion?(nil)
+    finishLaunch(error: launchError("Workout start was replaced."))
     command = ["kind": "start", "sport": sport, "sportId": sportId ?? "",
       "startAt": startAt ?? Date().timeIntervalSince1970 * 1000,
       "requestedAt": Date().timeIntervalSince1970 * 1000]
+    launchAttempts = 0
+    launchedAttempt = 0
     startCompletion = completion
+    attemptLaunch()
+  }
+
+  private func launchError(_ message: String) -> NSError {
+    NSError(domain: "QlaFitWatchLink", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+  }
+
+  private func finishLaunch(error: Error?) {
+    launchTimeout?.cancel()
+    launchTimeout = nil
+    let completion = startCompletion
+    startCompletion = nil
+    completion?(error)
+  }
+
+  private func attemptLaunch() {
+    guard startCompletion != nil else { return }
+    launchAttempts += 1
+    let timeout = DispatchWorkItem { [weak self] in
+      guard let self, self.startCompletion != nil else { return }
+      if self.launchAttempts < 2 { self.attemptLaunch() }
+      else {
+        let error = self.launchError("Apple Watch did not confirm a running workout after two launch attempts.")
+        self.finishLaunch(error: error)
+        self.stop()
+      }
+    }
+    launchTimeout?.cancel()
+    launchTimeout = timeout
+    DispatchQueue.main.asyncAfter(deadline: .now() + 12, execute: timeout)
     launchIfReady()
   }
 
   private func launchIfReady() {
-    guard let completion = startCompletion else { return }
-    guard WCSession.isSupported() else {
-      startCompletion = nil
-      command = nil
-      completion(nil)
-      return
-    }
-    guard WCSession.default.activationState == .activated else { return }
-    startCompletion = nil
+    guard startCompletion != nil, WCSession.isSupported() else { return }
+    guard launchedAttempt != launchAttempts else { return }
+    launchedAttempt = launchAttempts
     let pending = currentCommand()
-    guard isPaired, isWatchAppInstalled, pending["kind"] as? String == "start" else {
-      command = nil
-      completion(nil)
-      return
-    }
+    guard pending["kind"] as? String == "start" else { return }
     sendPayload(pending)
     let configuration = HKWorkoutConfiguration()
-    // The wake configuration opens the app. The live handshake supplies the
-    // exact catalogue sport and countdown, and rejects a cancelled launch.
-    configuration.activityType = pending["sport"] as? String == "ride" ? .cycling : .running
-    configuration.locationType = .outdoor
-    healthStore.startWatchApp(with: configuration) { _, error in
-      DispatchQueue.main.async { completion(error) }
+    // Keep in sync with WatchSportCatalogue. The background launch must be
+    // able to start the right HealthKit session without a connectivity round trip.
+    let sports: [String: (HKWorkoutActivityType, HKWorkoutSessionLocationType)] = [
+      "running": (.running, .outdoor), "cycling": (.cycling, .outdoor),
+      "walking": (.walking, .outdoor), "hiking": (.hiking, .outdoor),
+      "swimming": (.swimming, .indoor), "rowing": (.rowing, .indoor),
+      "elliptical": (.elliptical, .indoor), "stair-climbing": (.stairClimbing, .indoor),
+      "tennis": (.tennis, .outdoor), "basketball": (.basketball, .indoor),
+      "football": (.soccer, .outdoor), "yoga": (.yoga, .indoor),
+      "pilates": (.pilates, .indoor), "dancing": (.cardioDance, .indoor),
+      "boxing": (.boxing, .indoor), "strength-training": (.traditionalStrengthTraining, .indoor),
+      "crossfit": (.crossTraining, .indoor), "hiit": (.highIntensityIntervalTraining, .indoor),
+    ]
+    let selected = sports[pending["sportId"] as? String ?? ""]
+    configuration.activityType = selected?.0 ?? (pending["sport"] as? String == "ride" ? .cycling : .running)
+    configuration.locationType = selected?.1 ?? .outdoor
+    // Do not gate the OS launch on isReachable or cached installation flags.
+    // Those are not evidence that the closed watch app cannot be launched.
+    NSLog("[Watch launch] Requesting HealthKit launch, attempt %d", launchAttempts)
+    healthStore.startWatchApp(with: configuration) { success, error in
+      NSLog("[Watch launch] HealthKit result: %@, %@", success ? "launched" : "failed", error?.localizedDescription ?? "no error")
     }
   }
 
@@ -125,8 +166,7 @@ private final class WatchLink: NSObject {
     let stopped: [String: Any] = ["kind": "stop", "requestedAt": Date().timeIntervalSince1970 * 1000]
     command = stopped
     metrics = nil
-    startCompletion?(nil)
-    startCompletion = nil
+    finishLaunch(error: launchError("Workout start was cancelled."))
     sendPayload(stopped)
   }
 
@@ -152,6 +192,10 @@ private final class WatchLink: NSObject {
       let state = message[WatchMessageKey.state] as? String ?? "stopped"
       let sport = message[WatchMessageKey.sport] as? String ?? "run"
       onEvent?("onWorkoutState", ["state": state, "sport": sport])
+      if state == "running", let startAt = message["startAt"] as? Double,
+        startAt == (command?["startAt"] as? Double) {
+        finishLaunch(error: nil)
+      }
       if state == "running", let metrics {
         sendPayload(["kind": "metrics", "metrics": metrics])
       }

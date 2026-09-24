@@ -38,6 +38,7 @@ import {
 import {
   getSensorSnapshot,
   stopWatchHeartRate,
+  WatchWorkoutStartError,
   subscribeSensors,
 } from '../../services/recording/sensors';
 import {
@@ -112,6 +113,16 @@ export default function RunRideRecorder({
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [focused]);
+  const showWatchStartError = () =>
+    Alert.alert(
+      t('workoutSetup.watchStartFailedTitle', {
+        defaultValue: 'Watch workout did not start',
+      }),
+      t('workoutSetup.watchStartFailedMessage', {
+        defaultValue:
+          'Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.',
+      })
+    );
   const perform = async (operation: () => Promise<unknown>) => {
     if (locked.current) return;
     locked.current = true;
@@ -119,7 +130,8 @@ export default function RunRideRecorder({
     setError(false);
     try {
       await operation();
-    } catch {
+    } catch (error) {
+      if (error instanceof WatchWorkoutStartError) showWatchStartError();
       setError(true);
     } finally {
       locked.current = false;
@@ -144,10 +156,20 @@ export default function RunRideRecorder({
       initialSportId,
       initialGps,
       initialWatch
-    ).catch(() => {
+    ).catch((error) => {
+      if (error instanceof WatchWorkoutStartError) {
+        Alert.alert(
+          t('workoutSetup.watchStartFailedTitle', {
+            defaultValue: 'Watch workout did not start',
+          }),
+          t('workoutSetup.watchStartFailedMessage', {
+            defaultValue:
+              'Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.',
+          })
+        );
+      }
       setAutoStartFailed(true);
-      // The watch was started by the countdown, three seconds before this
-      // ran. Nothing is recording it now, so it must not be left in an open
+      // Setup already opened the watch workout. Nothing is recording it now, so it must not be left in an open
       // session burning battery on a run that never began.
       void stopWatchHeartRate();
     });

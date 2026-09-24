@@ -85,6 +85,8 @@ export interface RecordingSession {
 
 export interface RecordingDetail {
   version: 1;
+  /** Daily totals from this provider already include this watch-recorded effort. */
+  healthSource?: 'HealthKit';
   recordingId: string;
   sport: RecordingSport;
   startedAt: number;

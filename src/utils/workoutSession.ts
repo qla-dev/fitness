@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { RECORDING_DETAIL_TYPE } from '../services/recording/types';
 import type {
   ExerciseEntrySetRequest,
   ExerciseEntrySetResponse,
@@ -205,9 +206,7 @@ const ACTIVE_CALORIES_NAME = 'Active Calories';
  * ACTIVE_ENERGY and APPLE_EXERCISE_TIME_NAME), not display text, so they are
  * matched literally and are deliberately not translated.
  */
-export function isProviderDayTotal(
-  session: ExerciseSessionResponse
-): boolean {
+export function isProviderDayTotal(session: ExerciseSessionResponse): boolean {
   if (session.type === 'preset') return false;
   const name = session.exercise_snapshot?.name;
   return name === APPLE_EXERCISE_TIME_NAME || name === ACTIVE_CALORIES_NAME;
@@ -240,6 +239,25 @@ function providersReportingExerciseTime(
   return providers;
 }
 
+/** Only explicitly watch-backed phone recordings overlap Apple's daily totals. */
+export function recordingHealthSource(
+  session: ExerciseSessionResponse
+): string | undefined {
+  if (session.type === 'preset') return undefined;
+  for (const detail of session.activity_details ?? []) {
+    if (detail.detail_type !== RECORDING_DETAIL_TYPE) continue;
+    const data = detail.detail_data;
+    if (
+      data &&
+      typeof data === 'object' &&
+      'healthSource' in data &&
+      data.healthSource === 'HealthKit'
+    )
+      return data.healthSource;
+  }
+  return undefined;
+}
+
 export function calculateExerciseStats(
   sessions: ExerciseSessionResponse[]
 ): ExerciseStats {
@@ -248,9 +266,28 @@ export function calculateExerciseStats(
   let otherExerciseCalories = 0;
   let durationMinutes = 0;
   const countedByProvider = providersReportingExerciseTime(sessions);
+  const phoneCalories = new Map<string, number>();
+  for (const session of sessions) {
+    const source = recordingHealthSource(session);
+    if (!source) continue;
+    const key = source + '|' + session.entry_date;
+    phoneCalories.set(
+      key,
+      (phoneCalories.get(key) ?? 0) + getSessionCalories(session)
+    );
+  }
 
   for (const session of sessions) {
-    const sessionCals = getSessionCalories(session);
+    let sessionCals = getSessionCalories(session);
+    if (
+      session.type !== 'preset' &&
+      session.exercise_snapshot?.name === ACTIVE_CALORIES_NAME
+    ) {
+      const key = session.exercise_snapshot?.source + '|' + session.entry_date;
+      const overlap = Math.min(sessionCals, phoneCalories.get(key) ?? 0);
+      sessionCals -= overlap;
+      phoneCalories.set(key, (phoneCalories.get(key) ?? 0) - overlap);
+    }
     caloriesBurned += sessionCals;
 
     if (session.type === 'preset') {
@@ -264,7 +301,8 @@ export function calculateExerciseStats(
       // its (zero) calories anywhere would be the start of a double count.
       const isAppleExerciseTime =
         session.exercise_snapshot?.name === APPLE_EXERCISE_TIME_NAME;
-      const source = session.exercise_snapshot?.source;
+      const source =
+        recordingHealthSource(session) ?? session.exercise_snapshot?.source;
       // Calories still count: the provider's active-energy total is carved out
       // for them in the importer, so the two halves add back up to its figure.
       // Only the minutes are already spoken for.
@@ -272,7 +310,7 @@ export function calculateExerciseStats(
         source && countedByProvider.has(source)
       );
       if (isActiveCals) {
-        activeCalories += session.calories_burned || 0;
+        activeCalories += sessionCals;
       } else if (isAppleExerciseTime) {
         durationMinutes += session.duration_minutes ?? 0;
       } else {

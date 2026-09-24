@@ -535,6 +535,35 @@ describe('exercise writeback', () => {
     expect(mockSaveWorkout).not.toHaveBeenCalled();
   });
 
+  it('does not export a phone copy already recorded by the watch, and reconciles tracked writeback copies', async () => {
+    prefs({
+      writebackExerciseEnabled: true,
+      'writebackExerciseSig:2026-06-01': 'old-signature',
+      'writebackExerciseUuids:2026-06-01': ['previous-phone-export'],
+    });
+    mockSummary.mockResolvedValue({
+      foodEntries: [],
+      waterIntake: 0,
+      exerciseSessions: [
+        {
+          ...session,
+          activity_details: [
+            {
+              detail_type: 'fitness_recording_v1',
+              detail_data: { healthSource: 'HealthKit' },
+            },
+          ],
+        },
+      ],
+    });
+    await writebackPhase(['2026-06-01']);
+    expect(mockSaveWorkout).not.toHaveBeenCalled();
+    expect(mockDeleteObjects).toHaveBeenCalledWith(WORKOUT_TYPE, {
+      uuids: ['previous-phone-export'],
+    });
+    expect(store['writebackExerciseUuids:2026-06-01']).toEqual([]);
+  });
+
   it('replaces the previous run\u2019s workouts rather than piling duplicates up', async () => {
     prefs({
       writebackExerciseEnabled: true,

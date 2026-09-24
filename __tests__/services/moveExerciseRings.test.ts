@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { localApiFetch } from '../../src/services/local/localApi';
 import { buildDailySummary } from '../../src/services/dailySummaryService';
 import { buildHourlyExerciseMinutes } from '../../src/utils/hourlyActivity';
+import { isProviderDayTotal } from '../../src/utils/workoutSession';
+import type { ExerciseSessionResponse } from '@workspace/shared';
 
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
@@ -72,6 +74,85 @@ const syncAndSummarize = async (records: unknown[]) => {
  * exercise time did before it was imported at all) zero.
  */
 describe('Move and Exercise after an Apple Health sync', () => {
+  test('watch-only import and repeated sync keep one workout, with daily totals counted once', async () => {
+    const records = appleDay().map((row) => ({ ...row, source: 'HealthKit' }));
+    await syncAndSummarize(records);
+    const summary = await syncAndSummarize(records);
+    const visible = summary.exerciseEntries.filter(
+      (row) => !isProviderDayTotal(row)
+    );
+    expect(visible).toHaveLength(1);
+    expect(summary.caloriesBurned).toBe(APPLE_ACTIVE_KCAL);
+    expect(summary.exerciseMinutes).toBe(APPLE_EXERCISE_SECONDS / 60);
+  });
+
+  test.each([true, false])(
+    'phone recording with watch=%s counts only its actual overlap with HealthKit',
+    async (watch) => {
+      const exercise = await request<{ id: string }>('/api/exercises', 'POST', {
+        name: 'Phone run',
+        modality: 'duration',
+      });
+      await request('/api/exercise-entries', 'POST', {
+        exercise_id: exercise.id,
+        entry_date: date,
+        duration_minutes: 25,
+        calories_burned: 220,
+        activity_details: [
+          {
+            id: 'phone-run',
+            provider_name: 'fitness',
+            detail_type: 'fitness_recording_v1',
+            detail_data: {
+              recordingId: 'phone-run',
+              ...(watch ? { healthSource: 'HealthKit' } : {}),
+            },
+          },
+        ],
+      });
+      const records = appleDay().map((row) => ({
+        ...row,
+        source: 'HealthKit',
+      }));
+      await syncAndSummarize(records);
+      const summary = await syncAndSummarize(records);
+      expect(summary.caloriesBurned).toBe(
+        APPLE_ACTIVE_KCAL + (watch ? 0 : 220)
+      );
+      expect(summary.exerciseMinutes).toBe(
+        APPLE_EXERCISE_SECONDS / 60 + (watch ? 0 : 25)
+      );
+      expect(
+        summary.exerciseEntries.filter((row) => !isProviderDayTotal(row))
+      ).toHaveLength(2);
+    }
+  );
+
+  test('a phone/watch workout remains counted before the provider totals arrive', () => {
+    const session = {
+      type: 'individual',
+      entry_date: date,
+      calories_burned: 220,
+      duration_minutes: 25,
+      exercise_snapshot: { name: 'Phone run', source: null },
+      activity_details: [
+        {
+          detail_type: 'fitness_recording_v1',
+          detail_data: { healthSource: 'HealthKit' },
+        },
+      ],
+    } as ExerciseSessionResponse;
+    const summary = buildDailySummary(date, {
+      goals: {} as never,
+      foodEntries: [],
+      exerciseEntries: [session],
+      waterIntake: { water_ml: 0 },
+      stepCalories: 0,
+    });
+    expect(summary.caloriesBurned).toBe(220);
+    expect(summary.exerciseMinutes).toBe(25);
+  });
+
   beforeEach(async () => {
     await AsyncStorage.clear();
   });

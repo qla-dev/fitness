@@ -414,6 +414,9 @@ export async function startRecording(
     if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 400)
       throw new Error('Invalid body weight');
     const catalogueSport = WORKOUT_SPORTS.find((entry) => entry.id === sportId);
+    // A selected watch is required before persisting or starting phone recording.
+    if (watch)
+      await startWatchHeartRate(sport, { sportId: catalogueSport?.id });
     const now = Date.now();
     const session: RecordingSession = {
       id: randomUUID(),
@@ -451,13 +454,6 @@ export async function startRecording(
     };
     await checkpointRecording(next);
     publish({ session: next });
-    // Best effort and deliberately not awaited into the failure path: a watch
-    // that is asleep, unpaired, or without the app installed must not stop a
-    // run from being recorded on the phone. The catalogue id goes with it so
-    // the watch opens the session as the sport it is — a hike is not a run.
-    // No countdown from here: arriving from setup the phone has already
-    // counted, and `startWatchCountdown` started the watch counting with it.
-    if (watch) void startWatchHeartRate(sport, { sportId: catalogueSport?.id });
   });
 }
 

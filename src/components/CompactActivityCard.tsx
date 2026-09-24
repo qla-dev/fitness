@@ -1,4 +1,5 @@
 import React from 'react';
+import { isProviderDayTotal } from '../utils/workoutSession';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
@@ -65,7 +66,9 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
     </View>
   );
 
-  if (sessions.length === 0) {
+  const logged = sessions.filter((session) => !isProviderDayTotal(session));
+
+  if (logged.length === 0) {
     // The prompt is the whole card, so an empty day is a way in rather than a
     // dead readout — the same treatment the food and measurement rows get.
     const empty = (
@@ -102,7 +105,7 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
       {/* Wrapped so the new look does not cost the swipe-to-delete and
           long-press these rows have always had. SwipeableExerciseRow renders
           whatever it is given and keeps its own gesture and delete. */}
-      {sessions.map((session, index) => (
+      {logged.map((session, index) => (
         <SwipeableExerciseRow
           key={session.id || index}
           session={session}

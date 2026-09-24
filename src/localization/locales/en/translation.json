@@ -5772,7 +5772,10 @@
       "custom": "Custom"
     },
     "watchDisconnected": "No watch connected",
-    "watchNeedsApp": "Install the watch app"
+    "watchNeedsApp": "Install the watch app",
+    "watchStartFailedTitle": "Watch workout did not start",
+    "watchStartFailedMessage": "Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.",
+    "openingWatch": "Opening Apple Watch and waiting for its workout to start..."
   },
   "addHub": {
     "searchPlaceholder": "Search food or meals",
