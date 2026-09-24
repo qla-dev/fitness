@@ -1,12 +1,7 @@
 import SwiftUI
 
-/// The watch app: pick a sport, or watch the one the phone started.
-///
-/// It is still not a second recorder — distance, pace and the route stay on
-/// the phone, which owns GPS and the saved activity. What it does own is the
-/// workout session that keeps the heart-rate sensor streaming, and the choice
-/// of which sport that session is, so a wearer who starts from the wrist gets
-/// the same list the phone offers rather than two of its eighteen entries.
+/// Home opens first, with activities on the next page. A phone-started session
+/// mirrors the phone recorder; standalone sessions use HealthKit statistics.
 struct ContentView: View {
   @EnvironmentObject private var workoutManager: WorkoutManager
 
@@ -15,9 +10,15 @@ struct ContentView: View {
       if let countdown = workoutManager.countdown {
         CountdownView(value: countdown, sport: workoutManager.sport)
       } else if workoutManager.isRunning {
-        ActiveView()
+        WatchActiveView()
+      } else if workoutManager.isFinishing {
+        ProgressView(watchText("workout.saving", "Saving workout…"))
       } else {
-        SportListView()
+        TabView {
+          WatchDashboardView()
+          SportListView()
+        }
+        .tabViewStyle(.page)
       }
     }
   }
@@ -54,59 +55,6 @@ private struct CountdownView: View {
   }
 }
 
-/// Live heart rate, with the sport it belongs to named above it.
-private struct ActiveView: View {
-  @EnvironmentObject private var workoutManager: WorkoutManager
-  /// Drives the pulse behind the reading. Tied to the value rather than to a
-  /// timer, so it beats when a beat arrives and is still when nothing does.
-  @State private var pulse = false
-
-  private var sport: WatchSport { workoutManager.sport }
-  private var bpm: String {
-    workoutManager.heartRate > 0
-      ? String(format: "%.0f", workoutManager.heartRate) : "--"
-  }
-
-  var body: some View {
-    VStack(spacing: 2) {
-      Label(sport.name, systemImage: sport.symbol)
-        .font(.caption2)
-        .foregroundStyle(sport.tint)
-        .labelStyle(.titleAndIcon)
-
-      ZStack {
-        Circle()
-          .stroke(sport.tint.opacity(0.25), lineWidth: 3)
-          .scaleEffect(pulse ? 1.06 : 0.94)
-          .animation(.easeInOut(duration: 0.45), value: pulse)
-        VStack(spacing: 0) {
-          Text(bpm)
-            .font(.system(size: 42, weight: .semibold, design: .rounded))
-            .monospacedDigit()
-            .contentTransition(.numericText())
-          Text("BPM")
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(1.4)
-            .foregroundStyle(.secondary)
-        }
-      }
-      .frame(height: 96)
-      .onChange(of: workoutManager.heartRate) { _, _ in pulse.toggle() }
-
-      Button(role: .destructive) {
-        workoutManager.stop()
-      } label: {
-        Label("Stop", systemImage: "stop.fill").font(.footnote)
-      }
-      .buttonStyle(.borderedProminent)
-      .tint(.red)
-
-      ErrorNote()
-    }
-    .padding(.horizontal, 6)
-  }
-}
-
 /// Every sport the phone offers, sectioned the way the phone sections them.
 private struct SportListView: View {
   @EnvironmentObject private var workoutManager: WorkoutManager
@@ -120,6 +68,7 @@ private struct SportListView: View {
             Section(group.title) {
               ForEach(sports) { sport in
                 SportRow(sport: sport) { workoutManager.startFromWatch(sport: sport) }
+                  .disabled(workoutManager.isFinishing)
               }
             }
           }
@@ -129,7 +78,7 @@ private struct SportListView: View {
         }
       }
       .listStyle(.carousel)
-      .navigationTitle("qla.fit")
+      .navigationTitle(watchText("activities.title", "Activities"))
     }
   }
 }
@@ -166,7 +115,7 @@ private struct SportRow: View {
 
 /// Shown wherever it happens: a failure to start is worth saying on the wrist,
 /// because the phone cannot show it if the watch is the one that failed.
-private struct ErrorNote: View {
+struct ErrorNote: View {
   @EnvironmentObject private var workoutManager: WorkoutManager
 
   var body: some View {

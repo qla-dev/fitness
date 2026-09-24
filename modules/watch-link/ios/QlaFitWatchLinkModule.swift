@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import WatchConnectivity
+import HealthKit
 
 /// Message keys shared with the watch app. Duplicated by hand from
 /// targets/watch/WorkoutManager.swift because a watchOS target and an iOS pod
@@ -33,6 +34,11 @@ private enum WatchMessageKind {
 /// stop receiving messages.
 private final class WatchLink: NSObject {
   var onEvent: ((String, [String: Any]) -> Void)?
+  private let healthStore = HKHealthStore()
+  private var command: [String: Any]?
+  private var startCompletion: ((Error?) -> Void)?
+  private var dashboard: [String: Any]? = UserDefaults.standard.dictionary(forKey: "watchDashboard")
+  private var metrics: [String: Any]?
 
   var isReachable: Bool {
     guard WCSession.isSupported() else { return false }
@@ -59,17 +65,75 @@ private final class WatchLink: NSObject {
     session.activate()
   }
 
-  /// Commands are best-effort: the watch app has to be reachable to act on
-  /// them. Queuing with transferUserInfo would start a workout minutes after
-  /// the user asked for one, which is worse than not starting it at all.
-  func send(kind: String, sport: String?, sportId: String?, startAt: Double?) {
+  // All mutable link state is confined to the main queue, including delegates.
+  func start(sport: String, sportId: String?, startAt: Double?, completion: @escaping (Error?) -> Void) {
+    startCompletion?(nil)
+    command = ["kind": "start", "sport": sport, "sportId": sportId ?? "",
+      "startAt": startAt ?? Date().timeIntervalSince1970 * 1000,
+      "requestedAt": Date().timeIntervalSince1970 * 1000]
+    startCompletion = completion
+    launchIfReady()
+  }
+
+  private func launchIfReady() {
+    guard let completion = startCompletion else { return }
+    guard WCSession.isSupported() else {
+      startCompletion = nil
+      command = nil
+      completion(nil)
+      return
+    }
+    guard WCSession.default.activationState == .activated else { return }
+    startCompletion = nil
+    let pending = currentCommand()
+    guard isPaired, isWatchAppInstalled, pending["kind"] as? String == "start" else {
+      command = nil
+      completion(nil)
+      return
+    }
+    sendPayload(pending)
+    let configuration = HKWorkoutConfiguration()
+    // The wake configuration opens the app. The live handshake supplies the
+    // exact catalogue sport and countdown, and rejects a cancelled launch.
+    configuration.activityType = pending["sport"] as? String == "ride" ? .cycling : .running
+    configuration.locationType = .outdoor
+    healthStore.startWatchApp(with: configuration) { _, error in
+      DispatchQueue.main.async { completion(error) }
+    }
+  }
+
+  func updateDashboard(_ value: [String: Any]) {
+    dashboard = value
+    UserDefaults.standard.set(value, forKey: "watchDashboard")
+    flushDashboard()
+  }
+
+  private func flushDashboard() {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+      isWatchAppInstalled, let dashboard else { return }
+    // Only the home snapshot is durable. Workout commands must never replay
+    // from a background transfer long after the user ended the session.
+    try? WCSession.default.updateApplicationContext(["dashboard": dashboard])
+  }
+
+  func updateMetrics(_ value: [String: Any]) {
+    metrics = value
+    sendPayload(["kind": "metrics", "metrics": value])
+  }
+
+  func stop() {
+    let stopped: [String: Any] = ["kind": "stop", "requestedAt": Date().timeIntervalSince1970 * 1000]
+    command = stopped
+    metrics = nil
+    startCompletion?(nil)
+    startCompletion = nil
+    sendPayload(stopped)
+  }
+
+  private func sendPayload(_ payload: [String: Any]) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
     guard session.activationState == .activated, session.isReachable else { return }
-    var payload: [String: Any] = [WatchMessageKey.kind: kind]
-    if let sport { payload[WatchMessageKey.sport] = sport }
-    if let sportId { payload[WatchMessageKey.sportId] = sportId }
-    if let startAt { payload[WatchMessageKey.startAt] = startAt }
     session.sendMessage(payload, replyHandler: nil, errorHandler: nil)
   }
 
@@ -88,6 +152,9 @@ private final class WatchLink: NSObject {
       let state = message[WatchMessageKey.state] as? String ?? "stopped"
       let sport = message[WatchMessageKey.sport] as? String ?? "run"
       onEvent?("onWorkoutState", ["state": state, "sport": sport])
+      if state == "running", let metrics {
+        sendPayload(["kind": "metrics", "metrics": metrics])
+      }
     default:
       break
     }
@@ -95,6 +162,23 @@ private final class WatchLink: NSObject {
 
   fileprivate func reachabilityDidChange() {
     emitReachability()
+    launchIfReady()
+    flushDashboard()
+    let pending = currentCommand()
+    if pending["kind"] as? String != "none" { sendPayload(pending) }
+    if let metrics { sendPayload(["kind": "metrics", "metrics": metrics]) }
+  }
+
+  fileprivate func currentCommand() -> [String: Any] {
+    guard let command else { return ["kind": "none"] }
+    if command["kind"] as? String == "start" {
+      let age = Date().timeIntervalSince1970 * 1000 - (command["requestedAt"] as? Double ?? 0)
+      // Do not start an abandoned countdown if the watch reconnects much later.
+      if age > 120_000 { return ["kind": "none"] }
+    }
+    var reply = command
+    if let metrics { reply["metrics"] = metrics }
+    return reply
   }
 }
 
@@ -104,15 +188,22 @@ extension WatchLink: WCSessionDelegate {
     activationDidCompleteWith activationState: WCSessionActivationState,
     error: Error?
   ) {
-    reachabilityDidChange()
+    DispatchQueue.main.async { self.reachabilityDidChange() }
   }
 
   func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-    handle(message: message)
+    DispatchQueue.main.async { self.handle(message: message) }
+  }
+
+  func session(_ session: WCSession, didReceiveMessage message: [String: Any],
+    replyHandler: @escaping ([String: Any]) -> Void) {
+    DispatchQueue.main.async {
+      replyHandler(message["kind"] as? String == "requestWorkout" ? self.currentCommand() : [:])
+    }
   }
 
   func sessionReachabilityDidChange(_ session: WCSession) {
-    reachabilityDidChange()
+    DispatchQueue.main.async { self.reachabilityDidChange() }
   }
 
   // Required on iOS so the session can be handed to a newly paired watch.
@@ -135,7 +226,7 @@ public final class QlaFitWatchLinkModule: Module {
       self.link.onEvent = { [weak self] name, body in
         self?.sendEvent(name, body)
       }
-      self.link.activate()
+      DispatchQueue.main.async { self.link.activate() }
     }
 
     Property("isSupported") { WCSession.isSupported() }
@@ -146,13 +237,23 @@ public final class QlaFitWatchLinkModule: Module {
 
     Property("isPaired") { self.link.isPaired }
 
-    AsyncFunction("startWorkout") { (sport: String, sportId: String?, startAt: Double?) in
-      self.link.send(
-        kind: WatchMessageKind.start, sport: sport, sportId: sportId, startAt: startAt)
-    }
+    AsyncFunction("startWorkout") { (sport: String, sportId: String?, startAt: Double?, promise: Promise) in
+      self.link.start(sport: sport, sportId: sportId, startAt: startAt) { error in
+        if let error { promise.reject("WATCH_LAUNCH_FAILED", error.localizedDescription) }
+        else { promise.resolve(nil) }
+      }
+    }.runOnQueue(.main)
 
     AsyncFunction("stopWorkout") {
-      self.link.send(kind: WatchMessageKind.stop, sport: nil, sportId: nil, startAt: nil)
-    }
+      self.link.stop()
+    }.runOnQueue(.main)
+
+    AsyncFunction("updateDashboard") { (value: [String: Any]) in
+      self.link.updateDashboard(value)
+    }.runOnQueue(.main)
+
+    AsyncFunction("updateMetrics") { (value: [String: Any]) in
+      self.link.updateMetrics(value)
+    }.runOnQueue(.main)
   }
 }

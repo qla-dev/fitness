@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { updateWatchMetrics } from '../../../modules/watch-link';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { randomUUID } from 'expo-crypto';
@@ -78,6 +79,28 @@ export const subscribeRecording = (fn: () => void) => {
 function publish(patch: Partial<Snapshot>) {
   snapshot = { ...snapshot, ...patch };
   listeners.forEach((fn) => fn());
+  const session = snapshot.session;
+  if (Platform.OS === 'ios' && session && session.watch !== false) {
+    const now = Date.now();
+    const elapsed = elapsedSeconds(session, now);
+    void updateWatchMetrics({
+      sessionId: session.id,
+      startedAt: session.startedAt,
+      timestamp: now,
+      phase: session.phase,
+      elapsed,
+      distance: session.distance,
+      speed:
+        session.phase === 'recording' && now - session.updatedAt < 5000
+          ? session.speed
+          : 0,
+      maxSpeed: session.maxSpeed,
+      elevationGain: session.elevationGain,
+      calories: recordingCalories(session, elapsed),
+    }).catch((error) =>
+      addLog('[Watch] Metrics sync failed', 'WARNING', [String(error)])
+    );
+  }
 }
 let queue: Promise<unknown> = Promise.resolve();
 function serialize<T>(work: () => Promise<T>): Promise<T> {

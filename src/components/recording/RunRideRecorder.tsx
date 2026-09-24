@@ -349,13 +349,21 @@ export default function RunRideRecorder({
           />
         </>
       ) : null}
-      <View className="flex-1 justify-center px-6" pointerEvents="none">
+      <View
+        className="flex-1 px-6"
+        pointerEvents="none"
+        style={{ paddingTop: insets.top }}
+      >
         {session ? (
           <>
-            <View className="flex-row items-baseline">
+            <View
+              className="flex-row items-baseline"
+              style={{ paddingRight: 64 }}
+            >
               <Text
-                style={{ color: '#FFF', fontSize: 84, fontWeight: '300' }}
+                style={{ color: '#FFF', fontSize: 48, fontWeight: '300' }}
                 numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {number(distanceFromKm(session.distance / 1000, unit), 2)}
               </Text>
@@ -387,8 +395,8 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View className="flex-row mt-8">
-              <View className="flex-1">
+            <View className="mt-6 gap-6">
+              <View>
                 <Text
                   style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
                 >
@@ -401,7 +409,7 @@ export default function RunRideRecorder({
                   {t('recording.kcal', { defaultValue: 'kcal' })}
                 </Text>
               </View>
-              <View className="flex-1">
+              <View>
                 <Text
                   style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
                 >

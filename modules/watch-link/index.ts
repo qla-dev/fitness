@@ -28,6 +28,8 @@ interface WatchLinkNativeModule {
     startAt?: number
   ): Promise<void>;
   stopWorkout(): Promise<void>;
+  updateDashboard(snapshot: WatchDashboardSnapshot): Promise<void>;
+  updateMetrics(snapshot: WatchWorkoutMetrics): Promise<void>;
   addListener(
     name: 'onHeartRate',
     listener: (event: WatchHeartRateEvent) => void
@@ -40,6 +42,49 @@ interface WatchLinkNativeModule {
     name: 'onReachabilityChange',
     listener: (event: WatchReachabilityEvent) => void
   ): EventSubscription;
+}
+
+interface WatchDashboardSnapshot {
+  date: string;
+  updatedAt: number;
+  move: number;
+  moveGoal: number;
+  exercise: number;
+  exerciseGoal: number;
+  stand: number;
+  standGoal: number;
+  steps: number;
+  distance: number;
+  distanceUnit: 'km' | 'miles';
+  calories: number;
+  calorieGoal: number;
+  water: number;
+  waterGoal: number;
+}
+
+interface WatchWorkoutMetrics {
+  sessionId: string;
+  startedAt: number;
+  timestamp: number;
+  phase: 'recording' | 'paused' | 'finished';
+  elapsed: number;
+  distance: number;
+  speed: number;
+  maxSpeed: number;
+  elevationGain: number;
+  calories: number;
+}
+
+export async function updateWatchDashboard(
+  snapshot: WatchDashboardSnapshot
+): Promise<void> {
+  await native?.updateDashboard?.(snapshot);
+}
+
+export async function updateWatchMetrics(
+  snapshot: WatchWorkoutMetrics
+): Promise<void> {
+  await native?.updateMetrics?.(snapshot);
 }
 
 /**
@@ -68,9 +113,8 @@ export const isWatchPaired = (): boolean => native?.isPaired ?? false;
 export const isWatchReachable = (): boolean => native?.isReachable ?? false;
 
 /**
- * Asks the watch app to open a workout session for this sport. Best effort:
- * the watch must be reachable, so callers should treat a live heart rate
- * arriving as the only real confirmation.
+ * Launches the paired watch app through HealthKit, then supplies the exact
+ * sport over WatchConnectivity. Live heart rate confirms the sensor is ready.
  *
  * `sportId` is the catalogue id from `WORKOUT_SPORTS`, which is what decides
  * the HealthKit activity type and the name the watch shows; without it the

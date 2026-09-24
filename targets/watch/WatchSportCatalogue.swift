@@ -9,9 +9,8 @@ import SwiftUI
 /// must stay identical to the catalogue's, because it is what crosses the
 /// WatchConnectivity boundary when the phone starts a session.
 ///
-/// Names are English here. The watch target ships no `.lproj` catalogs — it is
-/// a separate localization surface from the RN app, like the widgets — so the
-/// strings it draws are literal until that surface exists.
+/// Sport names are catalogue content. Watch chrome uses the separate native
+/// English catalog under en.lproj, with explicit fallbacks through watchText.
 struct WatchSport: Identifiable, Hashable {
   let id: String
   let name: String

@@ -69,7 +69,12 @@ export default function RunOrRideScreen({
     borderless: true,
     // Forced-dark content under it: see `appearance` on the hook.
     appearance: 'dark',
-    left: { kind: 'back' },
+    right: {
+      kind: 'dismiss',
+      onPress: () => navigation.goBack(),
+      disabled: countdown,
+    },
+    nativeOptions: { headerBackVisible: false, gestureEnabled: false },
   });
 
   // The count owns the whole screen, bar included — nothing to go back to

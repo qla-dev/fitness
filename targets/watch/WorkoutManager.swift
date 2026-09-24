@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import HealthKit
 import WatchConnectivity
 
@@ -62,6 +63,19 @@ enum WatchWorkoutOrigin {
 /// without one there is no live stream to forward.
 @MainActor
 final class WorkoutManager: NSObject, ObservableObject {
+  static let shared = WorkoutManager()
+  @Published private(set) var dashboard: [String: Any] =
+    UserDefaults.standard.dictionary(forKey: "phoneDashboard") ?? [:]
+  @Published private(set) var phoneMetrics: [String: Any] = [:]
+  @Published private(set) var startedAt = Date()
+  @Published private(set) var activeCalories: Double = 0
+  @Published private(set) var distance: Double = 0
+  @Published private(set) var averageHeartRate: Double = 0
+  @Published private(set) var maxHeartRate: Double = 0
+  @Published private(set) var heartRateAt = Date.distantPast
+  @Published private(set) var isFinishing = false
+  @Published private(set) var isPaused = false
+  var isPhoneWorkout: Bool { origin == WatchWorkoutOrigin.phone }
   @Published private(set) var heartRate: Double = 0
   @Published private(set) var isRunning = false
   @Published private(set) var sport: WatchSport = WatchSportCatalogue.all[0]
@@ -82,6 +96,10 @@ final class WorkoutManager: NSObject, ObservableObject {
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
   private var builder: HKLiveWorkoutBuilder?
+  private var phoneWorkoutRequested = false
+  private var requestInFlight = false
+  private var acceptedStartAt: Double?
+  private var lastPhoneCommandAt: Double = 0
 
   override init() {
     super.init()
@@ -121,6 +139,81 @@ final class WorkoutManager: NSObject, ObservableObject {
     ])
   }
 
+  func requestPhoneWorkout() {
+    phoneWorkoutRequested = true
+    let connection = WCSession.default
+    guard connection.activationState == .activated, connection.isReachable,
+      !requestInFlight else { return }
+    requestInFlight = true
+    connection.sendMessage(["kind": "requestWorkout"], replyHandler: { [weak self] message in
+      Task { @MainActor in
+        guard let self else { return }
+        self.requestInFlight = false
+        self.phoneWorkoutRequested = false
+        await self.handlePhoneMessage(message)
+      }
+    }, errorHandler: { [weak self] error in
+      Task { @MainActor in
+        self?.requestInFlight = false
+        self?.lastError = error.localizedDescription
+      }
+    })
+  }
+
+  private func receiveDashboard(_ context: [String: Any]) {
+    guard let value = context["dashboard"] as? [String: Any] else { return }
+    guard (value["updatedAt"] as? Double ?? 0) >= (dashboard["updatedAt"] as? Double ?? 0) else { return }
+    dashboard = value
+    UserDefaults.standard.set(value, forKey: "phoneDashboard")
+  }
+
+  private func handlePhoneMessage(_ message: [String: Any]) async {
+    switch message["kind"] as? String {
+    case "start":
+      let requestedAt = message["requestedAt"] as? Double ?? 0
+      guard requestedAt >= lastPhoneCommandAt else { return }
+      lastPhoneCommandAt = requestedAt
+      let startValue = message["startAt"] as? Double
+      if isFinishing {
+        // Re-read the live command after the previous builder finishes saving.
+        phoneWorkoutRequested = true
+        return
+      }
+      guard !isRunning else { return }
+      if let startValue, startValue == acceptedStartAt { return }
+      await requestAuthorization()
+      guard lastPhoneCommandAt == requestedAt else { return }
+      let sport = WatchSportCatalogue.sport(id: message["sportId"] as? String)
+        ?? WatchSportCatalogue.fallback(recording: message["sport"] as? String)
+      start(sport: sport, countingDownTo: startValue.map { Date(timeIntervalSince1970: $0 / 1000) },
+        origin: WatchWorkoutOrigin.phone)
+      if isRunning { acceptedStartAt = startValue }
+      if let metrics = message["metrics"] as? [String: Any] {
+        await handlePhoneMessage(["kind": "metrics", "metrics": metrics])
+      }
+    case "stop":
+      let requestedAt = message["requestedAt"] as? Double ?? 0
+      guard requestedAt >= lastPhoneCommandAt else { return }
+      lastPhoneCommandAt = requestedAt
+      if isPhoneWorkout { stop() }
+    case "metrics":
+      guard isRunning, isPhoneWorkout, let value = message["metrics"] as? [String: Any],
+        let timestamp = value["timestamp"] as? Double,
+        timestamp >= (phoneMetrics["timestamp"] as? Double ?? 0),
+        let start = value["startedAt"] as? Double,
+        abs(start - (acceptedStartAt ?? start)) < 120_000,
+        phoneMetrics["sessionId"] == nil || phoneMetrics["sessionId"] as? String == value["sessionId"] as? String else { return }
+      phoneMetrics = value
+      let paused = value["phase"] as? String == "paused"
+      if paused != isPaused {
+        isPaused = paused
+        if paused { session?.pause() } else { session?.resume() }
+      }
+      if value["phase"] as? String == "finished" { stop() }
+    default: break
+    }
+  }
+
   // MARK: - Authorization
 
   func requestAuthorization() async {
@@ -157,9 +250,18 @@ final class WorkoutManager: NSObject, ObservableObject {
     countingDownTo startAt: Date? = nil,
     origin: String = WatchWorkoutOrigin.watch
   ) {
-    guard !isRunning else { return }
+    guard !isRunning, !isFinishing, session == nil else { return }
     self.sport = sport
     self.origin = origin
+    phoneMetrics = [:]
+    activeCalories = 0
+    distance = 0
+    heartRate = 0
+    averageHeartRate = 0
+    maxHeartRate = 0
+    heartRateAt = .distantPast
+    isPaused = false
+    lastError = nil
 
     let configuration = HKWorkoutConfiguration()
     configuration.activityType = sport.activityType
@@ -179,6 +281,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       self.builder = builder
 
       let startDate = Date()
+      startedAt = startDate
       session.startActivity(with: startDate)
       builder.beginCollection(withStart: startDate) { [weak self] _, error in
         guard let error else { return }
@@ -234,6 +337,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     countdownTask?.cancel()
     countdownTask = nil
     countdown = nil
+    isFinishing = true
     session.end()
     isRunning = false
     heartRate = 0
@@ -258,7 +362,14 @@ final class WorkoutManager: NSObject, ObservableObject {
     let workoutOrigin = origin
     builder.endCollection(withEnd: Date()) { [weak self] _, error in
       if let error {
-        Task { @MainActor in self?.lastError = error.localizedDescription }
+        Task { @MainActor in
+          guard self?.builder === builder else { return }
+          self?.lastError = error.localizedDescription
+          self?.session = nil
+          self?.builder = nil
+          self?.isFinishing = false
+          if self?.phoneWorkoutRequested == true { self?.requestPhoneWorkout() }
+        }
         return
       }
       let metadata: [String: Any] = [
@@ -273,9 +384,12 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
         builder.finishWorkout { _, error in
           Task { @MainActor in
+            guard self?.builder === builder else { return }
             if let error { self?.lastError = error.localizedDescription }
             self?.session = nil
             self?.builder = nil
+            self?.isFinishing = false
+            if self?.phoneWorkoutRequested == true { self?.requestPhoneWorkout() }
           }
         }
       }
@@ -293,11 +407,14 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
     date: Date
   ) {
     Task { @MainActor in
+      guard self.session === workoutSession else { return }
       switch toState {
       case .running:
+        guard !isFinishing else { return }
         isRunning = true
         sendState()
       case .ended:
+        isFinishing = true
         isRunning = false
         sendState()
         finish()
@@ -311,8 +428,15 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
     _ workoutSession: HKWorkoutSession, didFailWithError error: Error
   ) {
     Task { @MainActor in
+      guard session === workoutSession else { return }
+      countdownTask?.cancel()
+      countdownTask = nil
+      countdown = nil
       lastError = error.localizedDescription
       isRunning = false
+      isFinishing = false
+      session = nil
+      builder = nil
       sendState()
     }
   }
@@ -327,6 +451,18 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
     _ workoutBuilder: HKLiveWorkoutBuilder,
     didCollectDataOf collectedTypes: Set<HKSampleType>
   ) {
+    for identifier in [HKQuantityTypeIdentifier.activeEnergyBurned, .distanceWalkingRunning, .distanceCycling] {
+      guard let type = HKQuantityType.quantityType(forIdentifier: identifier),
+        collectedTypes.contains(type),
+        let quantity = workoutBuilder.statistics(for: type)?.sumQuantity() else { continue }
+      let isEnergy = identifier == .activeEnergyBurned
+      let value = quantity.doubleValue(for: isEnergy ? .kilocalorie() : .meter())
+      guard value.isFinite, value >= 0 else { continue }
+      Task { @MainActor in
+        guard self.builder === workoutBuilder, isRunning else { return }
+        if isEnergy { activeCalories = value } else { distance = value }
+      }
+    }
     guard
       let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate),
       collectedTypes.contains(heartRateType),
@@ -341,9 +477,15 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
     guard bpm.isFinite, bpm > 0 else { return }
 
     let sampleDate = statistics.mostRecentQuantityDateInterval()?.end ?? Date()
+    let average = statistics.averageQuantity()?.doubleValue(for: unit) ?? bpm
+    let maximum = statistics.maximumQuantity()?.doubleValue(for: unit) ?? bpm
 
     Task { @MainActor in
+      guard self.builder === workoutBuilder, isRunning else { return }
       heartRate = bpm
+      heartRateAt = sampleDate
+      averageHeartRate = average
+      maxHeartRate = maximum
       send([
         WatchMessageKey.kind: WatchMessageKind.heartRate,
         WatchMessageKey.heartRate: bpm,
@@ -361,8 +503,22 @@ extension WorkoutManager: WCSessionDelegate {
     activationDidCompleteWith activationState: WCSessionActivationState,
     error: Error?
   ) {
-    guard let error else { return }
-    Task { @MainActor in self.lastError = error.localizedDescription }
+    Task { @MainActor in
+      if let error { self.lastError = error.localizedDescription }
+      receiveDashboard(session.receivedApplicationContext)
+      if phoneWorkoutRequested { requestPhoneWorkout() }
+    }
+  }
+
+  nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    Task { @MainActor in receiveDashboard(applicationContext) }
+  }
+
+  nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+    Task { @MainActor in
+      if phoneWorkoutRequested { requestPhoneWorkout() }
+      sendState()
+    }
   }
 
   /// The phone drives start/stop so a run can begin from qla.fit without
@@ -372,22 +528,7 @@ extension WorkoutManager: WCSessionDelegate {
     _ session: WCSession, didReceiveMessage message: [String: Any]
   ) {
     Task { @MainActor in
-      switch message[WatchMessageKey.kind] as? String {
-      case WatchMessageKind.start:
-        let sport =
-          WatchSportCatalogue.sport(id: message[WatchMessageKey.sportId] as? String)
-          ?? WatchSportCatalogue.fallback(
-            recording: message[WatchMessageKey.sport] as? String)
-        let startAt = (message[WatchMessageKey.startAt] as? Double)
-          .map { Date(timeIntervalSince1970: $0 / 1000) }
-        start(
-          sport: sport, countingDownTo: startAt,
-          origin: WatchWorkoutOrigin.phone)
-      case WatchMessageKind.stop:
-        stop()
-      default:
-        break
-      }
+      await handlePhoneMessage(message)
     }
   }
 }
