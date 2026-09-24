@@ -224,7 +224,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     if (metres == null || !Number.isFinite(Number(metres))) return undefined;
     return distanceFromKm(Number(metres) / 1000, distanceUnit);
   }, [measurements?.distance_m, distanceUnit]);
-  useWatchDashboardSync(loadedSummary, measurements, dayDistance, distanceUnit);
+  useWatchDashboardSync(
+    loadedSummary,
+    measurements,
+    dayDistance,
+    distanceUnit,
+    preferences?.show_net_carbs ?? false
+  );
   // The Exercise chart's 24 bars, built from the day's logged sessions. Move
   // and Stand come off the summary instead: their breakdowns are read from the
   // health provider, not derived from anything the app holds.

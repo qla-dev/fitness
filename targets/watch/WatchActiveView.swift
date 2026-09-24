@@ -25,10 +25,11 @@ struct WatchActiveView: View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
           ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-              HStack(alignment: .top, spacing: 8) {
-                WatchMetric(label: paceLabel, value: paceOrSpeed(at: timeline.date))
-                WatchMetric(label: watchText("metric.distance", "Distance") + " · " + distanceUnit,
-                  value: hasMetrics ? watchNumber(distance / metresPerUnit, digits: 2) : "—")
+              ViewThatFits(in: .horizontal) {
+                primaryMetrics(at: timeline.date, fontSize: 20)
+                primaryMetrics(at: timeline.date, fontSize: 18)
+                primaryMetrics(at: timeline.date, fontSize: 16)
+                primaryMetrics(at: timeline.date, fontSize: 14)
               }
               HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(timeline.date.timeIntervalSince(manager.heartRateAt) < 15 && manager.heartRate > 0
@@ -49,7 +50,6 @@ struct WatchActiveView: View {
             }.padding(.horizontal, 6).padding(.bottom, 20)
           }
         }
-        .navigationTitle(watchText("workout.metrics", "Metrics"))
       }
       NavigationStack {
         ScrollView {
@@ -78,13 +78,23 @@ struct WatchActiveView: View {
             ErrorNote()
           }.padding(.horizontal, 6).padding(.bottom, 20)
         }
-        .navigationTitle(watchText("workout.details", "Details"))
       }
     }
     .tabViewStyle(.page)
     .confirmationDialog(watchText("workout.finishTitle", "Finish this workout?"), isPresented: $confirmStop) {
       Button(watchText("workout.finish", "Finish and save"), role: .destructive) { manager.stop() }
       Button(watchText("common.cancel", "Cancel"), role: .cancel) {}
+    }
+  }
+
+  // Both values use the same size; a long speed must not shrink independently.
+  private func primaryMetrics(at date: Date, fontSize: CGFloat) -> some View {
+    HStack(alignment: .top, spacing: 8) {
+      WatchMetric(label: paceLabel + " · " + (manager.sport.activityType == .cycling ? speedUnit : (watchText("unit.minutes", "min") + "/" + distanceUnit)),
+        value: paceOrSpeed(at: date), valueFontSize: fontSize, fixedValueSize: true)
+      WatchMetric(label: watchText("metric.distance", "Distance") + " · " + distanceUnit,
+        value: hasMetrics ? watchNumber(distance / metresPerUnit, digits: 2) : "—",
+        valueFontSize: fontSize, fixedValueSize: true)
     }
   }
 
@@ -112,7 +122,7 @@ struct WatchActiveView: View {
     }
     guard speed > 0.5 else { return "—" }
     return manager.sport.activityType == .cycling
-      ? watchNumber(speed * 3600 / metresPerUnit, digits: 1) + " " + speedUnit
+      ? watchNumber(speed * 3600 / metresPerUnit, digits: 1)
       : watchClock(metresPerUnit / speed)
   }
 }

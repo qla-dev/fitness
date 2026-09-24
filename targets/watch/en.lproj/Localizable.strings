@@ -11,6 +11,9 @@
 "home.stand" = "Stand";
 "home.steps" = "Steps";
 "home.title" = "Home";
+"home.pageHint" = "Swipe right for nutrition, left for activities";
+"nutrition.left" = "left";
+"nutrition.goal" = "Goal";
 "home.water" = "Water";
 "metric.averageHeartRate" = "Average heart rate";
 "metric.averagePace" = "Average pace";

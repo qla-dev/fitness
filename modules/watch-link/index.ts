@@ -54,12 +54,21 @@ interface WatchDashboardSnapshot {
   stand: number;
   standGoal: number;
   steps: number;
+  stepsGoal: number;
   distance: number;
   distanceUnit: 'km' | 'miles';
   calories: number;
   calorieGoal: number;
   water: number;
   waterGoal: number;
+  nutrients: {
+    key: string;
+    label: string;
+    consumed: number;
+    goal: number;
+    unit: string;
+    color: number;
+  }[];
 }
 
 interface WatchWorkoutMetrics {

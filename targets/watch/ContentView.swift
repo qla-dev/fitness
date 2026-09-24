@@ -4,6 +4,7 @@ import SwiftUI
 /// mirrors the phone recorder; standalone sessions use HealthKit statistics.
 struct ContentView: View {
   @EnvironmentObject private var workoutManager: WorkoutManager
+  @State private var homePage = 0
 
   var body: some View {
     Group {
@@ -14,9 +15,10 @@ struct ContentView: View {
       } else if workoutManager.isFinishing {
         ProgressView(watchText("workout.saving", "Saving workout…"))
       } else {
-        TabView {
-          WatchDashboardView()
-          SportListView()
+        TabView(selection: $homePage) {
+          WatchNutritionView().tag(-1)
+          WatchDashboardView().tag(0)
+          SportListView().tag(1)
         }
         .tabViewStyle(.page)
       }
@@ -78,7 +80,6 @@ private struct SportListView: View {
         }
       }
       .listStyle(.carousel)
-      .navigationTitle(watchText("activities.title", "Activities"))
     }
   }
 }

@@ -34,7 +34,14 @@ it('sends the dashboard Move total and goals, measurements, and converted distan
     exerciseCaloriesGoal: 650,
     exerciseMinutes: 25,
     exerciseMinutesGoal: 40,
-    goals: { ...emptyDailySummary(getTodayDate()).goals, stand_hours: 10 },
+    protein: { consumed: 85, goal: 140 },
+    carbs: { consumed: 110, goal: 200 },
+    fiber: { consumed: 15, goal: 30 },
+    goals: {
+      ...emptyDailySummary(getTodayDate()).goals,
+      stand_hours: 10,
+      steps: 9000,
+    },
   };
   renderHook(() =>
     useWatchDashboardSync(
@@ -54,9 +61,40 @@ it('sends the dashboard Move total and goals, measurements, and converted distan
       stand: 7,
       standGoal: 10,
       steps: 8123,
+      stepsGoal: 9000,
       distance: 3.1,
       distanceUnit: 'miles',
+      nutrients: expect.arrayContaining([
+        expect.objectContaining({
+          key: 'protein',
+          consumed: 85,
+          goal: 140,
+          unit: 'g',
+        }),
+        expect.objectContaining({ key: 'carbs', consumed: 110, goal: 200 }),
+        expect.objectContaining({
+          key: 'dietary_fiber',
+          consumed: 15,
+          goal: 30,
+        }),
+      ]),
     })
+  );
+});
+
+it('uses the phone net-carb preference and sends all 16 nutrient rings', () => {
+  const summary = {
+    ...emptyDailySummary(getTodayDate()),
+    carbs: { consumed: 110, goal: 200 },
+    fiber: { consumed: 15, goal: 30 },
+  };
+  renderHook(() =>
+    useWatchDashboardSync(summary, undefined, undefined, 'km', true)
+  );
+  const nutrients = push.mock.calls[0][0].nutrients;
+  expect(nutrients).toHaveLength(16);
+  expect(nutrients.find((row) => row.key === 'carbs')).toEqual(
+    expect.objectContaining({ consumed: 95, goal: 200 })
   );
 });
 
