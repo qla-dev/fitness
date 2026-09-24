@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, View, type ImageSourcePropType } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import CoverFact from './CoverFact';
 import TextFact from './TextFact';
@@ -6,7 +6,7 @@ import SmallGraphFact, { type FactSeries } from './SmallGraphFact';
 import type { IconName } from './Icon';
 import type { ActivityGoalKey } from '../constants/activityGoals';
 import type { HealthTrendKey } from '../constants/healthTrends';
-import { goalFactCopy } from '../constants/goalFacts';
+import { goalFactCardTitles, goalFactCopy } from '../constants/goalFacts';
 import { useGoalFactHistory } from '../hooks/useGoalFactHistory';
 import {
   averageFact,
@@ -18,6 +18,9 @@ import {
 import { addDays, getTodayDate } from '../utils/dateUtils';
 import { formatSleepDuration } from '../utils/sleepDay';
 import { formatLocalizedNumber, useAppLocale } from '../localization';
+
+/** The Move goal's second cover, about the energy spent at rest. */
+const BMR_COVER: ImageSourcePropType = require('../../assets/goal-facts/bmr.jpg');
 
 const covers = {
   steps: require('../../assets/goal-facts/steps.jpg'),
@@ -56,6 +59,7 @@ export default function GoalFacts({
     distanceUnit
   );
   const copy = goalFactCopy(t, metric);
+  const cardTitles = goalFactCardTitles(t, metric);
   const formatValue = (value: number) => {
     if (metric === 'sleep') return formatSleepDuration(value, t);
     const amount = formatLocalizedNumber(value, {
@@ -203,6 +207,7 @@ export default function GoalFacts({
         <>
           <SmallGraphFact
             {...common}
+            title={cardTitles.trend}
             variant="trend"
             body={t('goalFacts.steps.recentComparison', {
               defaultValue:
@@ -232,6 +237,7 @@ export default function GoalFacts({
           />
           <SmallGraphFact
             {...common}
+            title={cardTitles.year}
             body={t('goalFacts.steps.yearComparison', {
               defaultValue: 'Your daily step average this year and last year.',
             })}
@@ -252,6 +258,7 @@ export default function GoalFacts({
           />
           <SmallGraphFact
             {...common}
+            title={cardTitles.month}
             body={t('goalFacts.steps.monthComparison', {
               defaultValue:
                 'Your daily step average this month and last month.',
@@ -266,6 +273,7 @@ export default function GoalFacts({
           />
           <SmallGraphFact
             {...common}
+            title={cardTitles.detail}
             variant="line"
             body={t('goalFacts.steps.paceComparison', {
               defaultValue:
@@ -299,6 +307,7 @@ export default function GoalFacts({
         <>
           <SmallGraphFact
             {...common}
+            title={cardTitles.trend}
             variant="trend"
             body={copy.trendTitle}
             series={[
@@ -317,6 +326,7 @@ export default function GoalFacts({
           />
           <SmallGraphFact
             {...common}
+            title={cardTitles.detail}
             body={copy.detailTitle}
             series={detailSeries}
             formatValue={
@@ -335,6 +345,18 @@ export default function GoalFacts({
           />
         </>
       )}
+      {metric === 'move' ? (
+        <CoverFact
+          title={t('goalFacts.move.bmrTitle', {
+            defaultValue: 'BMR: the energy you use at rest',
+          })}
+          body={t('goalFacts.move.bmrBody', {
+            defaultValue:
+              'Your basal metabolic rate is the energy your body spends just keeping itself running: breathing, circulation, staying warm and repairing cells. It is usually the largest share of what you burn in a day, and it sits outside your Move goal, which counts active energy only. Age, height, weight and body composition all shape it.',
+          })}
+          image={BMR_COVER}
+        />
+      ) : null}
       <TextFact title={copy.aboutTitle} body={copy.aboutBody} />
     </View>
   );

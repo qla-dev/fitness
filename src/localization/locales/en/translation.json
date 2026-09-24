@@ -423,6 +423,7 @@
     "groceryList": "Grocery list"
   },
   "screens": {
+    "account": "Account",
     "foods": "Foods",
     "meals": "Meals",
     "exercises": "Exercises",
@@ -2162,6 +2163,8 @@
     "waterAdd": "Add a serving",
     "waterDecrease": "Decrease",
     "waterChangeGoal": "Change goal",
+    "weightChangeGoal": "Change goal",
+    "weightHistory": "History",
     "waterServing": "{{amount}} {{unit}}",
     "waterPerTap": "per tap",
     "waterNoContainer": "Set up a water container to start tracking hydration.",
@@ -5157,7 +5160,28 @@
     "title": "On-device storage",
     "description": "Your data is saved on this device. No backend is connected."
   },
+  "account": {
+    "title": "Account",
+    "notSet": "Not set",
+    "signIn": "Sign-in methods",
+    "passwordSet": "Set"
+  },
   "profile": {
+    "username": "Username",
+    "usernamePlaceholder": "Choose a username",
+    "usernameInvalid": "3 to 30 letters, numbers, dots, dashes or underscores, starting with a letter or number.",
+    "usernameHelp": "Your profile link: {{link}}",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "emailInvalid": "Enter a valid email address.",
+    "password": "Password",
+    "passwordPlaceholder": "New password",
+    "passwordInvalid": "Use at least 8 characters.",
+    "passwordHelp": "Stored only on this phone, in the system keychain, and never shown again.",
+    "accountSubtitle": "Username, sign-in methods, password",
+    "shareProfile": "Share profile",
+    "shareApp": "Share app",
+    "shareAppSubtitle": "Send qla.fit to a friend",
     "title": "Profile",
     "namePrompt": "Enter your name",
     "library": {
@@ -5219,7 +5243,8 @@
     "ageValue_other": "{{count}} years",
     "changeTodayGoal": "Change today's goal",
     "goalIncrease": "Increase goal",
-    "goalDecrease": "Decrease goal"
+    "goalDecrease": "Decrease goal",
+    "fieldSaveFailed": "Could not save {{field}}. Please try again."
   },
   "programs": {
     "title": "Program",
@@ -5446,7 +5471,19 @@
     "waterHint": "Most adults feel good around two litres. Drink more on hot or active days.",
     "sleepHint": "Most adults feel their best with seven to nine hours a night.",
     "caloriesHint": "The energy you want to eat each day. Not sure yet? Skip it and set it later in Profile.",
-    "proteinHint": "Protein helps your muscles recover and keeps you fuller for longer."
+    "proteinHint": "Protein helps your muscles recover and keeps you fuller for longer.",
+    "placeholders": {
+      "age": "Enter your age",
+      "height": "Enter your height",
+      "weight": "Enter your current weight",
+      "targetWeight": "Enter your target weight",
+      "sessions": "Enter training days per week",
+      "steps": "Enter a daily step goal",
+      "water": "Enter a daily water goal",
+      "sleep": "Enter hours of sleep a night",
+      "calories": "Enter a daily calorie goal",
+      "protein": "Enter a daily protein goal"
+    }
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",
@@ -5542,7 +5579,13 @@
     "customStoreHint": "Shop somewhere else? Type its name and we will save it with your list.",
     "otherAppliancesHint": "Anything else you cook with. We save it as a note for now.",
     "minutesHint": "Think about a busy weekday. Quick meals can still be really good.",
-    "leftoversHint": "Cooking extra saves time. Pick variety if you would rather eat something new each day."
+    "leftoversHint": "Cooking extra saves time. Pick variety if you would rather eat something new each day.",
+    "placeholders": {
+      "servings": "Enter how many people eat",
+      "days": "Enter how many days to plan",
+      "dislikes": "Enter ingredients you avoid",
+      "otherAllergies": "Enter any other allergies"
+    }
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -5576,6 +5619,9 @@
     "title": "Calendar"
   },
   "goalDetail": {
+    "headerTitle": "{{goal}} goal",
+    "todayGoal": "Today's goal",
+    "sleepInBed": "{{duration}} in bed",
     "today": "Today",
     "ofGoal": "{{percent}}% of {{goal}} {{unit}}",
     "noGoal": "No goal set",
@@ -5754,14 +5800,87 @@
     "groceryLists": "My lists",
     "mealPlans": "My plans",
     "logFoodOrMeal": "Log food",
-    "aiHelp": "AI help",
+    "logWithAi": "Log with AI",
     "typeCodeTitle": "Type barcode"
+  },
+  "sleepScore": {
+    "heading": "Sleep score",
+    "rating": {
+      "veryHigh": "Very high",
+      "high": "High",
+      "ok": "OK",
+      "low": "Low",
+      "veryLow": "Very low"
+    },
+    "duration": {
+      "label": "Duration:",
+      "lowRestorative": "Not enough REM and deep sleep",
+      "metGoal": "You met your {{goal}} goal",
+      "shortOfGoal": "Short of your {{goal}} goal"
+    },
+    "bedtime": {
+      "label": "Bedtime:",
+      "detail": "Fell asleep at {{time}}"
+    },
+    "interruptions": {
+      "label": "Interruptions:",
+      "detail_one": "{{formattedCount}} wake-up, {{duration}} total",
+      "detail_other": "{{formattedCount}} wake-ups, {{duration}} total"
+    }
+  },
+  "sleepBreakdown": {
+    "tabs": {
+      "label": "Breakdown",
+      "stages": "Stages",
+      "amounts": "Amounts",
+      "comparisons": "Comparisons"
+    },
+    "averageAsleep": "Average time asleep",
+    "averageInBed": "Average time in bed",
+    "goal": "Sleep goal",
+    "efficiency": "Asleep while in bed"
   },
   "goalApps": {
     "heading": "Apps for: {{goal}}",
     "openStore": "Opens the app in the store"
   },
   "goalFacts": {
+    "cards": {
+      "steps": {
+        "trend": "Momentum",
+        "year": "Year over year",
+        "month": "Month over month",
+        "detail": "Pace of the day"
+      },
+      "move": {
+        "trend": "Energy shift",
+        "detail": "Weekly burn"
+      },
+      "exercise": {
+        "trend": "Training time",
+        "detail": "Show-up rate"
+      },
+      "stand": {
+        "trend": "Up and about",
+        "detail": "Weekday vs weekend"
+      },
+      "distance": {
+        "trend": "Ground covered",
+        "detail": "Journey log"
+      },
+      "water": {
+        "trend": "Refill rhythm",
+        "detail": "Weekly intake"
+      },
+      "weight": {
+        "trend": "Steady view",
+        "detail": "Weigh-in range"
+      },
+      "sleep": {
+        "trend": "Night by night",
+        "detail": "Short and long nights"
+      }
+    },
     "noData": "Your comparisons will appear as you record more data.",
     "steps": {
       "coverTitle": "Every walk has a story",
@@ -5781,7 +5900,9 @@
       "aboutTitle": "Reading your Move goal",
       "aboutBody": "Move tracks active energy, measured in kilocalories. It is different from total energy, which also includes the energy your body uses at rest. Device estimates help you compare your own days; they are not an exact measure of effort.",
       "trendTitle": "Your energy over two fortnights",
-      "detailTitle": "Your weekly energy budget"
+      "detailTitle": "Your weekly energy budget",
+      "bmrTitle": "BMR: the energy you use at rest",
+      "bmrBody": "Your basal metabolic rate is the energy your body spends just keeping itself running: breathing, circulation, staying warm and repairing cells. It is usually the largest share of what you burn in a day, and it sits outside your Move goal, which counts active energy only. Age, height, weight and body composition all shape it."
     },
     "exercise": {
       "coverTitle": "Make room for your kind of movement",

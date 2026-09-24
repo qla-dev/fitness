@@ -9,6 +9,9 @@ jest.mock('../../src/hooks', () => ({
   usePreferences: () => ({ preferences: { default_weight_unit: 'lbs' } }),
   useServerConnection: () => ({ isConnected: true, isLoading: false }),
 }));
+jest.mock('../../src/hooks/useProfileSetup', () => ({
+  useProfileSetup: () => ({ openWizard: jest.fn() }),
+}));
 jest.mock('../../src/components/DashboardTrendCards', () =>
   jest.fn(() => null)
 );

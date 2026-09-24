@@ -40,8 +40,10 @@ it.each([
         distanceUnit="km"
       />
     );
-    expect(screen.UNSAFE_getAllByType(CoverFact)).toHaveLength(1);
-    expect(screen.UNSAFE_getByType(CoverFact).props.image).toBeTruthy();
+    // Move carries a second cover, about BMR.
+    const covers = screen.UNSAFE_getAllByType(CoverFact);
+    expect(covers).toHaveLength(metric === 'move' ? 2 : 1);
+    for (const cover of covers) expect(cover.props.image).toBeTruthy();
     expect(screen.UNSAFE_getAllByType(TextFact)).toHaveLength(1);
     expect(
       screen.UNSAFE_getAllByType(SmallGraphFact).length

@@ -171,7 +171,8 @@ export default function AddHubScreen() {
   const { recentFoods } = useFoods();
   const [
     green,
-    blue,
+    violet,
+    teal,
     orange,
     pink,
     textSecondary,
@@ -182,7 +183,8 @@ export default function AddHubScreen() {
     textPrimary,
   ] = useCSSVariable([
     '--color-cat-green',
-    '--color-cat-blue',
+    '--color-cat-violet',
+    '--color-cat-teal',
     '--color-cat-orange',
     '--color-cat-pink',
     '--color-text-secondary',
@@ -290,7 +292,18 @@ export default function AddHubScreen() {
   // are different lists, and a barcode you cannot scan is a different action
   // from pointing a camera at one. Workouts are not here — this screen is the
   // food dashboard, and exercise has the Activities tab.
+  //
+  // AI leads, in the accent: it is the quickest way to log a meal, so it takes
+  // the first card and the one colour that marks the primary action. Every
+  // other card gets a category colour of its own, so no two read as related.
   const headline: HeadlineAction[] = [
+    {
+      key: 'ai',
+      label: t('addHub.logWithAi', { defaultValue: 'Log with AI' }),
+      icon: 'sparkles',
+      tint: accent,
+      onPress: actions.aiMealScan,
+    },
     {
       key: 'food',
       label: t('addHub.logFoodOrMeal', { defaultValue: 'Log food' }),
@@ -299,38 +312,31 @@ export default function AddHubScreen() {
       onPress: focusSearch,
     },
     {
-      key: 'ai',
-      label: t('addHub.aiHelp', { defaultValue: 'AI help' }),
-      icon: 'sparkles',
-      tint: pink,
-      onPress: actions.aiMealScan,
-    },
-    {
       key: 'scan',
       label: t('addHub.scanCode', { defaultValue: 'Scan code' }),
       icon: 'scan',
-      tint: blue,
+      tint: violet,
       onPress: actions.barcodeScan,
     },
     {
       key: 'type',
       label: t('addHub.typeCode', { defaultValue: 'Type code' }),
       icon: 'pencil',
-      tint: blue,
+      tint: teal,
       onPress: () => setTypeCodeOpen(true),
     },
     {
       key: 'grocery',
       label: t('addHub.groceryLists', { defaultValue: 'My lists' }),
       icon: 'cart',
-      tint: green,
+      tint: orange,
       onPress: actions.groceryList,
     },
     {
       key: 'plans',
       label: t('addHub.mealPlans', { defaultValue: 'My plans' }),
       icon: 'calendar',
-      tint: orange,
+      tint: pink,
       onPress: actions.mealPlans,
     },
   ];

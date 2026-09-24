@@ -14,6 +14,9 @@ import WeightLineChart from '../components/WeightLineChart';
 import ValueSkeleton from '../components/ValueSkeleton';
 import GoalFacts from '../components/GoalFacts';
 import GoalApps from '../components/GoalApps';
+import SleepRangeBreakdown from '../components/SleepRangeBreakdown';
+import SleepScoreCard from '../components/SleepScoreCard';
+import { useSleepRange } from '../hooks/useSleepRange';
 import {
   useDailySummary,
   useHealthTrends,
@@ -148,6 +151,12 @@ export default function GoalDetailScreen({
   const { measurements } = useMeasurements({ date });
   const { preferences } = usePreferences();
   const { wakeUp } = useSleepDay(date);
+  // A month of nights for the score card: the latest is scored and the rest
+  // give it the usual bedtime to be measured against, whichever range the
+  // chart above is showing.
+  const scoreNights = useSleepRange({ range: 'm', enabled: trend === 'sleep' });
+  // Eight hours where no sleep goal is set, so the score still has a target.
+  const sleepGoalSeconds = (summary?.goals.sleep_goal_hours || 8) * 3600;
   // Only the trend this screen shows is fetched; the other two stay idle.
   const trends = useHealthTrends({
     range,
@@ -256,10 +265,17 @@ export default function GoalDetailScreen({
   // from and nothing said twice. The scroll view below pairs it with
   // `contentInsetAdjustmentBehavior`, which a transparent bar requires because
   // it reserves no space of its own.
+  // Named for the goal on both paths. The native bar reads only `nativeTitle`
+  // and otherwise falls back to the route's generic "Goal".
+  const headerTitle = t('goalDetail.headerTitle', {
+    defaultValue: '{{goal}} goal',
+    goal: title,
+  });
   const header = useScreenHeader({
     variant: 'transparent',
     left: { kind: 'back' },
-    title,
+    title: headerTitle,
+    nativeTitle: headerTitle,
     ...(changeGoalAction ? { right: changeGoalAction } : {}),
   });
 
@@ -356,17 +372,22 @@ export default function GoalDetailScreen({
             : undefined,
       };
     }
-    if (trend === 'sleep' && wakeUp) {
-      const seconds =
-        wakeUp.time_asleep_in_seconds ?? wakeUp.duration_in_seconds;
+    if (trend === 'sleep') {
+      // No night ending today yet — early in the day, before the watch
+      // syncs — still has a goal to show: the bar sits at zero and the
+      // summary stays, rather than the whole block vanishing.
+      const seconds = wakeUp
+        ? (wakeUp.time_asleep_in_seconds ?? wakeUp.duration_in_seconds)
+        : null;
       // The goal is set in hours and the reading arrives in seconds, so the
       // comparison happens in seconds — the unit the finer of the two uses.
-      const goalHours = summary?.goals.sleep_goal_hours;
       return {
-        text: formatSleepDuration(seconds, t),
+        text: seconds != null ? formatSleepDuration(seconds, t) : '—',
         unit: '',
         value: seconds ?? 0,
-        goal: goalHours != null ? goalHours * 3600 : 0,
+        // The same eight-hour fallback the score card uses, so a day with no
+        // goal set still gets the bar every other goal draws.
+        goal: sleepGoalSeconds,
       };
     }
     return null;
@@ -419,6 +440,16 @@ export default function GoalDetailScreen({
       ? activityHistory.isLoading || activityHistory.isPlaceholderData
       : trend !== null &&
         (trends[trend].isLoading || trends.isPlaceholderData));
+
+  // The small figure beside sleep's headline: time in bed, for the night on
+  // D and as the range's average on the rest. It used to be one of two tiles
+  // the chart drew under this summary, saying the headline over again.
+  const sleepInBedSeconds =
+    trend !== 'sleep'
+      ? null
+      : range === 'd'
+        ? (wakeUp?.duration_in_seconds ?? null)
+        : trends.sleep.averageTimeInBedSeconds;
 
   const summaryValue = useMemo(() => {
     if (rangeSummaryPending) return undefined;
@@ -492,11 +523,13 @@ export default function GoalDetailScreen({
     return `${formatDateLabel(first, t, locale)} – ${formatDateLabel(date, t, locale)}`;
   }, [range, date, t]);
 
+  // Today against today's goal, whatever range is picked: the goal is a daily
+  // one, so the bar holds still while the figure above it changes window.
   // Capped at 100: a bar running past its track says nothing the number above
   // it has not already said.
   const percent =
-    today && today.goal > 0 && summaryValue !== undefined
-      ? Math.min(100, Math.round((summaryValue / today.goal) * 100))
+    today && today.goal > 0
+      ? Math.min(100, Math.round((today.value / today.goal) * 100))
       : 0;
 
   return (
@@ -531,14 +564,15 @@ export default function GoalDetailScreen({
 
           {today || isLoading ? (
             <View testID="goal-detail-summary" className="px-4">
-              {/* What the figure is — Today, or the average it stands for.
-                  Which days it covers is the line under the number, so this
-                  one stays short. */}
+              {/* What the figure is — Today, or the average it stands for —
+                  and the days it covers, on one line. The line under the
+                  number is the goal's, which is always today's. */}
               <Text
                 testID="goal-detail-subtitle"
-                className="text-xs text-text-muted uppercase"
+                className="text-xs text-text-muted"
               >
-                {summaryLabel}
+                <Text className="uppercase">{summaryLabel}</Text>
+                {` · ${summaryPeriod}`}
               </Text>
               <View className="flex-row items-end gap-2">
                 <View className="min-h-9 justify-center">
@@ -555,15 +589,21 @@ export default function GoalDetailScreen({
                     it, and it is why the charts below drop their own heading —
                     it was saying the same word again, a gap further down. */}
                 <Text className="text-sm text-text-secondary mb-1">
-                  {today?.unit || title}
+                  {trend === 'sleep' && sleepInBedSeconds != null
+                    ? t('goalDetail.sleepInBed', {
+                        defaultValue: '{{duration}} in bed',
+                        duration: formatSleepDuration(sleepInBedSeconds, t),
+                      })
+                    : today?.unit || title}
                 </Text>
               </View>
-              <Text className="text-xs text-text-muted mt-0.5">
-                {summaryPeriod}
-              </Text>
-
-              {today && today.goal > 0 && summaryValue !== undefined ? (
+              {today && today.goal > 0 ? (
                 <>
+                  <Text className="text-xs text-text-muted mt-0.5">
+                    {t('goalDetail.todayGoal', {
+                      defaultValue: "Today's goal",
+                    })}
+                  </Text>
                   <View
                     className="bg-raised rounded-full overflow-hidden mt-2"
                     style={{ height: 6 }}
@@ -660,6 +700,22 @@ export default function GoalDetailScreen({
             </View>
           ) : null}
         </View>
+        {/* Sleep's own cards, straight under the chart and ahead of the facts.
+            The wrapper owns the spacing: 24 above, between and below, the
+            same step the facts heading keeps from whatever precedes it. */}
+        {trend === 'sleep' ? (
+          <View className="px-4 pt-6 gap-6">
+            <SleepRangeBreakdown
+              days={trends.sleep.data}
+              goalSeconds={sleepGoalSeconds}
+            />
+            <SleepScoreCard
+              days={scoreNights.sleep.days}
+              goalSeconds={sleepGoalSeconds}
+              timeFormat={preferences?.time_format}
+            />
+          </View>
+        ) : null}
         <GoalFacts
           metric={metric}
           date={date}

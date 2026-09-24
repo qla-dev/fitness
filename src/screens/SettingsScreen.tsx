@@ -7,7 +7,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Share,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { profileQueryKey } from '../hooks/queryKeys';
+import { fetchProfile } from '../services/api/profileApi';
+import { addLog } from '../services/LogService';
+import { APP_LINK, profileLink } from '../utils/profileLink';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -180,6 +186,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     }
   };
 
+  // The header's share button hands the system sheet this person's profile
+  // link. With no username there is no link yet, so it asks for one first.
+  const profile = useQuery({
+    queryKey: profileQueryKey,
+    queryFn: fetchProfile,
+    enabled: isLocalDataMode(),
+  }).data;
+  const share = (message: string, what: string) => {
+    Share.share({ message }).catch((error: unknown) => {
+      void addLog(`[Profile] Could not open the share sheet for ${what}`, 'WARNING', [
+        error instanceof Error ? error.message : String(error),
+      ]);
+    });
+  };
+  const shareProfile = () => {
+    if (!profile?.username) {
+      navigation.navigate('ProfileEdit', { field: 'username' });
+      return;
+    }
+    share(profileLink(profile.username), 'the profile link');
+  };
+
   const header = useScreenHeader({
     variant: 'transparent',
     title: t('profile.title', { defaultValue: 'Profile' }),
@@ -187,6 +215,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       ? t('profile.title', { defaultValue: 'Profile' })
       : '',
     left: { kind: 'back' },
+    right: {
+      kind: 'icon',
+      sfSymbol: 'square.and.arrow.up',
+      ionicon: 'share-outline',
+      accessibilityLabel: t('profile.shareProfile', {
+        defaultValue: 'Share profile',
+      }),
+      identifier: 'profile-share',
+      onPress: shareProfile,
+    },
     borderless: true,
   });
 
@@ -412,6 +450,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 })}
                 onPress={() => navigation.navigate('About')}
                 iconColor={hydration}
+              />
+              <SettingsRow
+                icon="share"
+                title={t('profile.shareApp', { defaultValue: 'Share app' })}
+                subtitle={t('profile.shareAppSubtitle', {
+                  defaultValue: 'Send qla.fit to a friend',
+                })}
+                onPress={() => share(APP_LINK, 'the app link')}
+                iconColor={catBlue}
               />
             </SettingsRowGroup>
 

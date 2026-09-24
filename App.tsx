@@ -76,6 +76,7 @@ import {
   SafeWorkoutSetup,
   SafeProfile,
   SafeProfileEdit,
+  SafeAccount,
   SafeProfileGoals,
   SafeMyLogs,
   SafeProfileTheme,
@@ -801,6 +802,11 @@ function AppContent() {
             name="ProfileEdit"
             component={SafeProfileEdit}
             options={createStackScreenOptions('', { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="Account"
+            component={SafeAccount}
+            options={createStackScreenOptions(t('screens.account', { defaultValue: 'Account' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="ProfileTheme"

@@ -43,6 +43,11 @@ interface TabHeaderProps {
    */
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  /**
+   * A button in the left slot, for a tab with no day of its own to put there
+   * (the Goals tab opens personal setup from it).
+   */
+  leadingAction?: TabHeaderAction;
   /** Extra action placed left of the workouts button (e.g. family diaries). */
   action?: TabHeaderAction;
   /**
@@ -80,6 +85,7 @@ const TabHeader: React.FC<TabHeaderProps> = ({
   onDatePress,
   onPreviousDay,
   onNextDay,
+  leadingAction,
   action,
   onWorkoutsPress,
   onProfilePress,
@@ -144,6 +150,18 @@ const TabHeader: React.FC<TabHeaderProps> = ({
         className="flex-row items-center"
         style={{ minWidth: slotWidth, minHeight: 44 }}
       >
+        {leadingAction ? (
+          <HeaderCircleButton
+            onPress={withHaptic(leadingAction.onPress)}
+            accessibilityLabel={leadingAction.accessibilityLabel}
+          >
+            <Icon
+              name={leadingAction.icon}
+              size={22}
+              color={primaryTextColor}
+            />
+          </HeaderCircleButton>
+        ) : null}
         {onPreviousDay && (
           <HeaderCircleButton
             onPress={withHaptic(onPreviousDay)}

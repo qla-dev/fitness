@@ -144,6 +144,8 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     return {
       id: db.userId,
       full_name: null,
+      username: null,
+      email: null,
       phone_number: null,
       date_of_birth: null,
       bio: null,

@@ -193,3 +193,100 @@ export function goalFactCopy(
       };
   }
 }
+
+/**
+ * The label over each graph card, one per card rather than the goal's name on
+ * all of them: a column of cards each headed "Steps" gave nothing to tell them
+ * apart by. Steps has four cards; every other goal has a trend and a detail.
+ */
+export function goalFactCardTitles(
+  t: TFunction,
+  metric: ActivityGoalKey | HealthTrendKey
+): { trend: string; detail: string; year: string; month: string } {
+  const steps = {
+    year: t('goalFacts.cards.steps.year', { defaultValue: 'Year over year' }),
+    month: t('goalFacts.cards.steps.month', {
+      defaultValue: 'Month over month',
+    }),
+  };
+  switch (metric) {
+    case 'steps':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.steps.trend', { defaultValue: 'Momentum' }),
+        detail: t('goalFacts.cards.steps.detail', {
+          defaultValue: 'Pace of the day',
+        }),
+      };
+    case 'move':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.move.trend', {
+          defaultValue: 'Energy shift',
+        }),
+        detail: t('goalFacts.cards.move.detail', {
+          defaultValue: 'Weekly burn',
+        }),
+      };
+    case 'exercise':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.exercise.trend', {
+          defaultValue: 'Training time',
+        }),
+        detail: t('goalFacts.cards.exercise.detail', {
+          defaultValue: 'Show-up rate',
+        }),
+      };
+    case 'stand':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.stand.trend', {
+          defaultValue: 'Up and about',
+        }),
+        detail: t('goalFacts.cards.stand.detail', {
+          defaultValue: 'Weekday vs weekend',
+        }),
+      };
+    case 'distance':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.distance.trend', {
+          defaultValue: 'Ground covered',
+        }),
+        detail: t('goalFacts.cards.distance.detail', {
+          defaultValue: 'Journey log',
+        }),
+      };
+    case 'water':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.water.trend', {
+          defaultValue: 'Refill rhythm',
+        }),
+        detail: t('goalFacts.cards.water.detail', {
+          defaultValue: 'Weekly intake',
+        }),
+      };
+    case 'weight':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.weight.trend', {
+          defaultValue: 'Steady view',
+        }),
+        detail: t('goalFacts.cards.weight.detail', {
+          defaultValue: 'Weigh-in range',
+        }),
+      };
+    case 'sleep':
+      return {
+        ...steps,
+        trend: t('goalFacts.cards.sleep.trend', {
+          defaultValue: 'Night by night',
+        }),
+        detail: t('goalFacts.cards.sleep.detail', {
+          defaultValue: 'Short and long nights',
+        }),
+      };
+  }
+}

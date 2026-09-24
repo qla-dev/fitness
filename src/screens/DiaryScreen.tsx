@@ -2,7 +2,6 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { hasSupplementNutrition } from '@workspace/shared';
 import React, {
   useCallback,
   useEffect,
@@ -27,7 +26,6 @@ import RingCalendarSheet, {
 } from '../components/RingCalendarSheet';
 import PhotoDayCapture from '../components/PhotoDayCapture';
 import TabHeader from '../components/TabHeader';
-import DiaryCalorieMacroSummary from '../components/DiaryCalorieMacroSummary';
 import DiaryNutritionCard from '../components/DiaryNutritionCard';
 import FoodSummary from '../components/FoodSummary';
 import MeasurementsSummary from '../components/MeasurementsSummary';
@@ -42,11 +40,9 @@ import { NapsCard, SleepTile } from '../components/SleepCards';
 import WaterTile from '../components/WaterTile';
 import StatusView from '../components/StatusView';
 import {
-  useCustomNutrients,
   useDailySummary,
   useFamilyUsers,
   useMealTypes,
-  useNutrientDisplayPreferences,
   useServerConnection,
   useWaterIntakeMutation,
 } from '../hooks';
@@ -296,10 +292,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   );
   const { data: customMeasurements, refetch: refetchCustomMeasurements } =
     useCustomMeasurementsByDate(selectedDate, { enabled: isConnected });
-  const { customNutrients, refetch: refetchCustomNutrients } =
-    useCustomNutrients({ enabled: isConnected });
-  const { preferences: nutrientPrefs, refetch: refetchNutrientPrefs } =
-    useNutrientDisplayPreferences({ enabled: isConnected });
 
   // Hydration is logged from the grid itself: one tap on the tile is one
   // serving, so the mutation belongs to the screen that draws the tile rather
@@ -319,13 +311,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // before this day, which is not always yesterday.
   const { previousSleep } = useSleepComparison(selectedDate, isConnected);
 
-  const diaryNutrientRow = nutrientPrefs.find(
-    (p) => p.view_group === 'diary' && p.platform === 'mobile'
-  );
-  const customNutrientKeys = (diaryNutrientRow?.visible_nutrients ?? []).slice(
-    0,
-    4
-  );
   // Manual-only custom entries for the Diary tiles: health-synced entries are
   // filtered here (before presentation) so MeasurementsSummary never receives
   // them; the component itself re-filters defensively too.
@@ -347,8 +332,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         refetch(),
         refetchMeasurements(),
         refetchCustomMeasurements(),
-        refetchCustomNutrients(),
-        refetchNutrientPrefs(),
         refetchSleep(),
       ]);
     } finally {
@@ -359,8 +342,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     refetch,
     refetchMeasurements,
     refetchCustomMeasurements,
-    refetchCustomNutrients,
-    refetchNutrientPrefs,
     refetchSleep,
   ]);
 
@@ -479,17 +460,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           showNetCarbs={preferences?.show_net_carbs === true}
           loading={isLoading}
         />
-        {(summary.foodEntries.length > 0 ||
-          hasSupplementNutrition(summary.supplementTotals) ||
-          summary.exerciseEntries.length > 0 ||
-          summary.calorieGoal > 0) && (
-          <DiaryCalorieMacroSummary
-            summary={summary}
-            showNetCarbs={preferences?.show_net_carbs === true}
-            customNutrientKeys={customNutrientKeys}
-            customNutrients={customNutrients}
-          />
-        )}
         {/* The day always renders in full. It used to collapse to an
             illustration and one Add Food button once every query settled
             empty, which hid the per-meal cards — the very things that offer a

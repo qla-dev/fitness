@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Image,
   Pressable,
@@ -35,20 +35,24 @@ export default function CoverFact({
   cta?: { label: string; onPress: () => void };
 }) {
   const accent = useCSSVariable('--color-accent-primary') as string;
+  const [width, setWidth] = useState(0);
   return (
-    <View className="bg-surface rounded-xl mb-4 overflow-hidden">
+    <View
+      className="bg-surface rounded-xl mb-4 overflow-hidden"
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+    >
       {image ? (
-        // A bundled image carries its pixel size as a default style, which
-        // outranks aspectRatio on the Image itself, so the wrapper holds the
-        // ratio and the cover is full width at its natural height.
-        <View style={{ width: '100%', aspectRatio: coverAspectRatio(image) }}>
-          <Image
-            source={image}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
-            accessible={false}
-          />
-        </View>
+        // Full width at the image's own proportions, as a height worked out
+        // from the card's measured width. Not `aspectRatio`: a bundled image
+        // carries its pixel size as a default style that outranks it, and on
+        // a wrapper it left the text below laid out for one width and drawn
+        // at another, with its last line clipped and a blank band under it.
+        <Image
+          source={image}
+          style={{ width: '100%', height: width / coverAspectRatio(image) }}
+          resizeMode="cover"
+          accessible={false}
+        />
       ) : (
         hero
       )}
@@ -61,7 +65,9 @@ export default function CoverFact({
         <Text className="text-lg font-bold text-text-primary mb-1">
           {title}
         </Text>
-        <Text className="text-text-secondary text-sm leading-5">{body}</Text>
+        {/* Styled exactly like a text fact's body — size, line height and
+            colour — so the two read as one voice when they sit together. */}
+        <Text className="text-base leading-6 text-text-primary">{body}</Text>
         {cta ? (
           <Pressable
             accessibilityRole="button"

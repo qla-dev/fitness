@@ -227,6 +227,11 @@ export const MeasurementTileCard: React.FC<{
   successColor: string;
   onPress?: () => void;
   /**
+   * Given by a tile inside a {@link TileMenu}: claims the long press so a
+   * hold opens the menu without also firing the tap.
+   */
+  onLongPress?: () => void;
+  /**
    * Inside a sheet there is no page background behind the card: the sheet
    * itself is the surface, so a surface-coloured card disappears into it and
    * the raised fill is what separates the two. No border with it — the fill
@@ -243,6 +248,7 @@ export const MeasurementTileCard: React.FC<{
   dangerColor,
   successColor,
   onPress,
+  onLongPress,
   onSheet = false,
   t,
 }) => {
@@ -353,6 +359,8 @@ export const MeasurementTileCard: React.FC<{
         fireSelectionHaptic();
         onPress();
       }}
+      onLongPress={onLongPress}
+      delayLongPress={onLongPress ? 300 : undefined}
       accessibilityRole="button"
       accessibilityLabel={tile.label}
     >

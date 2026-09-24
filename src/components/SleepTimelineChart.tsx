@@ -1,4 +1,4 @@
-import { Canvas, Rect } from '@shopify/react-native-skia';
+import { Canvas, Line, Rect } from '@shopify/react-native-skia';
 import ChartSurface from './ChartSurface';
 import ChartCaption from './ChartCaption';
 import type { TFunction } from 'i18next';
@@ -41,7 +41,7 @@ import {
   chooseSleepClockAnchorMinutes,
   MINUTES_PER_DAY,
 } from './charts/sleepTimelineLayout';
-import { CHART_PLOT_HEIGHT } from '../constants/charts';
+import { CHART_GRID_LINE_COLOR, CHART_PLOT_HEIGHT } from '../constants/charts';
 
 type SleepTimelineAggregates = Omit<SleepTimelineSummary, 'days'>;
 
@@ -58,6 +58,9 @@ type SleepTimelineChartProps = SleepTimelineAggregates &
   };
 
 const PLOT_HEIGHT = CHART_PLOT_HEIGHT;
+
+/** Room at each end of the plot, matching the Victory charts' `domainPadding`. */
+const RANGE_HORIZONTAL_PADDING = 25;
 
 /**
  * Wide enough for the longest label the axis can produce, "12 AM". Dropping the ":00"
@@ -81,7 +84,7 @@ const MINUTES_PER_HOUR = 60;
  * reported no stages at all" fallback, which fills whole columns — muted grey would hand
  * those users a wall of dead grey where the old chart gave them accent-coloured bars.
  */
-const STAGE_COLOR_VARIABLES: Record<SleepStageLane, string> = {
+export const STAGE_COLOR_VARIABLES: Record<SleepStageLane, string> = {
   awake: '--color-cat-orange',
   rem: '--color-cat-violet',
   light: '--color-cat-blue',
@@ -269,6 +272,7 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
         height: PLOT_HEIGHT,
         anchorMinutes,
         innerPadding: RANGE_INNER_PADDING[range],
+        horizontalPadding: RANGE_HORIZONTAL_PADDING,
       }),
     [data, plotWidth, anchorMinutes, range]
   );
@@ -372,10 +376,21 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
         </Text>
       )}
 
-      <View className="flex-row mb-1">
-        <SleepStatTile label={statLabels[0]} testID="sleep-stat-time-in-bed" />
-        <SleepStatTile label={statLabels[1]} testID="sleep-stat-time-asleep" />
-      </View>
+      {/* Bare, on the goal screen, the summary above already states the
+          averages and the dates, so the tiles and the date line would say it
+          all twice. The caption keeps a tapped night's details. */}
+      {bare ? null : (
+        <View className="flex-row mb-1">
+          <SleepStatTile
+            label={statLabels[0]}
+            testID="sleep-stat-time-in-bed"
+          />
+          <SleepStatTile
+            label={statLabels[1]}
+            testID="sleep-stat-time-asleep"
+          />
+        </View>
+      )}
 
       {/* Fixed height so selecting a night swaps the copy without reflowing the
           plot, and the same fixed height every other chart reserves above its
@@ -385,7 +400,16 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
           className="text-text-muted text-xs"
           testID="sleep-timeline-subtitle"
         >
-          {selectedLabels?.clockRange ?? rangeLabel}
+          {bare
+            ? selectedLabels
+              ? [
+                  selectedLabels.clockRange,
+                  `${selectedLabels.stats[1].title} ${selectedLabels.stats[1].value}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+              : ''
+            : (selectedLabels?.clockRange ?? rangeLabel)}
         </Text>
       </ChartCaption>
 
@@ -419,6 +443,34 @@ const SleepTimelineChart: React.FC<SleepTimelineChartProps> = ({
                 most of the block outright.
               */}
               <Canvas style={{ flex: 1 }}>
+                {/* The grid the other charts draw: a line at each clock
+                    tick and at both edges, so the plot ends on a line, and
+                    one down each labelled day. */}
+                {[0, ...layout.ticks.map((tick) => tick.y), PLOT_HEIGHT].map(
+                  (y, index) => (
+                    <Line
+                      key={`h-${index}`}
+                      p1={{ x: 0, y }}
+                      p2={{ x: plotWidth, y }}
+                      color={CHART_GRID_LINE_COLOR}
+                      strokeWidth={1}
+                    />
+                  )
+                )}
+                {xLabelIndices.map((dayIndex) => {
+                  const column = layout.columns[dayIndex];
+                  if (!column) return null;
+                  const x = column.x + column.width / 2;
+                  return (
+                    <Line
+                      key={`v-${dayIndex}`}
+                      p1={{ x, y: 0 }}
+                      p2={{ x, y: PLOT_HEIGHT }}
+                      color={CHART_GRID_LINE_COLOR}
+                      strokeWidth={1}
+                    />
+                  );
+                })}
                 <ChartRiseGroup progress={rise} baseline={PLOT_HEIGHT}>
                   {layout.columns.flatMap((column) =>
                     column.blocks.map((block, blockIndex) => (

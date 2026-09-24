@@ -50,7 +50,14 @@ export default function SegmentedControl<T extends string>({
   ]) as string[];
 
   return (
-    <Host style={{ height: SEGMENTED_CONTROL_HEIGHT[size] }}>
+    // No safe area. The hosting view applies whatever insets it is under, so
+    // a picker that scrolled beneath a transparent nav bar picked up the bar's
+    // inset and drew its segments that far down its frame, and kept it after
+    // scrolling back. A control inline in content never wants that padding.
+    <Host
+      style={{ height: SEGMENTED_CONTROL_HEIGHT[size] }}
+      ignoreSafeArea="all"
+    >
       <Picker<T>
         label={label ?? 'Options'}
         selection={activeKey}

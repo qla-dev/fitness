@@ -18,6 +18,7 @@ import {
   type HealthTrendSeries,
 } from '../types/healthTrends';
 import { addDays, getTodayDate } from '../utils/dateUtils';
+import { formatSleepDuration } from '../utils/sleepDay';
 import HealthTrendCard from './HealthTrendCard';
 
 interface DashboardTrendCardsProps {
@@ -75,30 +76,23 @@ export default function DashboardTrendCards({
     (day) => water.data.find((point) => point.day === day)?.waterMl ?? null
   );
   const waterAverage = averageOf(waterValues);
-  const format = (value: number | null, unit?: string, digits = 0) =>
+  // No `style: 'unit'`. On iOS, Hermes hands it to the system's measurement
+  // formatter, which converts into the region's preferred unit and writes its
+  // own symbols: a 100 kg average printed as "220.462#", and two hours of
+  // sleep as "7,200s". The weight is already in the user's unit, so it only
+  // needs the number formatted and the unit written after it.
+  const format = (value: number | null, digits = 0) =>
     value == null
       ? '—'
-      : formatLocalizedNumber(
-          value,
-          unit
-            ? {
-                style: 'unit',
-                unit,
-                unitDisplay: 'short',
-                maximumFractionDigits: digits,
-              }
-            : { maximumFractionDigits: digits }
-        );
-  const weightLabel = format(
-    weightAverage,
-    weightUnit === 'kg' ? 'kilogram' : 'pound',
-    2
-  );
-  const sleepMinutes = Math.round((sleepAverage ?? 0) * 60);
+      : formatLocalizedNumber(value, { maximumFractionDigits: digits });
+  const weightLabel =
+    weightAverage == null
+      ? '—'
+      : `${format(weightAverage, 1)} ${weightUnit}`;
   const sleepLabel =
     sleepAverage == null
       ? '—'
-      : `${format(Math.floor(sleepMinutes / 60), 'hour')} ${format(sleepMinutes % 60, 'minute')}`;
+      : formatSleepDuration(Math.round(sleepAverage * 3600), t);
   const stepLabel = format(stepAverage);
   const waterLabel =
     waterAverage == null

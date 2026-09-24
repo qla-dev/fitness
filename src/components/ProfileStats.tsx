@@ -8,6 +8,7 @@ import { useCSSVariable } from 'uniwind';
 import TileIconSlot from './TileIconSlot';
 import { HeightIcon } from './icons/measurements';
 import { AgeIcon } from './icons/profile';
+import { useProfileSetup } from '../hooks/useProfileSetup';
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { usePreferences } from '../hooks/usePreferences';
@@ -46,8 +47,9 @@ const EMPTY = '—';
  * like any other measurement; only where it is shown has changed.
  *
  * Height is editable in place through the same one-field sheet the measurement
- * tiles use. Age is shown, not edited: it is derived from the stored date of
- * birth, and there is no date-of-birth editor to send the user to yet.
+ * tiles use. Age opens the personal setup's own Age step on its own, saved
+ * from there: the wizard is where age is asked, and it writes the date of
+ * birth this tile reads.
  */
 export default function ProfileStats({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
@@ -65,6 +67,7 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
     enabled,
   });
   const { preferences } = usePreferences({ enabled });
+  const setup = useProfileSetup(enabled);
   const heightMode = preferences?.default_measurement_unit ?? 'cm';
   // The same 120-day window the diary tiles read, so this shares their cache
   // rather than opening an all-time range of its own.
@@ -101,6 +104,14 @@ export default function ProfileStats({ enabled }: { enabled: boolean }) {
               defaultValue_one: '{{count}} year',
               defaultValue_other: '{{count}} years',
             }),
+      onPress: () => {
+        fireSelectionHaptic();
+        setup.openWizard(
+          () => navigation.navigate('SetupWizard'),
+          undefined,
+          'age'
+        );
+      },
     },
     {
       key: 'height',

@@ -65,7 +65,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           disabled={!editable}
           onPress={() => {
             fireSelectionHaptic();
-            navigation.navigate('ProfileEdit', { field: 'name' });
+            navigation.navigate('Account');
           }}
           className="flex-row items-center px-4"
           style={{ minHeight: 96, gap: 14 }}
@@ -93,16 +93,17 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
               {fullName ||
                 t('profile.namePrompt', { defaultValue: 'Enter your name' })}
             </Text>
-            {/* Only what the person wrote. The old fallback described the
-                screen ("Your health, goals, and preferences"), which said
-                nothing about them and pushed the name off centre. */}
-            {profile?.bio ? (
+            {/* What the row opens, the way the system's own account row
+                reads "Apple Account, iCloud and more" under the name. */}
+            {editable ? (
               <Text
                 className="text-text-secondary text-sm mt-1"
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
-                {profile.bio}
+                {t('profile.accountSubtitle', {
+                  defaultValue: 'Username, sign-in methods, password',
+                })}
               </Text>
             ) : null}
           </View>

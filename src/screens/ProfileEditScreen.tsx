@@ -6,7 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import PillInput from '../components/ui/PillInput';
 import { useCustomNutrients } from '../hooks';
-import { goalsQueryKey, profileQueryKey } from '../hooks/queryKeys';
+import {
+  accountPasswordQueryKey,
+  goalsQueryKey,
+  profileQueryKey,
+} from '../hooks/queryKeys';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { fetchDailyGoals } from '../services/api/goalsApi';
 import { fetchProfile } from '../services/api/profileApi';
@@ -25,9 +29,22 @@ import {
 import { usePreferences } from '../hooks/usePreferences';
 import { weightFromKg, weightToKg } from '../utils/unitConversions';
 import { getTodayDate } from '../utils/dateUtils';
+import {
+  isValidUsername,
+  normalizeUsername,
+  profileLinkLabel,
+  USERNAME_MAX_LENGTH,
+} from '../utils/profileLink';
+import {
+  isValidPassword,
+  setAccountPassword,
+} from '../services/accountPassword';
 import type { RootStackScreenProps } from '../types/navigation';
 
 type ProfileEditScreenProps = RootStackScreenProps<'ProfileEdit'>;
+
+/** Something@somewhere.tld — a sanity check, not RFC 5322. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * One value, one screen — the Profile card and the goals list both drill in
@@ -51,6 +68,9 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   const input = useRef<TextInput>(null);
 
   const isGoal = params.field === 'goal';
+  // Every field but a goal is one line of text on the profile, or the
+  // password beside it; they differ only in the settings below.
+  const textField = params.field === 'goal' ? null : params.field;
   const goalKey = params.field === 'goal' ? params.goalKey : '';
   const today = getTodayDate();
 
@@ -70,7 +90,13 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
 
   const label = isGoal
     ? getProfileGoalLabel(t, goalKey, customNutrients)
-    : t('profile.name', { defaultValue: 'Name' });
+    : textField === 'username'
+      ? t('profile.username', { defaultValue: 'Username' })
+      : textField === 'email'
+        ? t('profile.email', { defaultValue: 'Email' })
+        : textField === 'password'
+          ? t('profile.password', { defaultValue: 'Password' })
+          : t('profile.name', { defaultValue: 'Name' });
   // See GoalEditScreen: a weight goal is stored in kilograms and edited in the
   // user's own unit, so its value, bounds and unit label all convert here.
   const { preferences } = usePreferences();
@@ -90,7 +116,15 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
     storedMaximum === undefined ? undefined : toDisplay(storedMaximum);
   const minimum = isGoal ? toDisplay(goalMinimum(goalKey)) : 0;
 
-  const storedName = profileQuery.data?.full_name ?? '';
+  // A password is never read back, so its field always starts empty.
+  const storedName =
+    textField === 'password'
+      ? ''
+      : ((textField === 'username'
+          ? profileQuery.data?.username
+          : textField === 'email'
+            ? profileQuery.data?.email
+            : profileQuery.data?.full_name) ?? '');
   const storedGoal = readGoalValue(goalsQuery.data, goalKey);
   const stored = useMemo(
     () =>
@@ -126,7 +160,13 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
       Number.isFinite(numeric) &&
       numeric >= minimum &&
       (maximum === undefined || numeric <= maximum)
-    : trimmed.length > 0;
+    : textField === 'username'
+      ? isValidUsername(normalizeUsername(trimmed))
+      : textField === 'email'
+        ? EMAIL_PATTERN.test(trimmed)
+        : textField === 'password'
+          ? isValidPassword(value)
+          : trimmed.length > 0;
 
   const save = async () => {
     if (saving.current || !valid || busy) return;
@@ -151,11 +191,22 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
               String(queryKey[0])
             ),
         });
+      } else if (textField === 'password') {
+        // Not trimmed: a space is a character the user chose to type.
+        await setAccountPassword(value);
+        await queryClient.invalidateQueries({
+          queryKey: accountPasswordQueryKey,
+        });
       } else {
         await localApiFetch({
           endpoint: '/api/identity/profiles',
           method: 'PUT',
-          body: { full_name: trimmed },
+          body:
+            textField === 'username'
+              ? { username: normalizeUsername(trimmed) }
+              : textField === 'email'
+                ? { email: trimmed.toLowerCase() }
+                : { full_name: trimmed },
         });
         await queryClient.invalidateQueries({ queryKey: profileQueryKey });
       }
@@ -183,6 +234,9 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   });
 
   const invalidNumber = isGoal && touched && trimmed.length > 0 && !valid;
+  const previewUsername = normalizeUsername(value);
+  const invalidText =
+    !isGoal && textField !== 'name' && touched && value.length > 0 && !valid;
 
   return (
     <View
@@ -202,42 +256,110 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
               ? t('profile.goalPlaceholder', {
                   defaultValue: 'Enter a value',
                 })
-              : t('profile.namePlaceholder', {
-                  defaultValue: 'Enter your name',
-                })
+              : textField === 'username'
+                ? t('profile.usernamePlaceholder', {
+                    defaultValue: 'Choose a username',
+                  })
+                : textField === 'email'
+                  ? t('profile.emailPlaceholder', {
+                      defaultValue: 'name@example.com',
+                    })
+                  : textField === 'password'
+                    ? t('profile.passwordPlaceholder', {
+                        defaultValue: 'New password',
+                      })
+                    : t('profile.namePlaceholder', {
+                        defaultValue: 'Enter your name',
+                      })
           }
-          keyboardType={isGoal ? 'decimal-pad' : 'default'}
-          autoCapitalize={isGoal ? 'none' : 'words'}
-          autoComplete={isGoal ? 'off' : 'name'}
-          maxLength={isGoal ? 12 : 100}
+          keyboardType={
+            isGoal
+              ? 'decimal-pad'
+              : textField === 'email'
+                ? 'email-address'
+                : 'default'
+          }
+          autoCapitalize={textField === 'name' ? 'words' : 'none'}
+          autoCorrect={textField === 'name'}
+          secureTextEntry={textField === 'password'}
+          autoComplete={
+            textField === 'name'
+              ? 'name'
+              : textField === 'username'
+                ? 'username'
+                : textField === 'email'
+                  ? 'email'
+                  : textField === 'password'
+                    ? 'new-password'
+                    : 'off'
+          }
+          maxLength={
+            isGoal ? 12 : textField === 'username' ? USERNAME_MAX_LENGTH : 100
+          }
           editable={!busy}
           returnKeyType="done"
           onSubmitEditing={() => void save()}
         />
-        {(failed || invalidNumber) && (
+        {(failed || invalidNumber || invalidText) && (
           <Text
             accessibilityRole="alert"
             className="text-text-primary text-sm mt-3"
           >
-            {failed
-              ? isGoal
-                ? t('profile.goalsSaveFailed', {
-                    defaultValue: 'Could not save goals. Please try again.',
-                  })
-                : t('profile.nameSaveFailed', {
-                    defaultValue: 'Could not save your name. Please try again.',
-                  })
-              : minimum > 0
-                ? t('profile.goalsInvalidMinimum', {
-                    defaultValue: 'Enter a number of at least {{minimum}}.',
-                    minimum,
-                  })
-                : t('profile.goalsInvalid', {
+            {invalidText
+              ? textField === 'username'
+                ? t('profile.usernameInvalid', {
                     defaultValue:
-                      'Enter a positive number or zero. Stand hours cannot exceed 24.',
-                  })}
+                      '3 to 30 letters, numbers, dots, dashes or underscores, starting with a letter or number.',
+                  })
+                : textField === 'email'
+                  ? t('profile.emailInvalid', {
+                      defaultValue: 'Enter a valid email address.',
+                    })
+                  : t('profile.passwordInvalid', {
+                      defaultValue: 'Use at least 8 characters.',
+                    })
+              : failed
+                ? isGoal
+                  ? t('profile.goalsSaveFailed', {
+                      defaultValue: 'Could not save goals. Please try again.',
+                    })
+                  : textField === 'name'
+                    ? t('profile.nameSaveFailed', {
+                        defaultValue:
+                          'Could not save your name. Please try again.',
+                      })
+                    : t('profile.fieldSaveFailed', {
+                        defaultValue:
+                          'Could not save {{field}}. Please try again.',
+                        field: label.toLowerCase(),
+                      })
+                : minimum > 0
+                  ? t('profile.goalsInvalidMinimum', {
+                      defaultValue: 'Enter a number of at least {{minimum}}.',
+                      minimum,
+                    })
+                  : t('profile.goalsInvalid', {
+                      defaultValue:
+                        'Enter a positive number or zero. Stand hours cannot exceed 24.',
+                    })}
           </Text>
         )}
+        {textField === 'username' ? (
+          <Text className="text-text-secondary text-sm mt-3">
+            {t('profile.usernameHelp', {
+              defaultValue: 'Your profile link: {{link}}',
+              link: profileLinkLabel(previewUsername || 'username'),
+            })}
+          </Text>
+        ) : null}
+        {textField === 'password' ? (
+          <Text className="text-text-secondary text-sm mt-3">
+            {t('profile.passwordHelp', {
+              defaultValue:
+                'Stored only on this phone, in the system keychain, and never shown again.',
+            })}
+          </Text>
+        ) : null}
         {isGoal && (
           <Text className="text-text-secondary text-sm mt-3">
             {t('profile.goalsHelp', {

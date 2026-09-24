@@ -356,7 +356,12 @@ export type RootStackParamList = {
    * key of the daily goals — the goal label and unit are derived from
    * `goalKey` so they re-localize with the app language.
    */
-  ProfileEdit: { field: 'name' } | { field: 'goal'; goalKey: string };
+  ProfileEdit:
+    | { field: 'name' }
+    | { field: 'username' }
+    | { field: 'email' }
+    | { field: 'password' }
+    | { field: 'goal'; goalKey: string };
   /**
    * One daily goal, set with steppers. A modal route rather than a sheet so
    * its header items are the system's, like every other modal in the app.
@@ -375,6 +380,8 @@ export type RootStackParamList = {
   ProfileGoals: undefined;
   /** Appearance options as rows instead of a picker sheet. */
   ProfileTheme: undefined;
+  /** Name, username, email and password, each drilling into `ProfileEdit`. */
+  Account: undefined;
   /** Preview of the paid tier reached from the profile card's premium rows. */
   ProfilePremium: undefined;
   CalorieSettings: undefined;

@@ -107,15 +107,30 @@ export function createNativeHeaderDatePickerItems({
 export type NativeTabHeaderNavigation = {
   setOptions: (options: {
     unstable_headerRightItems: () => NativeStackHeaderItem[];
+    unstable_headerLeftItems?: () => NativeStackHeaderItem[];
   }) => void;
 };
 
 export function setNativeTabHeaderActions(
   navigation: NativeTabHeaderNavigation,
   actions: NativeHeaderAction[],
-  tintColor: string
+  tintColor: string,
+  /** Buttons for the left of the bar, on a tab with no date to put there. */
+  leadingActions: NativeHeaderAction[] = []
 ) {
+  const toItem = (action: NativeHeaderAction) =>
+    createNativeHeaderIconButtonItem({
+      sfSymbol: action.sfSymbol,
+      onPress: withHaptic(action.onPress),
+      tintColor,
+      accessibilityLabel: action.accessibilityLabel,
+      identifier: action.identifier,
+      separated: true,
+    });
   navigation.setOptions({
+    ...(leadingActions.length > 0
+      ? { unstable_headerLeftItems: () => leadingActions.map(toItem) }
+      : {}),
     unstable_headerRightItems: () =>
       actions.map((action) =>
         createNativeHeaderIconButtonItem({

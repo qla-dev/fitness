@@ -19,6 +19,7 @@ export const measurementsQueryKey = (date: string) =>
 export const preferencesQueryKey = ['userPreferences'] as const;
 
 export const profileQueryKey = ['userProfile'] as const;
+export const accountPasswordQueryKey = ['accountPassword'] as const;
 
 export const waterRangeQueryKey = (startDate: string, endDate: string) =>
   ['waterRange', startDate, endDate] as const;

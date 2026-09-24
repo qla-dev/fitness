@@ -7,6 +7,7 @@ import { CARD_GAP } from '../constants/layout';
 import { useCSSVariable } from 'uniwind';
 import MoreMeasurementsSheet from './MoreMeasurementsSheet';
 import type { RootStackParamList } from '../types/navigation';
+import TileMenu from './TileMenu';
 import {
   buildMeasurementTiles,
   MeasurementTileCard,
@@ -129,21 +130,51 @@ const MeasurementsSummary: React.FC<MeasurementsSummaryProps> = ({
   // whatever is left over — near enough to the vertical one to look like a
   // mistake, never equal to it. Two flexed children and one gap are exact.
   const cells: React.ReactNode[] = [
-    ...tiles.map((tile) => (
-      <MeasurementTileCard
-        key={tile.id}
-        tile={tile}
-        iconColor={iconColor}
-        accentColor={accentPrimary}
-        mutedColor={mutedColor}
-        dangerColor={dangerColor}
-        successColor={successColor}
-        t={t}
-        onPress={() =>
-          tile.fieldId ? record(tile.fieldId) : onPress?.()
-        }
-      />
-    )),
+    ...tiles.map((tile) => {
+      const card = (
+        <MeasurementTileCard
+          key={tile.id}
+          tile={tile}
+          iconColor={iconColor}
+          accentColor={accentPrimary}
+          mutedColor={mutedColor}
+          dangerColor={dangerColor}
+          successColor={successColor}
+          t={t}
+          onPress={() => (tile.fieldId ? record(tile.fieldId) : onPress?.())}
+        />
+      );
+      // Weight holds the way water does: a tap records, a hold offers the
+      // goal and the history behind the number.
+      if (tile.fieldId !== 'weight') return card;
+      return (
+        <TileMenu
+          key={tile.id}
+          actions={[
+            {
+              id: 'goal',
+              title: t('measurements.weightChangeGoal', {
+                defaultValue: 'Change goal',
+              }),
+              image: 'target',
+              onSelect: () =>
+                navigation.navigate('GoalEdit', { goalKey: 'target_weight' }),
+            },
+            {
+              id: 'history',
+              title: t('measurements.weightHistory', {
+                defaultValue: 'History',
+              }),
+              image: 'chart.line.uptrend.xyaxis',
+              onSelect: () =>
+                navigation.navigate('GoalDetail', { metric: 'weight', date }),
+            },
+          ]}
+        >
+          {card}
+        </TileMenu>
+      );
+    }),
     ...(trailingTiles ?? []),
   ];
   const rows: React.ReactNode[][] = [];

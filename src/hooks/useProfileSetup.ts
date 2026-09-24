@@ -68,9 +68,33 @@ export function useProfileSetup(enabled: boolean) {
   const isComplete = ready && isSetupComplete(profileSteps(t), existing);
 
   const save = useCallback(
-    (data: SetupAnswers): SetupWizardSession['onSave'] =>
+    (
+      data: SetupAnswers,
+      single = false
+    ): SetupWizardSession['onSave'] =>
       async (answers, done) => {
         if (done) {
+          // Age is asked as a number of years, but the profile stores a date
+          // of birth, which is what the Profile's Age reads. It was only ever
+          // kept in the wizard's own answers, so the tile stayed empty. A
+          // changed age becomes the birth date that makes it true today.
+          const age = Number(String(answers.age ?? '').trim());
+          if (
+            isLocalDataMode() &&
+            Number.isInteger(age) &&
+            age > 0 &&
+            String(age) !== data.age
+          ) {
+            const now = new Date();
+            const birth = `${now.getFullYear() - age}-${String(
+              now.getMonth() + 1
+            ).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            await localApiFetch({
+              endpoint: '/api/identity/profiles',
+              method: 'PUT',
+              body: { date_of_birth: birth },
+            });
+          }
           // Weight and height are pre-filled from the latest measurements.
           // Only a value the user actually changed is written, through the same
           // endpoint as manual check-ins, so untouched Health imports are left alone.
@@ -84,7 +108,10 @@ export function useProfileSetup(enabled: boolean) {
           };
           const weight = changed('weight');
           const height = changed('height');
-          if (weight !== undefined || height !== undefined)
+          // Saving one answer (the Age tile) writes that answer and nothing
+          // else: rewriting goals from the rest of the saved answers
+          // could switch on a calorie goal the user never set from that screen.
+          if (!single && (weight !== undefined || height !== undefined))
             await upsertCheckIn({
               entryDate: getTodayDate(),
               weight,
@@ -92,7 +119,7 @@ export function useProfileSetup(enabled: boolean) {
             });
           // Profile goal editing is currently local-only elsewhere in the app.
           // Keep the same contract; server mode retains these questionnaire choices locally.
-          if (isLocalDataMode()) {
+          if (!single && isLocalDataMode()) {
             const goals: Record<string, number> = {};
             for (const field of [
               'steps',
@@ -113,7 +140,8 @@ export function useProfileSetup(enabled: boolean) {
         await saveSetup((s) => ({
           ...s,
           profile: answers,
-          profileDone: done,
+          // Saving one answer does not finish, or unfinish, the tour.
+          profileDone: single ? s.profileDone : done,
         }));
         if (done)
           await client.invalidateQueries({
@@ -124,6 +152,7 @@ export function useProfileSetup(enabled: boolean) {
                 'dailySummary',
                 'goals',
                 'profileSetupSource',
+                'userProfile',
               ].includes(String(q.queryKey[0])),
           });
       },
@@ -134,13 +163,18 @@ export function useProfileSetup(enabled: boolean) {
    * Parks the wizard session and calls `navigate` to show it. Returns false
    * when the data is not loaded yet or a wizard is already open.
    */
-  const openWizard = (navigate: () => void, onClose: () => void = () => {}) => {
+  const openWizard = (
+    navigate: () => void,
+    onClose: () => void = () => {},
+    singleStep?: string
+  ) => {
     if (!state || !sourceData || isSetupWizardOpen()) return false;
     openSetupWizardSession({
       steps: profileSteps(t),
       initial: existing,
       onClose,
-      onSave: save(sourceData),
+      onSave: save(sourceData, singleStep !== undefined),
+      singleStep,
     });
     navigate();
     return true;

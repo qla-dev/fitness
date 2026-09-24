@@ -19,6 +19,11 @@ export interface SetupField {
    * Only a hint: nothing is saved unless the user types it.
    */
   suggestion?: number | ((answers: SetupAnswers) => number | undefined);
+  /**
+   * What the empty input says, written as an instruction ("Enter your target
+   * weight"). A bare number there read as a value already filled in.
+   */
+  placeholder?: string;
   showWhen?: (answers: SetupAnswers) => boolean;
 }
 export interface SetupStep {
@@ -62,6 +67,12 @@ export interface SetupWizardSession {
   initial: SetupAnswers;
   onSave: (answers: SetupAnswers, done: boolean) => Promise<void>;
   onClose: () => void;
+  /**
+   * Opens on this one step and saves from it: the footer reads Save, Back
+   * closes, and there is no Skip. For editing a single answer from wherever
+   * it is shown — the Age tile on the Profile — without the rest of the tour.
+   */
+  singleStep?: string;
 }
 
 // Route params must stay serializable, so the opener parks its callbacks here

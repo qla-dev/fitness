@@ -194,6 +194,10 @@ const ICON_MAP = {
   'sleep-nap': { sf: 'zzz', ion: 'moon-outline' },
   'sleep-bedtime': { sf: 'bed.double.fill', ion: 'bed' },
   'sleep-score': { sf: 'star.fill', ion: 'star' },
+  'goal-target': { sf: 'target', ion: 'locate-outline' },
+  'account-username': { sf: 'at', ion: 'at-outline' },
+  'account-email': { sf: 'envelope.fill', ion: 'mail-outline' },
+  'account-signin': { sf: 'key.fill', ion: 'key-outline' },
   spo2: { sf: 'lungs.fill', ion: 'pulse' },
   'heart-rate': { sf: 'heart.fill', ion: 'heart' },
   // Where a session was measured, and whether it carries a track. Named for

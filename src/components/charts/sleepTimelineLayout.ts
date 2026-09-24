@@ -73,6 +73,12 @@ export interface SleepTimelineLayoutOptions {
   anchorMinutes: number;
   /** Fraction of each day's slot left as the gap between columns. */
   innerPadding: number;
+  /**
+   * Room left at each end, to the first and last column's centre. The same
+   * 25 the Victory charts pass as `domainPadding`, so the first date label is
+   * not centred on the plot's edge and hanging past the page's padding.
+   */
+  horizontalPadding?: number;
 }
 
 /**
@@ -332,7 +338,13 @@ const buildTicks = (
  */
 export const buildSleepTimelineLayout = (
   days: SleepTimelineDay[],
-  { width, height, anchorMinutes, innerPadding }: SleepTimelineLayoutOptions
+  {
+    width,
+    height,
+    anchorMinutes,
+    innerPadding,
+    horizontalPadding = 0,
+  }: SleepTimelineLayoutOptions
 ): SleepTimelineLayout => {
   const rangesByDay = days.map((day) =>
     day.segments.flatMap((segment) =>
@@ -348,19 +360,30 @@ export const buildSleepTimelineLayout = (
   }
 
   const spanMinutes = domain.endMinutes - domain.startMinutes;
-  const slotWidth = width / days.length;
+  // Column centres run evenly from one padded end to the other; with no
+  // padding this is one slot per day across the whole width, as before.
+  const inner = Math.max(0, width - 2 * horizontalPadding);
+  const slotWidth =
+    horizontalPadding > 0 && days.length > 1
+      ? inner / (days.length - 1)
+      : width / days.length;
+  const centreOf = (dayIndex: number) =>
+    horizontalPadding > 0
+      ? days.length > 1
+        ? horizontalPadding + dayIndex * slotWidth
+        : width / 2
+      : (dayIndex + 0.5) * slotWidth;
   const columnWidth = Math.max(
     MIN_COLUMN_WIDTH,
     slotWidth * (1 - innerPadding)
   );
-  const columnInset = (slotWidth - columnWidth) / 2;
 
   const toY = (minutes: number): number =>
     ((minutes - domain.startMinutes) / spanMinutes) * height;
 
   const columns = rangesByDay.map((ranges, dayIndex) => ({
     dayIndex,
-    x: dayIndex * slotWidth + columnInset,
+    x: centreOf(dayIndex) - columnWidth / 2,
     width: columnWidth,
     blocks: ranges.map((range) => {
       const blockHeight = Math.max(

@@ -72,10 +72,20 @@ export default function SetupWizardScreen({
   const [session] = useState(getSetupWizardSession);
   const allSteps = session?.steps ?? [];
   const initial = session?.initial ?? {};
+  const singleStep = session?.singleStep;
   const [answers, setAnswers] = useState(initial);
-  const [index, setIndex] = useState(() =>
-    Math.max(0, Math.min(allSteps.length, Number(initial.__step) || 0))
-  );
+  const [index, setIndex] = useState(() => {
+    if (singleStep) {
+      const at = allSteps
+        .filter((candidate) => visibleFields(candidate, initial).length > 0)
+        .findIndex((candidate) => candidate.id === singleStep);
+      if (at >= 0) return at;
+    }
+    return Math.max(
+      0,
+      Math.min(allSteps.length, Number(initial.__step) || 0)
+    );
+  });
   // A step whose only question is hidden by an earlier answer (target weight
   // when the sole focus is "Just track") is skipped rather than shown empty.
   const steps = allSteps.filter(
@@ -151,7 +161,15 @@ export default function SetupWizardScreen({
     setError(false);
     try {
       await session.onSave(
-        { ...next, __step: done ? '' : String(index + 1) },
+        {
+          ...next,
+          // Editing one answer leaves the tour where it was.
+          __step: singleStep
+            ? (initial.__step ?? '')
+            : done
+              ? ''
+              : String(index + 1),
+        },
         done
       );
       if (done && !step) fireSuccessHaptic();
@@ -177,6 +195,11 @@ export default function SetupWizardScreen({
 
   const back = () => {
     if (busy) return;
+    // One step, nothing behind it: Back leaves without saving.
+    if (singleStep) {
+      close();
+      return;
+    }
     if (index > 0) {
       setError(false);
       setIndex((i) => i - 1);
@@ -230,8 +253,9 @@ export default function SetupWizardScreen({
       onPress: back,
       disabled: busy,
     },
-    right: step
-      ? {
+    right:
+      step && !singleStep
+        ? {
           kind: 'text',
           label: t('common.skip', { defaultValue: 'Skip' }),
           onPress: skip,
@@ -389,7 +413,8 @@ export default function SetupWizardScreen({
                       error={fieldError(field)}
                       reserveErrorSpace={!!field.numeric}
                       placeholder={
-                        field.numeric
+                        field.placeholder ??
+                        (field.numeric
                           ? fieldSuggestion(field, answers) !== undefined
                             ? formatLocalizedNumber(
                                 fieldSuggestion(field, answers) as number
@@ -399,7 +424,7 @@ export default function SetupWizardScreen({
                                 min: formatLocalizedNumber(field.min ?? 0),
                                 max: formatLocalizedNumber(field.max ?? 0),
                               })
-                          : undefined
+                          : undefined)
                       }
                       keyboardType={field.numeric ? 'decimal-pad' : 'default'}
                       maxLength={field.numeric ? 8 : 160}
@@ -458,10 +483,13 @@ export default function SetupWizardScreen({
           onHeightChange={setFooterHeight}
           onPress={() => {
             fireSelectionHaptic();
-            void persist(answers, !step, !step);
+            if (singleStep) void persist(answers, true, true);
+            else void persist(answers, !step, !step);
           }}
           label={
-            step
+            singleStep
+              ? t('common.save', { defaultValue: 'Save' })
+              : step
               ? selectedCount > 0
                 ? t('setup.continueCount', {
                     defaultValue: 'Continue ({{count}})',

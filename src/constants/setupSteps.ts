@@ -98,6 +98,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'age',
+        placeholder: t('setup.placeholders.age', {
+          defaultValue: 'Enter your age',
+        }),
         label: t('setup.age', { defaultValue: 'Age' }),
         icon: 'calendar',
         unit: t('setup.unitYears', { defaultValue: 'years old' }),
@@ -114,6 +117,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'height',
+        placeholder: t('setup.placeholders.height', {
+          defaultValue: 'Enter your height',
+        }),
         label: t('setup.height', { defaultValue: 'Height' }),
         icon: 'measurements',
         unit: 'cm',
@@ -129,6 +135,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'weight',
+        placeholder: t('setup.placeholders.weight', {
+          defaultValue: 'Enter your current weight',
+        }),
         label: t('setup.weight', { defaultValue: 'Current weight' }),
         icon: 'scale',
         unit: 'kg',
@@ -144,6 +153,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'targetWeight',
+        placeholder: t('setup.placeholders.targetWeight', {
+          defaultValue: 'Enter your target weight',
+        }),
         label: t('setup.targetWeight', { defaultValue: 'Target weight' }),
         icon: 'trophy',
         unit: 'kg',
@@ -168,6 +180,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'sessions',
+        placeholder: t('setup.placeholders.sessions', {
+          defaultValue: 'Enter training days per week',
+        }),
         label: t('setup.sessions', { defaultValue: 'Training days/week' }),
         icon: 'exercise-weights',
         unit: t('setup.unitDays', { defaultValue: 'days' }),
@@ -189,6 +204,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'steps',
+        placeholder: t('setup.placeholders.steps', {
+          defaultValue: 'Enter a daily step goal',
+        }),
         label: t('setup.steps', { defaultValue: 'Daily steps' }),
         icon: 'exercise-walking',
         unit: t('setup.unitSteps', { defaultValue: 'steps' }),
@@ -204,6 +222,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'water_goal_ml',
+        placeholder: t('setup.placeholders.water', {
+          defaultValue: 'Enter a daily water goal',
+        }),
         label: t('setup.water', { defaultValue: 'Daily water' }),
         icon: 'hydration',
         unit: 'ml',
@@ -219,6 +240,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'sleep',
+        placeholder: t('setup.placeholders.sleep', {
+          defaultValue: 'Enter hours of sleep a night',
+        }),
         label: t('setup.sleep', { defaultValue: 'Sleep goal' }),
         icon: 'sleep-bedtime',
         unit: t('setup.unitHours', { defaultValue: 'hours' }),
@@ -234,6 +258,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'calories',
+        placeholder: t('setup.placeholders.calories', {
+          defaultValue: 'Enter a daily calorie goal',
+        }),
         label: t('setup.calories', { defaultValue: 'Daily calorie goal' }),
         icon: 'flame',
         unit: 'kcal',
@@ -250,6 +277,9 @@ export function profileSteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'protein',
+        placeholder: t('setup.placeholders.protein', {
+          defaultValue: 'Enter a daily protein goal',
+        }),
         label: t('setup.protein', { defaultValue: 'Daily protein goal' }),
         icon: 'food',
         unit: 'g',
@@ -270,6 +300,9 @@ export function grocerySteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'servings',
+        placeholder: t('groceries.placeholders.servings', {
+          defaultValue: 'Enter how many people eat',
+        }),
         label: t('groceries.servings', { defaultValue: 'People / servings' }),
         unit: t('groceries.unitPeople', { defaultValue: 'people' }),
         numeric: true,
@@ -284,6 +317,9 @@ export function grocerySteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'days',
+        placeholder: t('groceries.placeholders.days', {
+          defaultValue: 'Enter how many days to plan',
+        }),
         label: t('groceries.days', { defaultValue: 'Days to plan' }),
         unit: t('setup.unitDays', { defaultValue: 'days' }),
         numeric: true,
@@ -330,6 +366,9 @@ export function grocerySteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'dislikes',
+        placeholder: t('groceries.placeholders.dislikes', {
+          defaultValue: 'Enter ingredients you avoid',
+        }),
         label: t('groceries.dislikes', {
           defaultValue: 'Disliked ingredients',
         }),
@@ -397,6 +436,9 @@ export function grocerySteps(t: TFunction): SetupStep[] {
     questionStep(
       {
         id: 'otherAllergies',
+        placeholder: t('groceries.placeholders.otherAllergies', {
+          defaultValue: 'Enter any other allergies',
+        }),
         label: t('groceries.otherAllergies', {
           defaultValue: 'Other allergies',
         }),
