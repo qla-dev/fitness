@@ -97,11 +97,11 @@
             }
           }
         },
-        "projectId": "e8f7109f-9728-439e-8de3-ca22211e401a"
+        "projectId": "28f98299-f213-404c-a9ff-2eaef31c6750"
       }
     },
     "version": "1.6.4",
-    "owner": "kulasinn-2",
+    "owner": "kulasinn",
     "ios": {
       "buildNumber": "12"
     }
