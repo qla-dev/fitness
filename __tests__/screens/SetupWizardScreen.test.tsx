@@ -4,6 +4,7 @@ import SetupWizardScreen from '../../src/screens/SetupWizardScreen';
 import { fireSelectionHaptic } from '../../src/services/haptics';
 import {
   getSetupWizardSession,
+  isSetupComplete,
   openSetupWizardSession,
   type SetupStep,
 } from '../../src/services/setupWizardSession';
@@ -120,8 +121,17 @@ describe('SetupWizardScreen', () => {
       fireEvent.press(screen.getByText('Skip'));
     });
     expect(fireSelectionHaptic).toHaveBeenCalled();
-    expect(onSave).toHaveBeenCalledWith({ a: '', __step: '1' }, false);
+    expect(onSave).toHaveBeenCalledWith(
+      { a: '', __skipped: ['a'], __step: '1' },
+      false
+    );
     expect(screen.getByText('Second heading')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Skip'));
+    });
+    const saved = onSave.mock.calls[1][0];
+    expect(saved.__skipped).toEqual(['a', 'b']);
+    expect(isSetupComplete(steps, saved)).toBe(true);
   });
 
   it('closes from the first step through the header back button', async () => {
@@ -130,6 +140,7 @@ describe('SetupWizardScreen', () => {
       fireEvent.press(screen.getByLabelText('Back'));
     });
     expect(onSave).toHaveBeenCalledWith({ __step: '' }, true);
+    expect(isSetupComplete(steps, onSave.mock.calls[0][0])).toBe(false);
     expect(onClose).toHaveBeenCalled();
     expect(navigation.goBack).toHaveBeenCalled();
     expect(getSetupWizardSession()).toBeNull();

@@ -51,13 +51,15 @@ export function visibleFields(step: SetupStep, answers: SetupAnswers) {
 }
 
 /**
- * True when every question that applies has an answer. A skipped question
- * counts as unanswered, so the startup protocol keeps offering the wizard.
+ * True when every applicable question is answered or explicitly skipped.
+ * Dismissing the wizard does not mark untouched questions as skipped.
  */
 export function isSetupComplete(steps: SetupStep[], answers: SetupAnswers) {
   return steps.every((step) =>
-    visibleFields(step, answers).every((field) =>
-      answerValues(answers, field.id).some((value) => value.trim() !== '')
+    visibleFields(step, answers).every(
+      (field) =>
+        answerValues(answers, '__skipped').includes(field.id) ||
+        answerValues(answers, field.id).some((value) => value.trim() !== '')
     )
   );
 }

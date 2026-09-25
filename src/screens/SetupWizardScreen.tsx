@@ -81,10 +81,7 @@ export default function SetupWizardScreen({
         .findIndex((candidate) => candidate.id === singleStep);
       if (at >= 0) return at;
     }
-    return Math.max(
-      0,
-      Math.min(allSteps.length, Number(initial.__step) || 0)
-    );
+    return Math.max(0, Math.min(allSteps.length, Number(initial.__step) || 0));
   });
   // A step whose only question is hidden by an earlier answer (target weight
   // when the sole focus is "Just track") is skipped rather than shown empty.
@@ -209,6 +206,12 @@ export default function SetupWizardScreen({
   const skip = () => {
     if (!step) return;
     const next = { ...answers };
+    next.__skipped = [
+      ...new Set([
+        ...answerValues(answers, '__skipped'),
+        ...fields.map((field) => field.id),
+      ]),
+    ];
     step.fields.forEach((f) => {
       next[f.id] = initial[f.id] ?? '';
     });
@@ -256,12 +259,12 @@ export default function SetupWizardScreen({
     right:
       step && !singleStep
         ? {
-          kind: 'text',
-          label: t('common.skip', { defaultValue: 'Skip' }),
-          onPress: skip,
-          disabled: busy,
-        }
-      : null,
+            kind: 'text',
+            label: t('common.skip', { defaultValue: 'Skip' }),
+            onPress: skip,
+            disabled: busy,
+          }
+        : null,
     accessory: (
       <View
         className="h-1 mx-5 bg-raised rounded-full"
@@ -490,15 +493,15 @@ export default function SetupWizardScreen({
             singleStep
               ? t('common.save', { defaultValue: 'Save' })
               : step
-              ? selectedCount > 0
-                ? t('setup.continueCount', {
-                    defaultValue: 'Continue ({{count}})',
-                    defaultValue_one: 'Continue ({{count}})',
-                    defaultValue_other: 'Continue ({{count}})',
-                    count: selectedCount,
-                  })
-                : t('common.continue', { defaultValue: 'Continue' })
-              : t('setup.finish', { defaultValue: 'Save and start' })
+                ? selectedCount > 0
+                  ? t('setup.continueCount', {
+                      defaultValue: 'Continue ({{count}})',
+                      defaultValue_one: 'Continue ({{count}})',
+                      defaultValue_other: 'Continue ({{count}})',
+                      count: selectedCount,
+                    })
+                  : t('common.continue', { defaultValue: 'Continue' })
+                : t('setup.finish', { defaultValue: 'Save and start' })
           }
         />
       </View>

@@ -9,6 +9,16 @@ jest.mock('../../src/services/storage', () => ({
 }));
 
 describe('personal setup storage', () => {
+  it('remembers explicitly skipped questions after reloading', async () => {
+    await updateSetup('local', (s) => ({
+      ...s,
+      profile: { age: '30', __skipped: ['weight', 'height'] },
+    }));
+    expect((await readSetup('local')).profile).toEqual({
+      age: '30',
+      __skipped: ['weight', 'height'],
+    });
+  });
   beforeEach(async () => {
     await AsyncStorage.clear();
   });

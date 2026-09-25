@@ -32,6 +32,21 @@ const steps: SetupStep[] = [
 ];
 
 describe('isSetupComplete', () => {
+  it('accepts explicit skips but still asks about untouched questions', () => {
+    expect(
+      isSetupComplete(steps, {
+        focus: ['lose'],
+        __skipped: ['age', 'targetWeight'],
+      })
+    ).toBe(true);
+    expect(
+      isSetupComplete(steps, {
+        focus: ['lose'],
+        __skipped: ['age'],
+      })
+    ).toBe(false);
+    expect(isSetupComplete(steps, { __step: '' })).toBe(false);
+  });
   it('is incomplete while a question that applies is unanswered', () => {
     expect(isSetupComplete(steps, { focus: ['lose'], age: '30' })).toBe(false);
     expect(isSetupComplete(steps, { focus: ['track'], age: ' ' })).toBe(false);
