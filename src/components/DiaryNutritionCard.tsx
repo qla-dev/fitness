@@ -429,7 +429,17 @@ export default function DiaryNutritionCard({
           </View>
 
           {/* In the opening the arcs leave, starting just above their centre. */}
-          <View
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('diaryNutrition.editGoalFor', {
+              defaultValue: 'Change your {{nutrient}} goal',
+              nutrient: t('nutrition.calories', { defaultValue: 'calories' }),
+            })}
+            onPress={() => {
+              fireSelectionHaptic();
+              navigation.navigate('GoalEdit', { goalKey: 'calories' });
+            }}
+            hitSlop={8}
             className="absolute inset-x-0 items-center"
             style={{ top: arcSize / 2 - 30 }}
           >
@@ -457,7 +467,7 @@ export default function DiaryNutritionCard({
                   })
                 : t('diaryNutrition.kcalLeft', { defaultValue: 'kcal left' })}
             </Text>
-          </View>
+          </Pressable>
         </View>
 
         <CalorieFlank
