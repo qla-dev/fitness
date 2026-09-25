@@ -97,11 +97,11 @@
             }
           }
         },
-        "projectId": "28f98299-f213-404c-a9ff-2eaef31c6750"
+        "projectId": "052f6afa-a233-46ce-a4f1-6f0516740237"
       }
     },
     "version": "1.6.4",
-    "owner": "kulasinn",
+    "owner": "qla-dev",
     "ios": {
       "buildNumber": "15"
     }
