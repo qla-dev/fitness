@@ -200,6 +200,7 @@ const ICON_MAP = {
   'account-signin': { sf: 'key.fill', ion: 'key-outline' },
   spo2: { sf: 'lungs.fill', ion: 'pulse' },
   'heart-rate': { sf: 'heart.fill', ion: 'heart' },
+  'apple-health': { sf: 'apple.logo', ion: 'logo-apple' },
   // Where a session was measured, and whether it carries a track. Named for
   // what they mean here rather than for the hardware, so a future Android
   // wearable does not need a second entry.

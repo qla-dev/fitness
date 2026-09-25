@@ -289,7 +289,10 @@ export default function ActivityHistoryScreen({
           renderItem={({ item }) => (
             <CompactActivityRow
               session={item}
-              onPress={() => openSession(item)}
+              onPress={() => {
+                fireSelectionHaptic();
+                openSession(item);
+              }}
               distanceUnit={distanceUnit}
             />
           )}

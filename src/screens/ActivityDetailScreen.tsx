@@ -93,16 +93,19 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const calendarSheetRef = useRef<CalendarSheetRef>(null);
 
-  const [accentPrimary, borderSubtle] = useCSSVariable([
+  const [accentPrimary, borderSubtle, textMuted] = useCSSVariable([
     '--color-accent-primary',
     '--color-border-subtle',
-  ]) as [string, string];
+    '--color-text-muted',
+  ]) as [string, string, string];
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
 
   const { getImageSource } = useExerciseImageSource();
 
   const sourceLabel = getSourceLabel(session.source);
+  const isAppleHealth = sourceLabel === getSourceLabel('HealthKit');
+  const hasHeartRate = (session.avg_heart_rate ?? 0) > 0;
   const canEditSource = canEditGroupedWorkout(session.source);
   const entryDate = session.entry_date ?? '';
   const normalizedDate = normalizeDate(entryDate);
@@ -276,7 +279,6 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // is still honored at runtime; the compiler just skips optimizing this
   // component. Suppress the bailout rather than rewrite the working id counter.
   const addDraftSet = useCallback(
-     
     (_exerciseId?: string) => {
       const id = `set-${nextSetIdRef.current++}`;
       setDraftSets((prev) => {
@@ -819,8 +821,29 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 ) : null}
               </FadeView>
             )}
-            <View className="flex-row items-center">
+            <View className="flex-row flex-wrap items-center">
+              {isAppleHealth && (
+                <Icon
+                  name="apple-health"
+                  size={14}
+                  color={textMuted}
+                  style={{ marginRight: 4 }}
+                />
+              )}
               <Text className="text-sm text-text-muted">{sourceLabel}</Text>
+              {hasHeartRate && (
+                <View className="flex-row items-center ml-2">
+                  <Icon
+                    name="device-watch"
+                    size={14}
+                    color={textMuted}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text className="text-sm text-text-muted">
+                    {t('recording.appleWatch', { defaultValue: 'Apple Watch' })}
+                  </Text>
+                </View>
+              )}
               <Text className="text-sm text-text-muted mx-2">{'\u2022'}</Text>
               {isEditing ? (
                 <TouchableOpacity

@@ -110,7 +110,10 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
           key={session.id || index}
           session={session}
           entryDate={entryDate}
-          onPress={() => onPressSession?.(session)}
+          onPress={() => {
+            fireSelectionHaptic();
+            onPressSession?.(session);
+          }}
           distanceUnit={distanceUnit}
         >
           <CompactActivityRow session={session} distanceUnit={distanceUnit} />
