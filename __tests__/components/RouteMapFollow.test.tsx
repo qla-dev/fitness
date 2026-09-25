@@ -29,6 +29,8 @@ it('follows position above centre, releases on map interaction, and resumes on r
   expect(mockSetCamera).toHaveBeenLastCalledWith({
     coordinates: { latitude: expect.any(Number), longitude: 18 },
     zoom: 17,
+    tilt: 60,
+    bearing: 0,
   });
   expect(mockSetCamera.mock.calls.at(-1)[0].coordinates.latitude).toBeLessThan(
     first.latitude
@@ -44,5 +46,26 @@ it('follows position above centre, releases on map interaction, and resumes on r
   );
   fireEvent.press(screen.getByLabelText('Follow my position'));
   expect(mockSetCamera).toHaveBeenCalledTimes(1);
-  expect(mockSetCamera.mock.calls[0][0]).not.toHaveProperty('bearing');
+  expect(mockSetCamera.mock.calls[0][0].bearing).toBe(0);
+  fireEvent(screen.getByTestId('map'), 'startShouldSetResponderCapture');
+  fireEvent(screen.getByTestId('map'), 'cameraMove', {
+    zoom: 16,
+    tilt: 45,
+    bearing: 120,
+  });
+  fireEvent.press(screen.getByLabelText('Follow my position'));
+  screen.rerender(
+    <RouteMap
+      center={{ latitude: 43.002, longitude: 18.002 }}
+      navigationMode
+      showsUserLocation
+    />
+  );
+  expect(mockSetCamera).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      zoom: 16,
+      tilt: 45,
+      bearing: 120,
+    })
+  );
 });

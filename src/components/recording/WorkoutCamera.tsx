@@ -118,24 +118,6 @@ export default function WorkoutCamera({
           onCameraReady={() => setReady(true)}
         />
       ) : null}
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        {composition.metrics.map((metric, index) => (
-          <Text
-            key={index}
-            style={{
-              position: 'absolute',
-              left: metric.x,
-              top: metric.y,
-              fontSize: metric.size,
-              lineHeight: metric.size * 1.2,
-              fontWeight: '400',
-              color: 'white',
-            }}
-          >
-            {metric.text}
-          </Text>
-        ))}
-      </View>
       <View
         style={{
           position: 'absolute',

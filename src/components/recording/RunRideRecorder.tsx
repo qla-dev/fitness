@@ -108,32 +108,25 @@ export default function RunRideRecorder({
   const session = snapshot.session;
   const [panelHeight, setPanelHeight] = useState(240);
   const [viewport, setViewport] = useState({ width: 390, height: 844 });
-  const [showCamera, setShowCamera] = useState(false);
-  const [flip] = useState(() => new Animated.Value(0));
-  const previousCameraMode = useRef(cameraMode);
+  const [cameraVisible, setCameraVisible] = useState(cameraMode);
+  const [previousCameraMode, setPreviousCameraMode] = useState(cameraMode);
+  if (previousCameraMode !== cameraMode) {
+    setPreviousCameraMode(cameraMode);
+    if (cameraMode) setCameraVisible(true);
+  }
+  const [cameraOpacity] = useState(
+    () => new Animated.Value(cameraMode ? 1 : 0)
+  );
   useEffect(() => {
-    if (previousCameraMode.current === cameraMode) return;
-    previousCameraMode.current = cameraMode;
-    let cancelled = false;
-    Animated.timing(flip, {
-      toValue: 1,
-      duration: 160,
+    Animated.timing(cameraOpacity, {
+      toValue: cameraMode ? 1 : 0,
+      duration: 140,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (!finished || cancelled) return;
-      setShowCamera(cameraMode);
-      flip.setValue(-1);
-      Animated.timing(flip, {
-        toValue: 0,
-        duration: 160,
-        useNativeDriver: true,
-      }).start();
+      if (finished && !cameraMode) setCameraVisible(false);
     });
-    return () => {
-      cancelled = true;
-      flip.stopAnimation();
-    };
-  }, [cameraMode, flip]);
+    return () => cameraOpacity.stopAnimation();
+  }, [cameraMode, cameraOpacity]);
   const accent = useCSSVariable('--color-accent-primary') as string;
   // A session recorded without a route has no map to show, so the screen is
   // the readings on black rather than a dimmed blank tile.
@@ -378,30 +371,28 @@ export default function RunRideRecorder({
       style={{ backgroundColor: '#000' }}
     >
       {active && focused && <KeepRecordingAwake />}
+      {tracksRoute && (
+        <RouteMap
+          key={session?.id ?? 'preview'}
+          center={snapshot.points[snapshot.points.length - 1]}
+          segments={routeSegments(snapshot.points)}
+          showsUserLocation={!!session}
+          appearance="dark"
+          navigationMode={!!session}
+        />
+      )}
       <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            transform: [
-              { perspective: 1000 },
-              {
-                rotateY: flip.interpolate({
-                  inputRange: [-1, 0, 1],
-                  outputRange: ['-90deg', '0deg', '90deg'],
-                }),
-              },
-            ],
-          },
-        ]}
+        pointerEvents={cameraMode ? 'auto' : 'none'}
+        style={[StyleSheet.absoluteFill, { opacity: cameraOpacity }]}
       >
-        {showCamera && session ? (
+        {session && (
           <WorkoutCamera
             recordingId={session.id}
             bottom={panelHeight}
             viewport={viewport}
-            top={insets.top + 52}
+            top={insets.top}
             route={snapshot.points}
-            active={focused && session.phase !== 'finished'}
+            active={cameraVisible && focused && session.phase !== 'finished'}
             lines={[
               'qla.fit',
               `${number(distanceFromKm(session.distance / 1000, unit), 2)} ${unitLabel}`,
@@ -413,30 +404,14 @@ export default function RunRideRecorder({
               `${bpm === null ? '-' : number(bpm, 0)} ${t('recording.bpm', { defaultValue: 'bpm' })}`,
             ]}
           />
-        ) : tracksRoute ? (
-          <>
-            {/* The map is the background rather than a pane at the top: it fills
-              the screen and the readings sit over it, dimmed enough to stay
-              legible against a bright map. */}
-            <View style={StyleSheet.absoluteFill}>
-              <RouteMap
-                key={session?.id ?? 'preview'}
-                center={snapshot.points[snapshot.points.length - 1]}
-                segments={routeSegments(snapshot.points)}
-                showsUserLocation={!!session && active}
-                appearance="dark"
-                navigationMode={!!session && active}
-              />
-            </View>
-          </>
-        ) : null}
+        )}
       </Animated.View>
       <View
         className="flex-1 px-6"
         pointerEvents="none"
-        style={{ paddingTop: insets.top + 52, marginRight: 88 }}
+        style={{ paddingTop: insets.top, marginRight: 88 }}
       >
-        {session && !showCamera ? (
+        {session ? (
           <>
             <View className="flex-row items-baseline">
               <Text
@@ -603,6 +578,11 @@ export default function RunRideRecorder({
           </View>
         ) : (
           <View>
+            {!active && (
+              <Button variant="ghost" disabled={busy} onPress={discard}>
+                {t('recording.discard', { defaultValue: 'Discard' })}
+              </Button>
+            )}
             <WorkoutHudBar
               colorScheme="dark"
               progress={goal ? goalPercent / 100 : 0}
@@ -683,11 +663,6 @@ export default function RunRideRecorder({
                 </Pressable>
               }
             />
-            {!active && (
-              <Button variant="ghost" disabled={busy} onPress={discard}>
-                {t('recording.discard', { defaultValue: 'Discard' })}
-              </Button>
-            )}
           </View>
         )}
         {(error || snapshot.error) && (

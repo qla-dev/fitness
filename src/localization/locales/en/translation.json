@@ -261,6 +261,8 @@
   },
   "activeWorkout": {
     "liveActivity": {
+      "pause": "Pause",
+      "resume": "Resume",
       "rest": "Rest",
       "paused": "Paused",
       "elapsed": "Elapsed",

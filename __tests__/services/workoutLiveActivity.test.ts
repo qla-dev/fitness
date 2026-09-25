@@ -16,12 +16,18 @@ import {
 } from '../../src/services/workoutLiveActivity';
 import WorkoutLiveActivityFactory from '../../src/services/WorkoutLiveActivityLayout';
 import { addLog } from '../../src/services/LogService';
+import {
+  pauseRecording,
+  resumeRecording,
+} from '../../src/services/recording/recorder';
 import type { RecordingSession } from '../../src/services/recording/types';
 
 let mockRecordingSession: RecordingSession | null = null;
 let mockRecordingListener: (() => void) | null = null;
 jest.mock('../../src/services/recording/recorder', () => ({
   initializeRecorder: jest.fn(async () => undefined),
+  pauseRecording: jest.fn(async () => undefined),
+  resumeRecording: jest.fn(async () => undefined),
   getRecordingSnapshot: () => ({ session: mockRecordingSession }),
   subscribeRecording: (listener: () => void) => {
     mockRecordingListener = listener;
@@ -275,6 +281,10 @@ describe('workoutLiveActivity', () => {
         'sparkyfitnessmobile://recording'
       );
       const instance = createdInstances[0];
+      fireInteraction('recording-resume');
+      expect(resumeRecording).not.toHaveBeenCalled();
+      fireInteraction('recording-pause');
+      expect(pauseRecording).toHaveBeenCalledTimes(1);
       mockRecordingSession = {
         ...mockRecordingSession,
         phase: 'paused',
@@ -290,6 +300,10 @@ describe('workoutLiveActivity', () => {
           pausedRemainingLabel: '01:05',
         })
       );
+      fireInteraction('recording-pause');
+      expect(pauseRecording).toHaveBeenCalledTimes(1);
+      fireInteraction('recording-resume');
+      expect(resumeRecording).toHaveBeenCalledTimes(1);
       mockRecordingSession = {
         ...mockRecordingSession,
         phase: 'recording',
@@ -326,6 +340,8 @@ describe('workoutLiveActivity', () => {
         workoutName: 'Push Day',
         locale: 'en',
         labels: {
+          pause: 'Pause',
+          resume: 'Resume',
           rest: 'Rest',
           paused: 'Paused',
           elapsed: 'Elapsed',

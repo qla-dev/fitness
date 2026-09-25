@@ -10,6 +10,8 @@ import i18n from '../localization/i18n';
 import {
   getRecordingSnapshot,
   initializeRecorder,
+  pauseRecording,
+  resumeRecording,
   subscribeRecording,
 } from './recording/recorder';
 import { recordingClock } from '../components/recording/format';
@@ -149,6 +151,18 @@ function handleUserInteraction(event: UserInteractionEvent): void {
   if (!reconciled) return;
   const store = useActiveWorkoutStore.getState();
   switch (event.target) {
+    case 'recording-pause':
+      if (getRecordingSnapshot().session?.phase === 'recording')
+        void pauseRecording().catch((error) =>
+          logActivityError('pause failed', error)
+        );
+      break;
+    case 'recording-resume':
+      if (getRecordingSnapshot().session?.phase === 'paused')
+        void resumeRecording(i18n.t.bind(i18n)).catch((error) =>
+          logActivityError('resume failed', error)
+        );
+      break;
     case REST_ADD_15_TARGET:
       store.adjustRest(15);
       break;
@@ -278,6 +292,8 @@ function labelsEqual(
   return (
     a.rest === b.rest &&
     a.paused === b.paused &&
+    a.pause === b.pause &&
+    a.resume === b.resume &&
     a.elapsed === b.elapsed &&
     a.workoutComplete === b.workoutComplete &&
     a.complete === b.complete &&

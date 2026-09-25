@@ -14,6 +14,8 @@ export type WorkoutLiveActivityLocale = SupportedLanguage;
  * plain string that crosses the widget boundary as JSON.
  */
 export type WorkoutLiveActivityLabels = {
+  pause: string;
+  resume: string;
   rest: string;
   paused: string;
   elapsed: string;
@@ -31,6 +33,8 @@ export type WorkoutLiveActivityLabels = {
 };
 
 const LABEL_KEYS: readonly (keyof WorkoutLiveActivityLabels)[] = [
+  'pause',
+  'resume',
   'rest',
   'paused',
   'elapsed',
@@ -47,6 +51,8 @@ const LABEL_KEYS: readonly (keyof WorkoutLiveActivityLabels)[] = [
 
 /** English fallback used when i18n is not yet initialized or a key is missing. */
 const EN_FALLBACK: WorkoutLiveActivityLabels = {
+  pause: 'Pause',
+  resume: 'Resume',
   rest: 'Rest',
   paused: 'Paused',
   elapsed: 'Elapsed',

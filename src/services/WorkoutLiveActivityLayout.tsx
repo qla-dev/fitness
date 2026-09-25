@@ -316,7 +316,25 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
   // Both labels share one font so the SF Symbol scales to match the text.
   const restButtonFont = font({ weight: 'semibold', size: 17 });
   const actionButtons = () => {
-    if (props.recordingSport) return null;
+    if (props.recordingSport) {
+      if (props.phase !== 'active' && props.phase !== 'paused') return null;
+      return (
+        <Button
+          label={
+            props.phase === 'paused' ? props.labels.resume : props.labels.pause
+          }
+          systemImage={props.phase === 'paused' ? 'play.fill' : 'pause.fill'}
+          target={
+            props.phase === 'paused' ? 'recording-resume' : 'recording-pause'
+          }
+          modifiers={[
+            buttonStyle('bordered'),
+            buttonBorderShape('capsule'),
+            controlSize('regular'),
+          ]}
+        />
+      );
+    }
     if (restInterval) {
       return (
         <HStack spacing={8}>

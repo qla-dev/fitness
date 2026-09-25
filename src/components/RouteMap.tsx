@@ -75,8 +75,14 @@ const RouteMap: React.FC<RouteMapProps> = ({
   const appleMap = useRef<AppleMaps.MapView>(null);
   const googleMap = useRef<GoogleMaps.MapView>(null);
   const [following, setFollowing] = useState(true);
+  const orientation = useRef({
+    tilt: navigationMode ? 60 : 0,
+    bearing: 0,
+    zoom: 17,
+  });
   const [initialCamera] = useState({
     coordinates: center,
+    tilt: navigationMode ? 60 : 0,
     zoom: zoom ?? (center ? ROUTE_ZOOM : DEFAULT_ZOOM),
   });
   // Follow position through the ref, as in SmartFreight. Free exploration stops
@@ -88,7 +94,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
         latitude: center.latitude - (360 / 2 ** 17) * 0.12,
         longitude: center.longitude,
       },
-      zoom: 17,
+      ...orientation.current,
     };
     if (Platform.OS === 'ios') appleMap.current?.setCameraPosition(camera);
     else if (Platform.OS === 'android')
@@ -129,6 +135,14 @@ const RouteMap: React.FC<RouteMapProps> = ({
           ref={appleMap}
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}
+          onCameraMove={(event) => {
+            if (!following)
+              orientation.current = {
+                tilt: event.tilt,
+                bearing: event.bearing,
+                zoom: event.zoom,
+              };
+          }}
           polylines={polylines}
           properties={{ isMyLocationEnabled: showsUserLocation }}
           uiSettings={{
@@ -141,6 +155,15 @@ const RouteMap: React.FC<RouteMapProps> = ({
             scheme === 'dark' ? AppleMaps.MapColorScheme.DARK : undefined
           }
         />
+        {appearance === 'dark' && (
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { right: 76, backgroundColor: 'rgba(0,0,0,0.4)' },
+            ]}
+          />
+        )}
         {navigationMode && (
           <Pressable
             accessibilityRole="button"
@@ -196,6 +219,14 @@ const RouteMap: React.FC<RouteMapProps> = ({
           ref={googleMap}
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}
+          onCameraMove={(event) => {
+            if (!following)
+              orientation.current = {
+                tilt: event.tilt,
+                bearing: event.bearing,
+                zoom: event.zoom,
+              };
+          }}
           polylines={polylines}
           properties={{ isMyLocationEnabled: showsUserLocation }}
           uiSettings={{
@@ -208,6 +239,15 @@ const RouteMap: React.FC<RouteMapProps> = ({
             scheme === 'dark' ? GoogleMaps.MapColorScheme.DARK : undefined
           }
         />
+        {appearance === 'dark' && (
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { right: 76, backgroundColor: 'rgba(0,0,0,0.4)' },
+            ]}
+          />
+        )}
         {navigationMode && (
           <Pressable
             accessibilityRole="button"

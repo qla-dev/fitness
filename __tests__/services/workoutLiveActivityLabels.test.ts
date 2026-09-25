@@ -6,6 +6,8 @@ import {
 import i18n, { initializeI18n } from '../../src/localization/i18n';
 
 const EN_EXPECTED = {
+  pause: 'Pause',
+  resume: 'Resume',
   rest: 'Rest',
   paused: 'Paused',
   elapsed: 'Elapsed',
@@ -21,6 +23,8 @@ const EN_EXPECTED = {
 };
 
 const PL_EXPECTED = {
+  pause: 'Pause',
+  resume: 'Resume',
   rest: 'Odpoczynek',
   paused: 'Wstrzymano',
   elapsed: 'Czas',
@@ -36,6 +40,8 @@ const PL_EXPECTED = {
 };
 
 const ES_EXPECTED = {
+  pause: 'Pause',
+  resume: 'Resume',
   rest: 'Descanso',
   paused: 'En pausa',
   elapsed: 'Transcurrido',
