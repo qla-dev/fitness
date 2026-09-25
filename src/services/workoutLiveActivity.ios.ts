@@ -8,6 +8,12 @@ import {
 } from 'expo-widgets';
 import i18n from '../localization/i18n';
 import {
+  getRecordingSnapshot,
+  initializeRecorder,
+  subscribeRecording,
+} from './recording/recorder';
+import { recordingClock } from '../components/recording/format';
+import {
   useActiveWorkoutStore,
   type ActiveWorkoutState,
 } from '../stores/activeWorkoutStore';
@@ -44,6 +50,7 @@ const ACTIVE_WORKOUT_URL = 'sparkyfitnessmobile://active-workout';
 let initialized = false;
 let reconciled = false;
 let unsubscribeStore: (() => void) | null = null;
+let unsubscribeRecording: (() => void) | null = null;
 let unsubscribeHydration: (() => void) | null = null;
 let unsubscribeLanguageChanged: (() => void) | null = null;
 let interactionSubscription: ReturnType<
@@ -289,6 +296,7 @@ function propsEqual(
   b: WorkoutLiveActivityProps
 ): boolean {
   return (
+    a.recordingSport === b.recordingSport &&
     a.locale === b.locale &&
     labelsEqual(a.labels, b.labels) &&
     a.workoutName === b.workoutName &&
@@ -323,8 +331,18 @@ async function applyProps(
     return;
   }
   const finalProps = withAppIcon(props);
+  if (activity && lastSentProps?.recordingSport !== props.recordingSport) {
+    await activity.end('immediate');
+    activity = null;
+    lastSentProps = null;
+  }
   if (activity == null) {
-    activity = WorkoutLiveActivityFactory.start(finalProps, ACTIVE_WORKOUT_URL);
+    activity = WorkoutLiveActivityFactory.start(
+      finalProps,
+      props.recordingSport
+        ? 'sparkyfitnessmobile://recording'
+        : ACTIVE_WORKOUT_URL
+    );
     lastSentProps = finalProps;
     return;
   }
@@ -333,12 +351,39 @@ async function applyProps(
   lastSentProps = finalProps;
 }
 
+function currentActivityProps(): WorkoutLiveActivityProps | null {
+  const session = getRecordingSnapshot().session;
+  if (!session || session.phase === 'finished') {
+    return computeWorkoutLiveActivityProps(useActiveWorkoutStore.getState());
+  }
+  const locale = resolveWorkoutLiveActivityLocale(i18n.resolvedLanguage);
+  const labels = buildWorkoutLiveActivityLabels(locale);
+  const paused = session.phase === 'paused';
+  const clock = recordingClock(session.elapsed);
+  return {
+    recordingSport: session.sport,
+    workoutName:
+      session.sportName ??
+      (session.sport === 'run'
+        ? i18n.t('recording.run', { defaultValue: 'Run' })
+        : i18n.t('recording.ride', { defaultValue: 'Bike ride' })),
+    locale,
+    labels,
+    startedAt:
+      (session.runningSince ?? session.startedAt) - session.elapsed * 1000,
+    phase: paused ? 'paused' : 'active',
+    restStartedAt: null,
+    restEndsAt: null,
+    pausedRemainingLabel: paused ? clock : null,
+    elapsedLabel: paused ? clock : null,
+    setLine: null,
+  };
+}
+
 /** Queue a sync that reads the latest store state when it actually runs. */
 function syncFromState(): void {
   void enqueue(async () => {
-    await applyProps(
-      computeWorkoutLiveActivityProps(useActiveWorkoutStore.getState())
-    );
+    await applyProps(currentActivityProps());
   }).catch((error) => logActivityError('sync failed', error));
 }
 
@@ -351,10 +396,11 @@ async function reconcileInstances(): Promise<void> {
   // Resolved before the first paint so it doesn't need a repaint of its own;
   // never throws, and a failure just leaves the icon slots on their fallbacks.
   await ensureAppIcon();
+  await initializeRecorder().catch((error) => {
+    logActivityError('recording recovery failed', error);
+  });
   const instances = WorkoutLiveActivityFactory.getInstances();
-  const props = computeWorkoutLiveActivityProps(
-    useActiveWorkoutStore.getState()
-  );
+  const props = currentActivityProps();
 
   if (props == null) {
     for (const instance of instances) {
@@ -370,7 +416,12 @@ async function reconcileInstances(): Promise<void> {
     lastSentProps = finalProps;
   } else {
     const finalProps = withAppIcon(props);
-    activity = WorkoutLiveActivityFactory.start(finalProps, ACTIVE_WORKOUT_URL);
+    activity = WorkoutLiveActivityFactory.start(
+      finalProps,
+      props.recordingSport
+        ? 'sparkyfitnessmobile://recording'
+        : ACTIVE_WORKOUT_URL
+    );
     lastSentProps = finalProps;
   }
   reconciled = true;
@@ -399,6 +450,9 @@ function startReconcile(): void {
 export async function initWorkoutLiveActivity(): Promise<void> {
   if (initialized) return;
   initialized = true;
+  unsubscribeRecording = subscribeRecording(() => {
+    if (reconciled) syncFromState();
+  });
 
   unsubscribeStore = useActiveWorkoutStore.subscribe((state, prevState) => {
     if (!reconciled) return;
@@ -446,6 +500,8 @@ export async function initWorkoutLiveActivity(): Promise<void> {
  * can't bleed last-sent props or the adopted instance into each other.
  */
 export function __resetWorkoutLiveActivityForTests(): void {
+  unsubscribeRecording?.();
+  unsubscribeRecording = null;
   unsubscribeStore?.();
   unsubscribeStore = null;
   unsubscribeHydration?.();

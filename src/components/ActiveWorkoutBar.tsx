@@ -35,11 +35,8 @@ import {
 } from '../utils/workoutSession';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import type { RootStackParamList } from '../types/navigation';
-import LiquidGlassSurface, {
-  LIQUID_GLASS_VERTICAL_GAP,
-  createLiquidGlassPillStyle,
-} from './LiquidGlassSurface';
-import { withAlpha } from '../utils/colors';
+import { LIQUID_GLASS_VERTICAL_GAP } from './LiquidGlassSurface';
+import WorkoutHudBar, { WORKOUT_HUD_BAR_HEIGHT } from './WorkoutHudBar';
 
 /**
  * Shared navigation ref — must be passed to the app's `<NavigationContainer ref={...} />`.
@@ -49,8 +46,7 @@ import { withAlpha } from '../utils/colors';
  */
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-const BAR_CONTENT_HEIGHT = 60;
-const PROGRESS_BAR_BOTTOM_OFFSET = 1;
+const BAR_CONTENT_HEIGHT = WORKOUT_HUD_BAR_HEIGHT;
 const SLIDE_ANIMATION_DURATION_MS = 220;
 
 /**
@@ -166,6 +162,7 @@ const HIDDEN_ROUTES = new Set<string>([
   'MeasurementsAdd',
   'Chat',
   'ActiveWorkout',
+  'RunOrRide',
 ]);
 
 export function shouldSuppressActiveWorkoutBar(
@@ -452,13 +449,10 @@ const ActiveWorkoutBar: React.FC<ActiveWorkoutBarProps> = ({
   // the home-indicator safe-area inset. All other theme colors flow through
   // className (`bg-chrome`, `text-text-primary`, etc.) so styling stays in
   // tailwind and tracks theme changes automatically.
-  const [accentPrimary, textMuted, chromeBorder, progressTrack] =
-    useCSSVariable([
-      '--color-accent-primary',
-      '--color-text-muted',
-      '--color-chrome-border',
-      '--color-progress-track',
-    ]) as [string, string, string, string];
+  const [accentPrimary, textMuted] = useCSSVariable([
+    '--color-accent-primary',
+    '--color-text-muted',
+  ]) as [string, string];
 
   const isWorkoutComplete = sessionId != null && activeSetId == null;
 
@@ -827,101 +821,19 @@ const ActiveWorkoutBar: React.FC<ActiveWorkoutBarProps> = ({
   }
 
   const barBody = (
-    <LiquidGlassSurface
-      style={createLiquidGlassPillStyle(chromeBorder, {
-        height: BAR_CONTENT_HEIGHT,
-        position: 'relative',
+    <WorkoutHudBar
+      progress={progress}
+      leftButton={leftButton}
+      rightButton={rightButton}
+      onCenterPress={handleCenterTap}
+      centerAccessibilityLabel={t('activeWorkout.bar.open', {
+        defaultValue: 'Open active workout',
       })}
-      colorScheme="auto"
-      glassEffectStyle="regular"
-      isInteractive
-    >
-      {/* Primary row — left control, stacked top/bottom text, right control.
-          Intrinsically sized so the bar grows when the bottom line wraps. */}
-      <View
-        className="flex-row items-center px-2"
-        style={{
-          flex: 1,
-        }}
-      >
-        <View className="w-10 items-center">{leftButton}</View>
-
-        <Pressable
-          onPress={handleCenterTap}
-          className="px-1"
-          style={{
-            alignItems: 'center',
-            flex: 1,
-            height: '100%',
-            justifyContent: 'center',
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={t('activeWorkout.bar.open', {
-            defaultValue: 'Open active workout',
-          })}
-        >
-          {topStatusLine != null && (
-            <Text
-              numberOfLines={1}
-              className="text-center text-sm font-semibold text-text-primary"
-              style={{ lineHeight: 16 }}
-            >
-              {topStatusLine}
-            </Text>
-          )}
-          <Text
-            numberOfLines={1}
-            className={
-              topStatusLine != null
-                ? 'text-center text-xs text-text-primary'
-                : 'text-center text-sm font-semibold text-text-primary'
-            }
-            style={{ lineHeight: topStatusLine != null ? 14 : 16 }}
-          >
-            {primaryLine}
-          </Text>
-          {secondaryLine.length > 0 && (
-            <Text
-              numberOfLines={1}
-              className="text-center text-xs text-text-secondary"
-              style={{ lineHeight: 14 }}
-            >
-              {secondaryLine}
-            </Text>
-          )}
-        </Pressable>
-
-        {countdownLabel != null && (
-          <Text
-            className="px-2 text-lg font-bold text-text-primary"
-            style={{ fontVariant: ['tabular-nums'] }}
-          >
-            {countdownLabel}
-          </Text>
-        )}
-
-        <View className="w-10 items-center">{rightButton}</View>
-      </View>
-
-      {/* Progress bar — inset into the glass surface. Width is the only dynamic
-          value; colors still track the active theme. */}
-      <View
-        pointerEvents="none"
-        className="absolute inset-x-4 h-[3px] overflow-hidden rounded-full"
-        style={{
-          bottom: PROGRESS_BAR_BOTTOM_OFFSET,
-          backgroundColor: withAlpha(progressTrack, 0.78),
-        }}
-      >
-        <View
-          className="h-[3px]"
-          style={{
-            width: `${progress * 100}%`,
-            backgroundColor: withAlpha(accentPrimary, 0.92),
-          }}
-        />
-      </View>
-    </LiquidGlassSurface>
+      topStatusLine={topStatusLine}
+      primaryLine={primaryLine}
+      secondaryLine={secondaryLine}
+      trailingLabel={countdownLabel}
+    />
   );
 
   return (

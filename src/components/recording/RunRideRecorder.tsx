@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteMap from '../RouteMap';
+import WorkoutHudBar from '../WorkoutHudBar';
 import WorkoutCamera from './WorkoutCamera';
 import Icon from '../Icon';
 import { useCSSVariable } from 'uniwind';
@@ -266,14 +267,6 @@ export default function RunRideRecorder({
     }
     return `${number(goalDone, 0)} / ${number(goal.target, 0)} ${t('recording.kcal', { defaultValue: 'kcal' })}`;
   };
-  const goalLabel = () => {
-    if (!goal) return '';
-    if (goal.type === 'time')
-      return t('workoutSetup.time', { defaultValue: 'Time' });
-    if (goal.type === 'distance')
-      return t('workoutSetup.distance', { defaultValue: 'Distance' });
-    return t('workoutSetup.calories', { defaultValue: 'Calories' });
-  };
 
   const finish = () =>
     Alert.alert(
@@ -425,7 +418,7 @@ export default function RunRideRecorder({
             {/* The map is the background rather than a pane at the top: it fills
               the screen and the readings sit over it, dimmed enough to stay
               legible against a bright map. */}
-            <View style={[StyleSheet.absoluteFill, { bottom: panelHeight }]}>
+            <View style={StyleSheet.absoluteFill}>
               <RouteMap
                 key={session?.id ?? 'preview'}
                 center={snapshot.points[snapshot.points.length - 1]}
@@ -522,25 +515,30 @@ export default function RunRideRecorder({
         automaticallyAdjustContentInsets={false}
         onLayout={(event) => setPanelHeight(event.nativeEvent.layout.height)}
         showsVerticalScrollIndicator={false}
-        className="rounded-t-3xl"
+        className={session ? undefined : 'rounded-t-3xl'}
         // Dark whatever the app theme is, and translucent so the route keeps
         // showing through underneath.
-        style={{ backgroundColor: 'rgba(12,12,12,0.92)', flexGrow: 0 }}
+        style={{
+          backgroundColor: session ? 'transparent' : 'rgba(12,12,12,0.92)',
+          flexGrow: 0,
+        }}
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          paddingHorizontal: session ? 0 : 16,
           paddingTop: 8,
           paddingBottom: Math.max(insets.bottom, 16),
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <View
-          className="self-center rounded-full mb-3"
-          style={{
-            width: 40,
-            height: 5,
-            backgroundColor: 'rgba(255,255,255,0.25)',
-          }}
-        />
+        {!session && (
+          <View
+            className="self-center rounded-full mb-3"
+            style={{
+              width: 40,
+              height: 5,
+              backgroundColor: 'rgba(255,255,255,0.25)',
+            }}
+          />
+        )}
         {!session && autoStarting ? (
           <View className="items-center gap-3 py-8">
             <ActivityIndicator />
@@ -604,106 +602,91 @@ export default function RunRideRecorder({
             </Button>
           </View>
         ) : (
-          <View className="gap-2">
-            {goal && (
-              <View className="gap-1 mb-1">
-                <View className="flex-row justify-between">
-                  <Text className="text-text-secondary text-sm">
-                    {t('recording.goal', {
-                      defaultValue: '{{goal}} goal',
-                      goal: goalLabel(),
-                    })}
-                  </Text>
-                  <Text className="text-text-primary text-sm font-semibold">
-                    {goalText()}
-                  </Text>
-                </View>
-                <View className="h-2 rounded-full bg-progress-track overflow-hidden">
-                  <View
-                    className="h-2 bg-accent-primary rounded-full"
-                    style={{ width: `${goalPercent}%` }}
-                  />
-                </View>
-              </View>
-            )}
-            <View className="flex-row items-center justify-between mb-4">
-              <View
-                className="items-center justify-center rounded-full"
-                style={{
-                  width: 44,
-                  height: 44,
-                  backgroundColor: withAlpha(accent, 0.18),
-                }}
-              >
-                <Icon
-                  name={
-                    currentSport === 'ride'
-                      ? 'exercise-cycling'
-                      : 'exercise-running-filled'
-                  }
-                  size={22}
-                  color={accent}
-                />
-              </View>
-              <Text
-                style={{
-                  color: active ? accent : 'rgba(255,255,255,0.5)',
-                  fontSize: 44,
-                  fontWeight: '500',
-                  fontVariant: ['tabular-nums'],
-                }}
-              >
-                {recordingClock(seconds)}
-              </Text>
-              <View style={{ width: 44 }} />
-            </View>
-
-            <View className="flex-row items-center justify-center gap-6">
-              {session.phase !== 'finished' && (
+          <View>
+            <WorkoutHudBar
+              colorScheme="dark"
+              progress={goal ? goalPercent / 100 : 0}
+              topStatusLine={
+                active
+                  ? null
+                  : t('activeWorkout.liveActivity.paused', {
+                      defaultValue: 'Paused',
+                    })
+              }
+              primaryLine={
+                session.sportName ??
+                (currentSport === 'run'
+                  ? t('recording.run', { defaultValue: 'Run' })
+                  : t('recording.ride', { defaultValue: 'Bike ride' }))
+              }
+              secondaryLine={
+                goal
+                  ? (goalText() ?? '')
+                  : number(distanceFromKm(session.distance / 1000, unit), 2) +
+                    ' ' +
+                    unitLabel
+              }
+              trailingLabel={recordingClock(seconds)}
+              leftButton={
+                session.phase !== 'finished' && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      active
+                        ? t('recording.pause', { defaultValue: 'Pause' })
+                        : t('recording.resume', { defaultValue: 'Resume' })
+                    }
+                    disabled={busy}
+                    onPress={() => {
+                      fireSelectionHaptic();
+                      void perform(() =>
+                        active ? pauseRecording() : resumeRecording(t)
+                      );
+                    }}
+                    className="items-center justify-center rounded-full"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: withAlpha(accent, 0.18),
+                      opacity: busy ? 0.5 : 1,
+                    }}
+                  >
+                    <Icon
+                      name={active ? 'pause' : 'play'}
+                      size={22}
+                      color="#FFF"
+                    />
+                  </Pressable>
+                )
+              }
+              rightButton={
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={
-                    active
-                      ? t('recording.pause', { defaultValue: 'Pause' })
-                      : t('recording.resume', { defaultValue: 'Resume' })
-                  }
+                  accessibilityLabel={t('recording.finish', {
+                    defaultValue: 'Finish and save',
+                  })}
                   disabled={busy}
-                  onPress={() => {
-                    fireSelectionHaptic();
-                    void perform(() =>
-                      active ? pauseRecording() : resumeRecording(t)
-                    );
-                  }}
+                  onPress={finish}
                   className="items-center justify-center rounded-full"
                   style={{
-                    width: 84,
-                    height: 84,
-                    backgroundColor: active
-                      ? 'rgba(255,255,255,0.12)'
-                      : withAlpha(accent, 0.22),
+                    width: 40,
+                    height: 40,
+                    backgroundColor: withAlpha(accent, 0.22),
                     opacity: busy ? 0.5 : 1,
                   }}
                 >
-                  <Icon
-                    name={active ? 'pause' : 'play'}
-                    size={34}
-                    color={active ? '#FFF' : accent}
-                  />
+                  {busy ? (
+                    <ActivityIndicator size="small" />
+                  ) : (
+                    <Icon name="checkmark" size={22} color={accent} />
+                  )}
                 </Pressable>
-              )}
-            </View>
-
-            {/* Ending appears once you have stopped: mid-session it would be a
-                thumb-slip away from throwing the run away. */}
+              }
+            />
             {!active && (
-              <>
-                <Button loading={busy} onPress={finish}>
-                  {t('recording.finish', { defaultValue: 'Finish and save' })}
-                </Button>
-                <Button variant="ghost" disabled={busy} onPress={discard}>
-                  {t('recording.discard', { defaultValue: 'Discard' })}
-                </Button>
-              </>
+              <Button variant="ghost" disabled={busy} onPress={discard}>
+                {t('recording.discard', { defaultValue: 'Discard' })}
+              </Button>
             )}
           </View>
         )}

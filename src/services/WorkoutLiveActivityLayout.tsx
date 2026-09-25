@@ -46,6 +46,7 @@ import type {
  * the main app). The layout never imports i18next or React Native.
  */
 export type WorkoutLiveActivityProps = {
+  recordingSport?: 'run' | 'ride';
   workoutName: string;
   /** Effective locale the labels were built for. */
   locale: WorkoutLiveActivityLocale;
@@ -102,7 +103,8 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
   // Count-up workout clock; frozen to a static label once the workout is
   // complete so it doesn't read as "still going".
   const elapsedClock = (maxWidth?: number) =>
-    props.phase === 'complete' ? (
+    props.phase === 'complete' ||
+    (props.recordingSport && props.phase === 'paused') ? (
       <Text modifiers={[monospacedDigit()]}>{props.elapsedLabel ?? ''}</Text>
     ) : (
       <Text
@@ -227,7 +229,17 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
     ) : null;
   };
 
-  const icon = () => <Image systemName="figure.strengthtraining.traditional" />;
+  const icon = () => (
+    <Image
+      systemName={
+        props.recordingSport === 'run'
+          ? 'figure.run'
+          : props.recordingSport === 'ride'
+            ? 'figure.outdoor.cycle'
+            : 'figure.strengthtraining.traditional'
+      }
+    />
+  );
 
   // App-icon identity for the island slots; null (→ SF-symbol or empty
   // fallback) until the service has copied the icon into the app group.
@@ -270,7 +282,10 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
         />
       );
     }
-    if (props.phase === 'complete') {
+    if (
+      props.phase === 'complete' ||
+      (props.recordingSport && props.phase === 'paused')
+    ) {
       return (
         <Text modifiers={[monospacedDigit()]}>{props.elapsedLabel ?? ''}</Text>
       );
@@ -301,6 +316,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
   // Both labels share one font so the SF Symbol scales to match the text.
   const restButtonFont = font({ weight: 'semibold', size: 17 });
   const actionButtons = () => {
+    if (props.recordingSport) return null;
     if (restInterval) {
       return (
         <HStack spacing={8}>

@@ -343,6 +343,7 @@ function AppContent() {
         MyLogs: 'my-logs',
         // Tapping the workout Live Activity opens its associated URL.
         ActiveWorkout: 'active-workout',
+        RunOrRide: 'recording',
       },
     },
   }), []);

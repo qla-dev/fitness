@@ -16,6 +16,20 @@ import {
 } from '../../src/services/workoutLiveActivity';
 import WorkoutLiveActivityFactory from '../../src/services/WorkoutLiveActivityLayout';
 import { addLog } from '../../src/services/LogService';
+import type { RecordingSession } from '../../src/services/recording/types';
+
+let mockRecordingSession: RecordingSession | null = null;
+let mockRecordingListener: (() => void) | null = null;
+jest.mock('../../src/services/recording/recorder', () => ({
+  initializeRecorder: jest.fn(async () => undefined),
+  getRecordingSnapshot: () => ({ session: mockRecordingSession }),
+  subscribeRecording: (listener: () => void) => {
+    mockRecordingListener = listener;
+    return () => {
+      mockRecordingListener = null;
+    };
+  },
+}));
 
 jest.mock('../../src/services/notifications', () => ({
   scheduleRestNotification: jest.fn(async () => 'notif-abc'),
@@ -194,6 +208,7 @@ function fireInteraction(target: string): void {
 
 describe('workoutLiveActivity', () => {
   beforeEach(async () => {
+    mockRecordingSession = null;
     jest.useFakeTimers();
     jest.setSystemTime(new Date(FIXED_NOW));
     // Service first: resetting the store fires setState, which must not reach
@@ -228,6 +243,76 @@ describe('workoutLiveActivity', () => {
   });
 
   describe('workout lifecycle', () => {
+    it('starts a recording, freezes on pause, excludes paused time on resume and ends on save', async () => {
+      await initHydrated();
+      mockRecordingSession = {
+        id: 'run-1',
+        scope: 'local',
+        sport: 'run',
+        sportName: 'Morning run',
+        phase: 'recording',
+        startedAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        entryDate: '2026-09-25',
+        elapsed: 0,
+        runningSince: FIXED_NOW,
+        distance: 0,
+        elevationGain: 0,
+        maxSpeed: 0,
+        speed: 0,
+        weightKg: 70,
+        segment: 0,
+      };
+      mockRecordingListener?.();
+      await flushPromises();
+      expect(mockFactory.start).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          recordingSport: 'run',
+          workoutName: 'Morning run',
+          phase: 'active',
+          startedAt: FIXED_NOW,
+        }),
+        'sparkyfitnessmobile://recording'
+      );
+      const instance = createdInstances[0];
+      mockRecordingSession = {
+        ...mockRecordingSession,
+        phase: 'paused',
+        elapsed: 65,
+        runningSince: null,
+      };
+      mockRecordingListener?.();
+      await flushPromises();
+      expect(instance.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          phase: 'paused',
+          elapsedLabel: '01:05',
+          pausedRemainingLabel: '01:05',
+        })
+      );
+      mockRecordingSession = {
+        ...mockRecordingSession,
+        phase: 'recording',
+        runningSince: FIXED_NOW + 100_000,
+      };
+      mockRecordingListener?.();
+      await flushPromises();
+      expect(instance.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          phase: 'active',
+          startedAt: FIXED_NOW + 35_000,
+        })
+      );
+      mockRecordingSession = {
+        ...mockRecordingSession,
+        phase: 'finished',
+        runningSince: null,
+      };
+      mockRecordingListener?.();
+      await flushPromises();
+      expect(instance.end).toHaveBeenCalledWith('immediate');
+    });
+
     it('starts the activity with active-phase props and the deep-link url', async () => {
       await initHydrated();
 
