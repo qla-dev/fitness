@@ -65,7 +65,8 @@
     "notNow": "Not now",
     "skip": "Skip",
     "more": "More",
-    "all": "All"
+    "all": "All",
+    "share": "Share"
   },
   "fitPass": {
     "title": "FitPass",
@@ -5436,7 +5437,27 @@
     "openPhoto": "Open workout photo",
     "showMap": "Show map",
     "showCamera": "Show camera",
-    "followRoute": "Follow my position"
+    "followRoute": "Follow my position",
+    "editor": {
+      "textColor": "Text color",
+      "hexColor": "Hex color",
+      "classic": "Classic",
+      "summit": "Stats above route",
+      "hero": "Distance spotlight",
+      "poster": "Route poster",
+      "none": "None",
+      "soft": "Soft shade",
+      "dark": "Deep shade",
+      "light": "Light wash",
+      "original": "Original",
+      "mono": "Monochrome",
+      "warm": "Golden hour",
+      "cool": "Cool light",
+      "layout": "Layout",
+      "overlay": "Image overlay",
+      "filter": "Photo filter",
+      "previewFailed": "Could not update the preview. Tap to retry."
+    }
   },
   "setup": {
     "progress": "Step {{current}} of {{total}}",

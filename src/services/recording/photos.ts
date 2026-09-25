@@ -6,6 +6,11 @@ import {
   Skia,
   matchFont,
 } from '@shopify/react-native-skia';
+import {
+  photoEditorLayout,
+  photoFilterMatrices,
+  type PhotoEditorOptions,
+} from './photoEditor';
 import type { PhotoComposition, RecordingPhoto } from './types';
 
 const directory = () => new Directory(Paths.document, 'workout-photos');
@@ -16,15 +21,16 @@ export const recordingPhotoUri = (photo: RecordingPhoto) =>
 async function renderRecordingPhoto(
   uri: string,
   composition: PhotoComposition,
-  whiteWash = false,
-  showRoute = false,
-  whiteText = true
+  options?: PhotoEditorOptions
 ): Promise<Uint8Array> {
   const data = await Skia.Data.fromURI(uri);
   const image = Skia.Image.MakeImageFromEncoded(data);
   if (!image) throw new Error('Camera image could not be decoded');
   const width = 1080;
-  const height = Math.round((width * composition.height) / composition.width);
+  const layout = options ? photoEditorLayout(composition, options) : undefined;
+  const height =
+    layout?.height ??
+    Math.round((width * composition.height) / composition.width);
   const surface = Skia.Surface.MakeOffscreen(width, height);
   if (!surface) {
     image.dispose();
@@ -33,6 +39,13 @@ async function renderRecordingPhoto(
   try {
     const canvas = surface.getCanvas();
     const paint = Skia.Paint();
+    if (options && options.filter !== 'original') {
+      const filter = Skia.ColorFilter.MakeMatrix(
+        photoFilterMatrices[options.filter]
+      );
+      paint.setColorFilter(filter);
+      filter.dispose();
+    }
     // Match the live camera's centered cover crop and viewport proportions.
     const scale = Math.max(width / image.width(), height / image.height());
     const sw = width / scale,
@@ -48,17 +61,29 @@ async function renderRecordingPhoto(
       Skia.XYWHRect(0, 0, width, height),
       paint
     );
-    if (whiteWash) {
-      paint.setColor(Skia.Color('rgba(255,255,255,0.25)'));
+    if (options && options.filter !== 'original') paint.setColorFilter(null);
+    if (options && options.overlay !== 'none') {
+      const color =
+        options.overlay === 'light'
+          ? 'rgba(255,255,255,0.25)'
+          : options.overlay === 'dark'
+            ? 'rgba(0,0,0,0.55)'
+            : 'rgba(0,0,0,0.25)';
+      paint.setColor(Skia.Color(color));
       canvas.drawRect(Skia.XYWHRect(0, 0, width, height), paint);
     }
-    const ratio = width / composition.width;
-    paint.setColor(Skia.Color(whiteText ? 'white' : '#111111'));
-    for (const metric of composition.metrics) {
+    const ratio = layout ? 1 : width / composition.width;
+    paint.setColor(Skia.Color(options?.textColor ?? 'white'));
+    for (const metric of layout?.metrics ?? composition.metrics) {
       const font = matchFont({
         fontSize: metric.size * ratio,
         fontWeight: '400',
       });
+      if ('maxWidth' in metric && typeof metric.maxWidth === 'number') {
+        const measured = font.measureText(metric.text).width;
+        if (measured > metric.maxWidth)
+          font.setSize((metric.size * metric.maxWidth) / measured);
+      }
       const metrics = font.getMetrics();
       const baseline =
         (metric.y + metric.size * 0.6) * ratio -
@@ -68,7 +93,7 @@ async function renderRecordingPhoto(
     const points = composition.route.filter(
       (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
     );
-    if (showRoute && points.length > 1) {
+    if (options && points.length > 1) {
       const latitude =
         points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
       const projected = points.map((p) => ({
@@ -86,11 +111,15 @@ async function renderRecordingPhoto(
         { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
       );
       const { minX, maxX, minY, maxY } = bounds;
-      const fit = (width * 0.35) / Math.max(maxX - minX, maxY - minY, 0.00001);
+      const box = layout!.route;
+      const fit = Math.min(
+        box.width / Math.max(maxX - minX, 0.00001),
+        box.height / Math.max(maxY - minY, 0.00001)
+      );
       const path = Skia.Path.Make();
       projected.forEach((p, i) => {
-        const x = width * 0.74 + (p.x - (minX + maxX) / 2) * fit;
-        const y = height * 0.7 + (p.y - (minY + maxY) / 2) * fit;
+        const x = box.x + (p.x - (minX + maxX) / 2) * fit;
+        const y = box.y + (p.y - (minY + maxY) / 2) * fit;
         if (!i || p.segment !== projected[i - 1].segment) path.moveTo(x, y);
         else path.lineTo(x, y);
       });
@@ -155,9 +184,7 @@ export async function createRecordingPhoto(
 
 export async function createPhotoPreview(
   photo: RecordingPhoto,
-  whiteWash: boolean,
-  showRoute: boolean,
-  whiteText = true
+  options: PhotoEditorOptions
 ) {
   if (
     !photo.composition ||
@@ -168,9 +195,7 @@ export async function createPhotoPreview(
   const bytes = await renderRecordingPhoto(
     new File(directory(), photo.originalFileName).uri,
     photo.composition,
-    whiteWash,
-    showRoute,
-    whiteText
+    options
   );
   const file = new File(Paths.cache, `${randomUUID()}.jpg`);
   file.write(bytes);

@@ -5,26 +5,23 @@ import {
   createRecordingPhoto,
   deleteRecordingPhoto,
 } from '../../../src/services/recording/photos';
+import { defaultPhotoEditorOptions } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'aaaa-bbbb') }));
 jest.mock('expo-file-system', () => ({
   Paths: { document: 'document', cache: 'cache' },
-  Directory: jest
-    .fn()
-    .mockImplementation(() => ({
-      uri: 'document/workout-photos',
-      create: jest.fn(),
-    })),
-  File: jest
-    .fn()
-    .mockImplementation((base, name) => ({
-      uri: name ? `${base.uri ?? base}/${name}` : base,
-      exists: true,
-      write: jest.fn(),
-      copy: jest.fn(),
-      delete: jest.fn(),
-    })),
+  Directory: jest.fn().mockImplementation(() => ({
+    uri: 'document/workout-photos',
+    create: jest.fn(),
+  })),
+  File: jest.fn().mockImplementation((base, name) => ({
+    uri: name ? `${base.uri ?? base}/${name}` : base,
+    exists: true,
+    write: jest.fn(),
+    copy: jest.fn(),
+    delete: jest.fn(),
+  })),
 }));
 jest.mock('@shopify/react-native-skia', () => {
   const canvas = {
@@ -36,7 +33,11 @@ jest.mock('@shopify/react-native-skia', () => {
   return {
     ImageFormat: { JPEG: 1 },
     PaintStyle: { Stroke: 1 },
-    matchFont: () => ({ getMetrics: () => ({ ascent: -80, descent: 20 }) }),
+    matchFont: () => ({
+      getMetrics: () => ({ ascent: -80, descent: 20 }),
+      measureText: () => ({ width: 100 }),
+      setSize: jest.fn(),
+    }),
     Skia: {
       Data: { fromURI: jest.fn().mockResolvedValue({}) },
       Image: {
@@ -57,7 +58,9 @@ jest.mock('@shopify/react-native-skia', () => {
           }),
         })),
       },
+      ColorFilter: { MakeMatrix: jest.fn(() => ({ dispose: jest.fn() })) },
       Paint: () => ({
+        setColorFilter: jest.fn(),
         setColor: jest.fn(),
         setStyle: jest.fn(),
         setStrokeWidth: jest.fn(),
@@ -114,9 +117,13 @@ it('re-renders the original for styling and shares the resulting file, leaving l
     capturedAt: 0,
     composition,
   };
-  expect(await createPhotoPreview(photo, true, true, false)).toBe(
-    'cache/aaaa-bbbb.jpg'
-  );
+  expect(
+    await createPhotoPreview(photo, {
+      ...defaultPhotoEditorOptions,
+      overlay: 'light',
+      textColor: '#111111',
+    })
+  ).toBe('cache/aaaa-bbbb.jpg');
   expect(Skia.Data.fromURI).toHaveBeenCalledWith(
     'document/workout-photos/bbbb.jpg'
   );
@@ -129,8 +136,7 @@ it('re-renders the original for styling and shares the resulting file, leaving l
   expect(
     await createPhotoPreview(
       { fileName: 'aaaa.jpg', capturedAt: 0 },
-      true,
-      true
+      defaultPhotoEditorOptions
     )
   ).toBe('document/workout-photos/aaaa.jpg');
   expect(Skia.Data.fromURI).not.toHaveBeenCalled();
@@ -145,4 +151,26 @@ it('removes both durable images when a capture is discarded', () => {
   expect(jest.mocked(File).mock.results).toHaveLength(2);
   for (const result of jest.mocked(File).mock.results)
     expect(result.value.delete).toHaveBeenCalledTimes(1);
+});
+
+it('filters the image before drawing the overlay and metrics', async () => {
+  await createPhotoPreview(
+    {
+      fileName: 'aaaa.jpg',
+      originalFileName: 'bbbb.jpg',
+      capturedAt: 0,
+      composition,
+    },
+    { ...defaultPhotoEditorOptions, filter: 'mono' }
+  );
+  expect(Skia.ColorFilter.MakeMatrix).toHaveBeenCalledTimes(1);
+  const canvas = jest
+    .mocked(Skia.Surface.MakeOffscreen)
+    .mock.results[0].value.getCanvas();
+  expect(canvas.drawImageRect.mock.invocationCallOrder[0]).toBeLessThan(
+    canvas.drawRect.mock.invocationCallOrder[0]
+  );
+  expect(canvas.drawRect.mock.invocationCallOrder[0]).toBeLessThan(
+    canvas.drawText.mock.invocationCallOrder[0]
+  );
 });
