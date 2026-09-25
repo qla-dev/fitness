@@ -45,7 +45,8 @@ struct WatchNutritionView: View {
     let color = Color(red: Double((argb >> 16) & 255) / 255,
       green: Double((argb >> 8) & 255) / 255, blue: Double(argb & 255) / 255)
 
-    return VStack(spacing: 5) {
+    return Button { editingNutrient = key } label: {
+      VStack(spacing: 5) {
       Image(systemName: symbol(for: key)).foregroundStyle(color).accessibilityHidden(true)
       ZStack {
         Circle().stroke(color.opacity(0.18), lineWidth: 5)
@@ -68,12 +69,13 @@ struct WatchNutritionView: View {
           .font(.system(size: 9)).foregroundStyle(.secondary)
           .lineLimit(1).minimumScaleFactor(0.7).frame(height: 12)
       } else {
-        Button(watchText("nutrition.addGoal", "Add Goal")) { editingNutrient = key }
-          .buttonStyle(.plain).font(.system(size: 10)).foregroundStyle(color)
+        Text(watchText("nutrition.addGoal", "Add Goal"))
+          .font(.system(size: 10)).foregroundStyle(color)
           .lineLimit(1).minimumScaleFactor(0.7).frame(height: 14)
         Color.clear.frame(height: 12).accessibilityHidden(true)
       }
-    }.frame(maxWidth: .infinity)
+      }.frame(maxWidth: .infinity).contentShape(Rectangle())
+    }.buttonStyle(.plain)
   }
 
   private func symbol(for key: String) -> String {

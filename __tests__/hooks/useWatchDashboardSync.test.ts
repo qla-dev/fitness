@@ -46,7 +46,7 @@ it('sends the dashboard Move total and goals, measurements, and converted distan
   renderHook(() =>
     useWatchDashboardSync(
       summary,
-      { steps: 8123, stand_hours: 7 },
+      { steps: 8123, stand_hours: 7, weight: 72.5 },
       3.1,
       'miles'
     )
@@ -62,6 +62,8 @@ it('sends the dashboard Move total and goals, measurements, and converted distan
       standGoal: 10,
       steps: 8123,
       stepsGoal: 9000,
+      weight: 72.5,
+      weightUnit: 'kg',
       distance: 3.1,
       distanceUnit: 'miles',
       nutrients: expect.arrayContaining([

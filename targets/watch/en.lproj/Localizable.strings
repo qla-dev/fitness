@@ -15,6 +15,15 @@
 "nutrition.left" = "left";
 "nutrition.goal" = "Goal";
 "home.water" = "Water";
+"measurement.weight" = "Weight";
+"measurement.add" = "Add entry";
+"measurement.phone" = "Saves to qla.fit on your iPhone.";
+"measurement.decimal" = "Decimal";
+"measurement.unconfirmed" = "Open qla.fit on iPhone, then tap Retry to confirm this entry.";
+"common.retry" = "Retry";
+"common.save" = "Save";
+"unit.kg" = "kg";
+"unit.lbs" = "lb";
 "metric.averageHeartRate" = "Average heart rate";
 "metric.averagePace" = "Average pace";
 "metric.averageSpeed" = "Average speed";

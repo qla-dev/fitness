@@ -106,6 +106,7 @@ export default function RunRideRecorder({
   const leaving = useRef(false);
   const session = snapshot.session;
   const [panelHeight, setPanelHeight] = useState(240);
+  const [viewport, setViewport] = useState({ width: 390, height: 844 });
   const [showCamera, setShowCamera] = useState(false);
   const [flip] = useState(() => new Animated.Value(0));
   const previousCameraMode = useRef(cameraMode);
@@ -378,7 +379,11 @@ export default function RunRideRecorder({
     // arm's length, usually outdoors, where a light sheet under sun is the
     // wrong instinct. It also lets the map sit behind everything without the
     // panel over it changing colour with the user's theme.
-    <View className="flex-1" style={{ backgroundColor: '#000' }}>
+    <View
+      className="flex-1"
+      onLayout={({ nativeEvent }) => setViewport(nativeEvent.layout)}
+      style={{ backgroundColor: '#000' }}
+    >
       {active && focused && <KeepRecordingAwake />}
       <Animated.View
         style={[
@@ -400,6 +405,9 @@ export default function RunRideRecorder({
           <WorkoutCamera
             recordingId={session.id}
             bottom={panelHeight}
+            viewport={viewport}
+            top={insets.top + 52}
+            route={snapshot.points}
             active={focused && session.phase !== 'finished'}
             lines={[
               'qla.fit',
@@ -417,12 +425,7 @@ export default function RunRideRecorder({
             {/* The map is the background rather than a pane at the top: it fills
               the screen and the readings sit over it, dimmed enough to stay
               legible against a bright map. */}
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                { top: insets.top + 52, bottom: panelHeight },
-              ]}
-            >
+            <View style={[StyleSheet.absoluteFill, { bottom: panelHeight }]}>
               <RouteMap
                 key={session?.id ?? 'preview'}
                 center={snapshot.points[snapshot.points.length - 1]}
@@ -440,12 +443,9 @@ export default function RunRideRecorder({
         pointerEvents="none"
         style={{ paddingTop: insets.top + 52, marginRight: 88 }}
       >
-        {session ? (
+        {session && !showCamera ? (
           <>
-            <View
-              className="flex-row items-baseline"
-              style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12 }}
-            >
+            <View className="flex-row items-baseline">
               <Text
                 style={{ color: '#FFF', fontSize: 48, fontWeight: '300' }}
                 numberOfLines={1}
@@ -461,10 +461,7 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View
-              className="flex-row items-baseline mt-6"
-              style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12 }}
-            >
+            <View className="flex-row items-baseline mt-6">
               <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
                 {currentSport === 'run'
                   ? speed > 0.5
@@ -487,10 +484,7 @@ export default function RunRideRecorder({
             <View
               className="mt-6 gap-6"
               style={{
-                backgroundColor: 'rgba(0,0,0,0.45)',
-                borderRadius: 12,
                 alignSelf: 'flex-start',
-                padding: 8,
               }}
             >
               <View>

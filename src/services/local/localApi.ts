@@ -1,4 +1,5 @@
 import type { DailyGoals } from '../../types/goals';
+import { saveWatchMeasurement } from './watchMeasurementRepository';
 import {
   asRecord,
   deleteRecord,
@@ -110,6 +111,8 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   initialise(db);
   const { path, query, method, body } = request;
   const parts = path.split('/');
+  if (path === '/api/measurements/watch' && method === 'POST')
+    return saveWatchMeasurement(db, body);
   if (path === '/api/health-data' && method === 'POST')
     return importHealthData(db, body.records);
   if (path === '/api/sleep' && method === 'GET')

@@ -110,4 +110,14 @@ export const RECORDING_DETAIL_TYPE = 'fitness_recording_v1';
 export interface RecordingPhoto {
   fileName: string;
   capturedAt: number;
+  originalFileName?: string;
+  composition?: PhotoComposition;
+}
+
+export interface PhotoComposition {
+  width: number;
+  height: number;
+  top: number;
+  metrics: { text: string; x: number; y: number; size: number }[];
+  route: { latitude: number; longitude: number; segment: number }[];
 }

@@ -16,10 +16,9 @@ import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
-import StepperInput, { useStepperDraft } from '../components/StepperInput';
+import WorkoutGoalSheet from '../components/recording/WorkoutGoalSheet';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
-import NativePromptSheet from '../components/ui/NativePromptSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import {
@@ -438,27 +437,6 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     begin(goal);
   };
 
-  const minuteDraft = useStepperDraft({
-    value: minutes,
-    min: 1,
-    max: 600,
-    step: 5,
-    onCommit: setMinutes,
-  });
-  const distanceDraft = useStepperDraft({
-    value: distance,
-    min: 1,
-    max: 500,
-    onCommit: setDistance,
-  });
-  const calorieDraft = useStepperDraft({
-    value: calories,
-    min: 25,
-    max: 5000,
-    step: 25,
-    onCommit: setCalories,
-  });
-
   const card = (
     color: string,
     icon: IconName,
@@ -732,92 +710,26 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
       <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
-      {/* One sheet for the three targets: same question, different unit. The
-          stepper lives here rather than on the card, where it competed with
-          the card's own tap and the start button beside it. */}
-      <NativePromptSheet
+      <WorkoutGoalSheet
         open={editingGoal !== null}
-        onClose={() => setEditingGoal(null)}
-        title={
-          editingGoal === 'time'
-            ? t('workoutSetup.time', { defaultValue: 'Time' })
-            : editingGoal === 'distance'
-              ? t('workoutSetup.distance', { defaultValue: 'Distance' })
-              : t('workoutSetup.calories', { defaultValue: 'Calories' })
+        kind={editingGoal ?? 'time'}
+        value={
+          editingGoal === 'distance'
+            ? distance
+            : editingGoal === 'calories'
+              ? calories
+              : minutes
         }
-        description={t('workoutSetup.goalSheetMessage', {
-          defaultValue:
-            'A goal is a target, not a limit — the session keeps recording past it until you finish.',
-        })}
-        footerLabel={t('common.done', { defaultValue: 'Done' })}
-        onFooterPress={() => setEditingGoal(null)}
-      >
-        <View className="items-center">
-          <View style={{ width: 200 }}>
-            <StepperInput
-              keyboardType="number-pad"
-              value={
-                editingGoal === 'time'
-                  ? minuteDraft.value
-                  : editingGoal === 'distance'
-                    ? distanceDraft.value
-                    : calorieDraft.value
-              }
-              onChangeText={
-                editingGoal === 'time'
-                  ? minuteDraft.onChangeText
-                  : editingGoal === 'distance'
-                    ? distanceDraft.onChangeText
-                    : calorieDraft.onChangeText
-              }
-              onBlur={
-                editingGoal === 'time'
-                  ? minuteDraft.onBlur
-                  : editingGoal === 'distance'
-                    ? distanceDraft.onBlur
-                    : calorieDraft.onBlur
-              }
-              onIncrement={
-                editingGoal === 'time'
-                  ? minuteDraft.onIncrement
-                  : editingGoal === 'distance'
-                    ? distanceDraft.onIncrement
-                    : calorieDraft.onIncrement
-              }
-              onDecrement={
-                editingGoal === 'time'
-                  ? minuteDraft.onDecrement
-                  : editingGoal === 'distance'
-                    ? distanceDraft.onDecrement
-                    : calorieDraft.onDecrement
-              }
-              accessibilityLabels={{
-                input:
-                  editingGoal === 'time'
-                    ? t('workoutSetup.timeTarget', {
-                        defaultValue: 'Time goal in minutes',
-                      })
-                    : editingGoal === 'distance'
-                      ? t('workoutSetup.distanceTarget', {
-                          defaultValue: 'Distance goal',
-                        })
-                      : t('workoutSetup.calorieTarget', {
-                          defaultValue: 'Calorie goal',
-                        }),
-              }}
-            />
-          </View>
-          <Text className="text-text-secondary text-base font-semibold mt-4 uppercase">
-            {editingGoal === 'time'
-              ? t('workoutSetup.minutesUnit', { defaultValue: 'MIN' })
-              : editingGoal === 'distance'
-                ? distanceUnit === 'miles'
-                  ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
-                  : t('workoutSetup.kmUnit', { defaultValue: 'KM' })
-                : t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })}
-          </Text>
-        </View>
-      </NativePromptSheet>
+        distanceUnit={distanceUnit}
+        onChange={
+          editingGoal === 'distance'
+            ? setDistance
+            : editingGoal === 'calories'
+              ? setCalories
+              : setMinutes
+        }
+        onClose={() => setEditingGoal(null)}
+      />
     </View>
   );
 }

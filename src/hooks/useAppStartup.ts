@@ -25,6 +25,7 @@ import { initWorkoutLiveActivity } from '../services/workoutLiveActivity';
 import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
 import { initializeRecorder } from '../services/recording/recorder';
 import { subscribeWatchGoals } from '../services/watchGoals';
+import { subscribeWatchMeasurements } from '../services/watchMeasurements';
 
 interface AppStartupArgs {
   /**
@@ -43,6 +44,8 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
   useEffect(() => {
     let cancelled = false;
     const watchGoals = Platform.OS === 'ios' ? subscribeWatchGoals() : null;
+    const watchMeasurements =
+      Platform.OS === 'ios' ? subscribeWatchMeasurements() : null;
     const onLanguageChanged = () => {
       void registerLocalizedNotificationPresentation().catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
@@ -173,6 +176,7 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     return () => {
       cancelled = true;
       watchGoals?.remove();
+      watchMeasurements?.remove();
       i18n.off('languageChanged', onLanguageChanged);
       if (Platform.OS === 'ios') {
         stopObservers();

@@ -229,7 +229,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     measurements,
     dayDistance,
     distanceUnit,
-    preferences?.show_net_carbs ?? false
+    preferences?.show_net_carbs ?? false,
+    preferences?.default_weight_unit === 'lbs' ? 'lbs' : 'kg'
   );
   // The Exercise chart's 24 bars, built from the day's logged sessions. Move
   // and Stand come off the summary instead: their breakdowns are read from the

@@ -13,10 +13,17 @@ import { addLog } from '../services/LogService';
 export function useWatchDashboardSync(
   summary: DailySummary | undefined,
   measurements:
-    { steps?: number | null; stand_hours?: number | null } | null | undefined,
+    | {
+        steps?: number | null;
+        stand_hours?: number | null;
+        weight?: number | null;
+      }
+    | null
+    | undefined,
   distance: number | undefined,
   distanceUnit: 'km' | 'miles',
-  showNetCarbs = false
+  showNetCarbs = false,
+  weightUnit: 'kg' | 'lbs' = 'kg'
 ) {
   const { t } = useTranslation();
   const colors = useCSSVariable(
@@ -44,6 +51,10 @@ export function useWatchDashboardSync(
       calorieGoal: summary.calorieGoal,
       water: summary.waterConsumed,
       waterGoal: summary.waterGoal,
+      ...(typeof measurements?.weight === 'number'
+        ? { weight: measurements.weight }
+        : {}),
+      weightUnit,
       nutrients: MACRO_RINGS.map((spec, index) => {
         const color = processColor(resolvedColors[index]);
         return {
@@ -58,5 +69,14 @@ export function useWatchDashboardSync(
     }).catch((error) =>
       addLog('[Watch] Dashboard sync failed', 'WARNING', [String(error)])
     );
-  }, [summary, measurements, distance, distanceUnit, showNetCarbs, t, palette]);
+  }, [
+    summary,
+    measurements,
+    distance,
+    distanceUnit,
+    showNetCarbs,
+    t,
+    palette,
+    weightUnit,
+  ]);
 }

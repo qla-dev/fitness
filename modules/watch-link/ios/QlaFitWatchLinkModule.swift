@@ -65,6 +65,19 @@ private final class WatchLink: NSObject {
       self?.completeGoalRequest(id: id, success: false)
     }
   }
+
+  func requestMeasurement(_ message: [String: Any], reply: @escaping ([String: Any]) -> Void) {
+    guard let entryId = message["id"] as? String, UUID(uuidString: entryId) != nil,
+      let kind = message["measurement"] as? String, ["water", "weight"].contains(kind),
+      let value = message["value"] as? Double, value.isFinite, value > 0,
+      let date = message["date"] as? String else { reply(["success": false]); return }
+    let id = UUID().uuidString
+    goalReplies[id] = reply
+    onEvent?("onMeasurementRequest", ["id": id, "entryId": entryId, "kind": kind, "value": value, "date": date])
+    DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+      self?.completeGoalRequest(id: id, success: false)
+    }
+  }
   private var launchTimeout: DispatchWorkItem?
   private var launchAttempts = 0
   private var launchedAttempt = 0
@@ -276,6 +289,10 @@ extension WatchLink: WCSessionDelegate {
   func session(_ session: WCSession, didReceiveMessage message: [String: Any],
     replyHandler: @escaping ([String: Any]) -> Void) {
     DispatchQueue.main.async {
+      if message["kind"] as? String == "addMeasurement" {
+        self.requestMeasurement(message, reply: replyHandler)
+        return
+      }
       if message["kind"] as? String == "setNutrientGoal" {
         self.requestGoal(message, reply: replyHandler)
         return
@@ -304,7 +321,7 @@ public final class QlaFitWatchLinkModule: Module {
   public func definition() -> ModuleDefinition {
     Name("QlaFitWatchLink")
 
-    Events("onHeartRate", "onWorkoutState", "onReachabilityChange", "onGoalRequest")
+    Events("onHeartRate", "onWorkoutState", "onReachabilityChange", "onGoalRequest", "onMeasurementRequest")
 
     AsyncFunction("completeGoalRequest") { (id: String, success: Bool) in
       self.link.completeGoalRequest(id: id, success: success)

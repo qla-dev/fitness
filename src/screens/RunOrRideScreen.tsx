@@ -57,6 +57,7 @@ export default function RunOrRideScreen({
     right: [
       {
         kind: 'icon',
+        separated: true,
         sfSymbol: cameraMode ? 'map' : 'camera',
         ionicon: cameraMode ? 'map-outline' : 'camera-outline',
         accessibilityLabel: cameraMode
@@ -74,7 +75,15 @@ export default function RunOrRideScreen({
         disabled: countdown,
       },
     ],
-    nativeOptions: { headerBackVisible: false, gestureEnabled: false },
+    nativeOptions: {
+      headerBackVisible: false,
+      gestureEnabled: false,
+      headerTransparent: true,
+      headerBlurEffect: 'none',
+      headerStyle: { backgroundColor: 'transparent' },
+      headerShadowVisible: false,
+      scrollEdgeEffects: { top: 'hidden' },
+    },
   });
 
   // The count owns the whole screen, bar included — nothing to go back to

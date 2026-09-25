@@ -18,17 +18,24 @@ import {
   deleteRecordingPhoto,
 } from '../../services/recording/photos';
 import { fireSuccessHaptic } from '../../services/haptics';
+import type { PhotoComposition } from '../../services/recording/types';
 
 export default function WorkoutCamera({
   recordingId,
   lines,
   bottom,
   active,
+  viewport,
+  top,
+  route,
 }: {
   recordingId: string;
   lines: string[];
   bottom: number;
   active: boolean;
+  viewport: { width: number; height: number };
+  top: number;
+  route: PhotoComposition['route'];
 }) {
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
@@ -36,6 +43,18 @@ export default function WorkoutCamera({
   const locked = useRef(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const composition: PhotoComposition = {
+    ...viewport,
+    top,
+    route,
+    metrics: [
+      { text: lines[1], x: 24, y: top, size: 48 },
+      { text: lines[3], x: 24, y: top + 82, size: 40 },
+      { text: lines[4], x: 24, y: top + 154, size: 34 },
+      { text: lines[5], x: 24, y: top + 220, size: 34 },
+      { text: lines[2], x: 24, y: top + 286, size: 28 },
+    ],
+  };
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [foreground, setForeground] = useState(
     AppState.currentState === 'active'
@@ -56,7 +75,7 @@ export default function WorkoutCamera({
       const picture = await camera.current?.takePictureAsync({ quality: 0.9 });
       if (!picture) throw new Error('Camera unavailable');
       temporary = picture.uri;
-      const photo = await createRecordingPhoto(picture.uri, lines);
+      const photo = await createRecordingPhoto(picture.uri, composition);
       try {
         await attachRecordingPhoto(recordingId, photo);
       } catch (error) {
@@ -99,6 +118,24 @@ export default function WorkoutCamera({
           onCameraReady={() => setReady(true)}
         />
       ) : null}
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {composition.metrics.map((metric, index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              left: metric.x,
+              top: metric.y,
+              fontSize: metric.size,
+              lineHeight: metric.size * 1.2,
+              fontWeight: '400',
+              color: 'white',
+            }}
+          >
+            {metric.text}
+          </Text>
+        ))}
+      </View>
       <View
         style={{
           position: 'absolute',

@@ -158,8 +158,27 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// phone locks or suspends the app). That is the same "phone not there" case
   /// the guard already handles silently, not a failure worth showing on the
   /// wrist — reachability changes re-send state and retry pending requests.
+  /// A reply timeout is equally transient: application context may have already
+  /// synced successfully while the phone's live-message reply was delayed.
   nonisolated private static func isUnreachable(_ error: Error) -> Bool {
-    (error as? WCError)?.code == .notReachable
+    guard let code = (error as? WCError)?.code else { return false }
+    return code == .notReachable || code == .messageReplyTimedOut
+  }
+
+  /// Retry the same identity after a lost reply; the phone saves each entry once.
+  func saveMeasurement(id: String, kind: String, value: Double, date: String,
+    completion: @escaping (Bool) -> Void) {
+    let connection = WCSession.default
+    guard connection.activationState == .activated, connection.isReachable else {
+      completion(false)
+      return
+    }
+    connection.sendMessage(["kind": "addMeasurement", "id": id, "measurement": kind,
+      "value": value, "date": date], replyHandler: { reply in
+      Task { @MainActor in completion(reply["success"] as? Bool == true) }
+    }, errorHandler: { _ in
+      Task { @MainActor in completion(false) }
+    })
   }
 
   private func sendState() {

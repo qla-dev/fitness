@@ -19,6 +19,8 @@ struct ContentView: View {
           WatchNutritionView().tag(-1)
           WatchDashboardView().tag(0)
           SportListView().tag(1)
+          WatchMeasurementView(kind: .water).tag(2)
+          WatchMeasurementView(kind: .weight).tag(3)
         }
         .tabViewStyle(.page)
       }

@@ -18,6 +18,10 @@ export interface WatchReachabilityEvent {
 }
 
 interface WatchLinkNativeModule {
+  addListener(
+    name: 'onMeasurementRequest',
+    listener: (event: WatchMeasurementRequest) => void
+  ): EventSubscription;
   completeGoalRequest(id: string, success: boolean): Promise<void>;
   addListener(
     name: 'onGoalRequest',
@@ -56,6 +60,20 @@ export interface WatchGoalRequest {
   value: number;
 }
 
+export interface WatchMeasurementRequest {
+  id: string;
+  entryId: string;
+  kind: 'water' | 'weight';
+  value: number;
+  date: string;
+}
+
+export function addWatchMeasurementListener(
+  listener: (event: WatchMeasurementRequest) => void
+): EventSubscription | null {
+  return native?.addListener('onMeasurementRequest', listener) ?? null;
+}
+
 export function addWatchGoalListener(
   listener: (event: WatchGoalRequest) => void
 ): EventSubscription | null {
@@ -86,6 +104,8 @@ interface WatchDashboardSnapshot {
   calorieGoal: number;
   water: number;
   waterGoal: number;
+  weight?: number;
+  weightUnit?: 'kg' | 'lbs';
   nutrients: {
     key: string;
     label: string;

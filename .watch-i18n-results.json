@@ -1,0 +1,90 @@
+{
+  "localeStructuralErrors": [],
+  "missingStaticKeys": [],
+  "placeholderErrors": [],
+  "pluralErrors": [],
+  "missingFallbackFindings": [],
+  "hardcodedUiFindings": [
+    {
+      "rule": "hardcoded-ui-text",
+      "file": "src/components/SegmentedControl.ios.tsx",
+      "line": 62,
+      "value": "Options",
+      "context": {
+        "attr": "label",
+        "form": "expression"
+      }
+    }
+  ],
+  "dynamicI18nFindings": [
+    {
+      "rule": "dynamic-i18n-key",
+      "file": "src/components/ActivityExtras.tsx",
+      "line": 151,
+      "expression": "block.titleKey",
+      "message": "Dynamic i18n key \"block.titleKey\" at src/components/ActivityExtras.tsx:151 — use a static map instead"
+    }
+  ],
+  "unsafeNumberFormatFindings": [],
+  "manualPluralizationFindings": [],
+  "unregisteredLocaleFindings": [],
+  "translationCoverage": {
+    "bs": {
+      "translated": 77,
+      "total": 4953,
+      "missing": 4876,
+      "percent": 2
+    },
+    "es": {
+      "translated": 3540,
+      "total": 4953,
+      "missing": 1413,
+      "percent": 71,
+      "stale": 6
+    },
+    "pl": {
+      "translated": 3806,
+      "total": 5061,
+      "missing": 1255,
+      "percent": 75,
+      "stale": 7
+    }
+  },
+  "summary": {
+    "translationCoverage": {
+      "bs": {
+        "translated": 77,
+        "total": 4953,
+        "missing": 4876,
+        "percent": 2
+      },
+      "es": {
+        "translated": 3540,
+        "total": 4953,
+        "missing": 1413,
+        "percent": 71,
+        "stale": 6
+      },
+      "pl": {
+        "translated": 3806,
+        "total": 5061,
+        "missing": 1255,
+        "percent": 75,
+        "stale": 7
+      }
+    },
+    "sourceLocale": "en",
+    "fallbackLocale": "en",
+    "localeStructuralErrors": 0,
+    "missingStaticKeys": 0,
+    "placeholderErrors": 0,
+    "pluralErrors": 0,
+    "missingFallbackFindings": 0,
+    "hardcodedUiFindings": 1,
+    "dynamicI18nFindings": 1,
+    "unsafeNumberFormatFindings": 0,
+    "manualPluralizationFindings": 0,
+    "unregisteredLocaleFindings": 0,
+    "sourceScanErrors": 0
+  }
+}
