@@ -55,12 +55,17 @@ export default function GoalEditScreen({
   const macro = MACRO_RINGS.find((ring) => ring.key === goalKey);
   const [accentPrimary, macroColor] = useCSSVariable([
     '--color-accent-primary',
-    macro?.colorVar ?? '--color-accent-primary',
+    goalKey === 'calories'
+      ? '--color-calories'
+      : (macro?.colorVar ?? '--color-accent-primary'),
   ]) as [string, string];
   // A goal that is neither a macro nor hydration carries the mark and colour
   // of the card it was opened from, rather than a bare number under a title.
   const glyph = getProfileGoalGlyph(goalKey);
-  const tint = macro ? macroColor : (glyph?.color ?? accentPrimary);
+  const tint =
+    macro || goalKey === 'calories'
+      ? macroColor
+      : (glyph?.color ?? accentPrimary);
   const today = getTodayDate();
   const goalsQuery = useQuery({
     queryKey: goalsQueryKey(today),
@@ -178,6 +183,8 @@ export default function GoalEditScreen({
               accentColor={tint}
               fill={1}
             />
+          ) : goalKey === 'calories' ? (
+            <Icon name="flame" size={56} color={tint} />
           ) : macro ? (
             <macro.Glyph size={44} color={tint} accentColor={tint} />
           ) : glyph ? (

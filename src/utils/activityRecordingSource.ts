@@ -54,10 +54,16 @@ export const resolveRecordingSource = (
   );
   if (!imported) return 'unknown';
   const raw = imported.detail_data as
-    | { device?: RawDevice; sourceName?: string }
+    | {
+        device?: RawDevice;
+        sourceName?: string;
+        metadata?: { QlaFitWatchOrigin?: string };
+      }
     | undefined;
   const fromDevice = classifyDevice(raw?.device);
   if (fromDevice !== 'unknown') return fromDevice;
+  // Our watch stamps this even when HealthKit omits HKDevice or heart rate.
+  if (raw?.metadata?.QlaFitWatchOrigin === 'watch') return 'watch';
   // No device on the record: some sources omit it entirely. The app name is a
   // weak second opinion, and only for the one case it actually settles.
   const sourceName = raw?.sourceName?.toLowerCase() ?? '';

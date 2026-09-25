@@ -596,8 +596,9 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 // Three states, because a paired watch without our app is not
                 // the same as no watch and is fixed by a different thing.
                 label: watchConnected
-                  ? (sensors.watchName ??
-                    t('recording.appleWatch', { defaultValue: 'Apple Watch' }))
+                  ? t('workoutSetup.watchConnected', {
+                      defaultValue: 'Apple Watch connected',
+                    })
                   : sensors.watchNeedsApp
                     ? t('workoutSetup.watchNeedsApp', {
                         defaultValue: 'Install the watch app',
@@ -711,6 +712,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       </ScrollView>
       <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
       <WorkoutGoalSheet
+        key={editingGoal ?? 'closed'}
         open={editingGoal !== null}
         kind={editingGoal ?? 'time'}
         value={

@@ -832,7 +832,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 />
               )}
               <Text className="text-sm text-text-muted">{sourceLabel}</Text>
-              {hasHeartRate && (
+              {(hasHeartRate || recordingSource === 'watch') && (
                 <View className="flex-row items-center ml-2">
                   <Icon
                     name="device-watch"

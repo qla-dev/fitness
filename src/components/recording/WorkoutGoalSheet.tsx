@@ -1,7 +1,11 @@
-import { Text, View } from 'react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCSSVariable } from 'uniwind';
 import NativePromptSheet from '../ui/NativePromptSheet';
-import StepperInput, { useStepperDraft } from '../StepperInput';
+import SheetStepper from '../ui/SheetStepper';
+import Icon from '../Icon';
+import { formatLocalizedNumber } from '../../localization';
+import { fireSelectionHaptic } from '../../services/haptics';
 import type { WorkoutGoalSheetProps } from '../../types/workoutGoalSheet';
 
 export default function WorkoutGoalSheet({
@@ -13,50 +17,77 @@ export default function WorkoutGoalSheet({
   onClose,
 }: WorkoutGoalSheetProps) {
   const { t } = useTranslation();
+  const tint = useCSSVariable('--color-accent-primary') as string;
+  const [draft, setDraft] = useState(value);
+  const minimum = kind === 'calories' ? 25 : kind === 'distance' ? 0.1 : 1;
+  const maximum = kind === 'calories' ? 5000 : kind === 'time' ? 600 : 500;
+  const stepSize = kind === 'calories' ? 25 : kind === 'time' ? 5 : 0.1;
   const title =
     kind === 'time'
       ? t('workoutSetup.time', { defaultValue: 'Time' })
       : kind === 'distance'
         ? t('workoutSetup.distance', { defaultValue: 'Distance' })
         : t('workoutSetup.calories', { defaultValue: 'Calories' });
-  const draft = useStepperDraft({
-    value,
-    min: kind === 'calories' ? 25 : kind === 'distance' ? 0.1 : 1,
-    max: kind === 'calories' ? 5000 : kind === 'time' ? 600 : 500,
-    step: kind === 'calories' ? 25 : kind === 'time' ? 5 : 0.1,
-    onCommit: onChange,
-  });
+  const unit =
+    kind === 'time'
+      ? t('workoutSetup.minutesUnit', { defaultValue: 'MIN' })
+      : kind === 'calories'
+        ? t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })
+        : distanceUnit === 'miles'
+          ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
+          : t('workoutSetup.kmUnit', { defaultValue: 'KM' });
+  const step = (direction: 1 | -1) => {
+    fireSelectionHaptic();
+    setDraft((current) =>
+      Math.max(
+        minimum,
+        Math.min(
+          maximum,
+          Math.round((current + direction * stepSize) * 10) / 10
+        )
+      )
+    );
+  };
   return (
     <NativePromptSheet
       open={open}
-      title={title}
       onClose={onClose}
+      title={title}
+      category={t('profile.goals', { defaultValue: 'Goals' })}
       footerLabel={t('common.done', { defaultValue: 'Done' })}
       onFooterPress={() => {
-        draft.onBlur();
+        onChange(draft);
         onClose();
       }}
     >
-      <View className="items-center">
-        <StepperInput
-          value={draft.value}
-          onChangeText={draft.onChangeText}
-          onBlur={draft.onBlur}
-          onIncrement={draft.onIncrement}
-          onDecrement={draft.onDecrement}
-          keyboardType={kind === 'distance' ? 'decimal-pad' : 'number-pad'}
-          accessibilityLabels={{ input: title }}
-        />
-        <Text className="text-text-secondary mt-4">
-          {kind === 'time'
-            ? t('workoutSetup.minutesUnit', { defaultValue: 'MIN' })
-            : kind === 'calories'
-              ? t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })
-              : distanceUnit === 'miles'
-                ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
-                : t('workoutSetup.kmUnit', { defaultValue: 'KM' })}
-        </Text>
-      </View>
+      <SheetStepper
+        value={formatLocalizedNumber(draft, { maximumFractionDigits: 1 })}
+        unit={unit}
+        tint={tint}
+        badge={
+          <Icon
+            name={
+              kind === 'calories'
+                ? 'flame'
+                : kind === 'time'
+                  ? 'timer'
+                  : 'gps-track'
+            }
+            size={56}
+            color={tint}
+          />
+        }
+        decrementLabel={t('profile.goalDecrease', {
+          defaultValue: 'Decrease goal',
+        })}
+        incrementLabel={t('profile.goalIncrease', {
+          defaultValue: 'Increase goal',
+        })}
+        decrementDisabled={draft <= minimum}
+        incrementDisabled={draft >= maximum}
+        onDecrement={() => step(-1)}
+        onIncrement={() => step(1)}
+      />
     </NativePromptSheet>
   );
 }

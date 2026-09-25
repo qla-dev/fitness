@@ -29,6 +29,30 @@ const appRecording = (points: unknown[]) => ({
  * was added alongside the source bundle id.
  */
 describe('resolveRecordingSource', () => {
+  it('recognizes a standalone watch recording without device or heart-rate data', () => {
+    expect(
+      resolveRecordingSource(
+        [
+          healthImport({
+            metadata: { QlaFitWatchOrigin: 'watch' },
+            sourceName: 'qla.fit',
+          }),
+        ],
+        RECORDING
+      )
+    ).toBe('watch');
+    expect(
+      resolveRecordingSource(
+        [
+          healthImport({
+            metadata: { QlaFitWatchOrigin: 'phone' },
+            sourceName: 'qla.fit',
+          }),
+        ],
+        RECORDING
+      )
+    ).toBe('unknown');
+  });
   it('reads Apple Watch off the imported record', () => {
     expect(
       resolveRecordingSource(
@@ -53,10 +77,7 @@ describe('resolveRecordingSource', () => {
     // Apple Health, not which slab of glass it touched.
     expect(
       resolveRecordingSource(
-        [
-          appRecording([{}, {}]),
-          healthImport({ device: { model: 'iPhone' } }),
-        ],
+        [appRecording([{}, {}]), healthImport({ device: { model: 'iPhone' } })],
         RECORDING
       )
     ).toBe('app');
@@ -70,7 +91,10 @@ describe('resolveRecordingSource', () => {
       )
     ).toBe('watch');
     expect(
-      resolveRecordingSource([healthImport({ sourceName: 'Strava' })], RECORDING)
+      resolveRecordingSource(
+        [healthImport({ sourceName: 'Strava' })],
+        RECORDING
+      )
     ).toBe('unknown');
   });
 

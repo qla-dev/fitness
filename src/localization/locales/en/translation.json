@@ -5824,7 +5824,8 @@
     "watchConnection": "Watch connection",
     "connectingWatchName": "Connecting to {{watch}}",
     "watchConnectedName": "{{watch}} is ready",
-    "watchConnectionHelp": "Keep your watch nearby. Your workout will start when your watch is ready."
+    "watchConnectionHelp": "Keep your watch nearby. Your workout will start when your watch is ready.",
+    "watchConnected": "Apple Watch connected"
   },
   "addHub": {
     "searchPlaceholder": "Search food or meals",

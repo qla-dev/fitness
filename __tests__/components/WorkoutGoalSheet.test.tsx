@@ -1,73 +1,54 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import WorkoutGoalSheet from '../../src/components/recording/WorkoutGoalSheet.ios';
+import WorkoutGoalSheet from '../../src/components/recording/WorkoutGoalSheet';
 
-jest.mock('@expo/ui/swift-ui', () => {
-  const { View, Text, Pressable } = require('react-native');
-  return {
-    Host: View,
-    BottomSheet: View,
-    HStack: View,
-    VStack: View,
-    Text,
-    Picker: ({
-      label,
-      children,
-      ...props
-    }: {
-      label: string;
-      children: React.ReactNode;
-    }) => (
-      <View testID={label} {...props}>
-        {children}
-      </View>
-    ),
-    Button: ({ label, onPress }: { label: string; onPress: () => void }) => (
-      <Pressable onPress={onPress}>
-        <Text>{label}</Text>
-      </Pressable>
-    ),
-  };
-});
-jest.mock('@expo/ui/swift-ui/modifiers', () => ({
-  buttonStyle: jest.fn(),
-  font: jest.fn(),
-  padding: jest.fn(),
-  pickerStyle: jest.fn(),
-  presentationDetents: jest.fn(),
-  presentationDragIndicator: jest.fn(),
-  tag: jest.fn(),
+jest.mock(
+  '../../src/components/ui/NativePromptSheet',
+  () =>
+    ({ children, footerLabel, onFooterPress, onClose }: any) => {
+      const { View, Text, Pressable } = require('react-native');
+      return (
+        <View>
+          {children}
+          <Pressable onPress={onFooterPress}>
+            <Text>{footerLabel}</Text>
+          </Pressable>
+          <Pressable onPress={onClose}>
+            <Text>Dismiss</Text>
+          </Pressable>
+        </View>
+      );
+    }
+);
+jest.mock(
+  '../../src/components/LiquidGlassSurface',
+  () => require('react-native').View
+);
+jest.mock('../../src/services/haptics', () => ({
+  fireSelectionHaptic: jest.fn(),
 }));
 
-it('edits hours and minutes together and never creates a zero-minute goal', () => {
-  const changed = jest.fn();
-  function Editor() {
-    const [value, setValue] = useState(95);
-    return (
-      <WorkoutGoalSheet
-        open
-        kind="time"
-        value={value}
-        distanceUnit="km"
-        onChange={(next) => {
-          changed(next);
-          setValue(next);
-        }}
-        onClose={jest.fn()}
-      />
-    );
-  }
-  const view = render(<Editor />);
-  fireEvent(view.getByTestId('Hours'), 'selectionChange', 2);
-  expect(changed).toHaveBeenLastCalledWith(155);
-  fireEvent(view.getByTestId('Minutes'), 'selectionChange', 10);
-  expect(changed).toHaveBeenLastCalledWith(130);
-  fireEvent(view.getByTestId('Hours'), 'selectionChange', 0);
-  fireEvent(view.getByTestId('Minutes'), 'selectionChange', 0);
-  expect(changed).toHaveBeenLastCalledWith(1);
+it('uses the macro stepper and commits minutes only with Done', () => {
+  const onChange = jest.fn(),
+    onClose = jest.fn();
+  const view = render(
+    <WorkoutGoalSheet
+      open
+      kind="time"
+      value={95}
+      distanceUnit="km"
+      onChange={onChange}
+      onClose={onClose}
+    />
+  );
+  fireEvent.press(view.getByLabelText('Increase goal'));
+  expect(view.getByText('100')).toBeTruthy();
+  expect(onChange).not.toHaveBeenCalled();
+  fireEvent.press(view.getByText('Done'));
+  expect(onChange).toHaveBeenCalledWith(100);
+  expect(onClose).toHaveBeenCalledTimes(1);
 });
-
-it('edits fractional distance in the selected display unit and closes with Done', () => {
+it('keeps fractional distances and cancels without committing', () => {
   const onChange = jest.fn(),
     onClose = jest.fn();
   const view = render(
@@ -80,9 +61,30 @@ it('edits fractional distance in the selected display unit and closes with Done'
       onClose={onClose}
     />
   );
-  fireEvent(view.getByTestId('Decimal'), 'selectionChange', 7);
-  expect(onChange).toHaveBeenLastCalledWith(5.7);
+  fireEvent.press(view.getByLabelText('Increase goal'));
+  expect(view.getByText('5.3')).toBeTruthy();
   expect(view.getByText('MI')).toBeTruthy();
-  fireEvent.press(view.getByText('Done'));
+  fireEvent.press(view.getByText('Dismiss'));
+  expect(onChange).not.toHaveBeenCalled();
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+it.each([
+  ['time', 1],
+  ['distance', 0.1],
+  ['calories', 25],
+] as const)('keeps %s above its minimum', (kind, value) => {
+  const onChange = jest.fn();
+  const view = render(
+    <WorkoutGoalSheet
+      open
+      kind={kind}
+      value={value}
+      distanceUnit="km"
+      onChange={onChange}
+      onClose={jest.fn()}
+    />
+  );
+  fireEvent.press(view.getByLabelText('Decrease goal'));
+  fireEvent.press(view.getByText('Done'));
+  expect(onChange).toHaveBeenCalledWith(value);
 });
