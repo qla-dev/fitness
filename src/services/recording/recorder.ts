@@ -43,6 +43,7 @@ import {
   type RecordingDetail,
   type RecordingSession,
   type RecordingSport,
+  type RecordingPhoto,
   type SensorReading,
 } from './types';
 import type { IndividualSessionResponse } from '@workspace/shared';
@@ -527,13 +528,39 @@ export async function stopAllRecording() {
   });
 }
 
+export async function attachRecordingPhoto(
+  recordingId: string,
+  photo: RecordingPhoto
+) {
+  return serialize(async () => {
+    await hydrate();
+    const session = snapshot.session;
+    if (!session || session.id !== recordingId || session.phase === 'finished')
+      throw new Error('Recording ended before photo was attached');
+    const next = { ...session, photos: [...(session.photos ?? []), photo] };
+    await checkpointRecording(next);
+    publish({ session: next });
+  });
+}
+
 export async function discardRecording() {
   return serialize(async () => {
     await hydrate();
     if (!snapshot.session) return;
     if (await Location.hasStartedLocationUpdatesAsync(RECORDING_TASK))
       await Location.stopLocationUpdatesAsync(RECORDING_TASK);
+    const photos = snapshot.session.photos ?? [];
     await clearRecording(snapshot.session.id);
+    if (photos.length) {
+      const { deleteRecordingPhoto } = await import('./photos');
+      for (const photo of photos) {
+        try {
+          deleteRecordingPhoto(photo);
+        } catch (error) {
+          report(error);
+        }
+      }
+    }
     publish({ session: null, points: [], error: false });
     filter = undefined;
     wheelAt = 0;
@@ -604,6 +631,7 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
     const points = await recordingSamples<RecordedPoint>(s.id, 'gps');
     const sensors = await recordingSamples<SensorReading>(s.id, 'sensor');
     const detail: RecordingDetail = {
+      photos: s.photos,
       version: 1,
       recordingId: s.id,
       sport: s.sport,

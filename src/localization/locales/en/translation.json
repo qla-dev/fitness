@@ -5417,7 +5417,17 @@
     "starting": "Starting…",
     "leaveTitle": "End this workout?",
     "leaveMessage": "Recording stops when you leave. Save it as an exercise, or throw it away.",
-    "keepRecording": "Keep recording"
+    "keepRecording": "Keep recording",
+    "photoSaved": "Photo saved to this workout",
+    "photoFailed": "Could not save the photo. Please try again.",
+    "allowCamera": "Allow camera access",
+    "switchCamera": "Switch camera",
+    "capturePhoto": "Capture photo with metrics",
+    "workoutPhotos": "Workout photos",
+    "openPhoto": "Open workout photo",
+    "showMap": "Show map",
+    "showCamera": "Show camera",
+    "followRoute": "Follow my position"
   },
   "setup": {
     "progress": "Step {{current}} of {{total}}",

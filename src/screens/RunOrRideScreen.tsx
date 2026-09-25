@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import {
+  getRecordingSnapshot,
+  subscribeRecording,
+} from '../services/recording/recorder';
 import { StatusBar, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +25,11 @@ export default function RunOrRideScreen({
   const usesNativeHeader = useNativeIOSHeadersActive();
   const accent = useCSSVariable('--color-accent-primary') as string;
   const focused = useIsFocused();
+  const [cameraMode, setCameraMode] = useState(false);
+  const recording = useSyncExternalStore(
+    subscribeRecording,
+    getRecordingSnapshot
+  );
 
   // The screen is black whatever the theme, so the root's theme-driven bar
   // style leaves the clock invisible on the light theme. Mounted only while
@@ -45,11 +54,26 @@ export default function RunOrRideScreen({
     borderless: true,
     // Forced-dark content under it: see `appearance` on the hook.
     appearance: 'dark',
-    right: {
-      kind: 'dismiss',
-      onPress: () => navigation.goBack(),
-      disabled: countdown,
-    },
+    right: [
+      {
+        kind: 'icon',
+        sfSymbol: cameraMode ? 'map' : 'camera',
+        ionicon: cameraMode ? 'map-outline' : 'camera-outline',
+        accessibilityLabel: cameraMode
+          ? t('recording.showMap', { defaultValue: 'Show map' })
+          : t('recording.showCamera', { defaultValue: 'Show camera' }),
+        onPress: () => setCameraMode((value) => !value),
+        disabled:
+          countdown ||
+          !recording.session ||
+          recording.session.phase === 'finished',
+      },
+      {
+        kind: 'dismiss',
+        onPress: () => navigation.goBack(),
+        disabled: countdown,
+      },
+    ],
     nativeOptions: { headerBackVisible: false, gestureEnabled: false },
   });
 
@@ -86,6 +110,7 @@ export default function RunOrRideScreen({
           flex child for that reason. */}
       <View className="flex-1">
         <RunRideRecorder
+          cameraMode={cameraMode}
           navigation={navigation}
           initialSport={route.params?.sport}
           initialSportId={route.params?.sportId}

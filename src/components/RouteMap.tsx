@@ -1,5 +1,13 @@
-import React from 'react';
-import { Platform, View, Text, StyleSheet, useColorScheme } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Platform,
+  Pressable,
+  View,
+  Text,
+  StyleSheet,
+  useColorScheme,
+} from 'react-native';
+import Icon from './Icon';
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +23,7 @@ const hasGoogleMapsApiKey = (): boolean =>
 export type RouteCoordinate = { latitude: number; longitude: number };
 
 export interface RouteMapProps {
+  navigationMode?: boolean;
   /** Where the camera starts. Defaults to a wide view when unknown. */
   center?: RouteCoordinate;
   zoom?: number;
@@ -58,15 +67,40 @@ const RouteMap: React.FC<RouteMapProps> = ({
   route,
   segments,
   showsUserLocation = false,
+  navigationMode = false,
 }) => {
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const accent = useCSSVariable('--color-accent-primary') as string;
-
-  const cameraPosition = {
+  const appleMap = useRef<AppleMaps.MapView>(null);
+  const googleMap = useRef<GoogleMaps.MapView>(null);
+  const [following, setFollowing] = useState(true);
+  const [initialCamera] = useState({
     coordinates: center,
     zoom: zoom ?? (center ? ROUTE_ZOOM : DEFAULT_ZOOM),
-  };
+  });
+  // Follow position through the ref, as in SmartFreight. Free exploration stops
+  // follow immediately; do not overwrite the user's pan, zoom or 3D choice.
+  useEffect(() => {
+    if (!navigationMode || !following || !center) return;
+    const camera = {
+      coordinates: {
+        latitude: center.latitude - (360 / 2 ** 17) * 0.12,
+        longitude: center.longitude,
+      },
+      zoom: 17,
+    };
+    if (Platform.OS === 'ios') appleMap.current?.setCameraPosition(camera);
+    else if (Platform.OS === 'android')
+      void googleMap.current?.setCameraPosition({ ...camera, duration: 800 });
+  }, [navigationMode, following, center]);
+
+  const cameraPosition = navigationMode
+    ? initialCamera
+    : {
+        coordinates: center,
+        zoom: zoom ?? (center ? ROUTE_ZOOM : DEFAULT_ZOOM),
+      };
   // A single-point line renders nothing on either platform and a zero-length
   // one is rejected outright, so the layer only exists once there are two.
   const polylines = segments
@@ -84,20 +118,49 @@ const RouteMap: React.FC<RouteMapProps> = ({
 
   if (Platform.OS === 'ios') {
     return (
-      <AppleMaps.View
+      <View
         style={StyleSheet.absoluteFill}
-        cameraPosition={cameraPosition}
-        polylines={polylines}
-        properties={{ isMyLocationEnabled: showsUserLocation }}
-        uiSettings={{
-          myLocationButtonEnabled: showsUserLocation,
-          compassEnabled: true,
-          scaleBarEnabled: false,
+        onStartShouldSetResponderCapture={() => {
+          setFollowing(false);
+          return false;
         }}
-        colorScheme={
-          scheme === 'dark' ? AppleMaps.MapColorScheme.DARK : undefined
-        }
-      />
+      >
+        <AppleMaps.View
+          ref={appleMap}
+          style={StyleSheet.absoluteFill}
+          cameraPosition={cameraPosition}
+          polylines={polylines}
+          properties={{ isMyLocationEnabled: showsUserLocation }}
+          uiSettings={{
+            myLocationButtonEnabled: showsUserLocation,
+            compassEnabled: true,
+            scaleBarEnabled: false,
+            togglePitchEnabled: true,
+          }}
+          colorScheme={
+            scheme === 'dark' ? AppleMaps.MapColorScheme.DARK : undefined
+          }
+        />
+        {navigationMode && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('recording.followRoute', {
+              defaultValue: 'Follow my position',
+            })}
+            onPress={() => setFollowing(true)}
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              right: 16,
+              backgroundColor: '#222',
+              borderRadius: 24,
+              padding: 12,
+            }}
+          >
+            <Icon name="gps-track" size={24} color="white" />
+          </Pressable>
+        )}
+      </View>
     );
   }
 
@@ -122,20 +185,49 @@ const RouteMap: React.FC<RouteMapProps> = ({
 
   if (Platform.OS === 'android') {
     return (
-      <GoogleMaps.View
+      <View
         style={StyleSheet.absoluteFill}
-        cameraPosition={cameraPosition}
-        polylines={polylines}
-        properties={{ isMyLocationEnabled: showsUserLocation }}
-        uiSettings={{
-          myLocationButtonEnabled: showsUserLocation,
-          compassEnabled: true,
-          scaleBarEnabled: false,
+        onStartShouldSetResponderCapture={() => {
+          setFollowing(false);
+          return false;
         }}
-        colorScheme={
-          scheme === 'dark' ? GoogleMaps.MapColorScheme.DARK : undefined
-        }
-      />
+      >
+        <GoogleMaps.View
+          ref={googleMap}
+          style={StyleSheet.absoluteFill}
+          cameraPosition={cameraPosition}
+          polylines={polylines}
+          properties={{ isMyLocationEnabled: showsUserLocation }}
+          uiSettings={{
+            myLocationButtonEnabled: showsUserLocation,
+            compassEnabled: true,
+            scaleBarEnabled: false,
+            tiltGesturesEnabled: true,
+          }}
+          colorScheme={
+            scheme === 'dark' ? GoogleMaps.MapColorScheme.DARK : undefined
+          }
+        />
+        {navigationMode && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('recording.followRoute', {
+              defaultValue: 'Follow my position',
+            })}
+            onPress={() => setFollowing(true)}
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              right: 16,
+              backgroundColor: '#222',
+              borderRadius: 24,
+              padding: 12,
+            }}
+          >
+            <Icon name="gps-track" size={24} color="white" />
+          </Pressable>
+        )}
+      </View>
     );
   }
 

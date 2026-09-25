@@ -35,6 +35,7 @@ export interface SensorReading {
 }
 
 export interface RecordingSession {
+  photos?: RecordingPhoto[];
   id: string;
   scope: string;
   /**
@@ -84,6 +85,7 @@ export interface RecordingSession {
 }
 
 export interface RecordingDetail {
+  photos?: RecordingPhoto[];
   version: 1;
   /** Daily totals from this provider already include this watch-recorded effort. */
   healthSource?: 'HealthKit';
@@ -104,3 +106,8 @@ export interface RecordingDetail {
 }
 
 export const RECORDING_DETAIL_TYPE = 'fitness_recording_v1';
+
+export interface RecordingPhoto {
+  fileName: string;
+  capturedAt: number;
+}

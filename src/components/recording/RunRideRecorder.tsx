@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Alert,
   Linking,
   Platform,
@@ -16,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteMap from '../RouteMap';
+import WorkoutCamera from './WorkoutCamera';
 import Icon from '../Icon';
 import { useCSSVariable } from 'uniwind';
 import { withAlpha } from '../../utils/colors';
@@ -61,6 +63,7 @@ function KeepRecordingAwake() {
 
 export default function RunRideRecorder({
   navigation,
+  cameraMode = false,
   initialSport,
   initialSportId,
   initialGps,
@@ -68,6 +71,7 @@ export default function RunRideRecorder({
   initialGoal,
   initialWeightKg,
 }: Pick<RootStackScreenProps<'RunOrRide'>, 'navigation'> & {
+  cameraMode?: boolean;
   /** Setup's choices. The in-screen controls still override them. */
   initialSport?: RecordingSport;
   /** Names the session; the sport above only decides how it records. */
@@ -101,6 +105,33 @@ export default function RunRideRecorder({
   // navigation it was holding back through.
   const leaving = useRef(false);
   const session = snapshot.session;
+  const [panelHeight, setPanelHeight] = useState(240);
+  const [showCamera, setShowCamera] = useState(false);
+  const [flip] = useState(() => new Animated.Value(0));
+  const previousCameraMode = useRef(cameraMode);
+  useEffect(() => {
+    if (previousCameraMode.current === cameraMode) return;
+    previousCameraMode.current = cameraMode;
+    let cancelled = false;
+    Animated.timing(flip, {
+      toValue: 1,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (!finished || cancelled) return;
+      setShowCamera(cameraMode);
+      flip.setValue(-1);
+      Animated.timing(flip, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }).start();
+    });
+    return () => {
+      cancelled = true;
+      flip.stopAnimation();
+    };
+  }, [cameraMode, flip]);
   const accent = useCSSVariable('--color-accent-primary') as string;
   // A session recorded without a route has no map to show, so the screen is
   // the readings on black rather than a dimmed blank tile.
@@ -349,38 +380,71 @@ export default function RunRideRecorder({
     // panel over it changing colour with the user's theme.
     <View className="flex-1" style={{ backgroundColor: '#000' }}>
       {active && focused && <KeepRecordingAwake />}
-      {tracksRoute ? (
-        <>
-          {/* The map is the background rather than a pane at the top: it fills
-              the screen and the readings sit over it, dimmed enough to stay
-              legible against a bright map. */}
-          <View style={StyleSheet.absoluteFill}>
-            <RouteMap
-              center={snapshot.points[snapshot.points.length - 1]}
-              segments={routeSegments(snapshot.points)}
-              showsUserLocation={!!session && active}
-              appearance="dark"
-            />
-          </View>
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(0,0,0,0.55)' },
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            transform: [
+              { perspective: 1000 },
+              {
+                rotateY: flip.interpolate({
+                  inputRange: [-1, 0, 1],
+                  outputRange: ['-90deg', '0deg', '90deg'],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {showCamera && session ? (
+          <WorkoutCamera
+            recordingId={session.id}
+            bottom={panelHeight}
+            active={focused && session.phase !== 'finished'}
+            lines={[
+              'qla.fit',
+              `${number(distanceFromKm(session.distance / 1000, unit), 2)} ${unitLabel}`,
+              recordingClock(seconds),
+              currentSport === 'run'
+                ? `${speed > 0.5 ? recordingClock((unit === 'miles' ? 1609.344 : 1000) / speed) : '-'} / ${unitLabel}`
+                : `${number(distanceFromKm(speed * 3.6, unit), 1)} ${unitLabel}/h`,
+              `${number(recordingCalories(session, seconds), 0)} ${t('recording.kcal', { defaultValue: 'kcal' })}`,
+              `${bpm === null ? '-' : number(bpm, 0)} ${t('recording.bpm', { defaultValue: 'bpm' })}`,
             ]}
           />
-        </>
-      ) : null}
+        ) : tracksRoute ? (
+          <>
+            {/* The map is the background rather than a pane at the top: it fills
+              the screen and the readings sit over it, dimmed enough to stay
+              legible against a bright map. */}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { top: insets.top + 52, bottom: panelHeight },
+              ]}
+            >
+              <RouteMap
+                key={session?.id ?? 'preview'}
+                center={snapshot.points[snapshot.points.length - 1]}
+                segments={routeSegments(snapshot.points)}
+                showsUserLocation={!!session && active}
+                appearance="dark"
+                navigationMode={!!session && active}
+              />
+            </View>
+          </>
+        ) : null}
+      </Animated.View>
       <View
         className="flex-1 px-6"
         pointerEvents="none"
-        style={{ paddingTop: insets.top }}
+        style={{ paddingTop: insets.top + 52, marginRight: 88 }}
       >
         {session ? (
           <>
             <View
               className="flex-row items-baseline"
-              style={{ paddingRight: 64 }}
+              style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12 }}
             >
               <Text
                 style={{ color: '#FFF', fontSize: 48, fontWeight: '300' }}
@@ -397,7 +461,10 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View className="flex-row items-baseline mt-6">
+            <View
+              className="flex-row items-baseline mt-6"
+              style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12 }}
+            >
               <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
                 {currentSport === 'run'
                   ? speed > 0.5
@@ -417,7 +484,15 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View className="mt-6 gap-6">
+            <View
+              className="mt-6 gap-6"
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                borderRadius: 12,
+                alignSelf: 'flex-start',
+                padding: 8,
+              }}
+            >
               <View>
                 <Text
                   style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
@@ -449,6 +524,9 @@ export default function RunRideRecorder({
         ) : null}
       </View>
       <ScrollView
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+        onLayout={(event) => setPanelHeight(event.nativeEvent.layout.height)}
         showsVerticalScrollIndicator={false}
         className="rounded-t-3xl"
         // Dark whatever the app theme is, and translucent so the route keeps
@@ -457,7 +535,7 @@ export default function RunRideRecorder({
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
-          paddingBottom: Math.max(insets.bottom, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -586,7 +664,7 @@ export default function RunRideRecorder({
               <View style={{ width: 44 }} />
             </View>
 
-            <View className="flex-row items-center justify-center gap-6 mb-2">
+            <View className="flex-row items-center justify-center gap-6">
               {session.phase !== 'finished' && (
                 <Pressable
                   accessibilityRole="button"
@@ -625,7 +703,7 @@ export default function RunRideRecorder({
                 thumb-slip away from throwing the run away. */}
             {!active && (
               <>
-                <Button className="mt-2" loading={busy} onPress={finish}>
+                <Button loading={busy} onPress={finish}>
                   {t('recording.finish', { defaultValue: 'Finish and save' })}
                 </Button>
                 <Button variant="ghost" disabled={busy} onPress={discard}>

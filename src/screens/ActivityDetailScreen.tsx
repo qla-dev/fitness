@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import FadeView from '../components/FadeView';
 import EditableSetList from '../components/EditableSetList';
 import RecordingSummary from '../components/recording/RecordingSummary';
+import WorkoutPhotos from '../components/recording/WorkoutPhotos';
 import WorkoutDetailsCard, {
   DetailSectionHeading,
   METRIC_COLORS,
@@ -896,6 +897,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {!isEditing && (
           <>
             <RecordingSummary details={session.activity_details} />
+            <WorkoutPhotos details={session.activity_details} />
             <WorkoutHeartRateSection
               samples={importedTelemetry.hr}
               average={session.avg_heart_rate}
