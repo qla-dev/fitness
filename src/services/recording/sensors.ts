@@ -8,6 +8,7 @@ import {
   isWatchAppInstalled,
   isWatchLinkAvailable,
   isWatchPaired,
+  getWatchName,
   startWatchWorkout,
   stopWatchWorkout,
 } from '@/modules/watch-link';
@@ -60,6 +61,7 @@ interface SensorSnapshot {
   watchAvailable: boolean;
   /** Paired, but our app is not on it — the one state an install would fix. */
   watchNeedsApp: boolean;
+  watchName: string | null;
   cadence: number | null;
   cadenceAt: number;
   speed: number | null;
@@ -78,6 +80,7 @@ let snapshot: SensorSnapshot = {
   watchStreaming: false,
   watchAvailable: false,
   watchNeedsApp: false,
+  watchName: null,
   cadence: null,
   cadenceAt: 0,
   speed: null,
@@ -481,12 +484,18 @@ function refreshWatchAvailability() {
   if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
   const installed = isWatchAppInstalled();
   const paired = isWatchPaired() || installed;
+  const watchName = paired ? getWatchName() : null;
   if (
     snapshot.watchAvailable === installed &&
-    snapshot.watchNeedsApp === (paired && !installed)
+    snapshot.watchNeedsApp === (paired && !installed) &&
+    snapshot.watchName === watchName
   )
     return;
-  update({ watchAvailable: installed, watchNeedsApp: paired && !installed });
+  update({
+    watchAvailable: installed,
+    watchNeedsApp: paired && !installed,
+    watchName,
+  });
 }
 
 // Watched for the life of the process rather than per screen: the answer is a

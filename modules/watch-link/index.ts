@@ -18,10 +18,16 @@ export interface WatchReachabilityEvent {
 }
 
 interface WatchLinkNativeModule {
+  completeGoalRequest(id: string, success: boolean): Promise<void>;
+  addListener(
+    name: 'onGoalRequest',
+    listener: (event: WatchGoalRequest) => void
+  ): EventSubscription;
   readonly isSupported: boolean;
   readonly isReachable: boolean;
   readonly isWatchAppInstalled: boolean;
   readonly isPaired: boolean;
+  readonly watchName?: string;
   startWorkout(
     sport: 'run' | 'ride',
     sportId?: string,
@@ -42,6 +48,25 @@ interface WatchLinkNativeModule {
     name: 'onReachabilityChange',
     listener: (event: WatchReachabilityEvent) => void
   ): EventSubscription;
+}
+
+export interface WatchGoalRequest {
+  id: string;
+  key: string;
+  value: number;
+}
+
+export function addWatchGoalListener(
+  listener: (event: WatchGoalRequest) => void
+): EventSubscription | null {
+  return native?.addListener('onGoalRequest', listener) ?? null;
+}
+
+export async function completeWatchGoalRequest(
+  id: string,
+  success: boolean
+): Promise<void> {
+  await native?.completeGoalRequest(id, success);
 }
 
 interface WatchDashboardSnapshot {
@@ -66,6 +91,8 @@ interface WatchDashboardSnapshot {
     label: string;
     consumed: number;
     goal: number;
+    goalStep?: number;
+    goalMaximum?: number;
     unit: string;
     color: number;
   }[];
@@ -117,6 +144,10 @@ export const isWatchAppInstalled = (): boolean =>
  * with {@link isWatchAppInstalled} rather than to rely on alone.
  */
 export const isWatchPaired = (): boolean => native?.isPaired ?? false;
+
+/** The name supplied by watchOS, cached after the watch app connects. */
+export const getWatchName = (): string | null =>
+  native?.watchName?.trim() || null;
 
 /** True when a message sent right now would reach the watch. */
 export const isWatchReachable = (): boolean => native?.isReachable ?? false;

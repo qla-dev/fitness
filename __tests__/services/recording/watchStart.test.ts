@@ -15,6 +15,7 @@ jest.mock('../../../modules/watch-link', () => ({
   isWatchLinkAvailable: jest.fn(() => true),
   isWatchAppInstalled: jest.fn(() => true),
   isWatchPaired: jest.fn(() => true),
+  getWatchName: jest.fn(() => 'Apple Watch Ultra'),
   addWatchReachabilityListener: jest.fn(),
   addWatchHeartRateListener: jest.fn(() => ({ remove: jest.fn() })),
   addWatchWorkoutStateListener: jest.fn(() => ({ remove: jest.fn() })),

@@ -124,6 +124,8 @@ import { DECIMAL_INPUT_REGEX, parseDecimalInput } from '../utils/numericInput';
 type FoodEntryAddScreenProps = RootStackScreenProps<'FoodEntryAdd'>;
 /** Reserved picker value for "count in servings"; never a real variant id. */
 const SERVING_COUNT_OPTION_ID = '__count-in-servings__';
+/** Picker-only identity for a search result without saved serving variants. */
+const ORIGINAL_UNIT_OPTION_ID = '__original-food-unit__';
 
 const EXTERNAL_DRAFT_VARIANT_ID = '__draft-external-unit__';
 // Sentinel written by FoodForm for AI-converted draft units; never a real DB ID.
@@ -328,6 +330,9 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   const [selectedVariantId, setSelectedVariantId] = useState<
     string | undefined
   >(hasExternalVariants ? (item.variantId ?? 'ext-0') : item.variantId);
+  const initialVariantId =
+    activeItem.variantId ??
+    (hasExternalVariants ? 'ext-0' : ORIGINAL_UNIT_OPTION_ID);
 
   const { variants } = useFoodVariants(activeItem.id, { enabled: isLocalFood });
   const { createVariant, isPending: isCreateVariantPending } =
@@ -344,9 +349,17 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   const resolvedLocalPickerVariantId = useMemo(
     () =>
       isLocalFood && !selectedVariantOverride
-        ? resolveLocalPickerVariantId(variants, selectedVariantId)
+        ? selectedVariantId === initialVariantId
+          ? selectedVariantId
+          : resolveLocalPickerVariantId(variants, selectedVariantId)
         : undefined,
-    [isLocalFood, selectedVariantId, selectedVariantOverride, variants]
+    [
+      isLocalFood,
+      selectedVariantId,
+      selectedVariantOverride,
+      variants,
+      initialVariantId,
+    ]
   );
   const externalVariantOptions = useMemo(
     () => buildExternalVariantOptions(activeItem.externalVariants),
@@ -407,9 +420,27 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
       isLocalFood && !selectedVariantOverride
         ? (resolvedLocalPickerVariantId ?? selectedVariantId)
         : selectedVariantId;
-    const baseOptions = isLocalFood
+    const savedOptions = isLocalFood
       ? localVariantOptions
       : externalVariantOptions;
+    // Keep the search result's original unit even when equivalent servings
+    // are grouped, or the provider supplies no variant list at all. This is
+    // independent of the current selection, so switching away cannot hide it.
+    const initialValues = unitVariantToDisplayValues(activeItemVariant);
+    const baseOptions = savedOptions.some(
+      (variant) => variant.id === initialVariantId
+    )
+      ? savedOptions
+      : [
+          {
+            id: initialVariantId,
+            label: formatVariantLabel(initialValues),
+            quantityUnitLabel: formatQuantityUnitLabel(initialValues),
+            perServingLabel: formatVariantServingLabel(initialValues),
+            ...initialValues,
+          },
+          ...savedOptions,
+        ];
     if (
       effectiveId &&
       !baseOptions.some((variant) => variant.id === effectiveId)
@@ -467,6 +498,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
     isLocalFood,
     localVariantOptions,
     resolvedLocalPickerVariantId,
+    initialVariantId,
     selectedVariantId,
     selectedVariantOverride,
   ]);
@@ -836,6 +868,30 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
     }
     setCountInServings(false);
     setServingsDraft(null);
+    // Leaving serving-count mode changes only how the same amount is shown.
+    if (
+      countInServings &&
+      value === (selectedVariantId ?? initialVariantId) &&
+      !selectedVariantOverride &&
+      !adjustedValues
+    )
+      return;
+    if (value === initialVariantId) {
+      setSelectedVariantId(
+        initialVariantId === ORIGINAL_UNIT_OPTION_ID
+          ? undefined
+          : initialVariantId
+      );
+      setSelectedVariantOverride(null);
+      setAdjustedValues(null);
+      setQuantityText(
+        String(
+          variantPickerOptions.find((option) => option.id === initialVariantId)
+            ?.servingSize ?? activeItemVariant.serving_size
+        )
+      );
+      return;
+    }
     handleVariantChange(value);
   };
 

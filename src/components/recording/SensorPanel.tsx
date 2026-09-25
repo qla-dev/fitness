@@ -47,7 +47,8 @@ export default function SensorPanel() {
       {watchSupported && (
         <View className="gap-1 border-b border-border-subtle pb-3">
           <Text className="text-text-primary font-semibold">
-            {t('recording.appleWatch', { defaultValue: 'Apple Watch' })}
+            {sensors.watchName ??
+              t('recording.appleWatch', { defaultValue: 'Apple Watch' })}
           </Text>
           {!watchInstalled ? (
             <Text className="text-text-muted text-sm">

@@ -93,6 +93,7 @@ export type RootStackParamList = {
   /** `newList` opens it straight on a blank list, for the dashboard card. */
   Cart: { newList?: boolean; planList?: GroceryList } | undefined;
   WorkoutSetup: { sport: RecordingSport; sportId?: string };
+  WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & { sport: RecordingSport; weightKg: number };
   /**
    * Started from `WorkoutSetup`, which passes the sport, the goal and the
    * weight the calorie estimate needs; entered bare (a resume, a deep link)

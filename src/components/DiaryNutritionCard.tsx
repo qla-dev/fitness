@@ -219,14 +219,16 @@ function MacroRing({
       >
         {label}
       </Text>
-      {goal > 0 ? (
-        <Text className="text-text-muted text-xs" numberOfLines={1}>
-          {t('diaryNutrition.amountLeft', {
-            defaultValue: '{{amount}} left',
-            amount: `${round(left)}${unit}`,
-          })}
-        </Text>
-      ) : null}
+      <Text className="text-text-muted text-xs" numberOfLines={1}>
+        {loading
+          ? ' '
+          : goal > 0
+            ? t('diaryNutrition.amountLeft', {
+                defaultValue: '{{amount}} left',
+                amount: `${round(left)}${unit}`,
+              })
+            : t('diaryNutrition.addGoal', { defaultValue: 'Add Goal' })}
+      </Text>
     </Pressable>
   );
 }
@@ -511,7 +513,9 @@ export default function DiaryNutritionCard({
                   trackColor={trackColor}
                   Glyph={spec.Glyph}
                   loading={loading}
-                  onPress={() => navigation.navigate('GoalEdit', { goalKey: spec.key })}
+                  onPress={() =>
+                    navigation.navigate('GoalEdit', { goalKey: spec.key })
+                  }
                 />
               );
             })}

@@ -46,3 +46,9 @@
 "workout.saving" = "Saving workout…";
 "workout.stop" = "Stop";
 "workout.waiting" = "Waiting for live data from iPhone";
+"nutrition.addGoal" = "Add Goal";
+"nutrition.decreaseGoal" = "Decrease goal";
+"nutrition.increaseGoal" = "Increase goal";
+"nutrition.goalHelp" = "New goals apply from today onward.";
+"nutrition.goalSaveFailed" = "Could not save. Open qla.fit on your iPhone and try again.";
+"nutrition.saveGoal" = "Save Goal";

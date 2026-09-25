@@ -74,6 +74,7 @@ import {
   SafeCart,
   SafeRunOrRide,
   SafeWorkoutSetup,
+  SafeWatchWorkoutStart,
   SafeProfile,
   SafeProfileEdit,
   SafeAccount,
@@ -777,6 +778,15 @@ function AppContent() {
             name="WorkoutSetup"
             component={SafeWorkoutSetup}
             options={createStackScreenOptions(t('workoutSetup.title', { defaultValue: 'Start Workout' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="WatchWorkoutStart"
+            component={SafeWatchWorkoutStart}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
           />
           <Stack.Screen
             name="RunOrRide"

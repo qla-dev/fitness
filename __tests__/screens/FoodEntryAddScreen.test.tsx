@@ -1092,6 +1092,73 @@ describe('FoodEntryAddScreen', () => {
     });
   });
 
+  it.each(['g', 'ml', 'bar'])(
+    'can switch from servings back to the original %s without saved variants',
+    (unit) => {
+      const screen = renderScreen({
+        item: { ...baseExternalItem, servingSize: 100, servingUnit: unit },
+        date: '2026-04-23',
+      });
+      const originalLabel = `100 ${unit} (200 cal)`;
+      expect(screen.getByText(originalLabel)).toBeTruthy();
+      fireEvent.press(screen.getByText(/^1 serving \(/));
+      expect(screen.getByTestId('quantity-input').props.value).toBe('1');
+      fireEvent.changeText(screen.getByTestId('quantity-input'), '2');
+      fireEvent.press(screen.getByText(originalLabel));
+      expect(screen.getByTestId('quantity-input').props.value).toBe('200');
+      expect(screen.getByText(originalLabel)).toBeTruthy();
+    }
+  );
+
+  it.each(['local', 'external'])(
+    'keeps the original unit selectable after choosing an equivalent %s portion',
+    (source) => {
+      const variants = [
+        {
+          id: 'original',
+          food_id: 'food-1',
+          serving_size: 100,
+          serving_unit: 'g',
+          calories: 200,
+          protein: 20,
+          carbs: 22,
+          fat: 7,
+        },
+        {
+          id: 'portion',
+          food_id: 'food-1',
+          serving_size: 1,
+          serving_unit: 'portion',
+          calories: 200,
+          protein: 20,
+          carbs: 22,
+          fat: 7,
+        },
+      ];
+      mockUseFoodVariants.mockReturnValue({
+        variants,
+        isLoading: false,
+        isError: false,
+      });
+      const screen = renderScreen({
+        item: {
+          ...baseExternalItem,
+          source,
+          servingSize: 100,
+          servingUnit: 'g',
+          variantId: source === 'local' ? 'original' : 'ext-0',
+          ...(source === 'external' ? { externalVariants: variants } : {}),
+        },
+        date: '2026-04-23',
+      });
+      expect(screen.getByTestId('quantity-input').props.value).toBe('100');
+      fireEvent.press(screen.getByText('1 portion (100 g) (200 cal)'));
+      expect(screen.getByTestId('quantity-input').props.value).toBe('1');
+      fireEvent.press(screen.getByText('100 g (200 cal)'));
+      expect(screen.getByTestId('quantity-input').props.value).toBe('100');
+    }
+  );
+
   it('keeps a 100 g reference available alongside a named local portion', () => {
     mockUseFoodVariants.mockReturnValue({
       variants: [

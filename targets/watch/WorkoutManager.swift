@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import HealthKit
 import WatchConnectivity
+import WatchKit
 
 /// Message keys shared with the phone. Duplicated by hand in the phone-side
 /// WatchConnectivity module because a watchOS target cannot import from the iOS
@@ -16,9 +17,9 @@ enum WatchMessageKey {
   /// The catalogue id ("stair-climbing"), so the watch can open the session
   /// as what it actually is rather than as one of two profiles.
   static let sportId = "sportId"
-  /// When the phone considers the session to have started, in epoch ms. The
-  /// watch counts down to it; a message that arrives after it is already past
-  /// skips the countdown rather than delaying a session that is under way.
+  /// Phone launch identity in epoch ms, echoed in the running acknowledgement.
+  /// New sessions count down locally after waking, so launch latency cannot
+  /// consume the countdown before the watch is visible.
   static let startAt = "startAt"
   static let state = "state"
 }
@@ -109,6 +110,30 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   // MARK: - WatchConnectivity
 
+  /// Confirm only after the phone has persisted the goal. An unreachable phone
+  /// leaves the editor open for retry instead of claiming an unsynced save.
+  func saveNutrientGoal(key: String, value: Double, completion: @escaping (Bool) -> Void) {
+    let connection = WCSession.default
+    guard connection.activationState == .activated, connection.isReachable else {
+      completion(false)
+      return
+    }
+    connection.sendMessage(["kind": "setNutrientGoal", "key": key, "value": value], replyHandler: { reply in
+      Task { @MainActor in
+        let success = reply["success"] as? Bool == true
+        if success, var nutrients = self.dashboard["nutrients"] as? [[String: Any]],
+          let index = nutrients.firstIndex(where: { $0["key"] as? String == key }) {
+          nutrients[index]["goal"] = value
+          self.dashboard["nutrients"] = nutrients
+          UserDefaults.standard.set(self.dashboard, forKey: "phoneDashboard")
+        }
+        completion(success)
+      }
+    }, errorHandler: { _ in
+      Task { @MainActor in completion(false) }
+    })
+  }
+
   private func activateConnectivity() {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
@@ -130,6 +155,7 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   private func sendState() {
     send([
+      "watchName": WKInterfaceDevice.current().name,
       WatchMessageKey.kind: WatchMessageKind.workoutState,
       WatchMessageKey.state: isRunning && (session?.state == .running || session?.state == .paused) ? "running" : "stopped",
       WatchMessageKey.startAt: acceptedStartAt ?? -1,
@@ -147,7 +173,8 @@ final class WorkoutManager: NSObject, ObservableObject {
         $0.activityType == configuration.activityType && $0.locationType == configuration.locationType
       } ?? WatchSportCatalogue.fallback(recording: configuration.activityType == .cycling ? "ride" : "run")
       acceptedStartAt = nil
-      start(sport: sport, origin: WatchWorkoutOrigin.phone, launchConfiguration: configuration)
+      start(sport: sport, countingDownTo: Date().addingTimeInterval(WatchCountdown.seconds),
+        origin: WatchWorkoutOrigin.phone, launchConfiguration: configuration)
       launchConfirmationTask?.cancel()
       launchConfirmationTask = Task { [weak self] in
         try? await Task.sleep(nanoseconds: 30_000_000_000)
@@ -207,7 +234,8 @@ final class WorkoutManager: NSObject, ObservableObject {
           sport = requestedSport
           acceptedStartAt = startValue
           launchConfirmationTask?.cancel()
-          beginCountdown(to: startValue.map { Date(timeIntervalSince1970: $0 / 1000) })
+          // The HealthKit launch already began the full countdown. Adopting
+          // its command must neither erase it with a past date nor restart it.
         }
         sendState()
         return
@@ -217,7 +245,9 @@ final class WorkoutManager: NSObject, ObservableObject {
       guard lastPhoneCommandAt == requestedAt else { return }
       let sport = WatchSportCatalogue.sport(id: message["sportId"] as? String)
         ?? WatchSportCatalogue.fallback(recording: message["sport"] as? String)
-      start(sport: sport, countingDownTo: startValue.map { Date(timeIntervalSince1970: $0 / 1000) },
+      // Waking the watch and granting Health permissions may take longer than
+      // the phone's timestamp. A NEW workout still gets its full 3-2-1.
+      start(sport: sport, countingDownTo: Date().addingTimeInterval(WatchCountdown.seconds),
         origin: WatchWorkoutOrigin.phone)
       if isRunning { acceptedStartAt = startValue }
       sendState()
@@ -546,6 +576,7 @@ extension WorkoutManager: WCSessionDelegate {
     Task { @MainActor in
       if let error { self.lastError = error.localizedDescription }
       receiveDashboard(session.receivedApplicationContext)
+      try? session.updateApplicationContext(["watchName": WKInterfaceDevice.current().name])
       if phoneWorkoutRequested { requestPhoneWorkout() }
     }
   }
@@ -556,6 +587,7 @@ extension WorkoutManager: WCSessionDelegate {
 
   nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
     Task { @MainActor in
+      try? session.updateApplicationContext(["watchName": WKInterfaceDevice.current().name])
       if phoneWorkoutRequested { requestPhoneWorkout() }
       sendState()
     }

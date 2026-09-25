@@ -3,6 +3,7 @@ import { Platform, processColor } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import { MACRO_RINGS, resolveMacroRing } from '../constants/macroRings';
+import { goalStep, goalMaximum } from '../constants/profileGoals';
 import { updateWatchDashboard } from '../../modules/watch-link';
 import type { DailySummary } from '../types/dailySummary';
 import { getTodayDate } from '../utils/dateUtils';
@@ -47,6 +48,10 @@ export function useWatchDashboardSync(
         const color = processColor(resolvedColors[index]);
         return {
           ...resolveMacroRing(spec, summary, showNetCarbs, t),
+          goalStep: goalStep(spec.key),
+          ...(goalMaximum(spec.key) === undefined
+            ? {}
+            : { goalMaximum: goalMaximum(spec.key) }),
           color: typeof color === 'number' ? color >>> 0 : 0xffffffff,
         };
       }),

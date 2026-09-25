@@ -39,6 +39,32 @@ private final class WatchLink: NSObject {
   private var startCompletion: ((Error?) -> Void)?
   private var dashboard: [String: Any]? = UserDefaults.standard.dictionary(forKey: "watchDashboard")
   private var metrics: [String: Any]?
+  private var watchName: String? = UserDefaults.standard.string(forKey: "watchDeviceName")
+
+  var deviceName: String? { isPaired ? watchName : nil }
+
+  fileprivate func receiveIdentity(_ message: [String: Any]) {
+    guard let name = message["watchName"] as? String, !name.isEmpty, name != watchName else { return }
+    watchName = name
+    UserDefaults.standard.set(name, forKey: "watchDeviceName")
+    emitReachability()
+  }
+  private var goalReplies: [String: ([String: Any]) -> Void] = [:]
+
+  func completeGoalRequest(id: String, success: Bool) {
+    goalReplies.removeValue(forKey: id)?(["success": success])
+  }
+
+  func requestGoal(_ message: [String: Any], reply: @escaping ([String: Any]) -> Void) {
+    guard let key = message["key"] as? String, let value = message["value"] as? Double,
+      value.isFinite, value > 0 else { reply(["success": false]); return }
+    let id = UUID().uuidString
+    goalReplies[id] = reply
+    onEvent?("onGoalRequest", ["id": id, "key": key, "value": value])
+    DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+      self?.completeGoalRequest(id: id, success: false)
+    }
+  }
   private var launchTimeout: DispatchWorkItem?
   private var launchAttempts = 0
   private var launchedAttempt = 0
@@ -182,6 +208,7 @@ private final class WatchLink: NSObject {
   }
 
   fileprivate func handle(message: [String: Any]) {
+    receiveIdentity(message)
     switch message[WatchMessageKey.kind] as? String {
     case WatchMessageKind.heartRate:
       guard let bpm = message[WatchMessageKey.heartRate] as? Double else { return }
@@ -232,7 +259,14 @@ extension WatchLink: WCSessionDelegate {
     activationDidCompleteWith activationState: WCSessionActivationState,
     error: Error?
   ) {
-    DispatchQueue.main.async { self.reachabilityDidChange() }
+    DispatchQueue.main.async {
+      self.receiveIdentity(session.receivedApplicationContext)
+      self.reachabilityDidChange()
+    }
+  }
+
+  func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    DispatchQueue.main.async { self.receiveIdentity(applicationContext) }
   }
 
   func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
@@ -242,6 +276,10 @@ extension WatchLink: WCSessionDelegate {
   func session(_ session: WCSession, didReceiveMessage message: [String: Any],
     replyHandler: @escaping ([String: Any]) -> Void) {
     DispatchQueue.main.async {
+      if message["kind"] as? String == "setNutrientGoal" {
+        self.requestGoal(message, reply: replyHandler)
+        return
+      }
       replyHandler(message["kind"] as? String == "requestWorkout" ? self.currentCommand() : [:])
     }
   }
@@ -254,6 +292,8 @@ extension WatchLink: WCSessionDelegate {
   func sessionDidBecomeInactive(_ session: WCSession) {}
 
   func sessionDidDeactivate(_ session: WCSession) {
+    watchName = nil
+    UserDefaults.standard.removeObject(forKey: "watchDeviceName")
     WCSession.default.activate()
   }
 }
@@ -264,7 +304,11 @@ public final class QlaFitWatchLinkModule: Module {
   public func definition() -> ModuleDefinition {
     Name("QlaFitWatchLink")
 
-    Events("onHeartRate", "onWorkoutState", "onReachabilityChange")
+    Events("onHeartRate", "onWorkoutState", "onReachabilityChange", "onGoalRequest")
+
+    AsyncFunction("completeGoalRequest") { (id: String, success: Bool) in
+      self.link.completeGoalRequest(id: id, success: success)
+    }.runOnQueue(.main)
 
     OnCreate {
       self.link.onEvent = { [weak self] name, body in
@@ -280,6 +324,7 @@ public final class QlaFitWatchLinkModule: Module {
     Property("isWatchAppInstalled") { self.link.isWatchAppInstalled }
 
     Property("isPaired") { self.link.isPaired }
+    Property("watchName") { self.link.deviceName }
 
     AsyncFunction("startWorkout") { (sport: String, sportId: String?, startAt: Double?, promise: Promise) in
       self.link.start(sport: sport, sportId: sportId, startAt: startAt) { error in

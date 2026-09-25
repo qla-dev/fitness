@@ -5657,6 +5657,7 @@
     "kcalLeft": "kcal left",
     "kcalLeftOfGoal": "kcal left of {{goal}}",
     "amountLeft": "{{amount}} left",
+    "addGoal": "Add Goal",
     "editGoalFor": "Change your {{nutrient}} goal"
   },
   "trainingCard": {
@@ -5785,7 +5786,11 @@
     "watchNeedsApp": "Install the watch app",
     "watchStartFailedTitle": "Watch workout did not start",
     "watchStartFailedMessage": "Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.",
-    "openingWatch": "Opening Apple Watch and waiting for its workout to start..."
+    "openingWatch": "Opening Apple Watch and waiting for its workout to start...",
+    "watchConnection": "Watch connection",
+    "connectingWatchName": "Connecting to {{watch}}",
+    "watchConnectedName": "{{watch}} is ready",
+    "watchConnectionHelp": "Keep your watch nearby. Your workout will start when your watch is ready."
   },
   "addHub": {
     "searchPlaceholder": "Search food or meals",

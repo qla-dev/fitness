@@ -86,8 +86,14 @@ describe('DiaryNutritionCard', () => {
     expect(getByText('300')).toBeTruthy();
   });
 
-  // A day with no goals set still has numbers worth showing; only the lines
-  // that measure against a goal drop out.
+  test('offers Add Goal beneath unset nutrients and opens their goal editor', () => {
+    const { getAllByText } = render(<DiaryNutritionCard summary={summary} />);
+    expect(getAllByText('Add Goal')).toHaveLength(11);
+    fireEvent.press(getAllByText('Add Goal')[0]);
+    expect(mockNavigate).toHaveBeenCalledWith('GoalEdit', { goalKey: 'sugars' });
+  });
+
+  // A day with no goals set still has numbers worth showing.
   test('survives a day with no goals set', () => {
     const { getByText, queryByText } = render(
       <DiaryNutritionCard

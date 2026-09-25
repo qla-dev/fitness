@@ -57,6 +57,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
     'Root-stack recorder opened from Start Workout, above the tab host.',
   WorkoutSetup:
     'Root-stack goal picker pushed from Start Workout, above the tab host.',
+  WatchWorkoutStart:
+    'Native watch connection modal above workout setup, sharing the measurement editor presentation.',
   Profile:
     'Root-stack profile route reached from the profile button every tab header carries.',
   ProfileGoals: 'Root-stack profile route presented above the tab host.',

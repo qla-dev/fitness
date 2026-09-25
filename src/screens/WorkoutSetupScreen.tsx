@@ -1,12 +1,5 @@
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
-import {
-  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -33,10 +26,9 @@ import {
   getSensorSnapshot,
   setWheelCircumference,
   subscribeSensors,
-  startWatchHeartRate,
-  stopWatchHeartRate,
 } from '../services/recording/sensors';
 import { usePreferences } from '../hooks/usePreferences';
+import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -115,16 +107,8 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // On when a watch is paired: its heart rate is the better reading, and the
   // switch is there for when you would rather it stayed out of the session.
   const [watchChoice, setWatchEnabled] = useState<boolean | null>(null);
-  const [starting, setStarting] = useState(false);
-  const startingRef = useRef(false);
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      if (startingRef.current) void stopWatchHeartRate();
-    };
-  }, []);
+  const { isNavigationLocked: starting, runNavigationAction } =
+    useNavigationActionGuard(navigation);
   const [sensorsOpen, setSensorsOpen] = useState(false);
   // Which target the sheet is editing, if any. One sheet for the three cards:
   // they ask the same question in different units.
@@ -387,54 +371,20 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     );
   };
 
-  const begin = useCallback(
-    (goal: RecordingGoal) => {
-      if (startingRef.current) return;
-      startingRef.current = true;
-      setStarting(true);
-      if (watchEnabled) setWatchEnabled(true);
-      void (async () => {
-        try {
-          if (watchEnabled) await startWatchHeartRate(sport, { sportId });
-          if (!mountedRef.current) return;
-          startingRef.current = false;
-          navigation.replace('RunOrRide', {
-            sport,
-            sportId,
-            gps: gpsEnabled,
-            watch: watchEnabled,
-            goal,
-            weightKg: weightToKg(parseDecimalInput(weight), weightUnit),
-          });
-        } catch {
-          if (!mountedRef.current) return;
-          Alert.alert(
-            t('workoutSetup.watchStartFailedTitle', {
-              defaultValue: 'Watch workout did not start',
-            }),
-            t('workoutSetup.watchStartFailedMessage', {
-              defaultValue:
-                'Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.',
-            }),
-            [{ text: t('common.ok', { defaultValue: 'OK' }) }]
-          );
-        } finally {
-          startingRef.current = false;
-          if (mountedRef.current) setStarting(false);
-        }
-      })();
-    },
-    [
-      watchEnabled,
-      sport,
-      sportId,
-      navigation,
-      gpsEnabled,
-      weight,
-      weightUnit,
-      t,
-    ]
-  );
+  const begin = (goal: RecordingGoal) => {
+    runNavigationAction(() => {
+      const params = {
+        sport,
+        sportId,
+        gps: gpsEnabled,
+        watch: watchEnabled,
+        goal,
+        weightKg: weightToKg(parseDecimalInput(weight), weightUnit),
+      };
+      if (watchEnabled) navigation.navigate('WatchWorkoutStart', params);
+      else navigation.replace('RunOrRide', params);
+    });
+  };
 
   const start = (goal: RecordingGoal) => {
     if (starting) return;
@@ -594,17 +544,6 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      {starting && (
-        <View className="flex-row items-center gap-3 p-4">
-          <ActivityIndicator />
-          <Text className="flex-1 text-text-primary">
-            {t('workoutSetup.openingWatch', {
-              defaultValue:
-                'Opening Apple Watch and waiting for its workout to start...',
-            })}
-          </Text>
-        </View>
-      )}
       <ScrollView
         pointerEvents={starting ? 'none' : 'auto'}
         showsVerticalScrollIndicator={false}
@@ -679,7 +618,8 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 // Three states, because a paired watch without our app is not
                 // the same as no watch and is fixed by a different thing.
                 label: watchConnected
-                  ? t('workoutSetup.watch', { defaultValue: 'Watch' })
+                  ? (sensors.watchName ??
+                    t('recording.appleWatch', { defaultValue: 'Apple Watch' }))
                   : sensors.watchNeedsApp
                     ? t('workoutSetup.watchNeedsApp', {
                         defaultValue: 'Install the watch app',

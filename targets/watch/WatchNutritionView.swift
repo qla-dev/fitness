@@ -3,6 +3,7 @@ import SwiftUI
 /// Mirrors the phone's full macro-ring catalogue, totals, goals and palette.
 struct WatchNutritionView: View {
   @EnvironmentObject private var manager: WorkoutManager
+  @State private var editingNutrient: String?
   private var nutrients: [[String: Any]] { manager.dashboard["nutrients"] as? [[String: Any]] ?? [] }
 
   var body: some View {
@@ -26,6 +27,11 @@ struct WatchNutritionView: View {
             }.font(.caption2).foregroundStyle(.secondary)
           }
         }.padding(.horizontal, 4).padding(.bottom, 20)
+      }
+      .sheet(isPresented: Binding(get: { editingNutrient != nil }, set: { if !$0 { editingNutrient = nil } })) {
+        if let nutrient = nutrients.first(where: { $0["key"] as? String == editingNutrient }) {
+          WatchNutrientGoalEditor(nutrient: nutrient)
+        }
       }
     }
   }
@@ -53,14 +59,21 @@ struct WatchNutritionView: View {
         }.padding(7)
       }.frame(width: 62, height: 62)
       Text(nutrient["label"] as? String ?? "").font(.caption2).foregroundStyle(color)
-        .multilineTextAlignment(.center)
+        .lineLimit(2).multilineTextAlignment(.center).frame(height: 30)
       if goal > 0 {
         Text(watchNumber(max(0, goal - consumed), digits: 1) + " " + unit + " " + watchText("nutrition.left", "left"))
           .font(.system(size: 10)).foregroundStyle(.secondary)
+          .lineLimit(1).minimumScaleFactor(0.7).frame(height: 14)
         Text(watchText("nutrition.goal", "Goal") + ": " + watchNumber(goal, digits: 1) + " " + unit)
           .font(.system(size: 9)).foregroundStyle(.secondary)
+          .lineLimit(1).minimumScaleFactor(0.7).frame(height: 12)
+      } else {
+        Button(watchText("nutrition.addGoal", "Add Goal")) { editingNutrient = key }
+          .buttonStyle(.plain).font(.system(size: 10)).foregroundStyle(color)
+          .lineLimit(1).minimumScaleFactor(0.7).frame(height: 14)
+        Color.clear.frame(height: 12).accessibilityHidden(true)
       }
-    }.frame(maxWidth: .infinity).accessibilityElement(children: .combine)
+    }.frame(maxWidth: .infinity)
   }
 
   private func symbol(for key: String) -> String {
@@ -76,4 +89,48 @@ struct WatchNutritionView: View {
     default: return "circle.hexagongrid.fill"
     }
   }
+}
+
+private struct WatchNutrientGoalEditor: View {
+  let nutrient: [String: Any]
+  @EnvironmentObject private var manager: WorkoutManager
+  @Environment(\.dismiss) private var dismiss
+  @State private var value: Double = 2
+  @State private var saving = false
+  @State private var failed = false
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 12) {
+        Text(nutrient["label"] as? String ?? "").font(.headline)
+        Text(watchNumber(value, digits: 1) + " " + (nutrient["unit"] as? String ?? ""))
+          .font(.title2).monospacedDigit()
+        HStack {
+          Button { value = max(step, value - step) } label: { Image(systemName: "minus") }
+            .accessibilityLabel(watchText("nutrition.decreaseGoal", "Decrease goal"))
+          Button { value = min(maximum, value + step) } label: { Image(systemName: "plus") }
+            .accessibilityLabel(watchText("nutrition.increaseGoal", "Increase goal"))
+        }.disabled(saving)
+        Text(watchText("nutrition.goalHelp", "New goals apply from today onward."))
+          .font(.caption2).foregroundStyle(.secondary)
+        if failed {
+          Text(watchText("nutrition.goalSaveFailed", "Could not save. Open qla.fit on your iPhone and try again."))
+            .font(.caption2).foregroundStyle(.red)
+        }
+        Button(watchText("nutrition.saveGoal", "Save Goal")) {
+          saving = true
+          failed = false
+          manager.saveNutrientGoal(key: nutrient["key"] as? String ?? "", value: value) { success in
+            saving = false
+            if success { dismiss() } else { failed = true }
+          }
+        }.disabled(saving)
+        if saving { ProgressView() }
+      }.padding()
+    }
+    .onAppear { value = max(step, nutrient["goal"] as? Double ?? 0) }
+  }
+
+  private var step: Double { nutrient["goalStep"] as? Double ?? 2 }
+  private var maximum: Double { nutrient["goalMaximum"] as? Double ?? Double.greatestFiniteMagnitude }
 }
