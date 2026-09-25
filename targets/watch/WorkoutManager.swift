@@ -149,8 +149,17 @@ final class WorkoutManager: NSObject, ObservableObject {
     let session = WCSession.default
     guard session.activationState == .activated, session.isReachable else { return }
     session.sendMessage(payload, replyHandler: nil) { [weak self] error in
+      guard !Self.isUnreachable(error) else { return }
       Task { @MainActor in self?.lastError = error.localizedDescription }
     }
+  }
+
+  /// Reachability can drop between the isReachable check and delivery (the
+  /// phone locks or suspends the app). That is the same "phone not there" case
+  /// the guard already handles silently, not a failure worth showing on the
+  /// wrist — reachability changes re-send state and retry pending requests.
+  nonisolated private static func isUnreachable(_ error: Error) -> Bool {
+    (error as? WCError)?.code == .notReachable
   }
 
   private func sendState() {
@@ -201,6 +210,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     }, errorHandler: { [weak self] error in
       Task { @MainActor in
         self?.requestInFlight = false
+        // phoneWorkoutRequested stays set, so the next reachability change retries.
+        guard !Self.isUnreachable(error) else { return }
         self?.lastError = error.localizedDescription
       }
     })
