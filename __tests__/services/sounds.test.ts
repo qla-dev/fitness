@@ -3,6 +3,7 @@ import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import {
   __resetSoundsForTests,
   isRestTimerSoundEnabled,
+  playCameraShutterSound,
   playRestCompleteSound,
 } from '../../src/services/sounds';
 import {
@@ -46,6 +47,21 @@ describe('sounds service', () => {
       useAppPreferencesStore.getState().setSoundsEnabled(false);
       expect(isRestTimerSoundEnabled()).toBe(true);
     });
+  });
+
+  it('replays the shutter sound and respects the shutter preference', async () => {
+    useAppPreferencesStore.getState().setSoundsEnabled(true);
+    playCameraShutterSound();
+    await flush();
+    playCameraShutterSound();
+    await flush();
+    expect(mockCreatePlayer).toHaveBeenCalledTimes(1);
+    const player = mockCreatePlayer.mock.results[0].value;
+    expect(player.play).toHaveBeenCalledTimes(2);
+    useAppPreferencesStore.getState().setSoundsEnabled(false);
+    playCameraShutterSound();
+    await flush();
+    expect(player.play).toHaveBeenCalledTimes(2);
   });
 
   describe('playRestCompleteSound', () => {

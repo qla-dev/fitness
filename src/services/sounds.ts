@@ -8,7 +8,29 @@ import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { addLog } from './LogService';
 
 let restChimePlayer: AudioPlayer | null = null;
+let shutterPlayer: AudioPlayer | null = null;
 let audioModeConfigured = false;
+
+/** Camera feedback respects the app's shutter-sound preference. */
+export function playCameraShutterSound(): void {
+  if (!useAppPreferencesStore.getState().soundsEnabled) return;
+  if (AppState.currentState !== 'active') return;
+  void (async () => {
+    try {
+      await setAudioModeAsync({
+        playsInSilentMode: false,
+        interruptionMode: 'mixWithOthers',
+      });
+      shutterPlayer ??= createAudioPlayer(
+        require('../../assets/sounds/shutter.mp3')
+      );
+      await shutterPlayer.seekTo(0);
+      shutterPlayer.play();
+    } catch (error) {
+      addLog(`Camera shutter playback failed: ${String(error)}`, 'WARNING');
+    }
+  })();
+}
 
 /**
  * Whether the rest-timer chime should play. Also consulted by the foreground
@@ -67,6 +89,7 @@ export function playRestCompleteSound(): void {
 
 /** Test-only helper — drops the cached player and audio-mode flag. */
 export function __resetSoundsForTests(): void {
+  shutterPlayer = null;
   restChimePlayer = null;
   audioModeConfigured = false;
 }
