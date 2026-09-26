@@ -23,6 +23,9 @@ export async function capturePhotoLocation(): Promise<
         if (
           !Number.isFinite(latitude) ||
           !Number.isFinite(longitude) ||
+          Math.abs(latitude) > 90 ||
+          Math.abs(longitude) > 180 ||
+          !Number.isFinite(location.timestamp) ||
           Date.now() - location.timestamp > 15000
         )
           return undefined;

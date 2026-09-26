@@ -475,7 +475,7 @@ export default function WorkoutPhotoEditor({
                   ]}
                 >
                   <Icon
-                    name="location"
+                    name="gps-track"
                     size={24}
                     color={options.showCapturePin ? '#FF9F0A' : 'white'}
                   />
