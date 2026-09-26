@@ -1,5 +1,5 @@
 import type { RecordZone } from '@workspace/shared';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -126,6 +126,7 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const [showHeaderTitle, setShowHeaderTitle] = useState(false);
 
   const { entry, stages, isLoading, isError, refetch } = useSleepDetail(
     entryId,
@@ -137,7 +138,14 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
   // hypnogram's axis labels can never disagree about which clock they are on.
   const zone = entry ? resolveSleepZone(entry, preferences?.timezone) : null;
 
-  const header = useScreenHeader({ left: { kind: 'back' } });
+  const header = useScreenHeader({
+    variant: 'transparent',
+    nativeTitle: showHeaderTitle
+      ? t('sleep.detailTitle', { defaultValue: 'Sleep' })
+      : '',
+    left: { kind: 'back' },
+    borderless: true,
+  });
 
   const renderContent = () => {
     if (isLoading) {
@@ -188,6 +196,13 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
     return (
       <ScrollView
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={({ nativeEvent }) => {
+          const offset =
+            nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
+          setShowHeaderTitle(offset > 48);
+        }}
+        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
