@@ -432,7 +432,7 @@ function currentActivityProps(): WorkoutLiveActivityProps | null {
         session.goal && session.goal.target > 0
           ? Math.min(
               1,
-              (session.goal.type === 'distance'
+              (session.goal.type === 'distance' || session.goal.type === 'route'
                 ? session.distance
                 : session.goal.type === 'time'
                   ? elapsedSeconds(session, Date.now())

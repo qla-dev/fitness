@@ -631,6 +631,7 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
     const points = await recordingSamples<RecordedPoint>(s.id, 'gps');
     const sensors = await recordingSamples<SensorReading>(s.id, 'sensor');
     const detail: RecordingDetail = {
+      plannedRoute: s.goal?.route,
       photos: s.photos,
       version: 1,
       recordingId: s.id,

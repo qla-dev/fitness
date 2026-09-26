@@ -1,16 +1,26 @@
 export type RecordingSport = 'run' | 'ride';
 
 /** What the session is aiming at. `open` is Quick Start: no target at all. */
-export type RecordingGoalType = 'open' | 'time' | 'distance' | 'calories';
+export type RecordingGoalType =
+  'open' | 'time' | 'distance' | 'calories' | 'route';
+
+export interface PlannedRoute {
+  destination: string;
+  destinationPoint: { latitude: number; longitude: number };
+  coordinates: { latitude: number; longitude: number }[];
+  distance: number;
+  roundTrip: boolean;
+}
 
 export interface RecordingGoal {
   type: RecordingGoalType;
   /**
-   * Seconds for `time`, metres for `distance`, kilocalories for
+   * Seconds for `time`, metres for `distance` and `route`, kilocalories for
    * `calories`. Always metric and always absolute, so a goal set under one
    * unit preference still reads correctly under another.
    */
   target: number;
+  route?: PlannedRoute;
 }
 
 export interface RecordedPoint {
@@ -85,6 +95,7 @@ export interface RecordingSession {
 }
 
 export interface RecordingDetail {
+  plannedRoute?: PlannedRoute;
   photos?: RecordingPhoto[];
   version: 1;
   /** Daily totals from this provider already include this watch-recorded effort. */

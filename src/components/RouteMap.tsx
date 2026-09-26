@@ -25,6 +25,9 @@ const hasGoogleMapsApiKey = (): boolean =>
 export type RouteCoordinate = { latitude: number; longitude: number };
 
 export interface RouteMapProps {
+  plannedRoute?: RouteCoordinate[];
+  destination?: RouteCoordinate;
+  onSelectPoint?: (point: RouteCoordinate) => void;
   navigationMode?: boolean;
   controlsTop?: number;
   /** Where the camera starts. Defaults to a wide view when unknown. */
@@ -72,6 +75,9 @@ const RouteMap: React.FC<RouteMapProps> = ({
   showsUserLocation = false,
   navigationMode = false,
   controlsTop = 16,
+  plannedRoute,
+  destination,
+  onSelectPoint,
 }) => {
   const { t } = useTranslation();
 
@@ -79,6 +85,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
   const [is3D, setIs3D] = useState(navigationMode);
   const scheme = useColorScheme();
   const accent = useCSSVariable('--color-accent-primary') as string;
+  const routeColor = useCSSVariable('--color-cat-violet') as string;
   const appleMap = useRef<AppleMaps.MapView>(null);
   const googleMap = useRef<GoogleMaps.MapView>(null);
   const [following, setFollowing] = useState(true);
@@ -191,6 +198,30 @@ const RouteMap: React.FC<RouteMapProps> = ({
     : route && route.length > 1
       ? [{ id: 'route', coordinates: route, color: accent, width: ROUTE_WIDTH }]
       : [];
+  if (plannedRoute && plannedRoute.length > 1) {
+    polylines.unshift({
+      id: 'planned-route',
+      coordinates: plannedRoute,
+      color: routeColor,
+      width: 8,
+    });
+  }
+  const markers = destination
+    ? [
+        {
+          id: 'destination',
+          coordinates: destination,
+          title: t('workoutRoute.destination', { defaultValue: 'Destination' }),
+        },
+      ]
+    : [];
+  const selectPoint = (event: {
+    coordinates: { latitude?: number; longitude?: number };
+  }) => {
+    const { latitude, longitude } = event.coordinates;
+    if (latitude !== undefined && longitude !== undefined)
+      onSelectPoint?.({ latitude, longitude });
+  };
 
   if (Platform.OS === 'ios') {
     return (
@@ -215,6 +246,8 @@ const RouteMap: React.FC<RouteMapProps> = ({
               };
           }}
           polylines={polylines}
+          markers={markers}
+          onMapClick={selectPoint}
           properties={{
             isMyLocationEnabled: showsUserLocation,
             elevation: navigationMode
@@ -289,6 +322,8 @@ const RouteMap: React.FC<RouteMapProps> = ({
               };
           }}
           polylines={polylines}
+          markers={markers}
+          onMapClick={selectPoint}
           properties={{ isMyLocationEnabled: showsUserLocation }}
           uiSettings={{
             myLocationButtonEnabled: !navigationMode && showsUserLocation,

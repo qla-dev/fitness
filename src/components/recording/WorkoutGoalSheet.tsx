@@ -46,6 +46,33 @@ export default function WorkoutGoalSheet({
         : distanceUnit === 'miles'
           ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
           : t('workoutSetup.kmUnit', { defaultValue: 'KM' });
+  const category =
+    kind === 'calories'
+      ? t('workoutSetup.goalEditor.caloriesHeader', {
+          defaultValue: 'Calories goals',
+        })
+      : kind === 'time'
+        ? t('workoutSetup.goalEditor.timeHeader', {
+            defaultValue: 'Time goals',
+          })
+        : t('workoutSetup.goalEditor.distanceHeader', {
+            defaultValue: 'Distance goals',
+          });
+  const description =
+    kind === 'calories'
+      ? t('workoutSetup.goalEditor.caloriesDescription', {
+          defaultValue:
+            'Set how many calories you want to burn in this workout. Follow your progress as you move.',
+        })
+      : kind === 'time'
+        ? t('workoutSetup.goalEditor.timeDescription', {
+            defaultValue:
+              'Choose how long you want to exercise. Follow your progress toward this target during your workout.',
+          })
+        : t('workoutSetup.goalEditor.distanceDescription', {
+            defaultValue:
+              'Set the distance you want to cover in this workout. Follow your progress as you move.',
+          });
   const step = (direction: 1 | -1) => {
     fireSelectionHaptic();
     setDraft((current) =>
@@ -63,7 +90,8 @@ export default function WorkoutGoalSheet({
       open={open}
       onClose={onClose}
       title={title}
-      category={t('profile.goals', { defaultValue: 'Goals' })}
+      category={category}
+      description={description}
       footerLabel={t('common.done', { defaultValue: 'Done' })}
       footerTint={tint}
       onFooterPress={() => {

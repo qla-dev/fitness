@@ -17,6 +17,7 @@ import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
 import WorkoutGoalSheet from '../components/recording/WorkoutGoalSheet';
+import WorkoutRouteSheet from '../components/recording/WorkoutRouteSheet';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
@@ -31,7 +32,7 @@ import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
-import type { RecordingGoal } from '../services/recording/types';
+import type { PlannedRoute, RecordingGoal } from '../services/recording/types';
 import { formatLocalizedNumber } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
 import { withAlpha } from '../utils/colors';
@@ -100,6 +101,9 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // Off means the session is timed but leaves no route — indoors, or on a
   // court, where a trace is noise and the battery is better spent elsewhere.
   const [gpsEnabled, setGpsEnabled] = useState(true);
+  const violet = useCSSVariable('--color-cat-violet') as string;
+  const [routeSheetOpen, setRouteSheetOpen] = useState(false);
+  const [plannedRoute, setPlannedRoute] = useState<PlannedRoute>();
   // Quick start is not a goal, so it only shows under "All"; "Custom" is where
   // saved workouts of your own will land and has nothing in it yet.
   const [goalFilter, setGoalFilter] = useState('all');
@@ -387,6 +391,10 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
 
   const start = (goal: RecordingGoal) => {
     if (starting) return;
+    if (goal.type === 'route' && !goal.route) {
+      setRouteSheetOpen(true);
+      return;
+    }
     fireSelectionHaptic();
     if (gpsEnabled && locationGranted === false) {
       promptForLocationSettings();
@@ -694,6 +702,23 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
             })} ${t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })}`,
             () => setEditingGoal('calories')
           )}
+        {gpsEnabled &&
+          goalFilter !== 'custom' &&
+          card(
+            violet,
+            'gps-track',
+            t('workoutRoute.title', { defaultValue: 'Route' }),
+            {
+              type: 'route',
+              target: plannedRoute?.distance ?? 0,
+              route: plannedRoute,
+            },
+            plannedRoute?.destination ??
+              t('workoutRoute.choose', {
+                defaultValue: 'Choose a destination',
+              }),
+            () => setRouteSheetOpen(true)
+          )}
         {goalFilter === 'custom' && (
           <View className="items-center py-10 px-6">
             <Icon name="paste" size={28} color={surface} />
@@ -711,6 +736,15 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
       <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
+      {routeSheetOpen && gpsEnabled && (
+        <WorkoutRouteSheet
+          value={plannedRoute}
+          sport={sport}
+          distanceUnit={distanceUnit}
+          onSave={setPlannedRoute}
+          onClose={() => setRouteSheetOpen(false)}
+        />
+      )}
       <WorkoutGoalSheet
         key={editingGoal ?? 'closed'}
         open={editingGoal !== null}

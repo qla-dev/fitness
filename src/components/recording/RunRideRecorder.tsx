@@ -244,7 +244,7 @@ export default function RunRideRecorder({
       ? 0
       : goal.type === 'time'
         ? seconds
-        : goal.type === 'distance'
+        : goal.type === 'distance' || goal.type === 'route'
           ? session.distance
           : recordingCalories(session, seconds);
   const goalPercent =
@@ -255,7 +255,7 @@ export default function RunRideRecorder({
     if (!goal) return null;
     if (goal.type === 'time')
       return `${recordingClock(Math.min(goalDone, goal.target))} / ${recordingClock(goal.target)}`;
-    if (goal.type === 'distance') {
+    if (goal.type === 'distance' || goal.type === 'route') {
       const target = distanceFromKm(goal.target / 1000, unit);
       return `${number(distanceFromKm(goalDone / 1000, unit), 2)} / ${number(target, 2)} ${unitLabel}`;
     }
@@ -375,8 +375,13 @@ export default function RunRideRecorder({
       {tracksRoute && (
         <RouteMap
           key={session?.id ?? 'preview'}
-          center={snapshot.points[snapshot.points.length - 1]}
+          center={
+            snapshot.points[snapshot.points.length - 1] ??
+            session?.goal?.route?.coordinates[0]
+          }
           segments={routeSegments(snapshot.points)}
+          plannedRoute={session?.goal?.route?.coordinates}
+          destination={session?.goal?.route?.destinationPoint}
           showsUserLocation={!!session}
           appearance="dark"
           navigationMode={!!session}

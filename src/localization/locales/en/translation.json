@@ -5447,7 +5447,12 @@
       "textColor": "Text color",
       "font": "Text font",
       "systemFont": "System",
-      "fonts": { "anton": "Anton", "bebas": "Bebas Neue", "rajdhani": "Rajdhani", "oswald": "Oswald" },
+      "fonts": {
+        "anton": "Anton",
+        "bebas": "Bebas Neue",
+        "rajdhani": "Rajdhani",
+        "oswald": "Oswald"
+      },
       "routeColor": "Route color",
       "hexColor": "Hex color",
       "classic": "Classic",
@@ -5834,7 +5839,15 @@
     "connectingWatchName": "Connecting to {{watch}}",
     "watchConnectedName": "{{watch}} is ready",
     "watchConnectionHelp": "Keep your watch nearby. Your workout will start when your watch is ready.",
-    "watchConnected": "Apple Watch connected"
+    "watchConnected": "Apple Watch connected",
+    "goalEditor": {
+      "caloriesHeader": "Calories goals",
+      "timeHeader": "Time goals",
+      "distanceHeader": "Distance goals",
+      "caloriesDescription": "Set how many calories you want to burn in this workout. Follow your progress as you move.",
+      "timeDescription": "Choose how long you want to exercise. Follow your progress toward this target during your workout.",
+      "distanceDescription": "Set the distance you want to cover in this workout. Follow your progress as you move."
+    }
   },
   "addHub": {
     "searchPlaceholder": "Search food or meals",
@@ -6030,5 +6043,24 @@
     "typical": "Previous 28 days · average",
     "activeDays_one": "{{formattedCount}} day with exercise",
     "activeDays_other": "{{formattedCount}} days with exercise"
+  },
+  "workoutRoute": {
+    "title": "Route",
+    "destination": "Destination",
+    "useRoute": "Use route",
+    "search": "Search address or place",
+    "oneWay": "One way",
+    "roundTrip": "Round trip",
+    "choose": "Choose a destination",
+    "locationError": "Allow location access and try again to set your starting point.",
+    "routeError": "Could not calculate this route. Select another point or try again.",
+    "noResults": "No places found. Try another address or tap the map.",
+    "searchError": "Address search is unavailable. Try again or tap the map.",
+    "selectedPoint": "Selected point",
+    "locate": "Find my starting point",
+    "distance": "{{distance}} {{unit}} planned",
+    "hint": "Search or tap the map to choose a destination.",
+    "attribution": "© OpenStreetMap contributors · Routing: FOSSGIS · Fix the map",
+    "searchButton": "Search"
   }
 }
