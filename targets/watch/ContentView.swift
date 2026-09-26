@@ -16,11 +16,11 @@ struct ContentView: View {
         ProgressView(watchText("workout.saving", "Saving workout…"))
       } else {
         TabView(selection: $homePage) {
+          WatchMeasurementView(kind: .weight).tag(-3)
+          WatchMeasurementView(kind: .water).tag(-2)
           WatchNutritionView().tag(-1)
           WatchDashboardView().tag(0)
           SportListView().tag(1)
-          WatchMeasurementView(kind: .water).tag(2)
-          WatchMeasurementView(kind: .weight).tag(3)
         }
         .tabViewStyle(.page)
       }

@@ -166,18 +166,38 @@ final class WorkoutManager: NSObject, ObservableObject {
   }
 
   /// Retry the same identity after a lost reply; the phone saves each entry once.
+  private var optimisticMeasurements: [String: (id: String, value: Double, previous: Any?, confirmedAfter: Double)] = [:]
+
   func saveMeasurement(id: String, kind: String, value: Double, date: String,
     completion: @escaping (Bool) -> Void) {
+    let previous = dashboard[kind]
+    let displayed = kind == "water" ? (previous as? Double ?? 0) + value : value
+    // Keep the phone's snapshot timestamp unchanged: these are local edits,
+    // not evidence that the dashboard has synced.
+    optimisticMeasurements[kind] = (id, displayed, previous, .infinity)
+    dashboard[kind] = displayed
+    let finish: (Bool) -> Void = { [weak self] success in
+      if let self, let edit = self.optimisticMeasurements[kind], edit.id == id {
+        if success {
+          self.optimisticMeasurements[kind] = (id, edit.value, edit.previous, Date().timeIntervalSince1970 * 1000)
+          UserDefaults.standard.set(self.dashboard, forKey: "phoneDashboard")
+        } else {
+          self.dashboard[kind] = edit.previous
+          self.optimisticMeasurements.removeValue(forKey: kind)
+        }
+      }
+      completion(success)
+    }
     let connection = WCSession.default
     guard connection.activationState == .activated, connection.isReachable else {
-      completion(false)
+      finish(false)
       return
     }
     connection.sendMessage(["kind": "addMeasurement", "id": id, "measurement": kind,
       "value": value, "date": date], replyHandler: { reply in
-      Task { @MainActor in completion(reply["success"] as? Bool == true) }
+      Task { @MainActor in finish(reply["success"] as? Bool == true) }
     }, errorHandler: { _ in
-      Task { @MainActor in completion(false) }
+      Task { @MainActor in finish(false) }
     })
   }
 
@@ -239,8 +259,16 @@ final class WorkoutManager: NSObject, ObservableObject {
   private func receiveDashboard(_ context: [String: Any]) {
     guard let value = context["dashboard"] as? [String: Any] else { return }
     guard (value["updatedAt"] as? Double ?? 0) >= (dashboard["updatedAt"] as? Double ?? 0) else { return }
-    dashboard = value
-    UserDefaults.standard.set(value, forKey: "phoneDashboard")
+    var displayed = value
+    for (kind, edit) in optimisticMeasurements {
+      if (value["updatedAt"] as? Double ?? 0) >= edit.confirmedAfter {
+        optimisticMeasurements.removeValue(forKey: kind)
+      } else {
+        displayed[kind] = edit.value
+      }
+    }
+    dashboard = displayed
+    UserDefaults.standard.set(displayed, forKey: "phoneDashboard")
   }
 
   private func handlePhoneMessage(_ message: [String: Any]) async {
