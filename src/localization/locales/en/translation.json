@@ -5349,7 +5349,9 @@
       "success": "Program added",
       "myPrograms": "My Programs",
       "contents": "{{sessions}} sessions · {{exercises}} exercises",
-      "singleAlreadyAdded": "This program is already in My Programs. Adding it again creates one additional copy."
+      "singleAlreadyAdded": "This program is already in My Programs. Adding it again creates one additional copy.",
+      "weeklyExplainer": "Each week is saved as a separate program in My Programs, with all its sessions and exercises. Nothing is charged.",
+      "weekName": "{{name}} · Week {{week}}"
     },
     "searchResults": "Programs",
     "searchEmpty": "No programs match that search",

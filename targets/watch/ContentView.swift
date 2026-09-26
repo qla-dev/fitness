@@ -21,6 +21,7 @@ struct ContentView: View {
           WatchNutritionView().tag(-1)
           WatchDashboardView().tag(0)
           SportListView().tag(1)
+          WatchProgramsView().tag(2)
         }
         .tabViewStyle(.page)
       }

@@ -188,6 +188,32 @@ private final class WatchLink: NSObject {
     flushDashboard()
   }
 
+  private var queuedPrograms: Data?
+
+  func updatePrograms(_ value: [String: Any]) throws {
+    let data = try JSONSerialization.data(withJSONObject: value)
+    UserDefaults.standard.set(data, forKey: "watchPrograms")
+    flushPrograms()
+  }
+
+  private func flushPrograms() {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+      isWatchAppInstalled,
+      let data = UserDefaults.standard.data(forKey: "watchPrograms"),
+      data != queuedPrograms else { return }
+    // Program libraries exceed application context's size limit. File transfers
+    // are durable and work while the counterpart is not reachable.
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("watch-programs-\(UUID().uuidString).json")
+    do {
+      try data.write(to: url, options: .atomic)
+      WCSession.default.transferFile(url, metadata: ["kind": "programs"])
+      queuedPrograms = data
+    } catch {
+      NSLog("[Watch] Could not queue programs: %@", error.localizedDescription)
+    }
+  }
+
   private func flushDashboard() {
     guard WCSession.isSupported(), WCSession.default.activationState == .activated,
       isWatchAppInstalled, let dashboard else { return }
@@ -248,6 +274,7 @@ private final class WatchLink: NSObject {
     emitReachability()
     launchIfReady()
     flushDashboard()
+    flushPrograms()
     let pending = currentCommand()
     if pending["kind"] as? String != "none" { sendPayload(pending) }
     if let metrics { sendPayload(["kind": "metrics", "metrics": metrics]) }
@@ -267,6 +294,14 @@ private final class WatchLink: NSObject {
 }
 
 extension WatchLink: WCSessionDelegate {
+  func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+    guard fileTransfer.file.metadata?["kind"] as? String == "programs" else { return }
+    try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+    if let error {
+      NSLog("[Watch] Program transfer failed: %@", error.localizedDescription)
+      DispatchQueue.main.async { self.queuedPrograms = nil }
+    }
+  }
   func session(
     _ session: WCSession,
     activationDidCompleteWith activationState: WCSessionActivationState,
@@ -305,10 +340,18 @@ extension WatchLink: WCSessionDelegate {
     DispatchQueue.main.async { self.reachabilityDidChange() }
   }
 
+  func sessionWatchStateDidChange(_ session: WCSession) {
+    DispatchQueue.main.async {
+      self.queuedPrograms = nil
+      self.reachabilityDidChange()
+    }
+  }
+
   // Required on iOS so the session can be handed to a newly paired watch.
   func sessionDidBecomeInactive(_ session: WCSession) {}
 
   func sessionDidDeactivate(_ session: WCSession) {
+    queuedPrograms = nil
     watchName = nil
     UserDefaults.standard.removeObject(forKey: "watchDeviceName")
     WCSession.default.activate()
@@ -356,6 +399,10 @@ public final class QlaFitWatchLinkModule: Module {
 
     AsyncFunction("updateDashboard") { (value: [String: Any]) in
       self.link.updateDashboard(value)
+    }.runOnQueue(.main)
+
+    AsyncFunction("updatePrograms") { (value: [String: Any]) in
+      try self.link.updatePrograms(value)
     }.runOnQueue(.main)
 
     AsyncFunction("updateMetrics") { (value: [String: Any]) in

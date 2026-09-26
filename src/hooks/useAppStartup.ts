@@ -26,6 +26,7 @@ import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
 import { initializeRecorder } from '../services/recording/recorder';
 import { subscribeWatchGoals } from '../services/watchGoals';
 import { subscribeWatchMeasurements } from '../services/watchMeasurements';
+import { subscribeWatchPrograms } from '../services/watchPrograms';
 
 interface AppStartupArgs {
   /**
@@ -44,6 +45,8 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
   useEffect(() => {
     let cancelled = false;
     const watchGoals = Platform.OS === 'ios' ? subscribeWatchGoals() : null;
+    const watchPrograms =
+      Platform.OS === 'ios' ? subscribeWatchPrograms() : null;
     const watchMeasurements =
       Platform.OS === 'ios' ? subscribeWatchMeasurements() : null;
     const onLanguageChanged = () => {
@@ -176,6 +179,7 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     return () => {
       cancelled = true;
       watchGoals?.remove();
+      watchPrograms?.remove();
       watchMeasurements?.remove();
       i18n.off('languageChanged', onLanguageChanged);
       if (Platform.OS === 'ios') {

@@ -21,15 +21,18 @@ struct WatchActiveView: View {
 
   var body: some View {
     TabView {
+      if manager.activeProgram != nil { WatchProgramActiveView() }
       NavigationStack {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
           ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-              ViewThatFits(in: .horizontal) {
-                primaryMetrics(at: timeline.date, fontSize: 20)
-                primaryMetrics(at: timeline.date, fontSize: 18)
-                primaryMetrics(at: timeline.date, fontSize: 16)
-                primaryMetrics(at: timeline.date, fontSize: 14)
+              if manager.activeProgram == nil {
+                ViewThatFits(in: .horizontal) {
+                  primaryMetrics(at: timeline.date, fontSize: 20)
+                  primaryMetrics(at: timeline.date, fontSize: 18)
+                  primaryMetrics(at: timeline.date, fontSize: 16)
+                  primaryMetrics(at: timeline.date, fontSize: 14)
+                }
               }
               HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(timeline.date.timeIntervalSince(manager.heartRateAt) < 15 && manager.heartRate > 0
@@ -54,7 +57,7 @@ struct WatchActiveView: View {
       NavigationStack {
         ScrollView {
           VStack(alignment: .leading, spacing: 14) {
-            Label(manager.sport.name, systemImage: manager.sport.symbol)
+            Label(manager.activeProgram?.name ?? manager.sport.name, systemImage: manager.sport.symbol)
               .font(.caption2).foregroundStyle(manager.sport.tint)
             WatchMetric(label: manager.isPhoneWorkout ? watchText("metric.estimatedCalories", "Estimated calories") : watchText("home.activeCalories", "Active calories"),
               value: hasMetrics ? watchNumber(manager.isPhoneWorkout ? metric("calories") : manager.activeCalories) + " " + watchText("unit.kcal", "kcal") : "—", color: .orange)

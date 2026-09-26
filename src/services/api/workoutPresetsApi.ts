@@ -17,6 +17,19 @@ export type WorkoutPresetExercisePayload = WorkoutPresetExerciseRequest;
 export type WorkoutPresetCreatePayload = WorkoutPresetCreateRequest;
 export type WorkoutPresetUpdatePayload = WorkoutPresetUpdateRequest;
 
+const changeListeners = new Set<() => void>();
+
+export function subscribeWorkoutPresetChanges(listener: () => void) {
+  changeListeners.add(listener);
+  return () => {
+    changeListeners.delete(listener);
+  };
+}
+
+function notifyPresetChanges() {
+  changeListeners.forEach((listener) => listener());
+}
+
 export const fetchWorkoutPresets =
   async (): Promise<WorkoutPresetsResponse> => {
     return apiFetch<WorkoutPresetsResponse>({
@@ -93,35 +106,41 @@ export const getWorkoutPresetById = async (
 export const createWorkoutPreset = async (
   body: WorkoutPresetCreatePayload
 ): Promise<WorkoutPreset> => {
-  return apiFetch<WorkoutPreset>({
+  const preset = await apiFetch<WorkoutPreset>({
     endpoint: '/api/workout-presets',
     method: 'POST',
     body,
     serviceName: 'Workout Presets API',
     operation: 'create workout preset',
   });
+  notifyPresetChanges();
+  return preset;
 };
 
 export const updateWorkoutPreset = async (
   id: number,
   body: WorkoutPresetUpdatePayload
 ): Promise<WorkoutPreset> => {
-  return apiFetch<WorkoutPreset>({
+  const preset = await apiFetch<WorkoutPreset>({
     endpoint: `/api/workout-presets/${id}`,
     method: 'PUT',
     body,
     serviceName: 'Workout Presets API',
     operation: 'update workout preset',
   });
+  notifyPresetChanges();
+  return preset;
 };
 
 export const deleteWorkoutPreset = async (
   id: number
 ): Promise<{ message: string }> => {
-  return apiFetch<{ message: string }>({
+  const result = await apiFetch<{ message: string }>({
     endpoint: `/api/workout-presets/${id}`,
     method: 'DELETE',
     serviceName: 'Workout Presets API',
     operation: 'delete workout preset',
   });
+  notifyPresetChanges();
+  return result;
 };

@@ -18,6 +18,7 @@ export interface WatchReachabilityEvent {
 }
 
 interface WatchLinkNativeModule {
+  updatePrograms(snapshot: WatchProgramsSnapshot): Promise<void>;
   addListener(
     name: 'onMeasurementRequest',
     listener: (event: WatchMeasurementRequest) => void
@@ -52,6 +53,32 @@ interface WatchLinkNativeModule {
     name: 'onReachabilityChange',
     listener: (event: WatchReachabilityEvent) => void
   ): EventSubscription;
+}
+
+export interface WatchProgramsSnapshot {
+  updatedAt: number;
+  programs: {
+    id: number;
+    name: string;
+    expiresAt?: string;
+    exercises: {
+      name: string;
+      sets: {
+        reps?: number;
+        weight?: number;
+        duration?: number;
+        distance?: number;
+        rest?: number;
+        notes?: string;
+      }[];
+    }[];
+  }[];
+}
+
+export async function updateWatchPrograms(
+  snapshot: WatchProgramsSnapshot
+): Promise<void> {
+  await native?.updatePrograms?.(snapshot);
 }
 
 export interface WatchGoalRequest {

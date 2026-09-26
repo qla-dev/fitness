@@ -63,6 +63,7 @@ export default function ProgramPurchaseScreen({
         provider
           ? { id: provider.id, provider_type: provider.provider_type }
           : null,
+        t,
         setProgress
       );
       if (!installed.preset) {
@@ -93,9 +94,9 @@ export default function ProgramPurchaseScreen({
       description={
         result
           ? undefined
-          : t('programs.purchase.singleExplainer', {
+          : t('programs.purchase.weeklyExplainer', {
               defaultValue:
-                'All sessions and exercises are saved together as one program in My Programs. Nothing is charged.',
+                'Each week is saved as a separate program in My Programs, with all its sessions and exercises. Nothing is charged.',
             })
       }
       dismissDisabled={busy}

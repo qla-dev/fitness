@@ -3,6 +3,8 @@ import {
   fetchWorkoutPresetsPage,
   getWorkoutPresetById,
   searchWorkoutPresets,
+  deleteWorkoutPreset,
+  subscribeWorkoutPresetChanges,
 } from '../../../src/services/api/workoutPresetsApi';
 import {
   getActiveServerConfig,
@@ -41,6 +43,28 @@ describe('workoutPresetsApi', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('notifies watch subscribers only after a successful change and supports cleanup', async () => {
+    mockGetActiveServerConfig.mockResolvedValue(testConfig);
+    const listener = jest.fn();
+    const remove = subscribeWorkoutPresetChanges(listener);
+    try {
+      mockFetch.mockRejectedValueOnce(new Error('Offline'));
+      await expect(deleteWorkoutPreset(1)).rejects.toThrow();
+      expect(listener).not.toHaveBeenCalled();
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ message: 'Deleted' }),
+      });
+      await deleteWorkoutPreset(1);
+      expect(listener).toHaveBeenCalledTimes(1);
+      remove();
+      await deleteWorkoutPreset(2);
+      expect(listener).toHaveBeenCalledTimes(1);
+    } finally {
+      remove();
+    }
   });
 
   describe('fetchWorkoutPresets', () => {

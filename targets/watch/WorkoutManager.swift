@@ -65,6 +65,43 @@ enum WatchWorkoutOrigin {
 @MainActor
 final class WorkoutManager: NSObject, ObservableObject {
   static let shared = WorkoutManager()
+  @Published private(set) var programs: [WatchProgram] = []
+  @Published private(set) var activeProgram: WatchProgram?
+  @Published private(set) var programStep = 0
+  @Published private(set) var programRestUntil: Date?
+  private var programsUpdatedAt: Double = 0
+  private var lastProgramSetCompletion = Date.distantPast
+
+  func receivePrograms(_ data: Data) {
+    guard let snapshot = try? JSONDecoder().decode(WatchProgramSnapshot.self, from: data),
+      snapshot.updatedAt >= programsUpdatedAt else { return }
+    programs = snapshot.programs
+    programsUpdatedAt = snapshot.updatedAt
+    UserDefaults.standard.set(data, forKey: "phonePrograms")
+  }
+
+  func startProgram(_ program: WatchProgram) {
+    guard !isRunning, !isFinishing, session == nil, !program.expired,
+      !program.steps.isEmpty,
+      let strength = WatchSportCatalogue.sport(id: "strength-training") else { return }
+    startFromWatch(sport: strength)
+    if isRunning {
+      activeProgram = program
+      programStep = 0
+      programRestUntil = nil
+      lastProgramSetCompletion = .distantPast
+    }
+  }
+
+  func completeProgramSet() {
+    guard isRunning, !isPaused, let program = activeProgram, programStep < program.steps.count,
+      Date().timeIntervalSince(lastProgramSetCompletion) > 0.5 else { return }
+    lastProgramSetCompletion = Date()
+    let rest = program.steps[programStep].target.rest ?? 0
+    programStep += 1
+    programRestUntil = rest > 0 ? Date().addingTimeInterval(rest) : nil
+    WKInterfaceDevice.current().play(.success)
+  }
   @Published private(set) var dashboard: [String: Any] =
     UserDefaults.standard.dictionary(forKey: "phoneDashboard") ?? [:]
   @Published private(set) var phoneMetrics: [String: Any] = [:]
@@ -105,6 +142,7 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   override init() {
     super.init()
+    if let data = UserDefaults.standard.data(forKey: "phonePrograms") { receivePrograms(data) }
     activateConnectivity()
   }
 
@@ -374,6 +412,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   ) {
     guard !isRunning, !isFinishing, session == nil else { return }
     self.sport = sport
+    activeProgram = nil
+    programRestUntil = nil
     self.origin = origin
     phoneMetrics = [:]
     activeCalories = 0
@@ -485,7 +525,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     // Read off the main actor here and carried into the completions as plain
     // strings: a [String: Any] is not Sendable, and building the dictionary
     // inside the closure keeps it from crossing an isolation boundary.
-    let brandName = sport.name
+    let brandName = activeProgram?.name ?? sport.name
     let workoutOrigin = origin
     builder.endCollection(withEnd: Date()) { [weak self] _, error in
       if let error {
@@ -626,6 +666,12 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
 // MARK: - WCSessionDelegate
 
 extension WorkoutManager: WCSessionDelegate {
+  nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
+    guard file.metadata?["kind"] as? String == "programs",
+      let data = try? Data(contentsOf: file.fileURL) else { return }
+    // Read before returning: WatchConnectivity removes its temporary file.
+    Task { @MainActor in receivePrograms(data) }
+  }
   nonisolated func session(
     _ session: WCSession,
     activationDidCompleteWith activationState: WCSessionActivationState,

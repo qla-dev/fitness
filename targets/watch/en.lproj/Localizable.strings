@@ -61,3 +61,21 @@
 "nutrition.goalHelp" = "New goals apply from today onward.";
 "nutrition.goalSaveFailed" = "Could not save. Open qla.fit on your iPhone and try again.";
 "nutrition.saveGoal" = "Save Goal";
+
+"program.title" = "My Programs";
+
+"program.empty" = "Add programs on iPhone to sync them here.";
+
+"program.start" = "Start program";
+
+"program.expired" = "This program has expired.";
+
+"program.reps" = "reps";
+
+"program.set" = "Set";
+
+"program.rest" = "Rest";
+
+"program.completeSet" = "Complete set";
+
+"program.complete" = "All sets complete. Swipe to finish and save your workout.";

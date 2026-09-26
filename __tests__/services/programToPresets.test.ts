@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import {
   installProgramAsPresets,
   parseProgramReps,
@@ -7,7 +8,10 @@ import {
   importExercise,
   searchExternalExercises,
 } from '../../src/services/api/externalExerciseSearchApi';
-import { createWorkoutPreset } from '../../src/services/api/workoutPresetsApi';
+import {
+  createWorkoutPreset,
+  deleteWorkoutPreset,
+} from '../../src/services/api/workoutPresetsApi';
 import type { ExerciseProgram } from '../../src/types/exerciseProgram';
 jest.mock('../../src/services/dataMode', () => ({
   isLocalDataMode: () => true,
@@ -22,7 +26,11 @@ jest.mock('../../src/services/api/externalExerciseSearchApi', () => ({
 }));
 jest.mock('../../src/services/api/workoutPresetsApi', () => ({
   createWorkoutPreset: jest.fn(),
+  deleteWorkoutPreset: jest.fn().mockResolvedValue({}),
 }));
+
+const t = ((_key: string, options: { name: string; week: number }) =>
+  `${options.name} · Week ${options.week}`) as TFunction;
 
 const mockFetchPage = fetchExercisesPage as jest.Mock;
 const mockSearchExternal = searchExternalExercises as jest.Mock;
@@ -86,7 +94,7 @@ describe('parseProgramReps', () => {
 describe('installProgramAsPresets', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('creates one program and reports movements nothing matches', async () => {
+  it('creates one program per week and reports movements nothing matches', async () => {
     mockFetchPage.mockImplementation(
       ({ searchTerm }: { searchTerm: string }) =>
         searchTerm === 'Barbell Hip Thrust'
@@ -104,14 +112,24 @@ describe('installProgramAsPresets', () => {
     mockSearchExternal.mockResolvedValue({ items: [] });
     mockCreate.mockResolvedValue({ id: 1 });
 
-    const result = await installProgramAsPresets(program, {
-      id: 'prov-1',
-      provider_type: 'wger',
-    });
+    const result = await installProgramAsPresets(
+      program,
+      {
+        id: 'prov-1',
+        provider_type: 'wger',
+      },
+      t
+    );
 
-    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
     const payload = mockCreate.mock.calls[0][0];
-    expect(payload.name).toBe('Test Program');
+    expect(payload.name).toBe('Test Program · Week 1');
+    expect(mockCreate.mock.calls.map(([value]) => value.name)).toEqual([
+      'Test Program · Week 1',
+      'Test Program · Week 2',
+      'Test Program · Week 3',
+      'Test Program · Week 4',
+    ]);
     // Only the movement that resolved is in the preset.
     expect(payload.exercises).toHaveLength(1);
     expect(payload.exercises[0].exercise_id).toBe('ex-1');
@@ -123,8 +141,8 @@ describe('installProgramAsPresets', () => {
       rest_time: 120,
     });
     expect(result).toMatchObject({
-      presetsCreated: 1,
-      exercisesAdded: 1,
+      presetsCreated: 4,
+      exercisesAdded: 4,
       skipped: ['Unknown Movement'],
     });
   });
@@ -137,10 +155,14 @@ describe('installProgramAsPresets', () => {
     mockImport.mockResolvedValue({ id: 'imported-1' });
     mockCreate.mockResolvedValue({ id: 1 });
 
-    await installProgramAsPresets(program, {
-      id: 'prov-1',
-      provider_type: 'wger',
-    });
+    await installProgramAsPresets(
+      program,
+      {
+        id: 'prov-1',
+        provider_type: 'wger',
+      },
+      t
+    );
 
     expect(mockImport).toHaveBeenCalledWith('wger', 'w1');
     expect(mockCreate.mock.calls[0][0].exercises[0].exercise_id).toBe(
@@ -152,14 +174,28 @@ describe('installProgramAsPresets', () => {
     mockFetchPage.mockResolvedValue(emptyPage);
     mockSearchExternal.mockResolvedValue({ items: [] });
 
-    const result = await installProgramAsPresets(program, null);
+    const result = await installProgramAsPresets(program, null, t);
 
     expect(mockCreate).not.toHaveBeenCalled();
     expect(result.presetsCreated).toBe(0);
     expect(result.skipped).toHaveLength(2);
   });
 
-  it('keeps every session in one preset even with more than 50 exercises', async () => {
+  it('removes completed weeks when a later week fails so retry does not duplicate them', async () => {
+    mockFetchPage.mockResolvedValue({
+      ...emptyPage,
+      exercises: [{ id: 'ex-1', name: 'Barbell Hip Thrust' }],
+    });
+    mockCreate
+      .mockResolvedValueOnce({ id: 11 })
+      .mockRejectedValueOnce(new Error('Storage full'));
+    await expect(installProgramAsPresets(program, null, t)).rejects.toThrow(
+      'Storage full'
+    );
+    expect(deleteWorkoutPreset).toHaveBeenCalledWith(11);
+  });
+
+  it('keeps every session in each weekly preset even with more than 50 exercises', async () => {
     mockFetchPage.mockResolvedValue({
       ...emptyPage,
       exercises: [{ id: 'ex-1', name: 'Barbell Hip Thrust' }],
@@ -176,16 +212,16 @@ describe('installProgramAsPresets', () => {
         ),
       })),
     };
-    const result = await installProgramAsPresets(expanded, null);
-    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const result = await installProgramAsPresets(expanded, null, t);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
     const payload = mockCreate.mock.calls[0][0];
     expect(payload.exercises).toHaveLength(72);
     expect(payload.exercises[24].sets[0].notes).toContain('Session 2');
     expect(payload.exercises[71].sort_order).toBe(71);
     expect(mockFetchPage).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({
-      presetsCreated: 1,
-      exercisesAdded: 72,
+      presetsCreated: 4,
+      exercisesAdded: 288,
       preset: { id: 7 },
     });
   });

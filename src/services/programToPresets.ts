@@ -1,9 +1,13 @@
+import type { TFunction } from 'i18next';
 import { fetchExercisesPage } from './api/exerciseApi';
 import {
   importExercise,
   searchExternalExercises,
 } from './api/externalExerciseSearchApi';
-import { createWorkoutPreset } from './api/workoutPresetsApi';
+import {
+  createWorkoutPreset,
+  deleteWorkoutPreset,
+} from './api/workoutPresetsApi';
 import { addLog } from './LogService';
 import {
   createProgramAccess,
@@ -131,7 +135,7 @@ function buildPresetExercise(
 }
 
 /**
- * Installs the complete program as one preset, preserving session order.
+ * Installs one preset per week, preserving the weekly session order.
  *
  * A session's movements are stored as names, so each one is resolved to a real
  * exercise id first; unresolvable movements are reported back rather than
@@ -140,6 +144,7 @@ function buildPresetExercise(
 export async function installProgramAsPresets(
   program: ExerciseProgram,
   provider: ProgramProvider | null,
+  t: TFunction,
   onProgress?: (progress: ProgramInstallProgress) => void
 ): Promise<ProgramInstallResult> {
   const scope = await programAccessScope();
@@ -154,6 +159,7 @@ export async function installProgramAsPresets(
   const resolvedIds = new Map<string, string | null>();
   let resolved = 0;
   let preset: WorkoutPreset | undefined;
+  const created: WorkoutPreset[] = [];
   const payloadExercises: NonNullable<WorkoutPresetCreatePayload['exercises']> =
     [];
 
@@ -193,20 +199,35 @@ export async function installProgramAsPresets(
   }
 
   if (payloadExercises.length > 0) {
-    preset = await createWorkoutPreset({
-      name: program.name,
-      description: [
-        program.tagline,
-        ...program.sessions.map(
-          (session) => `${session.name}: ${session.focus}`
-        ),
-      ].join('\n'),
-      exercises: payloadExercises,
-    });
-    await saveProgramAccess(scope, preset.id, access);
+    try {
+      for (let week = 1; week <= program.weeks; week += 1) {
+        const weeklyPreset = await createWorkoutPreset({
+          name: t('programs.purchase.weekName', {
+            defaultValue: '{{name}} · Week {{week}}',
+            name: program.name,
+            week,
+          }),
+          description: [
+            program.tagline,
+            ...program.sessions.map(
+              (session) => `${session.name}: ${session.focus}`
+            ),
+          ].join('\n'),
+          exercises: payloadExercises,
+        });
+        created.push(weeklyPreset);
+        await saveProgramAccess(scope, weeklyPreset.id, access);
+      }
+      preset = created[0];
+    } catch (error) {
+      await Promise.allSettled(
+        created.map((item) => deleteWorkoutPreset(item.id))
+      );
+      throw error;
+    }
   }
-  const presetsCreated = preset ? 1 : 0;
-  const exercisesAdded = payloadExercises.length;
+  const presetsCreated = created.length;
+  const exercisesAdded = payloadExercises.length * presetsCreated;
 
   // A program that resolved nothing creates no preset; only a real install is
   // recorded, so a fully unresolvable program can be retried from Start.
