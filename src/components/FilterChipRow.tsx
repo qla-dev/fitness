@@ -35,7 +35,8 @@ const FilterChipRow: React.FC<{
   onChange: (value: string) => void;
   /** The option that means "no filter" — re-tapping it does nothing. */
   clearValue: string;
-}> = ({ value, options, onChange, clearValue }) => {
+  horizontalPadding?: number;
+}> = ({ value, options, onChange, clearValue, horizontalPadding = GUTTER }) => {
   const chipFill = useGlassChipFill();
   const [accentPrimary, accentText, textPrimary] = useCSSVariable([
     '--color-accent-primary',
@@ -47,7 +48,7 @@ const FilterChipRow: React.FC<{
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 8 }}
+      contentContainerStyle={{ paddingHorizontal: horizontalPadding, gap: 8 }}
       // Directly under the search field, which narrows the same list.
       className="pb-3"
     >

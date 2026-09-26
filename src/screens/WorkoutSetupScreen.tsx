@@ -713,10 +713,11 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               target: plannedRoute?.distance ?? 0,
               route: plannedRoute,
             },
-            plannedRoute?.destination ??
-              t('workoutRoute.choose', {
-                defaultValue: 'Choose a destination',
-              }),
+            plannedRoute
+              ? `${formatLocalizedNumber(plannedRoute.distance / 1000, { maximumFractionDigits: 2 })} ${t('workoutSetup.kmUnit', { defaultValue: 'KM' })}`
+              : t('workoutRoute.choose', {
+                  defaultValue: 'Choose a destination',
+                }),
             () => setRouteSheetOpen(true)
           )}
         {goalFilter === 'custom' && (

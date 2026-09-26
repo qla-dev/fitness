@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   Linking,
   Pressable,
@@ -18,6 +19,7 @@ import RouteMap from '../RouteMap';
 import Icon from '../Icon';
 import {
   calculateWorkoutRoute,
+  NoDistinctReturnRouteError,
   searchRoutePlaces,
   type RoutePlace,
   type RoutePoint,
@@ -56,10 +58,24 @@ export default function WorkoutRouteSheet({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState('');
   const [locationAttempt, setLocationAttempt] = useState(0);
+  const [locating, setLocating] = useState(true);
   const searchRequest = useRef<AbortController | null>(null);
   useEffect(() => () => searchRequest.current?.abort(), []);
   useEffect(() => {
     let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        cancelled = true;
+        setLocating(false);
+        setRouting(false);
+        setError(
+          t('workoutRoute.locationError', {
+            defaultValue:
+              'Allow location access and try again to set your starting point.',
+          })
+        );
+      }
+    }, 20000);
     void (async () => {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) throw new Error('Location unavailable');
@@ -70,17 +86,25 @@ export default function WorkoutRouteSheet({
         setStart(location.coords);
         setError('');
       }
-    })().catch(() => {
-      if (!cancelled)
-        setError(
-          t('workoutRoute.locationError', {
-            defaultValue:
-              'Allow location access and try again to set your starting point.',
-          })
-        );
-    });
+    })()
+      .catch(() => {
+        if (!cancelled) {
+          setRouting(false);
+          setError(
+            t('workoutRoute.locationError', {
+              defaultValue:
+                'Allow location access and try again to set your starting point.',
+            })
+          );
+        }
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+        if (!cancelled) setLocating(false);
+      });
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
     };
   }, [locationAttempt, t]);
   useEffect(() => {
@@ -96,13 +120,18 @@ export default function WorkoutRouteSheet({
       .then((route) => {
         if (!controller.signal.aborted) setPlan(route);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!controller.signal.aborted)
           setError(
-            t('workoutRoute.routeError', {
-              defaultValue:
-                'Could not calculate this route. Select another point or try again.',
-            })
+            error instanceof NoDistinctReturnRouteError
+              ? t('workoutRoute.noReturnRoute', {
+                  defaultValue:
+                    'No different return route was found. Try another destination or choose One way.',
+                })
+              : t('workoutRoute.routeError', {
+                  defaultValue:
+                    'Could not calculate this route. Select another point or try again.',
+                })
           );
       })
       .finally(() => {
@@ -227,6 +256,7 @@ export default function WorkoutRouteSheet({
         </View>
         <View>
           <FilterChipRow
+            horizontalPadding={0}
             value={roundTrip ? 'round' : 'one'}
             clearValue={roundTrip ? 'round' : 'one'}
             options={[
@@ -276,10 +306,15 @@ export default function WorkoutRouteSheet({
             {error}
           </Text>
         ) : null}
-        {!start && (
+        {!start && !locating && (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setLocationAttempt((value) => value + 1)}
+            onPress={() => {
+              setLocating(true);
+              setRouting(!!destination);
+              setError('');
+              setLocationAttempt((value) => value + 1);
+            }}
           >
             <Text style={{ color: tint }}>
               {t('workoutRoute.locate', {
@@ -307,6 +342,21 @@ export default function WorkoutRouteSheet({
               })
             }
           />
+          {locating && (
+            <View
+              testID="route-location-loading"
+              accessibilityLiveRegion="polite"
+              accessibilityState={{ busy: true }}
+              className="absolute inset-0 bg-surface/90 items-center justify-center gap-3 px-6"
+            >
+              <ActivityIndicator size="large" color={tint} />
+              <Text className="text-text-primary text-center">
+                {t('workoutRoute.locating', {
+                  defaultValue: 'Searching for your location…',
+                })}
+              </Text>
+            </View>
+          )}
         </View>
         <Text className="text-text-secondary">
           {plan
@@ -325,17 +375,39 @@ export default function WorkoutRouteSheet({
                 defaultValue: 'Search or tap the map to choose a destination.',
               })}
         </Text>
-        <Text
-          className="text-text-muted text-xs pb-2"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('workoutRoute.mapCredits', {
+            defaultValue: 'Map credits',
+          })}
+          className="self-end p-2"
           onPress={() =>
-            void Linking.openURL('https://www.openstreetmap.org/fixthemap')
+            Alert.alert(
+              t('workoutRoute.mapCredits', { defaultValue: 'Map credits' }),
+              t('workoutRoute.attribution', {
+                defaultValue:
+                  '© OpenStreetMap contributors · Routing: FOSSGIS · Fix the map',
+              }),
+              [
+                {
+                  text: t('common.close', { defaultValue: 'Close' }),
+                  style: 'cancel',
+                },
+                {
+                  text: t('workoutRoute.fixMap', {
+                    defaultValue: 'Fix the map',
+                  }),
+                  onPress: () =>
+                    void Linking.openURL(
+                      'https://www.openstreetmap.org/fixthemap'
+                    ),
+                },
+              ]
+            )
           }
         >
-          {t('workoutRoute.attribution', {
-            defaultValue:
-              '© OpenStreetMap contributors · Routing: FOSSGIS · Fix the map',
-          })}
-        </Text>
+          <Icon name="info-circle" size={18} color={tint} />
+        </Pressable>
       </View>
     </NativePromptSheet>
   );

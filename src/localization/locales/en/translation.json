@@ -6053,6 +6053,10 @@
     "activeDays_other": "{{formattedCount}} days with exercise"
   },
   "workoutRoute": {
+    "locating": "Searching for your location…",
+    "noReturnRoute": "No different return route was found. Try another destination or choose One way.",
+    "mapCredits": "Map credits",
+    "fixMap": "Fix the map",
     "title": "Route",
     "destination": "Destination",
     "useRoute": "Use route",

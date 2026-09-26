@@ -14,6 +14,13 @@ const routeResponse = z.object({
       z.object({
         distance: z.number().positive(),
         geometry: z.object({ coordinates: z.array(coordinate).min(2) }),
+        legs: z
+          .array(
+            z.object({
+              annotation: z.object({ nodes: z.array(z.number()) }).optional(),
+            })
+          )
+          .optional(),
       })
     )
     .min(1),
@@ -78,6 +85,31 @@ export async function searchRoutePlaces(
   return result;
 }
 
+export class NoDistinctReturnRouteError extends Error {
+  constructor() {
+    super('No distinct return route found');
+    this.name = 'NoDistinctReturnRouteError';
+  }
+}
+
+type ProviderRoute = z.infer<typeof routeResponse>['routes'][number];
+
+/** Compare undirected road edges, so reversing the same road is still overlap. */
+function routeEdges(route: ProviderRoute): Set<string> {
+  const nodes = route.legs?.flatMap((leg) => leg.annotation?.nodes ?? []);
+  const points =
+    nodes && nodes.length > 1
+      ? nodes.map(String)
+      : route.geometry.coordinates.map((point) =>
+          point.map((n) => n.toFixed(5)).join(',')
+        );
+  return new Set(
+    points
+      .slice(1)
+      .map((point, index) => [points[index], point].sort().join('|'))
+  );
+}
+
 export async function calculateWorkoutRoute(
   start: RoutePoint,
   destination: RoutePlace,
@@ -85,29 +117,61 @@ export async function calculateWorkoutRoute(
   roundTrip: boolean,
   signal: AbortSignal
 ): Promise<PlannedRoute> {
-  const waypoints = roundTrip
-    ? [start, destination, start]
-    : [start, destination];
   const profile = sport === 'ride' ? 'bike' : 'foot';
-  const coordinates = waypoints
-    .map((point) => `${point.longitude},${point.latitude}`)
-    .join(';');
-  const data = routeResponse.parse(
-    await request(
-      `https://routing.openstreetmap.de/routed-${profile}/route/v1/${profile}/${coordinates}?overview=full&geometries=geojson`,
-      signal
-    )
-  );
-  const route = data.routes[0];
+  const fetchLeg = async (
+    from: RoutePoint,
+    to: RoutePoint,
+    alternatives: boolean
+  ) => {
+    const coordinates = [from, to]
+      .map((point) => `${point.longitude},${point.latitude}`)
+      .join(';');
+    const data = routeResponse.parse(
+      await request(
+        `https://routing.openstreetmap.de/routed-${profile}/route/v1/${profile}/${coordinates}?overview=full&geometries=geojson&annotations=nodes&alternatives=${alternatives}`,
+        signal
+      )
+    );
+    return data.routes;
+  };
+  const route = (await fetchLeg(start, destination, false))[0];
+  let geometry = route.geometry.coordinates;
+  let distance = route.distance;
+  if (roundTrip) {
+    const outboundEdges = routeEdges(route);
+    const candidates = await fetchLeg(destination, start, true);
+    const ranked = candidates
+      .map((candidate) => {
+        const edges = routeEdges(candidate);
+        const common = [...edges].filter((edge) =>
+          outboundEdges.has(edge)
+        ).length;
+        return {
+          candidate,
+          overlap:
+            common / Math.max(1, Math.min(edges.size, outboundEdges.size)),
+        };
+      })
+      .sort(
+        (a, b) =>
+          a.overlap - b.overlap || a.candidate.distance - b.candidate.distance
+      );
+    const returning = ranked.find((item) => item.overlap < 0.85)?.candidate;
+    if (!returning) throw new NoDistinctReturnRouteError();
+    // Keep road-derived geometry; shared access roads are allowed, but a
+    // mostly identical return is not presented as a different round trip.
+    geometry = [...geometry, ...returning.geometry.coordinates.slice(1)];
+    distance += returning.distance;
+  }
   return {
     destination: destination.name,
     destinationPoint: {
       latitude: destination.latitude,
       longitude: destination.longitude,
     },
-    distance: route.distance,
+    distance,
     roundTrip,
-    coordinates: route.geometry.coordinates.map(([longitude, latitude]) => ({
+    coordinates: geometry.map(([longitude, latitude]) => ({
       latitude,
       longitude,
     })),
