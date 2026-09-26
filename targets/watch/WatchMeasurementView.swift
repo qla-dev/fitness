@@ -52,7 +52,9 @@ private struct WatchMeasurementEditor: View {
   let kind: WatchMeasurementKind
   @EnvironmentObject private var manager: WorkoutManager
   @Environment(\.dismiss) private var dismiss
-  @State private var value = 0
+  // Keep the draft in the phone's storage units: ml or kg. A weight tap is
+  // exactly 2 kg even when the watch displays the equivalent in pounds.
+  @State private var value: Double = 0
   @State private var saving = false
   @State private var pending: (id: String, value: Double, date: String)?
   @State private var unconfirmed = false
@@ -62,23 +64,27 @@ private struct WatchMeasurementEditor: View {
     ScrollView {
       VStack(spacing: 10) {
         Text(kind.title).font(.headline)
-        if kind == .water {
-          Picker(kind.title, selection: $value) {
-            ForEach(1..<81, id: \.self) { step in
-              Text(watchNumber(Double(step) * 25) + " " + unit).tag(step)
-            }
-          }.pickerStyle(.wheel).frame(height: 90).disabled(saving || pending != nil)
-        } else {
-          HStack {
-            Picker(kind.title, selection: Binding(get: { value / 10 }, set: { value = $0 * 10 + value % 10 })) {
-              ForEach(1..<(pounds ? 661 : 300), id: \.self) { whole in Text(watchNumber(Double(whole))).tag(whole) }
-            }
-            Picker(watchText("measurement.decimal", "Decimal"), selection: Binding(get: { value % 10 }, set: { value = value / 10 * 10 + $0 })) {
-              ForEach(0..<10, id: \.self) { fraction in Text(watchNumber(Double(fraction) / 10, digits: 1)).tag(fraction) }
-            }
-            Text(unit).font(.caption2)
-          }.pickerStyle(.wheel).frame(height: 90).disabled(saving || pending != nil)
+        HStack(spacing: 6) {
+          Button { adjust(-step) } label: {
+            Image(systemName: "minus").font(.headline).frame(width: 44, height: 44)
+              .background(kind.color.opacity(0.22), in: Circle())
+          }
+          .accessibilityLabel(watchText("measurement.decrease", "Decrease amount"))
+          .disabled(value - step < minimum)
+          VStack(spacing: 2) {
+            Text(watchNumber(displayValue, digits: kind == .water ? 0 : 1))
+              .font(.title2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+            Text(unit).font(.caption2).foregroundStyle(.secondary)
+          }.frame(maxWidth: .infinity)
+          Button { adjust(step) } label: {
+            Image(systemName: "plus").font(.headline).frame(width: 44, height: 44)
+              .background(kind.color.opacity(0.22), in: Circle())
+          }
+          .accessibilityLabel(watchText("measurement.increase", "Increase amount"))
+          .disabled(value + step > maximum)
         }
+        .buttonStyle(.plain).tint(kind.color)
+        .disabled(saving || pending != nil)
         if unconfirmed {
           Text(watchText("measurement.unconfirmed", "Open qla.fit on iPhone, then tap Retry to confirm this entry."))
             .font(.caption2).foregroundStyle(.secondary)
@@ -93,14 +99,14 @@ private struct WatchMeasurementEditor: View {
       if let entry = UserDefaults.standard.dictionary(forKey: pendingKey),
         let id = entry["id"] as? String, let amount = entry["value"] as? Double, let date = entry["date"] as? String {
         pending = (id, amount, date)
-        value = Int((kind == .water ? amount / 25 : amount * (pounds ? 2.2046226218 : 1) * 10).rounded())
+        value = amount
         unconfirmed = true
         return
       }
-      if kind == .water { value = 10 }
+      if kind == .water { value = 250 }
       else {
         let kg = manager.dashboard["weight"] as? Double ?? 70
-        value = min(pounds ? 6609 : 2999, max(10, Int((kg * (pounds ? 2.2046226218 : 1) * 10).rounded())))
+        value = min(maximum, max(minimum, kg))
       }
     }
   }
@@ -110,6 +116,16 @@ private struct WatchMeasurementEditor: View {
       (pounds ? watchText("unit.lbs", "lb") : watchText("unit.kg", "kg"))
   }
   private var pendingKey: String { "pendingMeasurement-" + kind.key }
+  private var step: Double { kind == .water ? 250 : 2 }
+  private var minimum: Double { kind == .water ? 25 : 1 }
+  private var maximum: Double { kind == .water ? 2000 : 299.9 }
+  private var displayValue: Double { kind == .weight && pounds ? value * 2.2046226218 : value }
+
+  private func adjust(_ delta: Double) {
+    guard !saving, pending == nil, value + delta >= minimum, value + delta <= maximum else { return }
+    value += delta
+    WKInterfaceDevice.current().play(.click)
+  }
 
   private func save() {
     guard !saving else { return }
@@ -118,8 +134,7 @@ private struct WatchMeasurementEditor: View {
       formatter.calendar = Calendar(identifier: .gregorian)
       formatter.locale = Locale(identifier: "en_US_POSIX")
       formatter.dateFormat = "yyyy-MM-dd"
-      let amount = kind == .water ? Double(value) * 25 : Double(value) / 10 / (pounds ? 2.2046226218 : 1)
-      pending = (UUID().uuidString, amount, formatter.string(from: Date()))
+      pending = (UUID().uuidString, value, formatter.string(from: Date()))
     }
     guard let entry = pending else { return }
     UserDefaults.standard.set(["id": entry.id, "value": entry.value, "date": entry.date], forKey: pendingKey)

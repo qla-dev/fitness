@@ -17,6 +17,8 @@
 "home.water" = "Water";
 "measurement.weight" = "Weight";
 "measurement.add" = "Add entry";
+"measurement.decrease" = "Decrease amount";
+"measurement.increase" = "Increase amount";
 "measurement.phone" = "Saves to qla.fit on your iPhone.";
 "measurement.decimal" = "Decimal";
 "measurement.unconfirmed" = "Open qla.fit on iPhone, then tap Retry to confirm this entry.";
