@@ -13,8 +13,7 @@ import type { RootStackScreenProps } from '../types/navigation';
 type ProfilePremiumScreenProps = RootStackScreenProps<'ProfilePremium'>;
 
 /**
- * Preview of the paid tier. Both premium rows on the Profile card land here,
- * so the pitch lives in one pushed screen instead of a modal each row raises.
+ * Preview of client management, reached from My Clients in Settings.
  */
 const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
   const { t } = useTranslation();
@@ -35,15 +34,6 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
       title: t('profile.clients', { defaultValue: 'My Clients' }),
       subtitle: t('profile.clientsSubtitle', {
         defaultValue: 'Manage your clients and their progress',
-      }),
-    },
-    {
-      icon: 'notifications' as const,
-      title: t('profile.purchase', {
-        defaultValue: 'Additional Notifications',
-      }),
-      subtitle: t('profile.purchaseSubtitle', {
-        defaultValue: 'Explore notification packages',
       }),
     },
   ];
@@ -72,7 +62,7 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
           <Text className="text-text-secondary text-base mt-2 text-center">
             {t('profile.paywallSubtitle', {
               defaultValue:
-                'Client management and additional notifications, together in one place.',
+                'Manage your clients and their progress in one place.',
             })}
           </Text>
         </View>

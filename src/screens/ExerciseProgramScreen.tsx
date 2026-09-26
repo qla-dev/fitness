@@ -9,6 +9,7 @@ import { useCSSVariable } from 'uniwind';
 
 import Icon from '../components/Icon';
 import ProgramCover from '../components/ProgramCover';
+import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import { formatLocalizedNumber } from '../localization';
 import ProgramExerciseRow from '../components/ProgramExerciseRow';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
@@ -195,24 +196,33 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
                 {program.coach}
               </Text>
             </View>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => setPurchasing(true)}
-              className="px-3 py-1 rounded-full self-start"
-              style={{ backgroundColor: accentPrimary }}
+            <LiquidGlassSurface
+              isInteractive
+              tintColor={accentPrimary}
+              style={{
+                alignSelf: 'flex-start',
+                borderRadius: 999,
+                overflow: 'hidden',
+              }}
             >
-              <Text className="text-accent-text text-base font-bold">
-                {alreadyInstalled
-                  ? t('programs.added', { defaultValue: 'Added' })
-                  : t('programs.startFor', {
-                      defaultValue: 'Start for {{price}}',
-                      price: formatLocalizedNumber(program.priceEur, {
-                        style: 'currency',
-                        currency: 'EUR',
-                      }),
-                    })}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setPurchasing(true)}
+                className="px-3 py-1 rounded-full"
+              >
+                <Text className="text-accent-text text-base font-bold">
+                  {alreadyInstalled
+                    ? t('programs.added', { defaultValue: 'Added' })
+                    : t('programs.startFor', {
+                        defaultValue: 'Start for {{price}}',
+                        price: formatLocalizedNumber(program.priceEur, {
+                          style: 'currency',
+                          currency: 'EUR',
+                        }),
+                      })}
+                </Text>
+              </TouchableOpacity>
+            </LiquidGlassSurface>
           </View>
         </View>
 
