@@ -118,6 +118,12 @@ export interface PhotoComposition {
   width: number;
   height: number;
   top: number;
-  metrics: { text: string; x: number; y: number; size: number }[];
+  metrics: {
+    text: string;
+    x: number;
+    y: number;
+    size: number;
+    icon?: 'speed' | 'calories' | 'heart';
+  }[];
   route: { latitude: number; longitude: number; segment: number }[];
 }

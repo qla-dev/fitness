@@ -8,6 +8,8 @@ import {
   useColorScheme,
 } from 'react-native';
 import Icon from './Icon';
+import LiquidGlassSurface from './LiquidGlassSurface';
+
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +26,7 @@ export type RouteCoordinate = { latitude: number; longitude: number };
 
 export interface RouteMapProps {
   navigationMode?: boolean;
+  controlsTop?: number;
   /** Where the camera starts. Defaults to a wide view when unknown. */
   center?: RouteCoordinate;
   zoom?: number;
@@ -68,8 +71,12 @@ const RouteMap: React.FC<RouteMapProps> = ({
   segments,
   showsUserLocation = false,
   navigationMode = false,
+  controlsTop = 16,
 }) => {
   const { t } = useTranslation();
+
+  const [mapReady, setMapReady] = useState(false);
+  const [is3D, setIs3D] = useState(navigationMode);
   const scheme = useColorScheme();
   const accent = useCSSVariable('--color-accent-primary') as string;
   const appleMap = useRef<AppleMaps.MapView>(null);
@@ -80,11 +87,18 @@ const RouteMap: React.FC<RouteMapProps> = ({
     bearing: 0,
     zoom: 17,
   });
-  const [initialCamera] = useState({
+  const [initialCamera, setInitialCamera] = useState({
     coordinates: center,
     tilt: navigationMode ? 60 : 0,
-    zoom: zoom ?? (center ? ROUTE_ZOOM : DEFAULT_ZOOM),
+    zoom:
+      zoom ??
+      (navigationMode && center ? 17 : center ? ROUTE_ZOOM : DEFAULT_ZOOM),
   });
+  // The native view may mount before the first GPS fix. A camera at world
+  // zoom cannot show a useful pitch; initialize it once that fix arrives.
+  if (navigationMode && center && !initialCamera.coordinates) {
+    setInitialCamera({ coordinates: center, tilt: 60, zoom: 17 });
+  }
   // Follow position through the ref, as in SmartFreight. Free exploration stops
   // follow immediately; do not overwrite the user's pan, zoom or 3D choice.
   useEffect(() => {
@@ -99,7 +113,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
     if (Platform.OS === 'ios') appleMap.current?.setCameraPosition(camera);
     else if (Platform.OS === 'android')
       void googleMap.current?.setCameraPosition({ ...camera, duration: 800 });
-  }, [navigationMode, following, center]);
+  }, [navigationMode, following, center, mapReady]);
 
   const cameraPosition = navigationMode
     ? initialCamera
@@ -107,6 +121,62 @@ const RouteMap: React.FC<RouteMapProps> = ({
         coordinates: center,
         zoom: zoom ?? (center ? ROUTE_ZOOM : DEFAULT_ZOOM),
       };
+  const controls = navigationMode && (
+    <View
+      style={{ position: 'absolute', right: 16, top: controlsTop, gap: 10 }}
+    >
+      <LiquidGlassSurface colorScheme="dark" style={{ borderRadius: 24 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('routeMap.toggle3D', {
+            defaultValue: 'Toggle 3D map',
+          })}
+          accessibilityState={{ selected: is3D }}
+          onPress={() => {
+            const tilt = is3D ? 0 : 60;
+            orientation.current.tilt = tilt;
+            setIs3D(!is3D);
+            const camera = { ...orientation.current, coordinates: center };
+            if (Platform.OS === 'ios')
+              appleMap.current?.setCameraPosition(camera);
+            else void googleMap.current?.setCameraPosition(camera);
+          }}
+          style={{
+            width: 48,
+            height: 48,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: '700' }}>
+            {is3D
+              ? t('routeMap.flat', { defaultValue: '2D' })
+              : t('routeMap.threeDimensional', { defaultValue: '3D' })}
+          </Text>
+        </Pressable>
+      </LiquidGlassSurface>
+      <LiquidGlassSurface colorScheme="dark" style={{ borderRadius: 24 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('recording.followRoute', {
+            defaultValue: 'Follow my position',
+          })}
+          onPress={() => {
+            setFollowing(true);
+            setMapReady((ready) => !ready);
+          }}
+          style={{
+            width: 48,
+            height: 48,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name="gps-track" size={22} color="white" />
+        </Pressable>
+      </LiquidGlassSurface>
+    </View>
+  );
   // A single-point line renders nothing on either platform and a zero-length
   // one is rejected outright, so the layer only exists once there are two.
   const polylines = segments
@@ -136,6 +206,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}
           onCameraMove={(event) => {
+            if (!mapReady) setMapReady(true);
             if (!following)
               orientation.current = {
                 tilt: event.tilt,
@@ -144,15 +215,22 @@ const RouteMap: React.FC<RouteMapProps> = ({
               };
           }}
           polylines={polylines}
-          properties={{ isMyLocationEnabled: showsUserLocation }}
+          properties={{
+            isMyLocationEnabled: showsUserLocation,
+            elevation: navigationMode
+              ? AppleMaps.MapStyleElevation?.REALISTIC
+              : undefined,
+          }}
           uiSettings={{
-            myLocationButtonEnabled: showsUserLocation,
-            compassEnabled: true,
+            myLocationButtonEnabled: !navigationMode && showsUserLocation,
+            compassEnabled: !navigationMode,
             scaleBarEnabled: false,
-            togglePitchEnabled: true,
+            togglePitchEnabled: !navigationMode,
           }}
           colorScheme={
-            scheme === 'dark' ? AppleMaps.MapColorScheme.DARK : undefined
+            appearance === 'dark' || scheme === 'dark'
+              ? AppleMaps.MapColorScheme.DARK
+              : undefined
           }
         />
         {appearance === 'dark' && (
@@ -160,29 +238,11 @@ const RouteMap: React.FC<RouteMapProps> = ({
             pointerEvents="none"
             style={[
               StyleSheet.absoluteFill,
-              { right: 76, backgroundColor: 'rgba(0,0,0,0.4)' },
+              { backgroundColor: 'rgba(0,0,0,0.4)' },
             ]}
           />
         )}
-        {navigationMode && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('recording.followRoute', {
-              defaultValue: 'Follow my position',
-            })}
-            onPress={() => setFollowing(true)}
-            style={{
-              position: 'absolute',
-              bottom: 16,
-              right: 16,
-              backgroundColor: '#222',
-              borderRadius: 24,
-              padding: 12,
-            }}
-          >
-            <Icon name="gps-track" size={24} color="white" />
-          </Pressable>
-        )}
+        {controls}
       </View>
     );
   }
@@ -220,6 +280,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}
           onCameraMove={(event) => {
+            if (!mapReady) setMapReady(true);
             if (!following)
               orientation.current = {
                 tilt: event.tilt,
@@ -230,13 +291,15 @@ const RouteMap: React.FC<RouteMapProps> = ({
           polylines={polylines}
           properties={{ isMyLocationEnabled: showsUserLocation }}
           uiSettings={{
-            myLocationButtonEnabled: showsUserLocation,
-            compassEnabled: true,
+            myLocationButtonEnabled: !navigationMode && showsUserLocation,
+            compassEnabled: !navigationMode,
             scaleBarEnabled: false,
             tiltGesturesEnabled: true,
           }}
           colorScheme={
-            scheme === 'dark' ? GoogleMaps.MapColorScheme.DARK : undefined
+            appearance === 'dark' || scheme === 'dark'
+              ? GoogleMaps.MapColorScheme.DARK
+              : undefined
           }
         />
         {appearance === 'dark' && (
@@ -244,29 +307,11 @@ const RouteMap: React.FC<RouteMapProps> = ({
             pointerEvents="none"
             style={[
               StyleSheet.absoluteFill,
-              { right: 76, backgroundColor: 'rgba(0,0,0,0.4)' },
+              { backgroundColor: 'rgba(0,0,0,0.4)' },
             ]}
           />
         )}
-        {navigationMode && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('recording.followRoute', {
-              defaultValue: 'Follow my position',
-            })}
-            onPress={() => setFollowing(true)}
-            style={{
-              position: 'absolute',
-              bottom: 16,
-              right: 16,
-              backgroundColor: '#222',
-              borderRadius: 24,
-              padding: 12,
-            }}
-          >
-            <Icon name="gps-track" size={24} color="white" />
-          </Pressable>
-        )}
+        {controls}
       </View>
     );
   }

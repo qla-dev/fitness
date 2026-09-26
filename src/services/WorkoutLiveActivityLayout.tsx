@@ -46,7 +46,19 @@ import type {
  * the main app). The layout never imports i18next or React Native.
  */
 export type WorkoutLiveActivityProps = {
+  brandName?: string;
   recordingSport?: 'run' | 'ride';
+  recordingMetrics?: {
+    distance: string;
+    distanceUnit: string;
+    pace: string;
+    paceLabel: string;
+    calories: string;
+    calorieUnit: string;
+    finish: string;
+    progress: number;
+    hasGoal: boolean;
+  };
   workoutName: string;
   /** Effective locale the labels were built for. */
   locale: WorkoutLiveActivityLocale;
@@ -373,7 +385,74 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
   };
 
   return {
-    banner: (
+    banner: props.recordingMetrics ? (
+      <VStack spacing={10} modifiers={[padding({ all: 16 })]}>
+        <HStack>
+          {icon()}
+          <Text
+            modifiers={[font({ size: 14, weight: 'semibold' }), lineLimit(1)]}
+          >
+            {props.workoutName}
+          </Text>
+          <Spacer />
+          {appIcon(28)}
+        </HStack>
+        <HStack spacing={20}>
+          <VStack alignment="leading">
+            <Text
+              modifiers={[
+                font({ size: 38, weight: 'bold' }),
+                monospacedDigit(),
+                foregroundStyle('#5087F7'),
+              ]}
+            >
+              {props.recordingMetrics.distance}
+            </Text>
+            <Text modifiers={[font({ size: 11 }), secondaryText()]}>
+              {props.recordingMetrics.distanceUnit}
+            </Text>
+          </VStack>
+          <VStack alignment="leading">
+            {elapsedClock(85)}
+            <Text modifiers={[font({ size: 11 }), secondaryText()]}>
+              {props.labels.elapsed}
+            </Text>
+          </VStack>
+          <VStack alignment="leading">
+            <Text modifiers={[monospacedDigit()]}>
+              {props.recordingMetrics.pace}
+            </Text>
+            <Text modifiers={[font({ size: 11 }), secondaryText()]}>
+              {props.recordingMetrics.paceLabel}
+            </Text>
+          </VStack>
+        </HStack>
+        {props.recordingMetrics.hasGoal && (
+          <ProgressView value={props.recordingMetrics.progress} />
+        )}
+        <HStack>
+          <Image systemName="flame.fill" />
+          <Text>
+            {props.recordingMetrics.calories +
+              ' ' +
+              props.recordingMetrics.calorieUnit}
+          </Text>
+          <Spacer />
+          {actionButtons()}
+          <Button
+            label={props.recordingMetrics.finish}
+            systemImage="stop.fill"
+            target="recording-stop"
+            modifiers={[buttonStyle('bordered'), buttonBorderShape('capsule')]}
+          />
+        </HStack>
+        <Text
+          modifiers={[font({ size: 11, weight: 'semibold' }), secondaryText()]}
+        >
+          {props.brandName}
+        </Text>
+      </VStack>
+    ) : (
       <VStack
         alignment="leading"
         spacing={6}

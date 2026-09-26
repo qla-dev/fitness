@@ -49,9 +49,9 @@ export default function WorkoutCamera({
     route,
     metrics: [
       { text: lines[1], x: 24, y: top, size: 48 },
-      { text: lines[3], x: 24, y: top + 82, size: 40 },
-      { text: lines[4], x: 24, y: top + 154, size: 34 },
-      { text: lines[5], x: 24, y: top + 220, size: 34 },
+      { icon: 'speed', text: lines[3], x: 60, y: top + 82, size: 40 },
+      { icon: 'calories', text: lines[4], x: 60, y: top + 154, size: 34 },
+      { icon: 'heart', text: lines[5], x: 60, y: top + 220, size: 34 },
       { text: lines[2], x: 24, y: top + 286, size: 28 },
     ],
   };

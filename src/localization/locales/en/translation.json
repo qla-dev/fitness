@@ -1960,6 +1960,9 @@
     "goalSeparator": " / {{value}}"
   },
   "routeMap": {
+    "toggle3D": "Toggle 3D map",
+    "flat": "2D",
+    "threeDimensional": "3D",
     "unsupported": "Maps are only available on iOS and Android.",
     "missingApiKey": "The map is unavailable: this build has no Google Maps API key."
   },

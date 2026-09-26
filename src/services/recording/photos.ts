@@ -13,6 +13,7 @@ import {
 } from './photoEditor';
 import type { PhotoComposition, RecordingPhoto } from './types';
 import { drawPhotoBranding } from './photoBranding';
+import { photoMetricIcons } from '../../constants/photoMetricIcons';
 import { photoTypeface } from './photoFonts';
 
 const directory = () => new Directory(Paths.document, 'workout-photos');
@@ -88,6 +89,21 @@ async function renderRecordingPhoto(
         const measured = font.measureText(metric.text).width;
         if (measured > metric.maxWidth)
           font.setSize((metric.size * metric.maxWidth) / measured);
+      }
+      if (metric.icon) {
+        const path = Skia.Path.MakeFromSVGString(photoMetricIcons[metric.icon]);
+        if (path) {
+          const iconSize = metric.size * ratio * 0.55;
+          canvas.save();
+          canvas.translate(
+            metric.x * ratio - iconSize - 12,
+            metric.y * ratio + metric.size * ratio * 0.25
+          );
+          canvas.scale(iconSize / 24, iconSize / 24);
+          canvas.drawPath(path, paint);
+          canvas.restore();
+          path.dispose();
+        }
       }
       const metrics = font.getMetrics();
       const baseline =

@@ -19,6 +19,30 @@ jest.mock('expo-maps', () => {
   };
 });
 
+it('initializes a street-level 3D camera when the first GPS fix arrives', () => {
+  Platform.OS = 'ios';
+  const screen = render(<RouteMap navigationMode />);
+  screen.rerender(
+    <RouteMap navigationMode center={{ latitude: 43, longitude: 18 }} />
+  );
+  expect(screen.getByTestId('map').props.cameraPosition).toMatchObject({
+    tilt: 60,
+    zoom: 17,
+    coordinates: { latitude: 43, longitude: 18 },
+  });
+  expect(
+    screen.getByTestId('map').props.uiSettings.myLocationButtonEnabled
+  ).toBe(false);
+  fireEvent.press(screen.getByLabelText('Toggle 3D map'));
+  expect(mockSetCamera).toHaveBeenLastCalledWith(
+    expect.objectContaining({ tilt: 0 })
+  );
+  fireEvent.press(screen.getByLabelText('Toggle 3D map'));
+  expect(mockSetCamera).toHaveBeenLastCalledWith(
+    expect.objectContaining({ tilt: 60 })
+  );
+});
+
 it('follows position above centre, releases on map interaction, and resumes on recenter', () => {
   Platform.OS = 'ios';
   const first = { latitude: 43, longitude: 18 };

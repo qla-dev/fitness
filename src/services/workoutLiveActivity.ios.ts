@@ -1,3 +1,8 @@
+import { preferencesQueryKey } from '../hooks/queryKeys';
+import type { UserPreferences } from '../types/preferences';
+import { distanceFromKm } from '../utils/unitConversions';
+import { queryClient } from '../hooks/queryClient';
+import { invalidateExerciseCache } from '../hooks/invalidateExerciseCache';
 import { Asset } from 'expo-asset';
 import { File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -12,8 +17,12 @@ import {
   initializeRecorder,
   pauseRecording,
   resumeRecording,
+  saveRecording,
   subscribeRecording,
 } from './recording/recorder';
+import { elapsedSeconds, recordingCalories } from './recording/metrics';
+import { formatLocalizedNumber } from '../localization';
+import { fireSuccessHaptic } from './haptics';
 import { recordingClock } from '../components/recording/format';
 import {
   useActiveWorkoutStore,
@@ -147,6 +156,8 @@ function withAppIcon(
  * interaction event. The activity itself repaints only after the store change
  * flows back out through {@link applyProps}.
  */
+let recordingFinishPending = false;
+
 function handleUserInteraction(event: UserInteractionEvent): void {
   if (!reconciled) return;
   const store = useActiveWorkoutStore.getState();
@@ -156,6 +167,21 @@ function handleUserInteraction(event: UserInteractionEvent): void {
         void pauseRecording().catch((error) =>
           logActivityError('pause failed', error)
         );
+      break;
+    case 'recording-stop':
+      if (getRecordingSnapshot().session && !recordingFinishPending) {
+        recordingFinishPending = true;
+        void (async () => {
+          await pauseRecording(true);
+          const entry = await saveRecording();
+          invalidateExerciseCache(queryClient, entry.entry_date!);
+          fireSuccessHaptic();
+        })()
+          .catch((error) => logActivityError('finish failed', error))
+          .finally(() => {
+            recordingFinishPending = false;
+          });
+      }
       break;
     case 'recording-resume':
       if (getRecordingSnapshot().session?.phase === 'paused')
@@ -312,6 +338,7 @@ function propsEqual(
   b: WorkoutLiveActivityProps
 ): boolean {
   return (
+    JSON.stringify(a.recordingMetrics) === JSON.stringify(b.recordingMetrics) &&
     a.recordingSport === b.recordingSport &&
     a.locale === b.locale &&
     labelsEqual(a.labels, b.labels) &&
@@ -376,7 +403,47 @@ function currentActivityProps(): WorkoutLiveActivityProps | null {
   const labels = buildWorkoutLiveActivityLabels(locale);
   const paused = session.phase === 'paused';
   const clock = recordingClock(session.elapsed);
+  const unit =
+    queryClient.getQueryData<UserPreferences>(preferencesQueryKey)
+      ?.default_distance_unit === 'miles'
+      ? 'miles'
+      : 'km';
+  const distance = distanceFromKm(session.distance / 1000, unit);
   return {
+    brandName: 'qla.fit',
+    recordingMetrics: {
+      distance: formatLocalizedNumber(distance, { maximumFractionDigits: 2 }),
+      distanceUnit:
+        unit === 'miles'
+          ? i18n.t('recording.miles', { defaultValue: 'mi' })
+          : i18n.t('recording.km', { defaultValue: 'km' }),
+      pace:
+        distance > 0
+          ? recordingClock(elapsedSeconds(session, Date.now()) / distance)
+          : '\u2014',
+      paceLabel: i18n.t('recording.pace', { defaultValue: 'Pace' }),
+      calories: formatLocalizedNumber(
+        recordingCalories(session, elapsedSeconds(session, Date.now())),
+        { maximumFractionDigits: 0 }
+      ),
+      calorieUnit: i18n.t('recording.kcal', { defaultValue: 'kcal' }),
+      finish: i18n.t('recording.finish', { defaultValue: 'Finish and save' }),
+      progress:
+        session.goal && session.goal.target > 0
+          ? Math.min(
+              1,
+              (session.goal.type === 'distance'
+                ? session.distance
+                : session.goal.type === 'time'
+                  ? elapsedSeconds(session, Date.now())
+                  : recordingCalories(
+                      session,
+                      elapsedSeconds(session, Date.now())
+                    )) / session.goal.target
+            )
+          : 0,
+      hasGoal: !!session.goal && session.goal.type !== 'open',
+    },
     recordingSport: session.sport,
     workoutName:
       session.sportName ??

@@ -53,6 +53,7 @@ export function photoEditorLayout(
     }
     return {
       text: metric.text,
+      icon: metric.icon,
       x: x * width,
       y: y * height,
       size: size * width,

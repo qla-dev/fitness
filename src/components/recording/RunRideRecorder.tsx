@@ -20,6 +20,7 @@ import RouteMap from '../RouteMap';
 import WorkoutHudBar from '../WorkoutHudBar';
 import WorkoutCamera from './WorkoutCamera';
 import Icon from '../Icon';
+import MetricIcon from './MetricIcon';
 import { useCSSVariable } from 'uniwind';
 import { withAlpha } from '../../utils/colors';
 import { fireSelectionHaptic } from '../../services/haptics';
@@ -379,6 +380,7 @@ export default function RunRideRecorder({
           showsUserLocation={!!session}
           appearance="dark"
           navigationMode={!!session}
+          controlsTop={insets.top + 16}
         />
       )}
       <Animated.View
@@ -429,7 +431,8 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View className="flex-row items-baseline mt-6">
+            <View className="flex-row items-center mt-6">
+              <MetricIcon kind="speed" />
               <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
                 {currentSport === 'run'
                   ? speed > 0.5
@@ -456,6 +459,7 @@ export default function RunRideRecorder({
               }}
             >
               <View>
+                <MetricIcon kind="calories" />
                 <Text
                   style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
                 >
@@ -469,6 +473,7 @@ export default function RunRideRecorder({
                 </Text>
               </View>
               <View>
+                <MetricIcon kind="heart" pulse={active && bpm !== null} />
                 <Text
                   style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
                 >
@@ -646,7 +651,10 @@ export default function RunRideRecorder({
                     defaultValue: 'Finish and save',
                   })}
                   disabled={busy}
-                  onPress={finish}
+                  onPress={() => {
+                    fireSelectionHaptic();
+                    finish();
+                  }}
                   className="items-center justify-center rounded-full"
                   style={{
                     width: 40,
