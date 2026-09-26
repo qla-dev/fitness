@@ -1,10 +1,13 @@
 import type { PhotoComposition } from './types';
 
-export type PhotoLayout = 'classic' | 'summit' | 'hero' | 'poster' | 'compact';
+export type PhotoLayout =
+  'classic' | 'summit' | 'hero' | 'poster' | 'compact' | 'trail';
 export type PhotoFilter = 'original' | 'mono' | 'warm' | 'cool';
 export type PhotoOverlay = 'none' | 'soft' | 'dark' | 'light';
 export type PhotoFont = 'system' | 'anton' | 'bebas' | 'rajdhani' | 'oswald';
 export interface PhotoEditorOptions {
+  routeStyle?: 'line' | 'map';
+  showCapturePin?: boolean;
   textAlign?: 'left' | 'center' | 'right';
   layout: PhotoLayout;
   textColor: string;
@@ -37,7 +40,12 @@ export function photoEditorLayout(
       y = 0.065 + index * 0.1,
       size = index === 0 ? 0.115 : 0.085;
     let maxWidth = 0.83;
-    if (options.layout === 'compact') {
+    if (options.layout === 'trail') {
+      x = 0.38 + (index % 3) * 0.19;
+      y = 0.15 + Math.floor(index / 3) * 0.065;
+      size = 0.032;
+      maxWidth = 0.17;
+    } else if (options.layout === 'compact') {
       x = 0.08;
       y = 0.08 + index * 0.06;
       size = 0.045;
@@ -60,7 +68,10 @@ export function photoEditorLayout(
     }
     return {
       text: metric.text,
-      icon: options.layout === 'compact' ? undefined : metric.icon,
+      icon:
+        options.layout === 'compact' || options.layout === 'trail'
+          ? undefined
+          : metric.icon,
       x: x * width,
       y: y * height,
       size: size * width,
@@ -68,20 +79,28 @@ export function photoEditorLayout(
     };
   });
   const route =
-    options.layout === 'classic' || options.layout === 'compact'
-      ? { x: 0.72, y: 0.76, width: 0.38, height: 0.3 }
-      : options.layout === 'summit'
-        ? { x: 0.55, y: 0.64, width: 0.72, height: 0.48 }
-        : options.layout === 'hero'
-          ? { x: 0.58, y: 0.46, width: 0.58, height: 0.4 }
-          : { x: 0.57, y: 0.35, width: 0.68, height: 0.5 };
+    options.layout === 'trail'
+      ? { x: 0.5, y: 0.58, width: 0.9, height: 0.78 }
+      : options.layout === 'classic' || options.layout === 'compact'
+        ? { x: 0.72, y: 0.76, width: 0.38, height: 0.3 }
+        : options.layout === 'summit'
+          ? { x: 0.55, y: 0.64, width: 0.72, height: 0.48 }
+          : options.layout === 'hero'
+            ? { x: 0.58, y: 0.46, width: 0.58, height: 0.4 }
+            : { x: 0.57, y: 0.35, width: 0.68, height: 0.5 };
   return {
     width,
     height,
     metrics,
     // Place the centered wordmark in each composition's negative space.
     branding: {
-      centerX: width * (options.layout === 'compact' ? 0.28 : 0.5),
+      centerX:
+        width *
+        (options.layout === 'compact'
+          ? 0.28
+          : options.layout === 'trail'
+            ? 0.66
+            : 0.5),
       top:
         height *
         {
@@ -90,6 +109,7 @@ export function photoEditorLayout(
           hero: 0.685,
           poster: 0.025,
           compact: 0.4,
+          trail: 0.07,
         }[options.layout],
       fontSize:
         width *

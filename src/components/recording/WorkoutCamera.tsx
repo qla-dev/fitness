@@ -23,6 +23,7 @@ import {
 import { fireRefreshHaptic } from '../../services/haptics';
 import { playCameraShutterSound } from '../../services/sounds';
 import type { PhotoComposition } from '../../services/recording/types';
+import { capturePhotoLocation } from '../../services/recording/photoLocation';
 
 export default function WorkoutCamera({
   recordingId,
@@ -100,13 +101,19 @@ export default function WorkoutCamera({
     }).start();
     let temporary: string | undefined;
     try {
-      const picture = await camera.current?.takePictureAsync({
-        quality: 0.9,
-        shutterSound: false,
-      });
+      const [picture, captureLocation] = await Promise.all([
+        camera.current?.takePictureAsync({
+          quality: 0.9,
+          shutterSound: false,
+        }),
+        capturePhotoLocation(),
+      ]);
       if (!picture) throw new Error('Camera unavailable');
       temporary = picture.uri;
-      const photo = await createRecordingPhoto(picture.uri, composition);
+      const photo = await createRecordingPhoto(picture.uri, {
+        ...composition,
+        captureLocation,
+      });
       try {
         await attachRecordingPhoto(recordingId, photo);
       } catch (error) {

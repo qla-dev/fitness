@@ -15,6 +15,7 @@ import type { PhotoComposition, RecordingPhoto } from './types';
 import { drawPhotoBranding } from './photoBranding';
 import { photoMetricIcons } from '../../constants/photoMetricIcons';
 import { photoTypeface } from './photoFonts';
+import { drawPhotoMap, photoMapGeometry } from './photoMap';
 
 const directory = () => new Directory(Paths.document, 'workout-photos');
 const validName = (name: string) => /^[a-f0-9-]+\.jpg$/i.test(name);
@@ -76,6 +77,59 @@ async function renderRecordingPhoto(
       paint.setColor(Skia.Color(color));
       canvas.drawRect(Skia.XYWHRect(0, 0, width, height), paint);
     }
+    const points = composition.route.filter(
+      (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
+    );
+    const location = composition.captureLocation;
+    const pin =
+      options?.showCapturePin &&
+      location &&
+      Number.isFinite(location.latitude) &&
+      Number.isFinite(location.longitude)
+        ? location
+        : undefined;
+    const boundsPoints = pin ? [...points, pin] : points;
+    if (options && layout && boundsPoints.length > 0) {
+      const geometry = photoMapGeometry(boundsPoints, layout.route);
+      if (options.routeStyle === 'map')
+        await drawPhotoMap(canvas, layout.route, geometry);
+      if (points.length > 1) {
+        const path = Skia.Path.Make();
+        points.forEach((point, index) => {
+          const { x, y } = geometry.point(point);
+          if (!index || point.segment !== points[index - 1].segment)
+            path.moveTo(x, y);
+          else path.lineTo(x, y);
+        });
+        paint.setColor(Skia.Color(options.routeColor));
+        paint.setStyle(PaintStyle.Stroke);
+        paint.setStrokeWidth(options.layout === 'trail' ? 18 : 14);
+        canvas.drawPath(path, paint);
+        path.dispose();
+      }
+      if (pin) {
+        const { x, y } = geometry.point(pin);
+        const marker = Skia.Path.MakeFromSVGString(
+          'M0 0 C-5 -10 -20 -21 -20 -34 A20 20 0 1 1 20 -34 C20 -21 5 -10 0 0 Z'
+        );
+        if (marker) {
+          canvas.save();
+          canvas.translate(x, y);
+          paint.setStyle(PaintStyle.Fill);
+          paint.setColor(Skia.Color(options.routeColor));
+          canvas.drawPath(marker, paint);
+          paint.setStyle(PaintStyle.Stroke);
+          paint.setStrokeWidth(3);
+          paint.setColor(Skia.Color('#FFFFFF'));
+          canvas.drawPath(marker, paint);
+          paint.setStyle(PaintStyle.Fill);
+          canvas.drawCircle(0, -34, 7, paint);
+          canvas.restore();
+          marker.dispose();
+        }
+      }
+      paint.setStyle(PaintStyle.Fill);
+    }
     const ratio = layout ? 1 : width / composition.width;
     paint.setColor(Skia.Color(options?.textColor ?? 'white'));
     for (const metric of layout?.metrics ?? composition.metrics) {
@@ -125,44 +179,6 @@ async function renderRecordingPhoto(
         (metric.y + metric.size * 0.6) * ratio -
         (metrics.ascent + metrics.descent) / 2;
       canvas.drawText(metric.text, textX, baseline, paint, font);
-    }
-    const points = composition.route.filter(
-      (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
-    );
-    if (options && points.length > 1) {
-      const latitude =
-        points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
-      const projected = points.map((p) => ({
-        x: p.longitude * Math.cos((latitude * Math.PI) / 180),
-        y: -p.latitude,
-        segment: p.segment,
-      }));
-      const bounds = projected.reduce(
-        (b, p) => ({
-          minX: Math.min(b.minX, p.x),
-          maxX: Math.max(b.maxX, p.x),
-          minY: Math.min(b.minY, p.y),
-          maxY: Math.max(b.maxY, p.y),
-        }),
-        { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
-      );
-      const { minX, maxX, minY, maxY } = bounds;
-      const box = layout!.route;
-      const fit = Math.min(
-        box.width / Math.max(maxX - minX, 0.00001),
-        box.height / Math.max(maxY - minY, 0.00001)
-      );
-      const path = Skia.Path.Make();
-      projected.forEach((p, i) => {
-        const x = box.x + (p.x - (minX + maxX) / 2) * fit;
-        const y = box.y + (p.y - (minY + maxY) / 2) * fit;
-        if (!i || p.segment !== projected[i - 1].segment) path.moveTo(x, y);
-        else path.lineTo(x, y);
-      });
-      paint.setColor(Skia.Color(options.routeColor));
-      paint.setStyle(PaintStyle.Stroke);
-      paint.setStrokeWidth(14);
-      canvas.drawPath(path, paint);
     }
     await drawPhotoBranding(
       canvas,

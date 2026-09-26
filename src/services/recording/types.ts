@@ -126,6 +126,7 @@ export interface RecordingPhoto {
 }
 
 export interface PhotoComposition {
+  captureLocation?: { latitude: number; longitude: number; timestamp: number };
   width: number;
   height: number;
   top: number;

@@ -166,6 +166,11 @@ export default function WorkoutPhotoEditor({
     image: MenuAction['image'];
   }[] = [
     {
+      id: 'trail',
+      title: t('recording.editor.trail', { defaultValue: 'Route story' }),
+      image: 'map',
+    },
+    {
       id: 'compact',
       title: t('recording.editor.compact', {
         defaultValue: 'Compact signature',
@@ -408,6 +413,74 @@ export default function WorkoutPhotoEditor({
                     setOptions((current) => ({ ...current, textAlign }));
                 }}
               />
+              <EditorMenu
+                label={t('recording.editor.routeStyle', {
+                  defaultValue: 'Route style',
+                })}
+                icon="gps-track"
+                actions={actions(
+                  [
+                    {
+                      id: 'line',
+                      title: t('recording.editor.routeLine', {
+                        defaultValue: 'Route outline',
+                      }),
+                      image:
+                        'point.topleft.down.to.point.bottomright.curvepath',
+                    },
+                    {
+                      id: 'map',
+                      title: t('recording.editor.fadedMap', {
+                        defaultValue: 'Faded map',
+                      }),
+                      image: 'map',
+                    },
+                  ],
+                  options.routeStyle ?? 'line'
+                )}
+                onSelect={(routeStyle) => {
+                  if (routeStyle === 'line' || routeStyle === 'map')
+                    setOptions((current) => ({ ...current, routeStyle }));
+                }}
+              />
+              <Pressable
+                accessibilityRole="switch"
+                accessibilityLabel={
+                  photo.composition?.captureLocation
+                    ? t('recording.editor.capturePin', {
+                        defaultValue: 'Pin photo location',
+                      })
+                    : t('recording.editor.noCaptureLocation', {
+                        defaultValue: 'No location saved with this photo',
+                      })
+                }
+                accessibilityState={{
+                  checked: !!options.showCapturePin,
+                  disabled: sharing || !photo.composition?.captureLocation,
+                }}
+                disabled={sharing || !photo.composition?.captureLocation}
+                onPress={() =>
+                  setOptions((current) => ({
+                    ...current,
+                    showCapturePin: !current.showCapturePin,
+                  }))
+                }
+              >
+                <LiquidGlassSurface
+                  colorScheme="dark"
+                  isInteractive
+                  style={[
+                    styles.tool,
+                    { opacity: photo.composition?.captureLocation ? 1 : 0.4 },
+                  ]}
+                >
+                  <Icon
+                    name="location"
+                    size={24}
+                    color={options.showCapturePin ? '#FF9F0A' : 'white'}
+                  />
+                </LiquidGlassSurface>
+              </Pressable>
             </ScrollView>
           )}
           {editable && filtersOpen && (
