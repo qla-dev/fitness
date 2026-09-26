@@ -94,6 +94,40 @@ const composition: PhotoComposition = {
 };
 beforeEach(() => jest.clearAllMocks());
 
+it.each(['left', 'center', 'right'] as const)(
+  'aligns exported text %s within its container',
+  async (textAlign) => {
+    await createPhotoPreview(
+      {
+        fileName: 'aaaa.jpg',
+        originalFileName: 'bbbb.jpg',
+        capturedAt: 0,
+        composition,
+      },
+      {
+        ...defaultPhotoEditorOptions,
+        textAlign,
+      }
+    );
+    const canvas = jest
+      .mocked(Skia.Surface.MakeOffscreen)
+      .mock.results[0].value.getCanvas();
+    const offset =
+      textAlign === 'left'
+        ? 0
+        : textAlign === 'center'
+          ? (1080 * 0.83 - 100) / 2
+          : 1080 * 0.83 - 100;
+    expect(canvas.drawText).toHaveBeenCalledWith(
+      '5 km',
+      expect.closeTo(1080 * 0.12 + offset),
+      expect.any(Number),
+      expect.anything(),
+      expect.anything()
+    );
+  }
+);
+
 it('exports the camera viewport crop and metric positions at the same scale', async () => {
   await createRecordingPhoto('camera.jpg', composition);
   expect(Skia.Surface.MakeOffscreen).toHaveBeenCalledWith(1080, 2160);
@@ -141,7 +175,17 @@ it('re-renders the original for styling and shares the resulting file, leaving l
   const paint = canvas.drawPath.mock.calls[0][1];
   expect(paint.setColor).toHaveBeenCalledWith('#111111');
   expect(paint.setColor).toHaveBeenLastCalledWith('#FF453A');
-  expect(drawPhotoBranding).toHaveBeenCalledWith(canvas, 1080, 1920, '#111111');
+  expect(drawPhotoBranding).toHaveBeenCalledWith(
+    canvas,
+    1080,
+    1920,
+    '#111111',
+    {
+      centerX: 540,
+      top: 1920 * 0.552,
+      fontSize: 1080 * 0.04,
+    }
+  );
   jest.mocked(Skia.Data.fromURI).mockClear();
   expect(
     await createPhotoPreview(

@@ -15,7 +15,7 @@ const composition: PhotoComposition = {
   ),
 };
 
-it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster'])(
+it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster', 'compact'])(
   '%s keeps all readings and the route within the export',
   (layout) => {
     for (const aspectRatio of [9 / 16, 390 / 650, 1]) {
@@ -25,6 +25,23 @@ it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster'])(
         aspectRatio,
       });
       expect(result.width / result.height).toBeCloseTo(aspectRatio, 2);
+      const brandBottom = result.branding.top + result.branding.fontSize * 1.4;
+      expect(result.branding.centerX).toBe(
+        result.width * (layout === 'compact' ? 0.28 : 0.5)
+      );
+      expect(result.branding.top).toBeGreaterThan(0);
+      expect(brandBottom).toBeLessThan(result.height);
+      for (const metric of result.metrics) {
+        expect(
+          brandBottom <= metric.y ||
+            result.branding.top >= metric.y + metric.size
+        ).toBe(true);
+      }
+      const routeTop = result.route.y - result.route.height / 2;
+      const routeBottom = result.route.y + result.route.height / 2;
+      expect(
+        brandBottom <= routeTop || result.branding.top >= routeBottom
+      ).toBe(true);
       expect(result.metrics.map((metric) => metric.text)).toEqual(
         composition.metrics.map((metric) => metric.text)
       );

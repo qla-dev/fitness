@@ -90,13 +90,28 @@ async function renderRecordingPhoto(
         if (measured > metric.maxWidth)
           font.setSize((metric.size * metric.maxWidth) / measured);
       }
+      const availableWidth =
+        'maxWidth' in metric && typeof metric.maxWidth === 'number'
+          ? metric.maxWidth
+          : font.measureText(metric.text).width;
+      const remainingWidth = Math.max(
+        0,
+        availableWidth - font.measureText(metric.text).width
+      );
+      const textX =
+        metric.x * ratio +
+        (options?.textAlign === 'right'
+          ? remainingWidth
+          : options?.textAlign === 'center'
+            ? remainingWidth / 2
+            : 0);
       if (metric.icon) {
         const path = Skia.Path.MakeFromSVGString(photoMetricIcons[metric.icon]);
         if (path) {
           const iconSize = metric.size * ratio * 0.55;
           canvas.save();
           canvas.translate(
-            metric.x * ratio - iconSize - 12,
+            textX - iconSize - 12,
             metric.y * ratio + metric.size * ratio * 0.25
           );
           canvas.scale(iconSize / 24, iconSize / 24);
@@ -109,7 +124,7 @@ async function renderRecordingPhoto(
       const baseline =
         (metric.y + metric.size * 0.6) * ratio -
         (metrics.ascent + metrics.descent) / 2;
-      canvas.drawText(metric.text, metric.x * ratio, baseline, paint, font);
+      canvas.drawText(metric.text, textX, baseline, paint, font);
     }
     const points = composition.route.filter(
       (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
@@ -153,7 +168,8 @@ async function renderRecordingPhoto(
       canvas,
       width,
       height,
-      options?.textColor ?? '#FFFFFF'
+      options?.textColor ?? '#FFFFFF',
+      layout?.branding
     );
     surface.flush();
     const rendered = surface.makeImageSnapshot();

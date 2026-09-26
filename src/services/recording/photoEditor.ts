@@ -1,10 +1,11 @@
 import type { PhotoComposition } from './types';
 
-export type PhotoLayout = 'classic' | 'summit' | 'hero' | 'poster';
+export type PhotoLayout = 'classic' | 'summit' | 'hero' | 'poster' | 'compact';
 export type PhotoFilter = 'original' | 'mono' | 'warm' | 'cool';
 export type PhotoOverlay = 'none' | 'soft' | 'dark' | 'light';
 export type PhotoFont = 'system' | 'anton' | 'bebas' | 'rajdhani' | 'oswald';
 export interface PhotoEditorOptions {
+  textAlign?: 'left' | 'center' | 'right';
   layout: PhotoLayout;
   textColor: string;
   font: PhotoFont;
@@ -14,6 +15,7 @@ export interface PhotoEditorOptions {
   aspectRatio: number;
 }
 export const defaultPhotoEditorOptions: PhotoEditorOptions = {
+  textAlign: 'left',
   layout: 'classic',
   textColor: '#FFFFFF',
   font: 'system',
@@ -31,11 +33,16 @@ export function photoEditorLayout(
   const width = 1080;
   const height = Math.round(width / options.aspectRatio);
   const metrics = composition.metrics.map((metric, index) => {
-    let x = 0.22,
+    let x = 0.12,
       y = 0.065 + index * 0.1,
       size = index === 0 ? 0.115 : 0.085;
-    let maxWidth = 0.73;
-    if (options.layout === 'summit') {
+    let maxWidth = 0.83;
+    if (options.layout === 'compact') {
+      x = 0.08;
+      y = 0.08 + index * 0.06;
+      size = 0.045;
+      maxWidth = 0.4;
+    } else if (options.layout === 'summit') {
       x = 0.22 + (index % 2) * 0.39;
       y = 0.065 + Math.floor(index / 2) * 0.09;
       size = 0.064;
@@ -53,7 +60,7 @@ export function photoEditorLayout(
     }
     return {
       text: metric.text,
-      icon: metric.icon,
+      icon: options.layout === 'compact' ? undefined : metric.icon,
       x: x * width,
       y: y * height,
       size: size * width,
@@ -61,7 +68,7 @@ export function photoEditorLayout(
     };
   });
   const route =
-    options.layout === 'classic'
+    options.layout === 'classic' || options.layout === 'compact'
       ? { x: 0.72, y: 0.76, width: 0.38, height: 0.3 }
       : options.layout === 'summit'
         ? { x: 0.55, y: 0.64, width: 0.72, height: 0.48 }
@@ -72,6 +79,26 @@ export function photoEditorLayout(
     width,
     height,
     metrics,
+    // Place the centered wordmark in each composition's negative space.
+    branding: {
+      centerX: width * (options.layout === 'compact' ? 0.28 : 0.5),
+      top:
+        height *
+        {
+          classic: 0.552,
+          summit: 0.325,
+          hero: 0.685,
+          poster: 0.025,
+          compact: 0.4,
+        }[options.layout],
+      fontSize:
+        width *
+        (options.layout === 'poster'
+          ? 0.05
+          : options.layout === 'compact'
+            ? 0.032
+            : 0.04),
+    },
     route: {
       x: route.x * width,
       y: route.y * height,

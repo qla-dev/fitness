@@ -5,6 +5,7 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -165,6 +166,13 @@ export default function WorkoutPhotoEditor({
     image: MenuAction['image'];
   }[] = [
     {
+      id: 'compact',
+      title: t('recording.editor.compact', {
+        defaultValue: 'Compact signature',
+      }),
+      image: 'text.badge.star',
+    },
+    {
       id: 'classic',
       title: t('recording.editor.classic', { defaultValue: 'Classic' }),
       image: 'text.alignleft',
@@ -283,8 +291,10 @@ export default function WorkoutPhotoEditor({
             style={StyleSheet.absoluteFill}
           />
           {editable && (
-            <View
+            <ScrollView
               style={styles.tools}
+              contentContainerStyle={{ gap: 12 }}
+              showsVerticalScrollIndicator={false}
               pointerEvents={sharing ? 'none' : 'auto'}
             >
               <EditorMenu
@@ -358,7 +368,47 @@ export default function WorkoutPhotoEditor({
                   <Icon name="sparkles" size={24} color="white" />
                 </LiquidGlassSurface>
               </Pressable>
-            </View>
+              <EditorMenu
+                label={t('recording.editor.alignment', {
+                  defaultValue: 'Text alignment',
+                })}
+                icon="list"
+                actions={actions(
+                  [
+                    {
+                      id: 'left',
+                      title: t('recording.editor.alignLeft', {
+                        defaultValue: 'Align left',
+                      }),
+                      image: 'text.alignleft',
+                    },
+                    {
+                      id: 'center',
+                      title: t('recording.editor.alignCenter', {
+                        defaultValue: 'Align center',
+                      }),
+                      image: 'text.aligncenter',
+                    },
+                    {
+                      id: 'right',
+                      title: t('recording.editor.alignRight', {
+                        defaultValue: 'Align right',
+                      }),
+                      image: 'text.alignright',
+                    },
+                  ],
+                  options.textAlign ?? 'left'
+                )}
+                onSelect={(textAlign) => {
+                  if (
+                    textAlign === 'left' ||
+                    textAlign === 'center' ||
+                    textAlign === 'right'
+                  )
+                    setOptions((current) => ({ ...current, textAlign }));
+                }}
+              />
+            </ScrollView>
           )}
           {editable && filtersOpen && (
             <View style={styles.filterTray}>
@@ -441,7 +491,7 @@ export default function WorkoutPhotoEditor({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   stage: { flex: 1, width: '100%', overflow: 'hidden', borderRadius: 24 },
-  tools: { position: 'absolute', right: 12, top: 16, gap: 12 },
+  tools: { position: 'absolute', right: 12, top: 16, bottom: 12 },
   tool: {
     width: 48,
     height: 48,
