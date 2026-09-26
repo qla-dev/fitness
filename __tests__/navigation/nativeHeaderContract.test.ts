@@ -86,6 +86,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
     'Single-measurement editor presented as a modal above the tab host, so its close button is a native header item.',
   GoalEdit:
     'Single-value goal editor presented as a modal above the tab host, so its close button is a native header item.',
+  ProgramPurchase:
+    'Program confirmation and success presented as a native modal above the tab host, like the goal editor.',
   AppleHealthCheck:
     'iOS startup sync settings sheet presented above the tab host.',
   CycleHub:

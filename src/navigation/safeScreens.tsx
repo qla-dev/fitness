@@ -35,6 +35,7 @@ import ExerciseSearchScreen from '../screens/ExerciseSearchScreen';
 import PresetSearchScreen from '../screens/PresetSearchScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ExerciseProgramScreen from '../screens/ExerciseProgramScreen';
+import ProgramPurchaseScreen from '../screens/ProgramPurchaseScreen';
 import CartScreen from '../screens/CartScreen';
 import RunOrRideScreen from '../screens/RunOrRideScreen';
 import WorkoutSetupScreen from '../screens/WorkoutSetupScreen';
@@ -134,6 +135,7 @@ export const SafeProgressPhotoCompare = withErrorBoundary(ProgressPhotoCompareSc
 export const SafeProgressPhotoTimelapse = withErrorBoundary(ProgressPhotoTimelapseScreen, 'ProgressPhotoTimelapse', { canGoBack: true });
 export const SafeChat = withErrorBoundary(ChatScreen, 'Chat', { canGoBack: true });
 export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'ExerciseProgram', { canGoBack: true });
+export const SafeProgramPurchase = withErrorBoundary(ProgramPurchaseScreen, 'ProgramPurchase', { canGoBack: true });
 export const SafeCart = withErrorBoundary(CartScreen, 'Cart', { canGoBack: true });
 export const SafeRunOrRide = withErrorBoundary(RunOrRideScreen, 'RunOrRide', { canGoBack: true });
 export const SafeWorkoutSetup = withErrorBoundary(WorkoutSetupScreen, 'WorkoutSetup', { canGoBack: true });

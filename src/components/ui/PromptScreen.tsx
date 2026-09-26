@@ -37,6 +37,7 @@ export default function PromptScreen({
   footerDisabled,
   footerLoading,
   footerTint,
+  dismissDisabled = false,
   hasTextInput = false,
   children,
 }: {
@@ -57,6 +58,7 @@ export default function PromptScreen({
   footerLoading?: boolean;
   /** The action's fill, for a screen that is about one coloured thing. */
   footerTint?: string;
+  dismissDisabled?: boolean;
   /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
   children: React.ReactNode;
@@ -69,7 +71,11 @@ export default function PromptScreen({
   const header = useScreenHeader({
     variant: 'transparent',
     title: headerTitle,
-    left: { kind: 'dismiss', onPress: () => navigation.goBack() },
+    left: {
+      kind: 'dismiss',
+      disabled: dismissDisabled,
+      onPress: () => navigation.goBack(),
+    },
   });
 
   return (

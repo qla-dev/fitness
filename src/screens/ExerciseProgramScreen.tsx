@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
-import { programInstalledToast } from '../utils/programInstallToast';
 import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -22,7 +20,6 @@ import {
   getProgramLevelLabel,
 } from '../constants/exercisePrograms';
 import { countProgramExercises } from '../types/exerciseProgram';
-import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
 import { useProgramExerciseLookup } from '../hooks/useProgramExerciseLookup';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -56,7 +53,6 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   const { getImageSource } = useExerciseImageSource();
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [purchasing, setPurchasing] = useState(false);
   const [expandedSessions, setExpandedSessions] = useState<
     Record<string, boolean>
   >({});
@@ -207,7 +203,11 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
             >
               <TouchableOpacity
                 accessibilityRole="button"
-                onPress={() => setPurchasing(true)}
+                onPress={() =>
+                  navigation.navigate('ProgramPurchase', {
+                    programId: program.id,
+                  })
+                }
                 className="px-3 py-1 rounded-full"
               >
                 <Text className="text-accent-text text-base font-bold">
@@ -420,16 +420,6 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
           </View>
         </View>
       </ScrollView>
-      {purchasing && (
-        <ProgramPurchaseSheet
-          program={program}
-          onClose={() => setPurchasing(false)}
-          onInstalled={(result) => {
-            setPurchasing(false);
-            Toast.show(programInstalledToast(t, result));
-          }}
-        />
-      )}
     </View>
   );
 };

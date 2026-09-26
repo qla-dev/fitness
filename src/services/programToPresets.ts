@@ -14,8 +14,8 @@ import {
 import type {
   ExerciseProgram,
   ProgramExercise,
-  ProgramSession,
 } from '../types/exerciseProgram';
+import type { WorkoutPreset } from '../types/workoutPresets';
 import type { WorkoutPresetCreatePayload } from './api/workoutPresetsApi';
 
 export interface ProgramProvider {
@@ -33,6 +33,7 @@ export interface ProgramInstallProgress {
 }
 
 export interface ProgramInstallResult {
+  preset?: WorkoutPreset;
   presetsCreated: number;
   exercisesAdded: number;
   /** Movement names no library or provider could match. */
@@ -129,16 +130,12 @@ function buildPresetExercise(
   };
 }
 
-function presetName(program: ExerciseProgram, session: ProgramSession): string {
-  return `${program.name} · ${session.name}`;
-}
-
 /**
- * Installs a program as workout presets — one preset per session.
+ * Installs the complete program as one preset, preserving session order.
  *
  * A session's movements are stored as names, so each one is resolved to a real
  * exercise id first; unresolvable movements are reported back rather than
- * silently dropped, and a session that resolves nothing creates no preset.
+ * silently dropped, and a program that resolves nothing creates no preset.
  */
 export async function installProgramAsPresets(
   program: ExerciseProgram,
@@ -156,14 +153,11 @@ export async function installProgramAsPresets(
   // and resolving the same name twice would double the requests and imports.
   const resolvedIds = new Map<string, string | null>();
   let resolved = 0;
-  let presetsCreated = 0;
-  let exercisesAdded = 0;
+  let preset: WorkoutPreset | undefined;
+  const payloadExercises: NonNullable<WorkoutPresetCreatePayload['exercises']> =
+    [];
 
   for (const [index, session] of program.sessions.entries()) {
-    const payloadExercises: NonNullable<
-      WorkoutPresetCreatePayload['exercises']
-    > = [];
-
     for (const exercise of session.exercises) {
       const key = normalize(exercise.name);
       if (!resolvedIds.has(key)) {
@@ -186,23 +180,35 @@ export async function installProgramAsPresets(
         continue;
       }
       payloadExercises.push(
-        buildPresetExercise(exerciseId, exercise, payloadExercises.length)
+        buildPresetExercise(
+          exerciseId,
+          {
+            ...exercise,
+            note: [session.name, exercise.note].filter(Boolean).join(' · '),
+          },
+          payloadExercises.length
+        )
       );
     }
+  }
 
-    if (payloadExercises.length === 0) continue;
-
-    const preset = await createWorkoutPreset({
-      name: presetName(program, session),
-      description: `${program.tagline} — ${session.focus}`,
+  if (payloadExercises.length > 0) {
+    preset = await createWorkoutPreset({
+      name: program.name,
+      description: [
+        program.tagline,
+        ...program.sessions.map(
+          (session) => `${session.name}: ${session.focus}`
+        ),
+      ].join('\n'),
       exercises: payloadExercises,
     });
     await saveProgramAccess(scope, preset.id, access);
-    presetsCreated += 1;
-    exercisesAdded += payloadExercises.length;
   }
+  const presetsCreated = preset ? 1 : 0;
+  const exercisesAdded = payloadExercises.length;
 
-  // A session that resolved nothing creates no preset; only a real install is
+  // A program that resolved nothing creates no preset; only a real install is
   // recorded, so a fully unresolvable program can be retried from Start.
   if (presetsCreated > 0) await markProgramInstalled(scope, program.id);
 
@@ -211,5 +217,5 @@ export async function installProgramAsPresets(
     'INFO'
   );
 
-  return { presetsCreated, exercisesAdded, skipped };
+  return { preset, presetsCreated, exercisesAdded, skipped };
 }

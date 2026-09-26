@@ -71,6 +71,7 @@ import {
   SafeProgressPhotoTimelapse,
   SafeChat,
   SafeExerciseProgram,
+  SafeProgramPurchase,
   SafeCart,
   SafeRunOrRide,
   SafeWorkoutSetup,
@@ -340,6 +341,7 @@ function AppContent() {
         },
         FoodScan: 'scan',
         FoodSearch: 'search',
+        ProgramPurchase: 'programs/:programId/add',
         MyLogs: 'my-logs',
         // Tapping the workout Live Activity opens its associated URL.
         ActiveWorkout: 'active-workout',
@@ -910,6 +912,15 @@ function AppContent() {
           />
           {/* Modal, like the wizard: that presentation is what gives the
               screen the system's own sheet chrome and native header items. */}
+          <Stack.Screen
+            name="ProgramPurchase"
+            component={SafeProgramPurchase}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
           <Stack.Screen
             name="GoalEdit"
             component={SafeGoalEdit}

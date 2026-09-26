@@ -89,11 +89,15 @@ export type RootStackParamList = {
   ExercisesLibrary: undefined;
   /** A training program's product page, opened from the Exercises store. */
   ExerciseProgram: { programId: string };
+  ProgramPurchase: { programId: string };
   /** The store cart, opened from the cart button in the Exercises store header. */
   /** `newList` opens it straight on a blank list, for the dashboard card. */
   Cart: { newList?: boolean; planList?: GroceryList } | undefined;
   WorkoutSetup: { sport: RecordingSport; sportId?: string };
-  WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & { sport: RecordingSport; weightKg: number };
+  WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & {
+    sport: RecordingSport;
+    weightKg: number;
+  };
   /**
    * Started from `WorkoutSetup`, which passes the sport, the goal and the
    * weight the calorie estimate needs; entered bare (a resume, a deep link)

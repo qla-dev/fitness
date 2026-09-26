@@ -12,18 +12,13 @@ import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
-import { programInstalledToast } from '../utils/programInstallToast';
 import { useCSSVariable } from 'uniwind';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import PaginatedLibraryFooter from '../components/PaginatedLibraryFooter';
 import StatusView from '../components/StatusView';
 import ProgramStore from '../components/ProgramStore';
 import ProgramCategoryChips from '../components/ProgramCategoryChips';
-import type {
-  ProgramCategoryId,
-  ExerciseProgram,
-} from '../types/exerciseProgram';
-import ProgramPurchaseSheet from '../components/ProgramPurchaseSheet';
+import type { ProgramCategoryId } from '../types/exerciseProgram';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useExercisesLibrary, useServerConnection, useProfile } from '../hooks';
 import { useExternalProviders } from '../hooks/useExternalProviders';
@@ -167,7 +162,6 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
 
   const queryClient = useQueryClient();
   // The program the add sheet is open for, if any.
-  const [purchasing, setPurchasing] = useState<ExerciseProgram | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
   // `importingId` only disables the rows after a re-render; the ref blocks a
   // second tap landing before that.
@@ -181,8 +175,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   const storeRef = useRef<ScrollView>(null);
   // Re-tapping the active tab returns to the top, like every other tab. Inert
   // in the pushed copy of this screen, which is not a tab root.
-  const { scrollToTop, onScroll, onScrollBeginDrag } =
-    useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } = useScrollTopOffset();
   useTabPress(navigation, () =>
     scrollToTop(storeRef.current ?? listRef.current)
   );
@@ -522,7 +515,9 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
             onSelectProgram={(program) =>
               navigation.navigate('ExerciseProgram', { programId: program.id })
             }
-            onStartProgram={setPurchasing}
+            onStartProgram={(program) =>
+              navigation.navigate('ProgramPurchase', { programId: program.id })
+            }
           />
         </ScrollView>
       );
@@ -714,16 +709,6 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     >
       {header}
       {renderContent()}
-      {purchasing && (
-        <ProgramPurchaseSheet
-          program={purchasing}
-          onClose={() => setPurchasing(null)}
-          onInstalled={(result) => {
-            setPurchasing(null);
-            Toast.show(programInstalledToast(t, result));
-          }}
-        />
-      )}
     </View>
   );
 };

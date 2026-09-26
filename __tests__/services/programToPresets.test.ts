@@ -86,7 +86,7 @@ describe('parseProgramReps', () => {
 describe('installProgramAsPresets', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('creates one preset per session and skips movements nothing matches', async () => {
+  it('creates one program and reports movements nothing matches', async () => {
     mockFetchPage.mockImplementation(
       ({ searchTerm }: { searchTerm: string }) =>
         searchTerm === 'Barbell Hip Thrust'
@@ -111,7 +111,7 @@ describe('installProgramAsPresets', () => {
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const payload = mockCreate.mock.calls[0][0];
-    expect(payload.name).toBe('Test Program · Day One');
+    expect(payload.name).toBe('Test Program');
     // Only the movement that resolved is in the preset.
     expect(payload.exercises).toHaveLength(1);
     expect(payload.exercises[0].exercise_id).toBe('ex-1');
@@ -157,5 +157,36 @@ describe('installProgramAsPresets', () => {
     expect(mockCreate).not.toHaveBeenCalled();
     expect(result.presetsCreated).toBe(0);
     expect(result.skipped).toHaveLength(2);
+  });
+
+  it('keeps every session in one preset even with more than 50 exercises', async () => {
+    mockFetchPage.mockResolvedValue({
+      ...emptyPage,
+      exercises: [{ id: 'ex-1', name: 'Barbell Hip Thrust' }],
+    });
+    mockCreate.mockResolvedValue({ id: 7 });
+    const expanded = {
+      ...program,
+      sessions: Array.from({ length: 3 }, (_, index) => ({
+        ...program.sessions[0],
+        name: `Session ${index + 1}`,
+        exercises: Array.from(
+          { length: 24 },
+          () => program.sessions[0].exercises[0]
+        ),
+      })),
+    };
+    const result = await installProgramAsPresets(expanded, null);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const payload = mockCreate.mock.calls[0][0];
+    expect(payload.exercises).toHaveLength(72);
+    expect(payload.exercises[24].sets[0].notes).toContain('Session 2');
+    expect(payload.exercises[71].sort_order).toBe(71);
+    expect(mockFetchPage).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      presetsCreated: 1,
+      exercisesAdded: 72,
+      preset: { id: 7 },
+    });
   });
 });

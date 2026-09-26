@@ -5343,7 +5343,13 @@
       "added_one": "{{count}} workout added to Programs",
       "added_other": "{{count}} workouts added to Programs",
       "skipped_one": "{{count}} exercise couldn't be matched and was left out",
-      "skipped_other": "{{count}} exercises couldn't be matched and were left out"
+      "skipped_other": "{{count}} exercises couldn't be matched and were left out",
+      "singleExplainer": "All sessions and exercises are saved together as one program in My Programs. Nothing is charged.",
+      "openProgram": "Open program",
+      "success": "Program added",
+      "myPrograms": "My Programs",
+      "contents": "{{sessions}} sessions ? {{exercises}} exercises",
+      "singleAlreadyAdded": "This program is already in My Programs. Adding it again creates one additional copy."
     },
     "searchResults": "Programs",
     "searchEmpty": "No programs match that search",
