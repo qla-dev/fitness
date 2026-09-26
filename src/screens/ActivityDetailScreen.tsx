@@ -69,7 +69,7 @@ import Toast from 'react-native-toast-message';
 import { addLog } from '../services/LogService';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { WorkoutDraftSet } from '../types/drafts';
-import type { WorkoutGpsPoint, WorkoutHrSample } from '../types/healthRecords';
+import { activityTelemetry } from '../utils/activityTelemetry';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
 
@@ -155,17 +155,10 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // Telemetry an imported workout arrived with. Read off the health-import
   // detail rather than a dedicated column: importHealthData stores the
   // provider's whole record there, so it is already persisted.
-  const importedTelemetry = useMemo(() => {
-    const raw = session.activity_details?.find(
-      (detail) => detail.detail_type === 'health_import'
-    )?.detail_data as
-      | { gps_points?: WorkoutGpsPoint[]; hr_samples?: WorkoutHrSample[] }
-      | undefined;
-    return {
-      gps: Array.isArray(raw?.gps_points) ? raw.gps_points : [],
-      hr: Array.isArray(raw?.hr_samples) ? raw.hr_samples : [],
-    };
-  }, [session.activity_details]);
+  const importedTelemetry = useMemo(
+    () => activityTelemetry(session.activity_details ?? []),
+    [session.activity_details]
+  );
 
   const firstImage = session.exercise_snapshot?.images?.[0];
   const firstImageSource = firstImage ? getImageSource(firstImage) : null;

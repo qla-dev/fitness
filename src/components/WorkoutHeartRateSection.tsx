@@ -112,7 +112,7 @@ export default function WorkoutHeartRateSection({
   });
   const totalSamples = Math.max(1, samples.length);
 
-  if (!hasData) return null;
+  if (!hasData && !(average != null && average > 0)) return null;
 
   const barWidth = CHART_W / BARS - 1.5;
 
@@ -135,75 +135,79 @@ export default function WorkoutHeartRateSection({
           </Text>
         ) : null}
 
-        <Svg
-          width="100%"
-          height={CHART_H}
-          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-          preserveAspectRatio="none"
-          accessible={false}
-        >
-          {values.map((value, index) =>
-            value == null ? null : (
-              <HrBar
-                key={index}
-                x={index * (CHART_W / BARS)}
-                width={barWidth}
-                // Scaled within the session's own range, so a steady effort
-                // still shows its variation instead of one flat block.
-                height={
-                  max > min
-                    ? 8 + ((value - min) / (max - min)) * (CHART_H - 12)
-                    : CHART_H / 2
-                }
-                progress={progress}
-              />
-            )
-          )}
-        </Svg>
-        <View className="flex-row justify-between mt-1">
-          <Text className="text-xs text-text-muted">
-            {formatLocalizedNumber(Math.round(min))}
-          </Text>
-          <Text className="text-xs text-text-muted">
-            {formatLocalizedNumber(Math.round(max))}
-          </Text>
-        </View>
-
-        <View className="mt-3">
-          {zoneTotals.map((zone) => (
-            <View
-              key={zone.key}
-              className="flex-row items-center py-1.5 border-t border-border"
+        {hasData && (
+          <>
+            <Svg
+              width="100%"
+              height={CHART_H}
+              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+              preserveAspectRatio="none"
+              accessible={false}
             >
-              <Text
-                style={{ color: zone.color }}
-                className="text-sm font-semibold w-16"
-              >
-                {t('activityDetail.zone', {
-                  defaultValue: 'Zone {{n}}',
-                  n: zone.key,
-                })}
+              {values.map((value, index) =>
+                value == null ? null : (
+                  <HrBar
+                    key={index}
+                    x={index * (CHART_W / BARS)}
+                    width={barWidth}
+                    // Scaled within the session's own range, so a steady effort
+                    // still shows its variation instead of one flat block.
+                    height={
+                      max > min
+                        ? 8 + ((value - min) / (max - min)) * (CHART_H - 12)
+                        : CHART_H / 2
+                    }
+                    progress={progress}
+                  />
+                )
+              )}
+            </Svg>
+            <View className="flex-row justify-between mt-1">
+              <Text className="text-xs text-text-muted">
+                {formatLocalizedNumber(Math.round(min))}
               </Text>
-              <View className="flex-1 h-2 rounded-full bg-raised mx-2 overflow-hidden">
-                <View
-                  style={{
-                    backgroundColor: zone.color,
-                    width: `${Math.round((zone.count / totalSamples) * 100)}%`,
-                  }}
-                  className="h-full rounded-full"
-                />
-              </View>
-              <Text className="text-xs text-text-muted w-20 text-right">
-                {zone.lower > 0
-                  ? t('activityDetail.zoneFrom', {
-                      defaultValue: '{{bpm}}+ bpm',
-                      bpm: zone.lower,
-                    })
-                  : t('activityDetail.zoneLow', { defaultValue: 'low' })}
+              <Text className="text-xs text-text-muted">
+                {formatLocalizedNumber(Math.round(max))}
               </Text>
             </View>
-          ))}
-        </View>
+
+            <View className="mt-3">
+              {zoneTotals.map((zone) => (
+                <View
+                  key={zone.key}
+                  className="flex-row items-center py-1.5 border-t border-border"
+                >
+                  <Text
+                    style={{ color: zone.color }}
+                    className="text-sm font-semibold w-16"
+                  >
+                    {t('activityDetail.zone', {
+                      defaultValue: 'Zone {{n}}',
+                      n: zone.key,
+                    })}
+                  </Text>
+                  <View className="flex-1 h-2 rounded-full bg-raised mx-2 overflow-hidden">
+                    <View
+                      style={{
+                        backgroundColor: zone.color,
+                        width: `${Math.round((zone.count / totalSamples) * 100)}%`,
+                      }}
+                      className="h-full rounded-full"
+                    />
+                  </View>
+                  <Text className="text-xs text-text-muted w-20 text-right">
+                    {zone.lower > 0
+                      ? t('activityDetail.zoneFrom', {
+                          defaultValue: '{{bpm}}+ bpm',
+                          bpm: zone.lower,
+                        })
+                      : t('activityDetail.zoneLow', { defaultValue: 'low' })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
