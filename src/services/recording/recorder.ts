@@ -635,6 +635,9 @@ export async function saveRecording(): Promise<IndividualSessionResponse> {
       photos: s.photos,
       version: 1,
       recordingId: s.id,
+      ...(Platform.OS === 'ios' && s.watch !== false
+        ? { healthSource: 'HealthKit' as const }
+        : {}),
       sport: s.sport,
       startedAt: s.startedAt,
       endedAt: s.updatedAt,

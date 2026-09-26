@@ -1,5 +1,6 @@
 import DashboardCardTitle from './DashboardCardTitle';
 import { useState } from 'react';
+import { useUniwind } from 'uniwind';
 import ChartTouchOverlay, { type ChartTouchLayout } from './ChartTouchOverlay';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
@@ -151,6 +152,7 @@ export default function ActivityMetricChart({
   onOpen,
 }: ActivityMetricChartProps) {
   const { t } = useTranslation();
+  const { theme } = useUniwind();
   const locale = useAppLocale();
   const [plotWidth, setPlotWidth] = useState(0);
   const [selection, setSelection] = useState<{
@@ -308,7 +310,12 @@ export default function ActivityMetricChart({
               y2={y}
               stroke={bare ? CHART_GRID_LINE_COLOR : color}
               strokeWidth={1}
-              {...(bare ? {} : { strokeOpacity: 0.18, strokeDasharray: '1 3' })}
+              {...(bare
+                ? {}
+                : {
+                    strokeOpacity: theme === 'light' ? 0.4 : 0.18,
+                    strokeDasharray: '1 3',
+                  })}
             />
           );
         })}
