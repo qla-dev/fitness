@@ -1,5 +1,10 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import { ClipOp, Skia, matchFont, type SkCanvas } from '@shopify/react-native-skia';
+import {
+  ClipOp,
+  Skia,
+  matchFont,
+  type SkCanvas,
+} from '@shopify/react-native-skia';
 
 type Point = { latitude: number; longitude: number };
 type Box = { x: number; y: number; width: number; height: number };
@@ -124,7 +129,11 @@ export async function drawPhotoMap(
   const paint = Skia.Paint();
   paint.setAlphaf(0.38);
   canvas.save();
-  canvas.clipRect(Skia.XYWHRect(left, top, box.width, box.height), ClipOp.Intersect, true);
+  canvas.clipRect(
+    Skia.XYWHRect(left, top, box.width, box.height),
+    ClipOp.Intersect,
+    true
+  );
   try {
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {

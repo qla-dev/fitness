@@ -77,7 +77,13 @@ jest.mock('@shopify/react-native-skia', () => {
         width,
         height,
       }),
-      Path: { Make: () => ({ moveTo: jest.fn(), lineTo: jest.fn(), dispose: jest.fn() }) },
+      Path: {
+        Make: () => ({
+          moveTo: jest.fn(),
+          lineTo: jest.fn(),
+          dispose: jest.fn(),
+        }),
+      },
     },
   };
 });
@@ -175,7 +181,9 @@ it('re-renders the original for styling and shares the resulting file, leaving l
   const paint = canvas.drawPath.mock.calls[0][1];
   expect(paint.setColor).toHaveBeenCalledWith('#111111');
   expect(paint.setColor).toHaveBeenCalledWith('#FF453A');
-  expect(canvas.drawPath.mock.invocationCallOrder[0]).toBeLessThan(canvas.drawText.mock.invocationCallOrder[0]);
+  expect(canvas.drawPath.mock.invocationCallOrder[0]).toBeLessThan(
+    canvas.drawText.mock.invocationCallOrder[0]
+  );
   expect(drawPhotoBranding).toHaveBeenCalledWith(
     canvas,
     1080,

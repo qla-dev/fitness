@@ -88,9 +88,11 @@ async function renderRecordingPhoto(
       Number.isFinite(location.longitude)
         ? location
         : undefined;
-    const boundsPoints = location ? [...points, location].filter(
-      (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
-    ) : points;
+    const boundsPoints = location
+      ? [...points, location].filter(
+          (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)
+        )
+      : points;
     if (options && layout && boundsPoints.length > 0) {
       const geometry = photoMapGeometry(boundsPoints, layout.route);
       if (options.routeStyle === 'map')

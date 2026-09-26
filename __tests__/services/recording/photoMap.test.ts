@@ -17,11 +17,20 @@ it('uses identical coordinates for a photo pin and its route point', () => {
 });
 
 it('keeps date-line crossings local instead of spanning the world', () => {
-  const geometry = photoMapGeometry([{ latitude: 0, longitude: 179.99 }, { latitude: 0, longitude: -179.99 }], box);
+  const geometry = photoMapGeometry(
+    [
+      { latitude: 0, longitude: 179.99 },
+      { latitude: 0, longitude: -179.99 },
+    ],
+    box
+  );
   expect(geometry.scale).toBeGreaterThan(1000000);
 });
 
 it('centers a GPS-only capture with no recorded route', () => {
   const point = { latitude: 43, longitude: 18 };
-  expect(photoMapGeometry([point], box).point(point)).toEqual({ x: 540, y: 960 });
+  expect(photoMapGeometry([point], box).point(point)).toEqual({
+    x: 540,
+    y: 960,
+  });
 });
