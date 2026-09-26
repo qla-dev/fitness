@@ -5348,7 +5348,7 @@
       "openProgram": "Open program",
       "success": "Program added",
       "myPrograms": "My Programs",
-      "contents": "{{sessions}} sessions ? {{exercises}} exercises",
+      "contents": "{{sessions}} sessions · {{exercises}} exercises",
       "singleAlreadyAdded": "This program is already in My Programs. Adding it again creates one additional copy."
     },
     "searchResults": "Programs",
