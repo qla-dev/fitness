@@ -39,6 +39,7 @@ export default function NativePromptSheet({
   onFooterPress,
   footerDisabled,
   footerLoading,
+  footerTint,
   hasTextInput = false,
   dismissOnBackdropPress = true,
   children,
@@ -62,6 +63,8 @@ export default function NativePromptSheet({
   onFooterPress: () => void;
   footerDisabled?: boolean;
   footerLoading?: boolean;
+  /** Match the action to the goal or metric being edited. */
+  footerTint?: string;
   /** See the note above: it decides alignment and whether a keyboard opens. */
   hasTextInput?: boolean;
   /** Whether tapping the dimmed area closes the sheet. */
@@ -111,6 +114,7 @@ export default function NativePromptSheet({
         onPress={onFooterPress}
         disabled={footerDisabled}
         loading={footerLoading}
+        tint={footerTint}
       />
     </CustomModal>
   );

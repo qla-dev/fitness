@@ -17,7 +17,17 @@ export default function WorkoutGoalSheet({
   onClose,
 }: WorkoutGoalSheetProps) {
   const { t } = useTranslation();
-  const tint = useCSSVariable('--color-accent-primary') as string;
+  const [timeColor, distanceColor, caloriesColor] = useCSSVariable([
+    '--color-cat-amber',
+    '--color-cat-blue',
+    '--color-cat-pink',
+  ]) as string[];
+  const tint =
+    kind === 'time'
+      ? timeColor
+      : kind === 'distance'
+        ? distanceColor
+        : caloriesColor;
   const [draft, setDraft] = useState(value);
   const minimum = kind === 'calories' ? 25 : kind === 'distance' ? 0.1 : 1;
   const maximum = kind === 'calories' ? 5000 : kind === 'time' ? 600 : 500;
@@ -55,6 +65,7 @@ export default function WorkoutGoalSheet({
       title={title}
       category={t('profile.goals', { defaultValue: 'Goals' })}
       footerLabel={t('common.done', { defaultValue: 'Done' })}
+      footerTint={tint}
       onFooterPress={() => {
         onChange(draft);
         onClose();
