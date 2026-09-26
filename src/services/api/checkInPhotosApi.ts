@@ -1,4 +1,10 @@
 import { File } from 'expo-file-system';
+import { randomUUID } from 'expo-crypto';
+import { isLocalDataMode } from '../dataMode';
+import {
+  copyProgressPhoto,
+  removeProgressPhoto,
+} from '../local/progressPhotoFiles';
 import { apiFetch, normalizeUrl } from './apiClient';
 import { ApiError } from './errors';
 import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
@@ -52,12 +58,13 @@ export const fetchPhotosByDate = async (
 
 /** Removes one photo. Replacing an angle does not need this: the server upserts. */
 export const deletePhoto = async (id: string): Promise<void> => {
-  return apiFetch<void>({
+  await apiFetch<void>({
     endpoint: `/api/measurements/check-in-photos/photo/${encodeURIComponent(id)}`,
     serviceName: SERVICE,
     operation: 'delete photo',
     method: 'DELETE',
   });
+  if (isLocalDataMode()) removeProgressPhoto(id);
 };
 
 /**
@@ -70,6 +77,27 @@ export async function uploadPhoto(params: {
   uri: string;
 }): Promise<CheckInPhoto> {
   const { date, type, uri } = params;
+  if (isLocalDataMode()) {
+    const previous = (await fetchPhotosByDate(date)).find(
+      (photo) => photo.photo_type === type
+    );
+    const id = randomUUID();
+    copyProgressPhoto(uri, id);
+    try {
+      const photo = await apiFetch<CheckInPhoto>({
+        endpoint: '/api/measurements/check-in-photos',
+        method: 'POST',
+        body: { id, entry_date: date, photo_type: type },
+        serviceName: SERVICE,
+        operation: 'save local photo',
+      });
+      if (previous) removeProgressPhoto(previous.id);
+      return photo;
+    } catch (error) {
+      removeProgressPhoto(id);
+      throw error;
+    }
+  }
 
   const config = await getActiveServerConfig();
   if (!config) throw new Error('Server configuration not found.');

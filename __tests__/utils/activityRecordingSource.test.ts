@@ -29,6 +29,38 @@ const appRecording = (points: unknown[]) => ({
  * was added alongside the source bundle id.
  */
 describe('resolveRecordingSource', () => {
+  it('reads watch metadata inside a locally synced transformed session', () => {
+    for (const raw_data of [
+      { device: { model: 'Watch', name: 'Apple Watch' } },
+      { metadata: { QlaFitWatchOrigin: 'watch' } },
+      { sourceName: 'Apple Watch' },
+    ]) {
+      expect(
+        resolveRecordingSource(
+          [
+            healthImport({
+              type: 'ExerciseSession',
+              source: 'HealthKit',
+              raw_data,
+            }),
+          ],
+          RECORDING
+        )
+      ).toBe('watch');
+    }
+    expect(
+      resolveRecordingSource(
+        [healthImport({ raw_data: { device: { model: 'iPhone' } } })],
+        RECORDING
+      )
+    ).toBe('phone');
+    expect(
+      resolveRecordingSource(
+        [healthImport({ raw_data: { sourceName: 'Health' } })],
+        RECORDING
+      )
+    ).toBe('unknown');
+  });
   it('recognizes a standalone watch recording without device or heart-rate data', () => {
     expect(
       resolveRecordingSource(

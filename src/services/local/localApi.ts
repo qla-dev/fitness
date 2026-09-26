@@ -1,4 +1,5 @@
 import type { DailyGoals } from '../../types/goals';
+import { photoRepository } from './photoRepository';
 import { saveWatchMeasurement } from './watchMeasurementRepository';
 import {
   asRecord,
@@ -363,6 +364,8 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     }
     return saveRecord(db, name, body, method === 'PUT' ? id : undefined);
   }
+  const photo = photoRepository(db, request);
+  if (photo) return photo.value;
   const food = foodRepository(db, request);
   if (food) return food.value;
   const workout = workoutRepository(db, request);

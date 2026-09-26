@@ -20,6 +20,13 @@ interface RawDevice {
   manufacturer?: string;
 }
 
+interface ImportedRecording {
+  device?: RawDevice;
+  sourceName?: string;
+  metadata?: { QlaFitWatchOrigin?: string };
+  raw_data?: ImportedRecording;
+}
+
 /**
  * Classify a HealthKit device. Matched on `model` first — Apple sets it to the
  * bare product family ("Watch", "iPhone") while `name` is free text that a
@@ -53,14 +60,11 @@ export const resolveRecordingSource = (
     (detail) => detail.detail_type === HEALTH_IMPORT
   );
   if (!imported) return 'unknown';
-  const raw = imported.detail_data as
-    | {
-        device?: RawDevice;
-        sourceName?: string;
-        metadata?: { QlaFitWatchOrigin?: string };
-      }
-    | undefined;
-  const fromDevice = classifyDevice(raw?.device);
+  // Local sync stores the transformed session here; HealthKit's device and
+  // source metadata remain inside raw_data. Older/direct imports are flat.
+  const record = imported.detail_data as ImportedRecording | undefined;
+  const raw = record?.raw_data ?? record;
+  const fromDevice = classifyDevice(raw?.device ?? record?.device);
   if (fromDevice !== 'unknown') return fromDevice;
   // Our watch stamps this even when HealthKit omits HKDevice or heart rate.
   if (raw?.metadata?.QlaFitWatchOrigin === 'watch') return 'watch';

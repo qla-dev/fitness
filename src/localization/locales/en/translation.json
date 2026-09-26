@@ -5434,6 +5434,8 @@
     "switchCamera": "Switch camera",
     "capturePhoto": "Capture photo with metrics",
     "workoutPhotos": "Workout photos",
+    "addPhoto": "Add photo",
+    "photosLoadFailed": "Could not load photos. Tap to retry.",
     "openPhoto": "Open workout photo",
     "showMap": "Show map",
     "showCamera": "Show camera",

@@ -7,6 +7,8 @@ import {
 import { getAuthHeaders } from '../services/api/authService';
 import { normalizeUrl } from '../services/api/apiClient';
 import type { ServerConfig } from '../services/storage';
+import { isLocalDataMode } from '../services/dataMode';
+import { localProgressPhotoFile } from '../services/local/progressPhotoFiles';
 
 export type CheckInPhotoSource = {
   uri: string;
@@ -29,6 +31,7 @@ export function useCheckInPhotoSource() {
 
   useFocusEffect(
     useCallback(() => {
+      if (isLocalDataMode()) return;
       getActiveServerConfig().then(setConfig);
     }, [])
   );
@@ -43,7 +46,18 @@ export function useCheckInPhotoSource() {
 
   const getPhotoSource = useCallback(
     (photoId: string): CheckInPhotoSource | null => {
-      if (!photoId || !config) return null;
+      if (!photoId) return null;
+      if (isLocalDataMode()) {
+        const cached = cacheRef.current.get(photoId);
+        if (cached) return cached;
+        const source = {
+          uri: localProgressPhotoFile(photoId).uri,
+          headers: {},
+        };
+        cacheRef.current.set(photoId, source);
+        return source;
+      }
+      if (!config) return null;
 
       // Unlike the exercise and food image sources, these carry the session
       // token, so a plaintext base URL would put it on the wire. Null renders
@@ -67,5 +81,5 @@ export function useCheckInPhotoSource() {
     [config]
   );
 
-  return { getPhotoSource, isReady: config !== null };
+  return { getPhotoSource, isReady: isLocalDataMode() || config !== null };
 }

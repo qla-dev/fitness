@@ -897,7 +897,28 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {!isEditing && (
           <>
             <RecordingSummary details={session.activity_details} />
-            <WorkoutPhotos details={session.activity_details} />
+            <WorkoutPhotos
+              details={session.activity_details}
+              sessionId={session.type + ':' + session.id}
+              composition={{
+                width: 1080,
+                height: 1920,
+                top: 0,
+                metrics: buildDetailStats()
+                  .slice(0, 5)
+                  .map((stat, index) => ({
+                    text: [stat.value, stat.unit].filter(Boolean).join(' '),
+                    x: 238,
+                    y: 125 + index * 192,
+                    size: index === 0 ? 124 : 92,
+                  })),
+                route: importedTelemetry.gps.map((point) => ({
+                  latitude: point.lat,
+                  longitude: point.lon,
+                  segment: 0,
+                })),
+              }}
+            />
             <WorkoutHeartRateSection
               samples={importedTelemetry.hr}
               average={session.avg_heart_rate}
