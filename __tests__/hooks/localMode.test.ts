@@ -33,8 +33,18 @@ beforeEach(async () => {
   jest.clearAllMocks();
 });
 
-test('local startup opens tabs without consulting a server configuration', async () => {
+test('first local startup offers Apple sign-in without consulting a server configuration', async () => {
   expect(isLocalDataMode()).toBe(true);
+  const { result } = renderHook(() => useAppBootstrap());
+  await waitFor(() =>
+    expect(result.current.initialRoute).toBe('OnlineAccount')
+  );
+  expect(result.current.linkingEnabled).toBe(false);
+  expect(getActiveServerConfig).not.toHaveBeenCalled();
+});
+
+test('returning local startup opens tabs after sign-in was offered', async () => {
+  await AsyncStorage.setItem('@qla/sign-in-seen', 'true');
   const { result } = renderHook(() => useAppBootstrap());
   await waitFor(() => expect(result.current.initialRoute).toBe('Tabs'));
   expect(result.current.linkingEnabled).toBe(true);

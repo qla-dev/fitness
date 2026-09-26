@@ -3,6 +3,10 @@ import { Alert, ScrollView, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import Button from '../components/ui/Button';
+import Icon from '../components/Icon';
+import { getAppLocale } from '../localization';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import {
   loadSyncSettings,
@@ -19,6 +23,8 @@ export default function OnlineSyncScreen({
   navigation,
 }: RootStackScreenProps<'OnlineSync'>) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const nativeHeader = useNativeIOSHeadersActive();
   const state = useOnlineSync();
   const session = useOnlineAccount((s) => s.session);
   const header = useScreenHeader({
@@ -57,7 +63,13 @@ export default function OnlineSyncScreen({
       ]
     );
   return (
-    <View className="flex-1 bg-background">
+    <View
+      className="flex-1 bg-background"
+      style={{
+        paddingTop: nativeHeader ? 0 : insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
       {header}
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}
@@ -98,7 +110,7 @@ export default function OnlineSyncScreen({
               }
               rightAccessory={
                 state.intervalMinutes === minutes ? (
-                  <Text className="text-accent-primary">✓</Text>
+                  <Icon name="checkmark" size={18} />
                 ) : undefined
               }
             />
@@ -114,7 +126,7 @@ export default function OnlineSyncScreen({
           {state.lastSynced
             ? t('online.lastSync', {
                 defaultValue: 'Last synced: {{time}}',
-                time: new Date(state.lastSynced).toLocaleString(),
+                time: new Date(state.lastSynced).toLocaleString(getAppLocale()),
               })
             : t('online.notSynced', { defaultValue: 'Not synced yet' })}
         </Text>

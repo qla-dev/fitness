@@ -42,6 +42,15 @@ describe('online sync and MarkAI logging', () => {
     expect(mergeResponse(sent, sent, remote).foods[0].name).toBe('Rice');
     expect(mergeResponse({ foods: [] }, sent, remote).foods).toEqual([]);
   });
+  it('does not resurrect a deletion waiting for a later upload batch', () => {
+    const merged = mergeResponse(
+      { foods: [] },
+      { foods: [] },
+      remote,
+      new Set(['foods/one'])
+    );
+    expect(merged.foods).toEqual([]);
+  });
   it('logs the same confirmed proposal only once', async () => {
     const meals = await localApiFetch<{ id: string }[]>({
       endpoint: '/api/meal-types',

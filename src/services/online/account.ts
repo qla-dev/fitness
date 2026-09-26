@@ -8,7 +8,7 @@ export type OnlineAccount = { id: string; name: string; ai_coins: number };
 const SESSION_KEY = 'qla.online.session';
 export const SIGN_IN_SEEN_KEY = '@qla/sign-in-seen';
 const API_URL = (
-  process.env.EXPO_PUBLIC_API_URL || 'https://qla.fit/endpoints/api'
+  process.env.EXPO_PUBLIC_API_URL || 'https://fit.qla.dev/endpoints/api'
 ).replace(/\/$/, '');
 type Session = { token: string; user: OnlineAccount };
 export const useOnlineAccount = create<{

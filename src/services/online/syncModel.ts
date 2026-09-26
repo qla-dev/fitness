@@ -46,6 +46,7 @@ export type SyncChange = {
 export type SyncState = {
   accountId: string;
   baseline: SyncTables;
+  conflict?: boolean;
   pending?: {
     request_id: string;
     changes: SyncChange[];
@@ -103,7 +104,8 @@ export function changesSince(
 export function mergeResponse(
   current: Record<string, LocalRecord[]>,
   sent: Record<string, LocalRecord[]>,
-  remote: SyncTables
+  remote: SyncTables,
+  protectedKeys: Set<string> = new Set()
 ): Record<string, LocalRecord[]> {
   const result = { ...current };
   for (const collection of SYNC_COLLECTIONS) {
@@ -114,6 +116,7 @@ export function mergeResponse(
       (sent[collection] ?? []).map((row) => [String(row.id), row])
     );
     for (const record of remote[collection] ?? []) {
+      if (protectedKeys.has(`${collection}/${record.id}`)) continue;
       if (
         fingerprint(rows.get(record.id) ?? null) !==
         fingerprint(before.get(record.id) ?? null)

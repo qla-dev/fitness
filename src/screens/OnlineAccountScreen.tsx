@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/ui/Button';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import {
   SIGN_IN_SEEN_KEY,
@@ -26,6 +27,7 @@ export default function OnlineAccountScreen({
 }: RootStackScreenProps<'OnlineAccount'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const nativeHeader = useNativeIOSHeadersActive();
   const session = useOnlineAccount((s) => s.session);
   const [available, setAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -71,7 +73,10 @@ export default function OnlineAccountScreen({
   return (
     <View
       className="flex-1 bg-background"
-      style={{ paddingBottom: insets.bottom }}
+      style={{
+        paddingBottom: insets.bottom,
+        paddingTop: nativeHeader ? 0 : insets.top,
+      }}
     >
       {header}
       <ScrollView

@@ -10,6 +10,7 @@ import {
 } from './account';
 import {
   changesSince,
+  fingerprint,
   mergeResponse,
   SYNC_COLLECTIONS,
   type SyncState,
@@ -66,9 +67,15 @@ async function performSync() {
     throw new Error(
       'This device contains another account’s data. Sign in with that account to sync.'
     );
+  if (initial.state?.conflict)
+    throw new OnlineError(
+      409,
+      'Review the sync conflict in Profile → Online sync.'
+    );
   if (!initial.state) {
     const remote = await onlineRequest<{ tables: SyncTables }>('/sync');
     await localTransaction((db) => {
+      let conflict = false;
       // A fresh installation contains only generated defaults. Restore the account before uploading them.
       const hasRemote = Object.values(remote.tables).some((rows) =>
         rows.some((r) => !r.deleted)
@@ -83,6 +90,11 @@ async function performSync() {
         for (const name of SYNC_COLLECTIONS) {
           const rows = db.tables[name] ?? [];
           const ids = new Set(rows.map((r) => String(r.id)));
+          for (const remoteRow of remote.tables[name] ?? []) {
+            const local = rows.find((r) => String(r.id) === remoteRow.id);
+            if (local && fingerprint(local) !== fingerprint(remoteRow.data))
+              conflict = true;
+          }
           db.tables[name] = [
             ...rows,
             ...(remote.tables[name] ?? []).flatMap((r) =>
@@ -94,6 +106,7 @@ async function performSync() {
       db.onlineSync = {
         accountId: account.id,
         baseline: remote.tables,
+        conflict,
       } satisfies SyncState;
       markLocalDatabaseDirty();
     });
@@ -102,6 +115,11 @@ async function performSync() {
   for (let batch = 0; batch < 100; batch++) {
     const pending = await localTransaction((db) => {
       const state = db.onlineSync as SyncState;
+      if (state.conflict)
+        throw new OnlineError(
+          409,
+          'Review the sync conflict in Profile → Online sync.'
+        );
       if (!state.pending) {
         state.pending = {
           request_id: randomUUID(),
@@ -119,21 +137,35 @@ async function performSync() {
     await localTransaction((db) => {
       const state = db.onlineSync as SyncState;
       // Unsent rows from later batches also count as local edits and must survive this response.
-      const sent = { ...pending.sent };
       const remaining = changesSince(pending.sent, state.baseline).filter(
         (c) =>
           !pending.changes.some(
             (p) => p.collection === c.collection && p.id === c.id
           )
       );
-      for (const change of remaining)
-        sent[change.collection] = (sent[change.collection] ?? []).filter(
-          (r) => String(r.id) !== change.id
-        );
-      db.tables = mergeResponse(db.tables, sent, remote.tables);
+      const protectedKeys = new Set(
+        remaining.map((c) => `${c.collection}/${c.id}`)
+      );
+      db.tables = mergeResponse(
+        db.tables,
+        pending.sent,
+        remote.tables,
+        protectedKeys
+      );
+      const baseline = { ...remote.tables };
+      for (const name of SYNC_COLLECTIONS) {
+        baseline[name] = [
+          ...(remote.tables[name] ?? []).filter(
+            (r) => !protectedKeys.has(`${name}/${r.id}`)
+          ),
+          ...(state.baseline[name] ?? []).filter((r) =>
+            protectedKeys.has(`${name}/${r.id}`)
+          ),
+        ];
+      }
       db.onlineSync = {
         accountId: account.id,
-        baseline: remote.tables,
+        baseline,
       } satisfies SyncState;
       markLocalDatabaseDirty();
     });
@@ -146,7 +178,16 @@ export function syncOnline(): Promise<void> {
   if (running) return running;
   useOnlineSync.setState({ busy: true, error: null, conflict: false });
   running = performSync()
-    .catch((error: unknown) => {
+    .catch(async (error: unknown) => {
+      if (error instanceof OnlineError && error.status === 409) {
+        await localTransaction((db) => {
+          const state = db.onlineSync as SyncState | undefined;
+          if (state) {
+            state.conflict = true;
+            markLocalDatabaseDirty();
+          }
+        });
+      }
       useOnlineSync.setState({
         error: error instanceof Error ? error.message : String(error),
         conflict: error instanceof OnlineError && error.status === 409,

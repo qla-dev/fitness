@@ -4,10 +4,13 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import Button from '../components/ui/Button';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import {
   onlineRequest,
+  OnlineError,
   updateOnlineAccount,
   useOnlineAccount,
 } from '../services/online/account';
@@ -25,9 +28,24 @@ import type { RootStackScreenProps } from '../types/navigation';
 type Mode = 'macros' | 'training' | 'free';
 export default function MarkaiScreen({
   navigation,
+  route,
 }: RootStackScreenProps<'MarkAI'>) {
+  const accountId = useOnlineAccount((s) => s.session?.user.id);
+  return (
+    <MarkaiContent
+      key={accountId ?? 'offline'}
+      navigation={navigation}
+      route={route}
+    />
+  );
+}
+
+function MarkaiContent({ navigation }: RootStackScreenProps<'MarkAI'>) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const nativeHeader = useNativeIOSHeadersActive();
   const session = useOnlineAccount((s) => s.session);
+  const accountId = session?.user.id;
   const [mode, setMode] = useState<Mode>('macros');
   const [conversation, setConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<MarkaiMessage[]>([]);
@@ -39,6 +57,12 @@ export default function MarkaiScreen({
   const [date, setDate] = useState(getTodayDate());
   const [logged, setLogged] = useState<string[]>([]);
   const lock = useRef(false);
+  const pendingRequest = useRef<{
+    prompt: string;
+    mode: Mode;
+    conversation: string;
+    id: string;
+  } | null>(null);
   const header = useScreenHeader({
     title: t('markai.title', { defaultValue: 'MarkAI' }),
     left: { kind: 'back' },
@@ -63,12 +87,9 @@ export default function MarkaiScreen({
   }, []);
   useEffect(() => {
     let cancelled = false;
-    setConversation(null);
-    setMessages([]);
-    setError(null);
-    if (!session) return;
+    if (!accountId) return;
     const load = async () => {
-      const key = `@qla/markai/${session.user.id}/${mode}`;
+      const key = `@qla/markai/${accountId}/${mode}`;
       let id = await AsyncStorage.getItem(key);
       if (!id) {
         id = randomUUID();
@@ -88,7 +109,7 @@ export default function MarkaiScreen({
     return () => {
       cancelled = true;
     };
-  }, [mode, session?.user.id]);
+  }, [mode, accountId]);
   const log = async (reply: MarkaiReply) => {
     if (!reply.food) return;
     if (
@@ -110,13 +131,21 @@ export default function MarkaiScreen({
     setBusy(true);
     setError(null);
     const prompt = text.trim();
+    if (
+      !pendingRequest.current ||
+      pendingRequest.current.prompt !== prompt ||
+      pendingRequest.current.mode !== mode ||
+      pendingRequest.current.conversation !== conversation
+    ) {
+      pendingRequest.current = { prompt, mode, conversation, id: randomUUID() };
+    }
     try {
       const response = await onlineRequest<{
         id: string;
         reply: MarkaiReply;
         ai_coins: number;
       }>('/markai/messages', {
-        id: randomUUID(),
+        id: pendingRequest.current.id,
         conversation_id: conversation,
         mode,
         prompt,
@@ -126,12 +155,15 @@ export default function MarkaiScreen({
         { id: response.id, prompt, reply: response.reply },
       ]);
       setText('');
+      pendingRequest.current = null;
       await updateOnlineAccount({
         ...session.user,
         ai_coins: response.ai_coins,
       });
       if (response.reply.log_requested) await log(response.reply);
     } catch (e: unknown) {
+      if (e instanceof OnlineError && e.status === 503)
+        pendingRequest.current = null;
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       lock.current = false;
@@ -139,7 +171,14 @@ export default function MarkaiScreen({
     }
   };
   return (
-    <KeyboardAvoidingView behavior="padding" className="flex-1 bg-background">
+    <KeyboardAvoidingView
+      behavior="padding"
+      className="flex-1 bg-background"
+      style={{
+        paddingTop: nativeHeader ? 0 : insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
       {header}
       <View className="flex-row p-4 gap-2">
         {(['macros', 'training', 'free'] as Mode[]).map((value) => (
@@ -148,7 +187,13 @@ export default function MarkaiScreen({
             disabled={busy}
             accessibilityRole="radio"
             accessibilityState={{ checked: mode === value }}
-            onPress={() => setMode(value)}
+            onPress={() => {
+              if (value === mode) return;
+              setConversation(null);
+              setMessages([]);
+              setError(null);
+              setMode(value);
+            }}
             className={`flex-1 rounded-xl p-3 ${mode === value ? 'bg-accent-primary' : 'bg-surface'}`}
           >
             <Text
