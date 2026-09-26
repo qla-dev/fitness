@@ -142,6 +142,7 @@ export default function WorkoutCamera({
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]}>
       {permission?.granted && active && foreground ? (
         <CameraView
+          key={facing}
           ref={camera}
           style={StyleSheet.absoluteFill}
           facing={facing}
@@ -149,6 +150,13 @@ export default function WorkoutCamera({
           onCameraReady={() => setReady(true)}
         />
       ) : null}
+      {!ready && (
+        <View
+          testID="camera-restarting-cover"
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]}
+        />
+      )}
       <Animated.View
         pointerEvents="none"
         style={[
