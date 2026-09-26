@@ -25,7 +25,7 @@ import { addLog } from '../services/LogService';
 const AUTO_SYNC_WATCHDOG_MS = 90_000;
 
 interface AutoSyncOnOpenArgs {
-  initialRoute: 'Tabs' | 'Onboarding' | null;
+  initialRoute: 'Tabs' | 'Onboarding' | 'OnlineAccount' | null;
   syncMutation: ReturnType<typeof useSyncHealthData>;
 }
 

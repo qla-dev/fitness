@@ -21,6 +21,7 @@ import { Uniwind, useUniwind, useCSSVariable } from 'uniwind';
 
 import { queryClient, serverConnectionQueryKey, serverConfigsQueryKey, useSyncHealthData } from './src/hooks';
 import { useAppStartup } from './src/hooks/useAppStartup';
+import { useOnlineSync } from './src/hooks/useOnlineSync';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import { useAppLanguageForegroundSync } from './src/hooks/useAppLanguageForegroundSync';
 import { useAutoSyncOnOpen } from './src/hooks/useAutoSyncOnOpen';
@@ -30,6 +31,9 @@ import { createNativeStackNavigator, type NativeStackNavigationOptions } from '@
 import FoodPhotoFlow from './src/components/FoodPhotoFlow';
 import {
   SafeOnboarding,
+  SafeOnlineAccount,
+  SafeOnlineSync,
+  SafeMarkAI,
   SafeFoodsLibrary,
   SafeMealsLibrary,
   SafeMealPlans,
@@ -155,6 +159,7 @@ const androidModalAnimation =
   Platform.OS === 'android' ? ({ animation: 'slide_from_bottom' } as const) : {};
 
 function AppContent() {
+  useOnlineSync();
   const { t } = useTranslation();
   const { theme } = useUniwind();
   const {
@@ -419,6 +424,9 @@ function AppContent() {
             component={SafeOnboarding}
             options={{ gestureEnabled: false }}
           />
+          <Stack.Screen name="OnlineAccount" component={SafeOnlineAccount} options={createStackScreenOptions(t('online.account', { defaultValue: 'Your account' }), { headerBackButtonDisplayMode: 'minimal' })} />
+          <Stack.Screen name="OnlineSync" component={SafeOnlineSync} options={createStackScreenOptions(t('online.sync', { defaultValue: 'Online sync' }), { headerBackButtonDisplayMode: 'minimal' })} />
+          <Stack.Screen name="MarkAI" component={SafeMarkAI} options={createStackScreenOptions(t('markai.title', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })} />
           <Stack.Screen name="Tabs" options={{ gestureEnabled: false }}>
             {() => (
               <TabsLayout

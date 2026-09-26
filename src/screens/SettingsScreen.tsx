@@ -1,4 +1,5 @@
 import ProfileSummary from '../components/ProfileSummary';
+import { onlineRequest, updateOnlineAccount, useOnlineAccount, type OnlineAccount } from '../services/online/account';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -51,6 +52,10 @@ type SettingsScreenProps = RootStackScreenProps<'Profile'>;
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { t, i18n: translationI18n } = useTranslation();
+  const onlineSession = useOnlineAccount((s) => s.session);
+  useFocusEffect(useCallback(() => {
+    if (onlineSession) void onlineRequest<OnlineAccount>('/account').then(updateOnlineAccount).catch(() => undefined);
+  }, [onlineSession?.user.id]));
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
@@ -255,6 +260,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       >
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
+          <SettingsRowGroup>
+            <SettingsRow icon="profile" title={onlineSession ? t('online.balance', { defaultValue: '{{amount}} AI coins', amount: onlineSession.user.ai_coins }) : t('online.signIn', { defaultValue: 'Sign in with Apple' })} subtitle={t('online.profileReward', { defaultValue: '100 AI coins when you create your account' })} onPress={() => navigation.navigate(onlineSession ? 'MarkAI' : 'OnlineAccount')} />
+            <SettingsRow icon="sync" title={t('online.sync', { defaultValue: 'Online sync' })} onPress={() => navigation.navigate('OnlineSync')} />
+            <SettingsRow icon="sparkles" title={t('markai.title', { defaultValue: 'MarkAI' })} subtitle={t('markai.subtitle', { defaultValue: 'Macros, training help and free chat' })} onPress={() => navigation.navigate('MarkAI')} />
+          </SettingsRowGroup>
 
           {!isLocalDataMode() && (
             <SettingsRow

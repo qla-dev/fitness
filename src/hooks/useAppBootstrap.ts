@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadOnlineAccount, SIGN_IN_SEEN_KEY } from '../services/online/account';
 
 import { initializeAppLanguage } from '../localization';
 import { getActiveServerConfig } from '../services/storage';
@@ -7,7 +9,7 @@ import { addLog } from '../services/LogService';
 import { isLocalDataMode } from '../services/dataMode';
 import { localApiFetch } from '../services/local/localApi';
 
-export type BootstrapRoute = 'Tabs' | 'Onboarding';
+export type BootstrapRoute = 'Tabs' | 'Onboarding' | 'OnlineAccount';
 
 export interface AppBootstrapResult {
   initialRoute: BootstrapRoute | null;
@@ -42,7 +44,9 @@ export function useAppBootstrap(): AppBootstrapResult {
         const config = local ? null : await getActiveServerConfig();
         if (cancelled) return;
 
-        const route: BootstrapRoute = local || config ? 'Tabs' : 'Onboarding';
+        if (local) await loadOnlineAccount();
+        const showAccount = local && !(await AsyncStorage.getItem(SIGN_IN_SEEN_KEY));
+        const route: BootstrapRoute = showAccount ? 'OnlineAccount' : local || config ? 'Tabs' : 'Onboarding';
         setInitialRoute(route);
         setLinkingEnabled(route === 'Tabs');
       } catch (error) {

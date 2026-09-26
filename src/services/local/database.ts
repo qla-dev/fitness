@@ -22,6 +22,7 @@ const databaseSchema = z.object({
       result: z.unknown(),
     })
   ),
+  onlineSync: z.unknown().optional(),
 });
 export type LocalDatabase = z.infer<typeof databaseSchema>;
 export const LOCAL_DATABASE_KEY = '@Fitness/local-database/v1';

@@ -50,6 +50,9 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
+  OnlineAccount: undefined;
+  OnlineSync: undefined;
+  MarkAI: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   /**
