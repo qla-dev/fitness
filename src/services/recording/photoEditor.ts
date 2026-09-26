@@ -6,6 +6,7 @@ export type PhotoOverlay = 'none' | 'soft' | 'dark' | 'light';
 export interface PhotoEditorOptions {
   layout: PhotoLayout;
   textColor: string;
+  routeColor: string;
   overlay: PhotoOverlay;
   filter: PhotoFilter;
   aspectRatio: number;
@@ -13,6 +14,7 @@ export interface PhotoEditorOptions {
 export const defaultPhotoEditorOptions: PhotoEditorOptions = {
   layout: 'classic',
   textColor: '#FFFFFF',
+  routeColor: '#5088F7',
   overlay: 'soft',
   filter: 'original',
   aspectRatio: 9 / 16,

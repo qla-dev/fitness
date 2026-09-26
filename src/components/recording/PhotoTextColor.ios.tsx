@@ -6,9 +6,12 @@ import type { PhotoTextColorProps } from './PhotoTextColor';
 export default function PhotoTextColor({
   value,
   onChange,
+  label: suppliedLabel,
 }: PhotoTextColorProps) {
   const { t } = useTranslation();
-  const label = t('recording.editor.textColor', { defaultValue: 'Text color' });
+  const label =
+    suppliedLabel ??
+    t('recording.editor.textColor', { defaultValue: 'Text color' });
   return (
     <Host style={{ width: 48, height: 48 }} colorScheme="dark">
       <ColorPicker

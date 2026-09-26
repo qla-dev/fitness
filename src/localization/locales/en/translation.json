@@ -5440,6 +5440,7 @@
     "followRoute": "Follow my position",
     "editor": {
       "textColor": "Text color",
+      "routeColor": "Route color",
       "hexColor": "Hex color",
       "classic": "Classic",
       "summit": "Stats above route",

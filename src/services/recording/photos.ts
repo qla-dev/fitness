@@ -12,6 +12,7 @@ import {
   type PhotoEditorOptions,
 } from './photoEditor';
 import type { PhotoComposition, RecordingPhoto } from './types';
+import { drawPhotoBranding } from './photoBranding';
 
 const directory = () => new Directory(Paths.document, 'workout-photos');
 const validName = (name: string) => /^[a-f0-9-]+\.jpg$/i.test(name);
@@ -123,10 +124,17 @@ async function renderRecordingPhoto(
         if (!i || p.segment !== projected[i - 1].segment) path.moveTo(x, y);
         else path.lineTo(x, y);
       });
+      paint.setColor(Skia.Color(options.routeColor));
       paint.setStyle(PaintStyle.Stroke);
-      paint.setStrokeWidth(7);
+      paint.setStrokeWidth(14);
       canvas.drawPath(path, paint);
     }
+    await drawPhotoBranding(
+      canvas,
+      width,
+      height,
+      options?.textColor ?? '#FFFFFF'
+    );
     surface.flush();
     const rendered = surface.makeImageSnapshot();
     try {

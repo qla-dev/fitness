@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export interface PhotoTextColorProps {
+  label?: string;
   value: string;
   onChange: (value: string) => void;
 }
@@ -22,8 +23,12 @@ const colors = [
 export default function PhotoTextColor({
   value,
   onChange,
+  label: suppliedLabel,
 }: PhotoTextColorProps) {
   const { t } = useTranslation();
+  const label =
+    suppliedLabel ??
+    t('recording.editor.textColor', { defaultValue: 'Text color' });
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const valid = /^#[0-9a-f]{6}$/i.test(draft);
@@ -31,9 +36,7 @@ export default function PhotoTextColor({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t('recording.editor.textColor', {
-          defaultValue: 'Text color',
-        })}
+        accessibilityLabel={label}
         onPress={() => {
           setDraft(value);
           setOpen(true);
@@ -78,9 +81,7 @@ export default function PhotoTextColor({
               gap: 20,
             }}
           >
-            <Text style={{ color: 'white', fontSize: 20 }}>
-              {t('recording.editor.textColor', { defaultValue: 'Text color' })}
-            </Text>
+            <Text style={{ color: 'white', fontSize: 20 }}>{label}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {colors.map((color) => (
                 <Pressable

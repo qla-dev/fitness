@@ -15,9 +15,11 @@ import * as Sharing from 'expo-sharing';
 import { File } from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 import PhotoTextColor from './PhotoTextColor';
+import PhotoFilterPreviews from './PhotoFilterPreviews';
 import type { RecordingPhoto } from '../../services/recording/types';
 import {
   createPhotoPreview,
@@ -82,19 +84,22 @@ export default function WorkoutPhotoEditor({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const accent = useCSSVariable('--color-accent-primary') as string;
   const original = recordingPhotoUri(photo);
   const editable =
     !!photo.composition &&
     /^[a-f0-9-]+\.jpg$/i.test(photo.originalFileName ?? '');
-  const [options, setOptions] = useState<PhotoEditorOptions>(
-    defaultPhotoEditorOptions
-  );
+  const [options, setOptions] = useState<PhotoEditorOptions>(() => ({
+    ...defaultPhotoEditorOptions,
+    routeColor: accent || defaultPhotoEditorOptions.routeColor,
+  }));
   const [preview, setPreview] = useState<{
     uri: string;
     options: PhotoEditorOptions;
   } | null>(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const shareLock = useRef(false);
   const currentFile = useRef<string | null>(null);
@@ -276,6 +281,17 @@ export default function WorkoutPhotoEditor({
                   }
                 />
               </LiquidGlassSurface>
+              <LiquidGlassSurface colorScheme="dark" style={styles.tool}>
+                <PhotoTextColor
+                  label={t('recording.editor.routeColor', {
+                    defaultValue: 'Route color',
+                  })}
+                  value={options.routeColor}
+                  onChange={(routeColor) =>
+                    setOptions((current) => ({ ...current, routeColor }))
+                  }
+                />
+              </LiquidGlassSurface>
               <EditorMenu
                 label={t('recording.editor.overlay', {
                   defaultValue: 'Image overlay',
@@ -288,16 +304,41 @@ export default function WorkoutPhotoEditor({
                     setOptions((current) => ({ ...current, overlay }));
                 }}
               />
-              <EditorMenu
-                label={t('recording.editor.filter', {
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('recording.editor.filter', {
                   defaultValue: 'Photo filter',
                 })}
-                icon="sparkles"
-                actions={actions(filters, options.filter)}
-                onSelect={(id) => {
-                  const filter = filters.find((item) => item.id === id)?.id;
-                  if (filter) setOptions((current) => ({ ...current, filter }));
+                accessibilityState={{
+                  expanded: filtersOpen,
+                  disabled: sharing,
                 }}
+                disabled={sharing}
+                onPress={() => setFiltersOpen((open) => !open)}
+              >
+                <LiquidGlassSurface
+                  colorScheme="dark"
+                  isInteractive
+                  style={styles.tool}
+                >
+                  <Icon name="sparkles" size={24} color="white" />
+                </LiquidGlassSurface>
+              </Pressable>
+            </View>
+          )}
+          {editable && filtersOpen && (
+            <View style={styles.filterTray}>
+              <PhotoFilterPreviews
+                uri={recordingPhotoUri({
+                  ...photo,
+                  fileName: photo.originalFileName!,
+                })}
+                filters={filters}
+                selected={options.filter}
+                disabled={sharing}
+                onSelect={(filter) =>
+                  setOptions((current) => ({ ...current, filter }))
+                }
               />
             </View>
           )}
@@ -366,7 +407,7 @@ export default function WorkoutPhotoEditor({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   stage: { flex: 1, width: '100%', overflow: 'hidden', borderRadius: 24 },
-  tools: { position: 'absolute', left: 12, top: 16, gap: 12 },
+  tools: { position: 'absolute', right: 12, top: 16, gap: 12 },
   tool: {
     width: 48,
     height: 48,
@@ -374,7 +415,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loading: { position: 'absolute', right: 20, top: 20 },
+  loading: { position: 'absolute', left: 20, top: 20 },
+  filterTray: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+  },
   footer: { paddingTop: 16, paddingHorizontal: 20, gap: 12 },
   footerRow: { flexDirection: 'row', gap: 12 },
   footerButton: {

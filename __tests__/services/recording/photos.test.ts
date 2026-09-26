@@ -7,6 +7,11 @@ import {
 } from '../../../src/services/recording/photos';
 import { defaultPhotoEditorOptions } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
+import { drawPhotoBranding } from '../../../src/services/recording/photoBranding';
+
+jest.mock('../../../src/services/recording/photoBranding', () => ({
+  drawPhotoBranding: jest.fn(async () => undefined),
+}));
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'aaaa-bbbb') }));
 jest.mock('expo-file-system', () => ({
@@ -122,6 +127,7 @@ it('re-renders the original for styling and shares the resulting file, leaving l
       ...defaultPhotoEditorOptions,
       overlay: 'light',
       textColor: '#111111',
+      routeColor: '#FF453A',
     })
   ).toBe('cache/aaaa-bbbb.jpg');
   expect(Skia.Data.fromURI).toHaveBeenCalledWith(
@@ -132,6 +138,10 @@ it('re-renders the original for styling and shares the resulting file, leaving l
     .mock.results[0].value.getCanvas();
   expect(canvas.drawRect).toHaveBeenCalledTimes(1);
   expect(canvas.drawPath).toHaveBeenCalledTimes(1);
+  const paint = canvas.drawPath.mock.calls[0][1];
+  expect(paint.setColor).toHaveBeenCalledWith('#111111');
+  expect(paint.setColor).toHaveBeenLastCalledWith('#FF453A');
+  expect(drawPhotoBranding).toHaveBeenCalledWith(canvas, 1080, 1920, '#111111');
   jest.mocked(Skia.Data.fromURI).mockClear();
   expect(
     await createPhotoPreview(

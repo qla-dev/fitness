@@ -13,6 +13,10 @@ import { createPhotoPreview } from '../../src/services/recording/photos';
 import type { RecordingPhoto } from '../../src/services/recording/types';
 
 const mockDelete = jest.fn();
+jest.mock('@shopify/react-native-skia', () => {
+  const { View } = require('react-native');
+  return { Canvas: View, Image: View, ColorMatrix: View, useImage: () => null };
+});
 jest.mock('react-native/Libraries/Components/StatusBar/StatusBar', () => ({
   __esModule: true,
   default: () => null,
@@ -142,4 +146,21 @@ it('ignores a stale preview that finishes after a newer selection', async () => 
     'file:///preview.jpg'
   );
   expect(mockDelete).toHaveBeenCalled();
+});
+
+it('selects a filter from the thumbnail strip and waits for its export', async () => {
+  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  await finishPreview();
+  fireEvent.press(screen.getByLabelText('Photo filter'));
+  fireEvent.press(screen.getByLabelText('Monochrome'));
+  expect(
+    screen.getByLabelText('Monochrome').props.accessibilityState.selected
+  ).toBe(true);
+  fireEvent.press(screen.getByText('Share'));
+  expect(Sharing.shareAsync).not.toHaveBeenCalled();
+  await finishPreview();
+  expect(createPhotoPreview).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({ filter: 'mono' })
+  );
 });
