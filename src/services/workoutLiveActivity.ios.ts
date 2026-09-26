@@ -4,6 +4,7 @@ import { distanceFromKm } from '../utils/unitConversions';
 import { queryClient } from '../hooks/queryClient';
 import { invalidateExerciseCache } from '../hooks/invalidateExerciseCache';
 import { Asset } from 'expo-asset';
+import Constants from 'expo-constants';
 import { File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import {
@@ -102,7 +103,11 @@ let appIconResolution: Promise<void> | null = null;
 
 async function resolveAppIcon(): Promise<void> {
   try {
-    const container = Object.values(Paths.appleSharedContainers)[0];
+    const group = Constants.expoConfig?.extra?.iosAppGroup;
+    const container =
+      typeof group === 'string'
+        ? Paths.appleSharedContainers[group]
+        : Object.values(Paths.appleSharedContainers)[0];
     if (container == null) return;
     // Must stay small: WidgetKit rejects oversized Live Activity images
     // ("widget archival failed") and renders a grey placeholder shape, so the

@@ -385,7 +385,7 @@ export default function RunRideRecorder({
           showsUserLocation={!!session}
           appearance="dark"
           navigationMode={!!session}
-          controlsTop={insets.top + 16}
+          controlsTop={insets.top + 76}
         />
       )}
       <Animated.View
@@ -416,7 +416,7 @@ export default function RunRideRecorder({
       <View
         className="flex-1 px-6"
         pointerEvents="none"
-        style={{ paddingTop: insets.top, marginRight: 88 }}
+        style={{ paddingTop: insets.top + 60, marginRight: 88 }}
       >
         {session ? (
           <>
@@ -436,7 +436,7 @@ export default function RunRideRecorder({
               </Text>
             </View>
 
-            <View className="flex-row items-center mt-6">
+            <View className="items-start mt-6">
               <MetricIcon kind="speed" />
               <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
                 {currentSport === 'run'
@@ -449,7 +449,7 @@ export default function RunRideRecorder({
               </Text>
               <Text
                 style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}
-                className="ml-2 uppercase"
+                className="uppercase"
               >
                 {currentSport === 'run'
                   ? t('recording.pace', { defaultValue: 'Pace' })

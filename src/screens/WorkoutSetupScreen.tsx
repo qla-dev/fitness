@@ -601,18 +601,14 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               },
               {
                 value: 'watch',
-                // Three states, because a paired watch without our app is not
-                // the same as no watch and is fixed by a different thing.
-                label: watchConnected
-                  ? t('workoutSetup.watchConnected', {
-                      defaultValue: 'Apple Watch connected',
-                    })
-                  : sensors.watchNeedsApp
-                    ? t('workoutSetup.watchNeedsApp', {
-                        defaultValue: 'Install the watch app',
+                // The label describes whether this workout will use the watch.
+                label:
+                  watchConnected && watchEnabled
+                    ? t('workoutSetup.watchConnected', {
+                        defaultValue: 'Apple Watch connected',
                       })
                     : t('workoutSetup.watchDisconnected', {
-                        defaultValue: 'No watch connected',
+                        defaultValue: 'Apple Watch not connected',
                       }),
                 icon: 'device-watch',
                 on: watchEnabled,

@@ -826,7 +826,11 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ParamListBase>>();
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const { defaultColor, saveColor } = useHeaderActionColors();
+  const themeColors = useHeaderActionColors();
+  const { defaultColor, saveColor } =
+    config.appearance === 'dark'
+      ? { defaultColor: '#FFFFFF', saveColor: '#FFFFFF' }
+      : themeColors;
   const colors: HeaderColors = { defaultColor, saveColor };
   // The menu badge dot always takes the real accent, even on the Liquid Glass
   // path where saveColor is coerced to the monochrome text color.
@@ -857,8 +861,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     appearance,
   } = config;
   const rightItems = toRightArray(right);
-  // Only the screen-owned bar takes the forced-dark colours; the native
-  // items keep the theme tint the system bar was built around.
+  // Forced-dark screens need white actions on both native and custom bars.
   const customColors: HeaderColors =
     appearance === 'dark'
       ? { defaultColor: '#FFFFFF', saveColor: '#FFFFFF' }

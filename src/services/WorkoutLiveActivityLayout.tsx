@@ -342,7 +342,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
           modifiers={[
             buttonStyle('bordered'),
             buttonBorderShape('capsule'),
-            controlSize('regular'),
+            controlSize('small'),
           ]}
         />
       );
@@ -386,22 +386,32 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
 
   return {
     banner: props.recordingMetrics ? (
-      <VStack spacing={10} modifiers={[padding({ all: 16 })]}>
-        <HStack>
+      <VStack
+        alignment="leading"
+        spacing={6}
+        modifiers={[padding({ horizontal: 16, vertical: 10 })]}
+      >
+        <HStack spacing={6}>
+          {appIcon(22)}
           {icon()}
           <Text
-            modifiers={[font({ size: 14, weight: 'semibold' }), lineLimit(1)]}
+            modifiers={[
+              font({ size: 13, weight: 'semibold' }),
+              lineLimit(1),
+              minimumScaleFactor(0.75),
+            ]}
           >
             {props.workoutName}
           </Text>
           <Spacer />
-          {appIcon(28)}
         </HStack>
-        <HStack spacing={20}>
+        <HStack spacing={12}>
           <VStack alignment="leading">
             <Text
               modifiers={[
-                font({ size: 38, weight: 'bold' }),
+                font({ size: 26, weight: 'bold' }),
+                lineLimit(1),
+                minimumScaleFactor(0.7),
                 monospacedDigit(),
                 foregroundStyle('#5087F7'),
               ]}
@@ -413,7 +423,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
             </Text>
           </VStack>
           <VStack alignment="leading">
-            {elapsedClock(85)}
+            {elapsedClock(72)}
             <Text modifiers={[font({ size: 11 }), secondaryText()]}>
               {props.labels.elapsed}
             </Text>
@@ -432,7 +442,13 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
         )}
         <HStack>
           <Image systemName="flame.fill" />
-          <Text>
+          <Text
+            modifiers={[
+              font({ size: 12 }),
+              lineLimit(1),
+              minimumScaleFactor(0.7),
+            ]}
+          >
             {props.recordingMetrics.calories +
               ' ' +
               props.recordingMetrics.calorieUnit}
@@ -443,14 +459,13 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
             label={props.recordingMetrics.finish}
             systemImage="stop.fill"
             target="recording-stop"
-            modifiers={[buttonStyle('bordered'), buttonBorderShape('capsule')]}
+            modifiers={[
+              buttonStyle('bordered'),
+              buttonBorderShape('capsule'),
+              controlSize('small'),
+            ]}
           />
         </HStack>
-        <Text
-          modifiers={[font({ size: 11, weight: 'semibold' }), secondaryText()]}
-        >
-          {props.brandName}
-        </Text>
       </VStack>
     ) : (
       <VStack

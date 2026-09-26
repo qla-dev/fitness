@@ -132,7 +132,12 @@ const RouteMap: React.FC<RouteMapProps> = ({
     <View
       style={{ position: 'absolute', right: 16, top: controlsTop, gap: 10 }}
     >
-      <LiquidGlassSurface colorScheme="dark" style={{ borderRadius: 24 }}>
+      <LiquidGlassSurface
+        isInteractive
+        glassEffectStyle="clear"
+        colorScheme="dark"
+        style={{ borderRadius: 24 }}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('routeMap.toggle3D', {
@@ -162,7 +167,12 @@ const RouteMap: React.FC<RouteMapProps> = ({
           </Text>
         </Pressable>
       </LiquidGlassSurface>
-      <LiquidGlassSurface colorScheme="dark" style={{ borderRadius: 24 }}>
+      <LiquidGlassSurface
+        isInteractive
+        glassEffectStyle="clear"
+        colorScheme="dark"
+        style={{ borderRadius: 24 }}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('recording.followRoute', {
@@ -233,6 +243,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
         }}
       >
         <AppleMaps.View
+          key={navigationMode && center ? 'located' : 'preview'}
           ref={appleMap}
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}
@@ -309,6 +320,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
         }}
       >
         <GoogleMaps.View
+          key={navigationMode && center ? 'located' : 'preview'}
           ref={googleMap}
           style={StyleSheet.absoluteFill}
           cameraPosition={cameraPosition}

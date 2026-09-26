@@ -33,13 +33,16 @@ function TestScreen({
   right,
   left,
   title = 'Test',
+  appearance,
 }: {
   right?: Parameters<typeof useScreenHeader>[0]['right'];
   left?: Parameters<typeof useScreenHeader>[0]['left'];
   title?: string;
+  appearance?: 'dark';
 }) {
   const header = useScreenHeader({
     title,
+    appearance,
     left,
     right: right ?? [{ kind: 'primary', onPress: () => {} }],
   });
@@ -199,6 +202,15 @@ describe('useScreenHeader custom bar title layout', () => {
 });
 
 describe('useScreenHeader accessibility label (native path)', () => {
+  it('uses white native actions on a forced-dark workout screen', () => {
+    render(
+      <TestScreen
+        appearance="dark"
+        right={[{ kind: 'dismiss', onPress: jest.fn() }]}
+      />
+    );
+    expect(nativeRightItem()).toMatchObject({ tintColor: '#FFFFFF' });
+  });
   let osSpy: jest.SpyInstance | null = null;
 
   beforeEach(async () => {

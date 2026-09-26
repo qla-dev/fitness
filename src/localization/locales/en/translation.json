@@ -5838,7 +5838,7 @@
       "goals": "Goals",
       "custom": "Custom"
     },
-    "watchDisconnected": "No watch connected",
+    "watchDisconnected": "Apple Watch not connected",
     "watchNeedsApp": "Install the watch app",
     "watchStartFailedTitle": "Watch workout did not start",
     "watchStartFailedMessage": "Open qla.fit on your Apple Watch, then try again. Your phone workout has not started.",

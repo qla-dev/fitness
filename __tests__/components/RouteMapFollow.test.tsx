@@ -4,10 +4,15 @@ import { fireEvent, render } from '@testing-library/react-native';
 import RouteMap from '../../src/components/RouteMap';
 
 const mockSetCamera = jest.fn();
+const mockMount = jest.fn();
 jest.mock('expo-maps', () => {
   const React = require('react');
   const { View } = require('react-native');
   const MapView = React.forwardRef((props: object, ref: unknown) => {
+    React.useState(() => {
+      mockMount(props);
+      return null;
+    });
     React.useImperativeHandle(ref, () => ({
       setCameraPosition: mockSetCamera,
     }));
@@ -20,11 +25,18 @@ jest.mock('expo-maps', () => {
 });
 
 it('initializes a street-level 3D camera when the first GPS fix arrives', () => {
+  mockMount.mockClear();
   Platform.OS = 'ios';
   const screen = render(<RouteMap navigationMode />);
   screen.rerender(
     <RouteMap navigationMode center={{ latitude: 43, longitude: 18 }} />
   );
+  expect(mockMount).toHaveBeenCalledTimes(2);
+  expect(mockMount.mock.calls[1][0].cameraPosition).toMatchObject({
+    tilt: 60,
+    zoom: 17,
+    coordinates: { latitude: 43, longitude: 18 },
+  });
   expect(screen.getByTestId('map').props.cameraPosition).toMatchObject({
     tilt: 60,
     zoom: 17,
