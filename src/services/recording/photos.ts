@@ -13,6 +13,7 @@ import {
 } from './photoEditor';
 import type { PhotoComposition, RecordingPhoto } from './types';
 import { drawPhotoBranding } from './photoBranding';
+import { photoTypeface } from './photoFonts';
 
 const directory = () => new Directory(Paths.document, 'workout-photos');
 const validName = (name: string) => /^[a-f0-9-]+\.jpg$/i.test(name);
@@ -24,6 +25,7 @@ async function renderRecordingPhoto(
   composition: PhotoComposition,
   options?: PhotoEditorOptions
 ): Promise<Uint8Array> {
+  const typeface = await photoTypeface(options?.font ?? 'system');
   const data = await Skia.Data.fromURI(uri);
   const image = Skia.Image.MakeImageFromEncoded(data);
   if (!image) throw new Error('Camera image could not be decoded');
@@ -76,10 +78,12 @@ async function renderRecordingPhoto(
     const ratio = layout ? 1 : width / composition.width;
     paint.setColor(Skia.Color(options?.textColor ?? 'white'));
     for (const metric of layout?.metrics ?? composition.metrics) {
-      const font = matchFont({
-        fontSize: metric.size * ratio,
-        fontWeight: '400',
-      });
+      const font = typeface
+        ? Skia.Font(typeface, metric.size * ratio)
+        : matchFont({
+            fontSize: metric.size * ratio,
+            fontWeight: '400',
+          });
       if ('maxWidth' in metric && typeof metric.maxWidth === 'number') {
         const measured = font.measureText(metric.text).width;
         if (measured > metric.maxWidth)

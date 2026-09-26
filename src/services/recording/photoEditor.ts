@@ -3,9 +3,11 @@ import type { PhotoComposition } from './types';
 export type PhotoLayout = 'classic' | 'summit' | 'hero' | 'poster';
 export type PhotoFilter = 'original' | 'mono' | 'warm' | 'cool';
 export type PhotoOverlay = 'none' | 'soft' | 'dark' | 'light';
+export type PhotoFont = 'system' | 'anton' | 'bebas' | 'rajdhani' | 'oswald';
 export interface PhotoEditorOptions {
   layout: PhotoLayout;
   textColor: string;
+  font: PhotoFont;
   routeColor: string;
   overlay: PhotoOverlay;
   filter: PhotoFilter;
@@ -14,6 +16,7 @@ export interface PhotoEditorOptions {
 export const defaultPhotoEditorOptions: PhotoEditorOptions = {
   layout: 'classic',
   textColor: '#FFFFFF',
+  font: 'system',
   routeColor: '#5088F7',
   overlay: 'soft',
   filter: 'original',

@@ -148,6 +148,19 @@ it('ignores a stale preview that finishes after a newer selection', async () => 
   expect(mockDelete).toHaveBeenCalled();
 });
 
+it('updates the overlay font and waits for its export before sharing', async () => {
+  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  await finishPreview();
+  fireEvent.press(screen.getByText('Anton'));
+  fireEvent.press(screen.getByText('Share'));
+  expect(Sharing.shareAsync).not.toHaveBeenCalled();
+  await finishPreview();
+  expect(createPhotoPreview).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({ font: 'anton' })
+  );
+});
+
 it('selects a filter from the thumbnail strip and waits for its export', async () => {
   render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
   await finishPreview();

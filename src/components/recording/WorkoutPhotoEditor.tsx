@@ -31,6 +31,7 @@ import {
   type PhotoLayout,
   type PhotoFilter,
   type PhotoOverlay,
+  type PhotoFont,
 } from '../../services/recording/photoEditor';
 
 function removePreview(uri: string | null, original: string) {
@@ -186,6 +187,28 @@ export default function WorkoutPhotoEditor({
       image: 'map',
     },
   ];
+  const fonts: { id: PhotoFont; title: string }[] = [
+    {
+      id: 'system',
+      title: t('recording.editor.systemFont', { defaultValue: 'System' }),
+    },
+    {
+      id: 'anton',
+      title: t('recording.editor.fonts.anton', { defaultValue: 'Anton' }),
+    },
+    {
+      id: 'bebas',
+      title: t('recording.editor.fonts.bebas', { defaultValue: 'Bebas Neue' }),
+    },
+    {
+      id: 'rajdhani',
+      title: t('recording.editor.fonts.rajdhani', { defaultValue: 'Rajdhani' }),
+    },
+    {
+      id: 'oswald',
+      title: t('recording.editor.fonts.oswald', { defaultValue: 'Oswald' }),
+    },
+  ];
   const overlays: { id: PhotoOverlay; title: string }[] = [
     { id: 'none', title: t('recording.editor.none', { defaultValue: 'None' }) },
     {
@@ -271,6 +294,17 @@ export default function WorkoutPhotoEditor({
                 onSelect={(id) => {
                   const layout = layouts.find((item) => item.id === id)?.id;
                   if (layout) setOptions((current) => ({ ...current, layout }));
+                }}
+              />
+              <EditorMenu
+                label={t('recording.editor.font', {
+                  defaultValue: 'Text font',
+                })}
+                icon="document-text"
+                actions={actions(fonts, options.font)}
+                onSelect={(id) => {
+                  const font = fonts.find((item) => item.id === id)?.id;
+                  if (font) setOptions((current) => ({ ...current, font }));
                 }}
               />
               <LiquidGlassSurface colorScheme="dark" style={styles.tool}>
