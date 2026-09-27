@@ -35,7 +35,43 @@ export function photoEditorLayout(
 ) {
   const width = 1080;
   const height = Math.round(width / options.aspectRatio);
-  const metrics = composition.metrics.map((metric, index) => {
+  const sourceMetrics = composition.metrics.map((metric, index) =>
+    options.layout === 'classic' && !metric.iconAbove
+      ? {
+          ...metric,
+          x: 24,
+          y: composition.top + [0, 82, 194, 298, 402][index],
+          size: [48, 40, 34, 34, 28][index],
+          iconAbove: true,
+        }
+      : metric
+  );
+  const metrics = sourceMetrics.map((metric, index) => {
+    if (options.layout === 'classic') {
+      const bottom = Math.max(
+        ...sourceMetrics.map(
+          (item) =>
+            item.y +
+            (item.icon ? 24 : 0) +
+            item.size * 1.2 +
+            (item.label ? (item.labelSize ?? 12) * 1.2 : 0)
+        )
+      );
+      const scale = Math.min(
+        width / composition.width,
+        (height * 0.9) / bottom
+      );
+      return {
+        ...metric,
+        x: metric.x * scale,
+        y: metric.y * scale,
+        size: metric.size * scale,
+        labelSize: (metric.labelSize ?? 12) * scale,
+        iconSize: 24 * scale,
+        unitSize: 28 * scale,
+        maxWidth: (composition.width - metric.x - 112) * scale,
+      };
+    }
     let x = 0.12,
       y = 0.065 + index * 0.1,
       size = index === 0 ? 0.115 : 0.085;
@@ -67,7 +103,9 @@ export function photoEditorLayout(
       maxWidth = index === 0 ? 0.84 : 0.4;
     }
     return {
-      text: metric.text,
+      text: [metric.text, metric.unit ?? metric.label]
+        .filter(Boolean)
+        .join(' '),
       icon:
         options.layout === 'compact' || options.layout === 'trail'
           ? undefined
@@ -104,7 +142,7 @@ export function photoEditorLayout(
       top:
         height *
         {
-          classic: 0.552,
+          classic: 0.94,
           summit: 0.325,
           hero: 0.685,
           poster: 0.025,

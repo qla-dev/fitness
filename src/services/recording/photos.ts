@@ -141,7 +141,7 @@ async function renderRecordingPhoto(
         ? Skia.Font(typeface, metric.size * ratio)
         : matchFont({
             fontSize: metric.size * ratio,
-            fontWeight: '400',
+            fontWeight: 'weight' in metric ? (metric.weight ?? '400') : '400',
           });
       if ('maxWidth' in metric && typeof metric.maxWidth === 'number') {
         const measured = font.measureText(metric.text).width;
@@ -163,16 +163,18 @@ async function renderRecordingPhoto(
           : options?.textAlign === 'center'
             ? remainingWidth / 2
             : 0);
+      const stacked = 'iconAbove' in metric && metric.iconAbove;
+      const iconSize = 'iconSize' in metric ? metric.iconSize : 24 * ratio;
       if (metric.icon) {
         const path = Skia.Path.MakeFromSVGString(photoMetricIcons[metric.icon]);
         if (path) {
-          const iconSize = metric.size * ratio * 0.55;
+          const drawnIconSize = stacked ? iconSize : metric.size * ratio * 0.55;
           canvas.save();
           canvas.translate(
-            textX - iconSize - 12,
-            metric.y * ratio + metric.size * ratio * 0.25
+            stacked ? textX : textX - drawnIconSize - 12,
+            metric.y * ratio + (stacked ? 0 : metric.size * ratio * 0.25)
           );
-          canvas.scale(iconSize / 24, iconSize / 24);
+          canvas.scale(drawnIconSize / 24, drawnIconSize / 24);
           canvas.drawPath(path, paint);
           canvas.restore();
           path.dispose();
@@ -181,8 +183,44 @@ async function renderRecordingPhoto(
       const metrics = font.getMetrics();
       const baseline =
         (metric.y + metric.size * 0.6) * ratio -
-        (metrics.ascent + metrics.descent) / 2;
+        (metrics.ascent + metrics.descent) / 2 +
+        (stacked && metric.icon ? iconSize : 0);
       canvas.drawText(metric.text, textX, baseline, paint, font);
+      if ('unit' in metric && metric.unit) {
+        const unitSize = 'unitSize' in metric ? metric.unitSize : 28 * ratio;
+        const unitFont = typeface
+          ? Skia.Font(typeface, unitSize)
+          : matchFont({ fontSize: unitSize, fontWeight: '600' });
+        canvas.drawText(
+          ` ${metric.unit}`,
+          textX + font.measureText(metric.text).width,
+          baseline,
+          paint,
+          unitFont
+        );
+      }
+      if ('label' in metric && metric.label) {
+        const labelSize = (metric.labelSize ?? 12) * ratio;
+        const labelFont = typeface
+          ? Skia.Font(typeface, labelSize)
+          : matchFont({ fontSize: labelSize, fontWeight: '400' });
+        const labelMetrics = labelFont.getMetrics();
+        const labelY =
+          metric.y * ratio +
+          (metric.icon ? iconSize : 0) +
+          metric.size * ratio * 1.2;
+        paint.setAlphaf(0.6);
+        canvas.drawText(
+          metric.label.toUpperCase(),
+          textX,
+          labelY +
+            labelSize * 0.6 -
+            (labelMetrics.ascent + labelMetrics.descent) / 2,
+          paint,
+          labelFont
+        );
+        paint.setAlphaf(1);
+      }
     }
     await drawPhotoBranding(
       canvas,

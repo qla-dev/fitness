@@ -135,6 +135,11 @@ export interface PhotoComposition {
     x: number;
     y: number;
     size: number;
+    unit?: string;
+    label?: string;
+    labelSize?: number;
+    weight?: '300' | '400';
+    iconAbove?: boolean;
     icon?: 'speed' | 'calories' | 'heart';
   }[];
   route: { latitude: number; longitude: number; segment: number }[];

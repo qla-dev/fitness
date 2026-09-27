@@ -4,6 +4,34 @@ import {
   type PhotoLayout,
 } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
+import { liveMetricLayout } from '../../../src/services/recording/liveMetricLayout';
+
+it('clones the live HUD geometry and stacked icons in the default share layout', () => {
+  const metrics = liveMetricLayout(
+    [
+      { text: '12.5', unit: 'km' },
+      { text: '5:30', label: 'Pace' },
+      { text: '640', label: 'kcal' },
+      { text: '145', label: 'bpm' },
+    ],
+    60
+  );
+  const result = photoEditorLayout(
+    { width: 390, height: 844, top: 60, route: [], metrics },
+    defaultPhotoEditorOptions
+  );
+  const scale = 1080 / 390;
+  expect(metrics[0].y).toBe(60);
+  result.metrics.forEach((metric, index) => {
+    expect(metric.x).toBeCloseTo(metrics[index].x * scale);
+    expect(metric.y).toBeCloseTo(metrics[index].y * scale);
+    expect(metric.size).toBeCloseTo(metrics[index].size * scale);
+    expect(metric).toMatchObject({
+      iconAbove: true,
+      text: metrics[index].text,
+    });
+  });
+});
 
 const composition: PhotoComposition = {
   width: 390,

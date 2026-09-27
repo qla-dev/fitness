@@ -21,6 +21,8 @@ import WorkoutHudBar from '../WorkoutHudBar';
 import WorkoutCamera from './WorkoutCamera';
 import Icon from '../Icon';
 import MetricIcon from './MetricIcon';
+import { liveMetricLayout } from '../../services/recording/liveMetricLayout';
+import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 import { useCSSVariable } from 'uniwind';
 import { withAlpha } from '../../utils/colors';
 import { fireSelectionHaptic } from '../../services/haptics';
@@ -361,6 +363,38 @@ export default function RunRideRecorder({
       ]
     );
 
+  const nativeHeader = useNativeIOSHeadersActive();
+  const liveMetrics = session
+    ? liveMetricLayout(
+        [
+          {
+            text: number(distanceFromKm(session.distance / 1000, unit), 2),
+            unit: unitLabel,
+          },
+          {
+            text:
+              currentSport === 'run'
+                ? speed > 0.5
+                  ? recordingClock((unit === 'miles' ? 1609.344 : 1000) / speed)
+                  : '—'
+                : number(distanceFromKm(speed * 3.6, unit)),
+            label:
+              currentSport === 'run'
+                ? t('recording.pace', { defaultValue: 'Pace' })
+                : t('recording.speed', { defaultValue: 'Speed' }),
+          },
+          {
+            text: number(recordingCalories(session, seconds), 0),
+            label: t('recording.kcal', { defaultValue: 'kcal' }),
+          },
+          {
+            text: bpm === null ? '—' : number(bpm, 0),
+            label: t('recording.bpm', { defaultValue: 'bpm' }),
+          },
+        ],
+        insets.top + (nativeHeader ? 0 : 12)
+      )
+    : [];
   return (
     // Forced dark for the whole recording: a full-screen takeover read at
     // arm's length, usually outdoors, where a light sheet under sun is the
@@ -400,100 +434,60 @@ export default function RunRideRecorder({
             top={insets.top}
             route={snapshot.points}
             active={cameraVisible && focused && session.phase !== 'finished'}
-            lines={[
-              'qla.fit',
-              `${number(distanceFromKm(session.distance / 1000, unit), 2)} ${unitLabel}`,
-              recordingClock(seconds),
-              currentSport === 'run'
-                ? `${speed > 0.5 ? recordingClock((unit === 'miles' ? 1609.344 : 1000) / speed) : '-'} / ${unitLabel}`
-                : `${number(distanceFromKm(speed * 3.6, unit), 1)} ${unitLabel}/h`,
-              `${number(recordingCalories(session, seconds), 0)} ${t('recording.kcal', { defaultValue: 'kcal' })}`,
-              `${bpm === null ? '-' : number(bpm, 0)} ${t('recording.bpm', { defaultValue: 'bpm' })}`,
-            ]}
+            metrics={liveMetrics}
           />
         )}
       </Animated.View>
-      <View
-        className="flex-1 px-6"
-        pointerEvents="none"
-        style={{ paddingTop: insets.top + 60, marginRight: 88 }}
-      >
-        {session ? (
-          <>
-            <View className="flex-row items-baseline">
-              <Text
-                style={{ color: '#FFF', fontSize: 48, fontWeight: '300' }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {number(distanceFromKm(session.distance / 1000, unit), 2)}
-              </Text>
-              <Text
-                style={{ color: '#FFF', fontSize: 28, fontWeight: '600' }}
-                className="ml-2"
-              >
-                {unitLabel}
-              </Text>
-            </View>
-
-            <View className="items-start mt-6">
-              <MetricIcon kind="speed" />
-              <Text style={{ color: '#FFF', fontSize: 40, fontWeight: '400' }}>
-                {currentSport === 'run'
-                  ? speed > 0.5
-                    ? recordingClock(
-                        (unit === 'miles' ? 1609.344 : 1000) / speed
-                      )
-                    : '—'
-                  : number(distanceFromKm(speed * 3.6, unit))}
-              </Text>
-              <Text
-                style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}
-                className="uppercase"
-              >
-                {currentSport === 'run'
-                  ? t('recording.pace', { defaultValue: 'Pace' })
-                  : t('recording.speed', { defaultValue: 'Speed' })}
-              </Text>
-            </View>
-
-            <View
-              className="mt-6 gap-6"
+      <View style={{ flex: 1 }} pointerEvents="none">
+        {liveMetrics.map((metric, index) => (
+          <View
+            key={index}
+            style={{
+              position: 'absolute',
+              left: metric.x,
+              top: metric.y,
+              right: 112,
+            }}
+          >
+            {metric.icon ? (
+              <MetricIcon
+                kind={metric.icon}
+                pulse={metric.icon === 'heart' && active && bpm !== null}
+              />
+            ) : null}
+            <Text
               style={{
-                alignSelf: 'flex-start',
+                color: '#FFF',
+                fontSize: metric.size,
+                lineHeight: metric.size * 1.2,
+                fontWeight: metric.weight,
+                includeFontPadding: false,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
-              <View>
-                <MetricIcon kind="calories" />
-                <Text
-                  style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
-                >
-                  {number(recordingCalories(session, seconds), 0)}
+              {metric.text}
+              {metric.unit ? (
+                <Text style={{ fontSize: 28, fontWeight: '600' }}>
+                  {' ' + metric.unit}
                 </Text>
-                <Text
-                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}
-                  className="uppercase"
-                >
-                  {t('recording.kcal', { defaultValue: 'kcal' })}
-                </Text>
-              </View>
-              <View>
-                <MetricIcon kind="heart" pulse={active && bpm !== null} />
-                <Text
-                  style={{ color: '#FFF', fontSize: 34, fontWeight: '400' }}
-                >
-                  {bpm === null ? '—' : number(bpm, 0)}
-                </Text>
-                <Text
-                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}
-                  className="uppercase"
-                >
-                  {t('recording.bpm', { defaultValue: 'bpm' })}
-                </Text>
-              </View>
-            </View>
-          </>
-        ) : null}
+              ) : null}
+            </Text>
+            {metric.label ? (
+              <Text
+                style={{
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: metric.labelSize,
+                  lineHeight: (metric.labelSize ?? 12) * 1.2,
+                  textTransform: 'uppercase',
+                  includeFontPadding: false,
+                }}
+              >
+                {metric.label}
+              </Text>
+            ) : null}
+          </View>
+        ))}
       </View>
       <ScrollView
         contentInsetAdjustmentBehavior="never"

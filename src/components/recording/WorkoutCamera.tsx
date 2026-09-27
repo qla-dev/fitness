@@ -27,7 +27,7 @@ import { capturePhotoLocation } from '../../services/recording/photoLocation';
 
 export default function WorkoutCamera({
   recordingId,
-  lines,
+  metrics,
   bottom,
   active,
   viewport,
@@ -35,7 +35,7 @@ export default function WorkoutCamera({
   route,
 }: {
   recordingId: string;
-  lines: string[];
+  metrics: PhotoComposition['metrics'];
   bottom: number;
   active: boolean;
   viewport: { width: number; height: number };
@@ -68,13 +68,7 @@ export default function WorkoutCamera({
     ...viewport,
     top,
     route,
-    metrics: [
-      { text: lines[1], x: 24, y: top, size: 48 },
-      { icon: 'speed', text: lines[3], x: 60, y: top + 82, size: 40 },
-      { icon: 'calories', text: lines[4], x: 60, y: top + 154, size: 34 },
-      { icon: 'heart', text: lines[5], x: 60, y: top + 220, size: 34 },
-      { text: lines[2], x: 24, y: top + 286, size: 28 },
-    ],
+    metrics,
   };
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [foreground, setForeground] = useState(

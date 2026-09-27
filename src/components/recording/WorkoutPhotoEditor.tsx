@@ -166,6 +166,11 @@ export default function WorkoutPhotoEditor({
     image: MenuAction['image'];
   }[] = [
     {
+      id: 'classic',
+      title: t('recording.editor.classic', { defaultValue: 'Classic' }),
+      image: 'text.alignleft',
+    },
+    {
       id: 'trail',
       title: t('recording.editor.trail', { defaultValue: 'Route story' }),
       image: 'map',
@@ -176,11 +181,6 @@ export default function WorkoutPhotoEditor({
         defaultValue: 'Compact signature',
       }),
       image: 'text.badge.star',
-    },
-    {
-      id: 'classic',
-      title: t('recording.editor.classic', { defaultValue: 'Classic' }),
-      image: 'text.alignleft',
     },
     {
       id: 'summit',
