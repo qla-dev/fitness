@@ -5,17 +5,13 @@ import {
   ActivityIndicator,
   Keyboard,
   Pressable,
-  ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
-import MarkaiComposer, {
-  useChatKeyboardHeight,
-} from '../components/markai/MarkaiComposer';
+import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon from '../components/Icon';
 import MarkaiEmptyState from '../components/markai/MarkaiEmptyState';
 import MarkaiThinking from '../components/markai/MarkaiThinking';
@@ -34,13 +30,10 @@ import {
   useOnlineAccount,
 } from '../services/online/account';
 import {
-  logMarkaiFood,
+  markaiFoodToFoodInfo,
   type MarkaiMessage,
   type MarkaiReply,
 } from '../services/online/markai';
-import { localApiFetch } from '../services/local/localApi';
-import { localTransaction, table } from '../services/local/database';
-import { queryClient } from '../hooks/queryClient';
 import { getTodayDate } from '../utils/dateUtils';
 import type { RootStackParamList } from '../types/navigation';
 
@@ -74,22 +67,16 @@ function MarkaiContent() {
   const [barHeight, setBarHeight] = useState(110);
   const historySheet = useRef<CustomModalRef>(null);
   const optionsSheet = useRef<CustomModalRef>(null);
-  const scroller = useRef<ScrollView>(null);
+  const scroller =
+    useRef<React.ElementRef<typeof KeyboardChatScrollView>>(null);
   const atBottom = useRef(true);
+  const viewport = useRef(0);
   const loadVersion = useRef(0);
-  const keyboard = useChatKeyboardHeight();
-  const tail = useAnimatedStyle(() => ({
-    height: Math.max(insets.bottom, keyboard.value) + barHeight,
-  }));
   const [conversation, setConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<MarkaiMessage[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [meals, setMeals] = useState<{ id: string; name: string }[]>([]);
-  const [mealId, setMealId] = useState('');
-  const [date, setDate] = useState(getTodayDate());
-  const [logged, setLogged] = useState<string[]>([]);
   const lock = useRef(false);
   const pendingRequest = useRef<{
     prompt: string;
@@ -98,6 +85,7 @@ function MarkaiContent() {
     id: string;
   } | null>(null);
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('markai.title', { defaultValue: 'MarkAI' }),
     left: { kind: 'back' },
     right: {
@@ -116,21 +104,6 @@ function MarkaiContent() {
     training: t('markai.training', { defaultValue: 'Training help' }),
     free: t('markai.free', { defaultValue: 'Free chat' }),
   };
-  useEffect(() => {
-    void localApiFetch<{ id: string; name: string }[]>({
-      endpoint: '/api/meal-types',
-    })
-      .then((rows) => {
-        setMeals(rows);
-        setMealId(rows[0]?.id ?? '');
-      })
-      .catch((e: unknown) => setError(String(e)));
-    void localTransaction((db) =>
-      table(db, 'markaiReceipts').map((r) => String(r.id))
-    )
-      .then(setLogged)
-      .catch((e: unknown) => setError(String(e)));
-  }, []);
   useEffect(() => {
     if (!accountId) return;
     let alive = true;
@@ -234,20 +207,13 @@ function MarkaiContent() {
       if (version === loadVersion.current) setLoading(false);
     }
   };
-  const log = async (reply: MarkaiReply) => {
+  const reviewFood = (reply: MarkaiReply) => {
     if (!reply.food) return;
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-      Number.isNaN(Date.parse(`${date}T12:00:00`))
-    )
-      throw new Error(
-        t('markai.dateError', {
-          defaultValue: 'Enter a valid date as YYYY-MM-DD.',
-        })
-      );
-    await logMarkaiFood(reply.food_id, reply.food, mealId, date);
-    setLogged((ids) => [...new Set([...ids, reply.food_id])]);
-    await queryClient.invalidateQueries();
+    Keyboard.dismiss();
+    navigation.navigate('FoodEntryAdd', {
+      item: markaiFoodToFoodInfo(reply.food_id, reply.food),
+      date: getTodayDate(),
+    });
   };
   const send = async (value = text) => {
     if (lock.current || loading || !value.trim() || !conversation || !session)
@@ -294,7 +260,6 @@ function MarkaiContent() {
         '@qla/markai/' + accountId + '/active',
         JSON.stringify({ id: conversation, mode })
       );
-      if (response.reply.log_requested) await log(response.reply);
     } catch (e: unknown) {
       if (e instanceof OnlineError && e.status === 503)
         pendingRequest.current = null;
@@ -311,21 +276,36 @@ function MarkaiContent() {
       style={{ paddingTop: nativeHeader ? 0 : insets.top }}
     >
       {header}
-      <ScrollView
+      <KeyboardChatScrollView
         ref={scroller}
+        keyboardLiftBehavior="whenAtEnd"
+        offset={insets.bottom}
+        onLayout={(event) => {
+          viewport.current = event.nativeEvent.layout.height;
+        }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior={nativeHeader ? 'automatic' : 'never'}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          padding: 20,
+          gap: 16,
+          paddingBottom: session ? barHeight + insets.bottom + 12 : 20,
+        }}
         scrollEventThrottle={16}
         onScroll={({ nativeEvent: e }) => {
           atBottom.current =
             e.contentOffset.y >=
             e.contentSize.height - e.layoutMeasurement.height - 100;
         }}
-        onContentSizeChange={() => {
-          if (atBottom.current)
-            scroller.current?.scrollToEnd({ animated: true });
+        onContentSizeChange={(_width, height) => {
+          if (
+            (messages.length || pendingPrompt) &&
+            atBottom.current &&
+            viewport.current > 0 &&
+            height > viewport.current
+          )
+            scroller.current?.scrollToEnd({ animated: false });
         }}
       >
         {loading ? <ActivityIndicator /> : null}
@@ -357,15 +337,18 @@ function MarkaiContent() {
             <Text
               selectable
               className="text-text-primary"
-              style={{ alignSelf: 'stretch', fontSize: 15.5, lineHeight: 22 }}
+              style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
             >
               {message.reply.text}
             </Text>
             {message.reply.food && (
               <View className="bg-surface rounded-2xl p-4 gap-3">
-                <Text className="text-text-primary text-lg font-semibold">
-                  {message.reply.food.name}
-                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Icon name="food" size={24} />
+                  <Text className="text-text-primary text-lg font-semibold">
+                    {message.reply.food.name}
+                  </Text>
+                </View>
                 <Text className="text-text-secondary">
                   {message.reply.food.serving}
                 </Text>
@@ -382,47 +365,11 @@ function MarkaiContent() {
                       'Estimated nutrition for the whole serving. Check before logging.',
                   })}
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {meals.map((meal) => (
-                    <Pressable
-                      key={meal.id}
-                      onPress={() => setMealId(meal.id)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: mealId === meal.id }}
-                    >
-                      <Text
-                        className={
-                          mealId === meal.id
-                            ? 'text-accent-primary font-semibold'
-                            : 'text-text-secondary'
-                        }
-                      >
-                        {meal.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <TextInput
-                  value={date}
-                  onChangeText={setDate}
-                  accessibilityLabel={t('markai.date', {
-                    defaultValue: 'Food log date',
-                  })}
-                  className="text-text-primary border border-border-subtle rounded-xl px-3 py-2"
-                />
                 <Button
-                  disabled={busy || logged.includes(message.reply.food_id)}
-                  onPress={() => {
-                    void log(message.reply).catch((e: unknown) =>
-                      setError(String(e))
-                    );
-                  }}
+                  disabled={busy}
+                  onPress={() => reviewFood(message.reply)}
                 >
-                  {logged.includes(message.reply.food_id)
-                    ? t('markai.logged', {
-                        defaultValue: 'Logged in your diary',
-                      })
-                    : t('markai.log', { defaultValue: 'Log food' })}
+                  {t('markai.log', { defaultValue: 'Log food' })}
                 </Button>
               </View>
             )}
@@ -442,8 +389,7 @@ function MarkaiContent() {
             {error}
           </Text>
         ) : null}
-        <Animated.View style={tail} />
-      </ScrollView>
+      </KeyboardChatScrollView>
       {session ? (
         <MarkaiComposer
           value={text}

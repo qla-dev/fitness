@@ -221,6 +221,10 @@ jest.mock('../../src/components/FoodNutritionSummary', () => {
   };
 });
 
+jest.mock('../../src/components/FoodEntryCalendar', () =>
+  require('../../src/components/CalendarSheet')
+);
+
 jest.mock('../../src/components/CalendarSheet', () => {
   const React = require('react');
   const { View } = require('react-native');

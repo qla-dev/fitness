@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { create } from 'zustand';
@@ -6,7 +5,6 @@ import { Platform } from 'react-native';
 
 export type OnlineAccount = { id: string; name: string; ai_coins: number };
 const SESSION_KEY = 'qla.online.session';
-export const SIGN_IN_SEEN_KEY = '@qla/sign-in-seen';
 const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || 'https://fit.qla.dev/endpoints/api'
 ).replace(/\/$/, '');
@@ -118,7 +116,6 @@ export async function signInWithApple(): Promise<boolean> {
   const session = { token: result.token, user: result.user };
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
   useOnlineAccount.setState({ session });
-  await AsyncStorage.setItem(SIGN_IN_SEEN_KEY, 'true');
   return result.registered;
 }
 

@@ -28,7 +28,9 @@ export default function MarkaiUserMessage({
         opacity: pending ? 0.65 : 1,
       }}
     >
-      <Text style={{ color: '#FFFFFF', fontSize: 14.5 }}>{text}</Text>
+      <Text style={{ color: '#FFFFFF', fontSize: 18, lineHeight: 25 }}>
+        {text}
+      </Text>
       {failed ? (
         <Text style={{ color: '#FFFFFF', fontSize: 12, marginTop: 6 }}>
           {t('markai.retry', { defaultValue: 'Not sent. Tap to retry.' })}

@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Icon from '../Icon';
 
@@ -12,7 +10,6 @@ export default function MarkaiEmptyState({
   onSelect: (prompt: string, mode: 'macros' | 'training' | 'free') => void;
 }) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
   const choices = [
     {
       label: t('markai.log', { defaultValue: 'Log food' }),
@@ -50,39 +47,23 @@ export default function MarkaiEmptyState({
     },
   ];
   return (
-    <Animated.View
-      layout={LinearTransition.duration(240)}
-      className="gap-3 py-6"
-    >
-      {choices.slice(0, expanded ? choices.length : 2).map((choice) => (
-        <Animated.View key={choice.label} entering={FadeIn.duration(240)}>
-          <Pressable
-            disabled={disabled}
-            accessibilityRole="button"
-            onPress={() => onSelect(choice.prompt, choice.mode)}
-            className="bg-surface rounded-2xl px-4 py-4 flex-row items-center gap-3"
-          >
-            <Icon name={choice.icon} size={20} />
-            <Text className="text-text-primary flex-1">{choice.label}</Text>
-            <Icon name="arrow-up" size={16} />
-          </Pressable>
-        </Animated.View>
-      ))}
-      <View className="items-center">
+    <View className="flex-1 items-center justify-center gap-4 py-6">
+      <Icon name="sparkles" size={36} />
+      {choices.map((choice) => (
         <Pressable
+          key={choice.label}
+          disabled={disabled}
           accessibilityRole="button"
-          accessibilityState={{ expanded }}
-          onPress={() => setExpanded(!expanded)}
-          className="flex-row items-center gap-2 px-4 py-3"
+          onPress={() => onSelect(choice.prompt, choice.mode)}
+          className="bg-surface rounded-2xl px-4 py-3 flex-row items-center gap-3"
+          style={{ maxWidth: '100%' }}
         >
-          <Text className="text-text-secondary">
-            {expanded
-              ? t('markai.lessPrompts', { defaultValue: 'Fewer ideas' })
-              : t('markai.morePrompts', { defaultValue: 'More ideas' })}
+          <Icon name={choice.icon} size={20} />
+          <Text className="text-text-primary text-base flex-shrink">
+            {choice.label}
           </Text>
-          <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} />
         </Pressable>
-      </View>
-    </Animated.View>
+      ))}
+    </View>
   );
 }

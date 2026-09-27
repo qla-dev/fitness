@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedNumber } from '../localization';
+import { formatLocalizedNumber, useAppLocale } from '../localization';
 import { fireSelectionHaptic } from '../services/haptics';
 import {
   View,
@@ -69,9 +69,8 @@ import { useSaveFood } from '../hooks/useSaveFood';
 import { useAddFoodEntry } from '../hooks/useAddFoodEntry';
 import { useAddFoodEntryMeal } from '../hooks/useAddFoodEntryMeal';
 import type { FoodEntryMealCreateData } from '../types/foodEntryMeals';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../components/CalendarSheet';
+import type { CalendarSheetRef } from '../components/CalendarSheet';
+import CalendarSheet from '../components/FoodEntryCalendar';
 import EntryContextCard from '../components/EntryContextCard';
 import {
   FOOTER_CONTROL_GAP,
@@ -220,11 +219,9 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   route,
 }) => {
   const { item, date: initialDate } = route.params;
-  const { t, i18n: translationI18n } = useTranslation();
+  const { t } = useTranslation();
   // The same locale every other dated row in the app formats with.
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const dateLocale = useAppLocale();
   const pickerMode = route.params?.pickerMode ?? 'log-entry';
   const returnDepth = route.params?.returnDepth ?? 1;
   const ingredientIndex = route.params?.ingredientIndex;

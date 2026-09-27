@@ -9,6 +9,20 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppBootstrap } from '../../src/hooks/useAppBootstrap';
+import { isLocalDataMode } from '../../src/services/dataMode';
+import { useOnlineAccount } from '../../src/services/online/account';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+jest.mock('../../src/services/dataMode', () => ({
+  isLocalDataMode: jest.fn(() => false),
+}));
+jest.mock('../../src/services/local/localApi', () => ({
+  localApiFetch: jest.fn(async () => ({})),
+}));
+jest.mock('../../src/services/online/account', () => ({
+  loadOnlineAccount: jest.fn(async () => undefined),
+  useOnlineAccount: { getState: jest.fn(() => ({ session: null })) },
+}));
 
 jest.mock('../../src/localization', () => ({
   initializeAppLanguage: jest.fn(() => Promise.resolve('en')),
@@ -70,9 +84,42 @@ function t(key: string, lang: string): string {
 describe('useAppBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(isLocalDataMode).mockReturnValue(false);
+    jest
+      .mocked(useOnlineAccount.getState)
+      .mockReturnValue({ session: null, ready: true });
     mockInitializeAppLanguage.mockResolvedValue('en');
     mockGetActiveServerConfig.mockResolvedValue(null);
     mockSplashScreen.hideAsync.mockResolvedValue(undefined);
+  });
+
+  it('prompts on every signed-out startup even after a previous dismissal', async () => {
+    jest.mocked(isLocalDataMode).mockReturnValue(true);
+    await AsyncStorage.setItem('@qla/sign-in-seen', 'true');
+    const first = renderHook(() => useAppBootstrap());
+    await waitFor(() =>
+      expect(first.result.current.initialRoute).toBe('OnlineAccount')
+    );
+    first.unmount();
+    const second = renderHook(() => useAppBootstrap());
+    await waitFor(() =>
+      expect(second.result.current.initialRoute).toBe('OnlineAccount')
+    );
+  });
+
+  it('skips the startup sign-in sheet for a restored account', async () => {
+    jest.mocked(isLocalDataMode).mockReturnValue(true);
+    jest
+      .mocked(useOnlineAccount.getState)
+      .mockReturnValue({
+        ready: true,
+        session: {
+          token: 'test',
+          user: { id: '1', name: 'Member', ai_coins: 100 },
+        },
+      });
+    const { result } = renderHook(() => useAppBootstrap());
+    await waitFor(() => expect(result.current.initialRoute).toBe('Tabs'));
   });
 
   it('does not set initialRoute before i18n initialization completes', async () => {

@@ -5,6 +5,13 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import MarkaiScreen from '../../src/screens/MarkaiScreen';
 import MacrosScreen from '../../src/screens/MacrosScreen';
 import { onlineRequest } from '../../src/services/online/account';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+beforeEach(async () => {
+  await AsyncStorage.clear();
+  mockNavigate.mockClear();
+  jest.mocked(onlineRequest).mockReset();
+});
 
 // The shared animation mock omits color interpolation; keep this renderer stub
 // local to the screen tests rather than changing animation mocks app-wide.
@@ -18,8 +25,12 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+const mockNavigate = jest.fn();
+jest.mock('react-native-keyboard-controller', () => ({
+  KeyboardChatScrollView: require('react-native').ScrollView,
+}));
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn() }),
+  useNavigation: () => ({ navigate: mockNavigate }),
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,
@@ -79,7 +90,44 @@ const reply = {
   ai_coins: 99,
 };
 
-it('uses the same chat for the legacy Tracker route and expands prompt choices without a greeting', async () => {
+it('opens food details for confirmation even when MarkAI requests logging', async () => {
+  jest.mocked(onlineRequest).mockResolvedValueOnce({
+    ...reply,
+    reply: {
+      ...reply.reply,
+      log_requested: true,
+      food: {
+        name: 'Oats',
+        serving: 'bowl',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+      },
+    },
+  });
+  const screen = render(<MarkaiScreen />);
+  await waitFor(() => expect(screen.getByText('Log food')).toBeTruthy());
+  fireEvent.changeText(screen.getByLabelText('Message MarkAI'), 'Log oats');
+  fireEvent.press(screen.getByText('Send'));
+  await waitFor(() => expect(screen.getByText('Oats')).toBeTruthy());
+  expect(mockNavigate).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByText('Log food'));
+  expect(mockNavigate).toHaveBeenCalledWith(
+    'FoodEntryAdd',
+    expect.objectContaining({
+      item: expect.objectContaining({
+        name: 'Oats',
+        source: 'external',
+        calories: 300,
+        protein: 12,
+      }),
+      date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    })
+  );
+});
+
+it('uses the same chat for the legacy Tracker route and shows prompt choices without a greeting', async () => {
   expect(MacrosScreen).toBe(MarkaiScreen);
   const screen = render(<MarkaiScreen />);
   await waitFor(() => expect(screen.getByText('Log food')).toBeTruthy());
@@ -88,7 +136,7 @@ it('uses the same chat for the legacy Tracker route and expands prompt choices w
   expect(screen.getByLabelText('Message MarkAI').props.value).toBe(
     'Help me log my meal: '
   );
-  fireEvent.press(screen.getByText('More ideas'));
+  expect(screen.queryByText('More ideas')).toBeNull();
   fireEvent.press(screen.getByText('Explain my daily metrics'));
   expect(screen.getByLabelText('Message MarkAI').props.value).toBe(
     'Explain my daily metrics'

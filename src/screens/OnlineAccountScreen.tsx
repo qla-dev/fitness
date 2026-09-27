@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import PromptScreen from '../components/ui/PromptScreen';
-import {
-  SIGN_IN_SEEN_KEY,
-  signInWithApple,
-  useOnlineAccount,
-} from '../services/online/account';
+import { signInWithApple, useOnlineAccount } from '../services/online/account';
 import { syncOnline, useOnlineSync } from '../services/online/sync';
 import { queryClient } from '../hooks/queryClient';
+import { addLog } from '../services/LogService';
 import type { RootStackScreenProps } from '../types/navigation';
 
 export default function OnlineAccountScreen({
@@ -20,28 +16,40 @@ export default function OnlineAccountScreen({
   const session = useOnlineAccount((s) => s.session);
   const [available, setAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [reward, setReward] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lock = useRef(false);
+  const dismissed = useRef(false);
   useEffect(() => {
     void AppleAuthentication.isAvailableAsync()
       .then(setAvailable)
       .catch(() => setAvailable(false));
   }, []);
-  const finish = async () => {
-    await AsyncStorage.setItem(SIGN_IN_SEEN_KEY, 'true');
+  const finish = useCallback(() => {
+    if (dismissed.current) return;
+    dismissed.current = true;
     if (navigation.canGoBack()) navigation.goBack();
     else navigation.replace('Tabs', { screen: 'Dashboard' });
-  };
+  }, [navigation]);
+  useEffect(() => {
+    if (session) finish();
+  }, [session, finish]);
   const signIn = async () => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
     setError(null);
     try {
-      setReward(await signInWithApple());
-      if (useOnlineSync.getState().enabled) await syncOnline();
-      await queryClient.invalidateQueries();
+      await signInWithApple();
+      finish();
+      // Authentication is complete. Optional sync must not hold the sheet open.
+      void (async () => {
+        if (useOnlineSync.getState().enabled) await syncOnline();
+        await queryClient.invalidateQueries();
+      })().catch((failure: unknown) => {
+        addLog('[OnlineAccount] Post-sign-in sync failed', 'WARNING', [
+          String(failure),
+        ]);
+      });
     } catch (failure: unknown) {
       if (!(
         failure &&
@@ -55,55 +63,22 @@ export default function OnlineAccountScreen({
       lock.current = false;
     }
   };
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', () => {
-        void AsyncStorage.setItem(SIGN_IN_SEEN_KEY, 'true').catch(
-          () => undefined
-        );
-      }),
-    [navigation]
-  );
+  if (session) return null;
   return (
     <PromptScreen
       headerTitle={t('online.account', { defaultValue: 'Your account' })}
       title={t('online.welcome', { defaultValue: 'Make it yours' })}
-      description={
-        session
-          ? reward
-            ? t('online.reward', {
-                defaultValue:
-                  'Your account is ready. 100 AI coins are yours to use with MarkAI.',
-              })
-            : t('online.signedIn', {
-                defaultValue:
-                  'You are signed in. Your account keeps your synced data ready for your next device.',
-              })
-          : t('online.invite', {
-              defaultValue:
-                'Create your free account to get 100 AI coins for MarkAI and keep your synced diary when you change phones.',
-            })
-      }
-      footerLabel={
-        session
-          ? t('common.continue', { defaultValue: 'Continue' })
-          : t('online.skip', { defaultValue: 'Continue offline' })
-      }
-      onFooterPress={() =>
-        void finish().catch((e: unknown) => setError(String(e)))
-      }
+      description={t('online.invite', {
+        defaultValue:
+          'Create your free account to get 100 AI coins for MarkAI and keep your synced diary when you change phones.',
+      })}
+      footerLabel={t('online.skip', { defaultValue: 'Continue offline' })}
+      onFooterPress={finish}
       footerDisabled={busy}
       dismissDisabled={busy}
     >
       <View className="gap-5">
-        {session ? (
-          <Text className="text-accent-primary text-xl font-semibold">
-            {t('online.balance', {
-              defaultValue: '{{amount}} AI coins',
-              amount: session.user.ai_coins,
-            })}
-          </Text>
-        ) : available && Platform.OS === 'ios' ? (
+        {available && Platform.OS === 'ios' ? (
           <View pointerEvents={busy ? 'none' : 'auto'}>
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={

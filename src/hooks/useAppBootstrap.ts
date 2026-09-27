@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loadOnlineAccount, SIGN_IN_SEEN_KEY } from '../services/online/account';
+import {
+  loadOnlineAccount,
+  useOnlineAccount,
+} from '../services/online/account';
 
 import { initializeAppLanguage } from '../localization';
 import { getActiveServerConfig } from '../services/storage';
@@ -45,8 +47,13 @@ export function useAppBootstrap(): AppBootstrapResult {
         if (cancelled) return;
 
         if (local) await loadOnlineAccount();
-        const showAccount = local && !(await AsyncStorage.getItem(SIGN_IN_SEEN_KEY));
-        const route: BootstrapRoute = showAccount ? 'OnlineAccount' : local || config ? 'Tabs' : 'Onboarding';
+        if (cancelled) return;
+        const showAccount = local && !useOnlineAccount.getState().session;
+        const route: BootstrapRoute = showAccount
+          ? 'OnlineAccount'
+          : local || config
+            ? 'Tabs'
+            : 'Onboarding';
         setInitialRoute(route);
         setLinkingEnabled(route === 'Tabs');
       } catch (error) {

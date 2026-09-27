@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 
-export function useChatKeyboardHeight() {
+function useChatKeyboardHeight() {
   const height = useSharedValue(0);
   useKeyboardHandler(
     {
@@ -105,8 +105,8 @@ export default function MarkaiComposer({
             placeholderTextColor={muted}
             style={{
               color: foreground,
-              fontSize: 16,
-              lineHeight: 21,
+              fontSize: 18,
+              lineHeight: 25,
               paddingTop: 12,
               paddingBottom: 6,
               paddingHorizontal: 16,

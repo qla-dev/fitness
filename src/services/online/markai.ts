@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { localTransaction, saveRecord, table } from '../local/database';
 import { getTodayDate } from '../../utils/dateUtils';
+import { externalFoodItemToFoodInfo } from '../../types/foodInfo';
 
 export const foodProposalSchema = z.object({
   name: z.string().min(1).max(200),
@@ -18,6 +19,24 @@ export type MarkaiReply = {
   log_requested: boolean;
 };
 export type MarkaiMessage = { id: string; prompt: string; reply: MarkaiReply };
+
+/** A proposal is only a draft; the shared food-entry modal owns confirmation. */
+export function markaiFoodToFoodInfo(id: string, proposal: FoodProposal) {
+  const food = foodProposalSchema.parse(proposal);
+  return externalFoodItemToFoodInfo({
+    id,
+    name: food.name,
+    brand: null,
+    source: 'markai',
+    is_custom: true,
+    serving_size: 1,
+    serving_unit: food.serving,
+    calories: food.calories,
+    protein: food.protein,
+    carbs: food.carbs,
+    fat: food.fat,
+  });
+}
 
 /** Stable proposal IDs make repeated confirmation and network retries harmless. */
 export async function logMarkaiFood(
