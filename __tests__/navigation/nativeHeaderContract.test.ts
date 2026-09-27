@@ -4,6 +4,8 @@ import path from 'node:path';
 const mobileRoot = path.resolve(__dirname, '../..');
 
 const NATIVE_TABS_ROUTE_EXCLUSIONS = {
+  OnlineAccount:
+    'Authentication uses the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   Onboarding: 'First-run setup route shown before the tab host exists.',
   FoodsLibrary: 'Root-stack library drill-in presented above the tab host.',
   MealsLibrary: 'Root-stack library drill-in presented above the tab host.',

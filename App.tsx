@@ -362,6 +362,7 @@ function AppContent() {
     <NavigationContainer
       ref={rootNavigationRef}
       theme={navigationTheme}
+      initialState={initialRoute === 'OnlineAccount' ? { index: 1, routes: [{ name: 'Tabs' }, { name: 'OnlineAccount' }] } : undefined}
       linking={linkingEnabled ? linking : undefined}
       onStateChange={(state) => {
         // Enable deep-link handling once the user has left Onboarding.
@@ -424,7 +425,7 @@ function AppContent() {
             component={SafeOnboarding}
             options={{ gestureEnabled: false }}
           />
-          <Stack.Screen name="OnlineAccount" component={SafeOnlineAccount} options={createStackScreenOptions(t('online.account', { defaultValue: 'Your account' }), { headerBackButtonDisplayMode: 'minimal' })} />
+          <Stack.Screen name="OnlineAccount" component={SafeOnlineAccount} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
           <Stack.Screen name="OnlineSync" component={SafeOnlineSync} options={createStackScreenOptions(t('online.sync', { defaultValue: 'Online sync' }), { headerBackButtonDisplayMode: 'minimal' })} />
           <Stack.Screen name="MarkAI" component={SafeMarkAI} options={createStackScreenOptions(t('markai.title', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })} />
           <Stack.Screen name="Tabs" options={{ gestureEnabled: false }}>
