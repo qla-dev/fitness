@@ -2,11 +2,14 @@ import {
   defaultPhotoEditorOptions,
   photoEditorLayout,
   type PhotoLayout,
+  identityPhotoTransform,
+  movePhotoTransform,
+  photoLocalPoint,
 } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
 import { liveMetricLayout } from '../../../src/services/recording/liveMetricLayout';
 
-it('clones the live HUD geometry and stacked icons in the default share layout', () => {
+it('keeps the live HUD sizing and stacked icons with full-width alignment boxes', () => {
   const metrics = liveMetricLayout(
     [
       { text: '12.5', unit: 'km' },
@@ -23,7 +26,8 @@ it('clones the live HUD geometry and stacked icons in the default share layout',
   const scale = 1080 / 390;
   expect(metrics[0].y).toBe(60);
   result.metrics.forEach((metric, index) => {
-    expect(metric.x).toBeCloseTo(metrics[index].x * scale);
+    expect(metric.x).toBe(0);
+    expect(metric.maxWidth).toBe(1080);
     expect(metric.y).toBeCloseTo(metrics[index].y * scale);
     expect(metric.size).toBeCloseTo(metrics[index].size * scale);
     expect(metric).toMatchObject({
@@ -43,6 +47,38 @@ const composition: PhotoComposition = {
   ),
 };
 
+it.each<PhotoLayout>([
+  'classic',
+  'summit',
+  'hero',
+  'poster',
+  'compact',
+  'trail',
+])(
+  '%s preserves the value, unit and label when changing layout or alignment',
+  (layout) => {
+    const metric = {
+      text: '12.5',
+      unit: 'km',
+      label: 'Distance',
+      x: 24,
+      y: 60,
+      size: 48,
+    };
+    for (const textAlign of ['left', 'center', 'right'] as const) {
+      const result = photoEditorLayout(
+        { ...composition, metrics: [metric] },
+        { ...defaultPhotoEditorOptions, layout, textAlign }
+      );
+      expect(result.metrics[0]).toMatchObject({
+        text: '12.5',
+        unit: 'km',
+        label: 'Distance',
+      });
+    }
+  }
+);
+
 it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster', 'compact'])(
   '%s keeps all readings and the route within the export',
   (layout) => {
@@ -54,9 +90,7 @@ it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster', 'compact'])(
       });
       expect(result.width / result.height).toBeCloseTo(aspectRatio, 2);
       const brandBottom = result.branding.top + result.branding.fontSize * 1.4;
-      expect(result.branding.centerX).toBe(
-        result.width * (layout === 'compact' ? 0.28 : 0.5)
-      );
+      expect(result.branding.centerX).toBe(result.width / 2);
       expect(result.branding.top).toBeGreaterThan(0);
       expect(brandBottom).toBeLessThan(result.height);
       for (const metric of result.metrics) {
@@ -95,4 +129,81 @@ it('puts the summit metrics above the centered route', () => {
     ...result.metrics.map((metric) => metric.y + metric.size)
   );
   expect(bottom).toBeLessThan(result.route.y - result.route.height / 2);
+});
+
+it.each(['classic', 'compact', 'summit'] as const)(
+  '%s aligns across the complete photo width',
+  (layout) => {
+    for (const textAlign of ['left', 'center', 'right'] as const) {
+      const result = photoEditorLayout(composition, {
+        ...defaultPhotoEditorOptions,
+        layout,
+        textAlign,
+      });
+      expect(result.metrics[0].x).toBe(0);
+      expect(
+        result.metrics[layout === 'summit' ? 1 : 0].x +
+          result.metrics[layout === 'summit' ? 1 : 0].maxWidth
+      ).toBe(result.width);
+      expect(result.branding.align).toBe(textAlign);
+    }
+  }
+);
+
+it('places full-width maps at the top or bottom independently of route visibility', () => {
+  for (const mapPosition of ['top', 'bottom'] as const) {
+    const result = photoEditorLayout(composition, {
+      ...defaultPhotoEditorOptions,
+      routeStyle: 'map',
+      mapPosition,
+      showRoute: false,
+    });
+    expect(result.map.width).toBe(result.width);
+    expect(result.map.x - result.map.width / 2).toBe(0);
+    expect(result.map.y).toBe(
+      result.height * (mapPosition === 'top' ? 0.25 : 0.75)
+    );
+  }
+});
+
+it('keeps a pinch focal point anchored while scaling and rotating', () => {
+  const from = { x: 120, y: 200, distance: 100, angle: 0 };
+  const to = { ...from, distance: 200, angle: Math.PI / 2 };
+  const next = movePhotoTransform(identityPhotoTransform, from, to, 400, 800);
+  const local = photoLocalPoint(from.x, from.y, next, 400, 800);
+  expect(next.scale).toBe(2);
+  expect(next.rotation).toBe(Math.PI / 2);
+  expect(local.x).toBeCloseTo(from.x);
+  expect(local.y).toBeCloseTo(from.y);
+  expect(identityPhotoTransform).toEqual({ x: 0, y: 0, scale: 1, rotation: 0 });
+});
+
+it('supports panning and bounds pinch scaling without changing the other layer', () => {
+  const start = { x: 50, y: 100, distance: 0, angle: 0 };
+  const moved = movePhotoTransform(
+    identityPhotoTransform,
+    start,
+    { ...start, x: 90, y: 180 },
+    400,
+    800
+  );
+  expect(moved).toEqual({ x: 0.1, y: 0.1, scale: 1, rotation: 0 });
+  expect(
+    movePhotoTransform(
+      moved,
+      { ...start, distance: 100 },
+      { ...start, distance: 10000 },
+      400,
+      800
+    ).scale
+  ).toBe(5);
+  expect(
+    movePhotoTransform(
+      moved,
+      { ...start, distance: 100 },
+      { ...start, distance: 1 },
+      400,
+      800
+    ).scale
+  ).toBe(0.2);
 });

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   ActivityIndicator,
   Alert,
@@ -21,9 +22,12 @@ import Icon, { type IconName } from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 import PhotoTextColor from './PhotoTextColor';
 import PhotoFilterPreviews from './PhotoFilterPreviews';
+import PhotoEditorCanvas from './PhotoEditorCanvas';
+import { fireSelectionHaptic } from '../../services/haptics';
 import type { RecordingPhoto } from '../../services/recording/types';
 import {
   createPhotoPreview,
+  createPhotoEditorLayers,
   recordingPhotoUri,
 } from '../../services/recording/photos';
 import {
@@ -49,21 +53,30 @@ function EditorMenu({
   icon,
   actions,
   onSelect,
+  onOpen,
 }: {
   label: string;
   icon: IconName;
   actions: MenuAction[];
   onSelect: (id: string) => void;
+  onOpen: () => void;
 }) {
   return (
     <MenuView
       actions={actions}
-      onPressAction={({ nativeEvent }) => onSelect(nativeEvent.event)}
+      onPressAction={({ nativeEvent }) => {
+        fireSelectionHaptic();
+        onSelect(nativeEvent.event);
+      }}
     >
       <View
         collapsable={false}
         accessibilityRole="button"
         accessibilityLabel={label}
+        onTouchStart={() => {
+          fireSelectionHaptic();
+          onOpen();
+        }}
       >
         <LiquidGlassSurface
           colorScheme="dark"
@@ -96,29 +109,45 @@ export default function WorkoutPhotoEditor({
     routeColor: accent || defaultPhotoEditorOptions.routeColor,
   }));
   const [preview, setPreview] = useState<{
-    uri: string;
+    layers: { background: string; stats: string; route: string };
     options: PhotoEditorOptions;
   } | null>(null);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
+  const [gesturing, setGesturing] = useState(false);
+  const [layoutVersion, setLayoutVersion] = useState(0);
+  // Transform-only edits animate the existing layers; they never regenerate tiles or text.
+  const layerKey = JSON.stringify({
+    ...options,
+    statsTransform: undefined,
+    routeTransform: undefined,
+  });
+  const layerOptions = useMemo<PhotoEditorOptions>(
+    () => JSON.parse(layerKey),
+    [layerKey]
+  );
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const shareLock = useRef(false);
-  const currentFile = useRef<string | null>(null);
-  const rendering = preview?.options !== options;
+  const currentFiles = useRef<string[]>([]);
+  const rendering = editable && preview?.options !== layerOptions;
   useEffect(() => {
     let cancelled = false;
     // Native color pickers can emit continuously while dragging the spectrum.
     const timer = setTimeout(() => {
-      void createPhotoPreview(photo, options)
-        .then((uri) => {
+      if (!editable) return;
+      void createPhotoEditorLayers(photo, layerOptions)
+        .then((layers) => {
           if (cancelled) {
-            removePreview(uri, original);
+            Object.values(layers).forEach((uri) =>
+              removePreview(uri, original)
+            );
             return;
           }
-          removePreview(currentFile.current, original);
-          currentFile.current = uri;
-          setPreview({ uri, options });
+          currentFiles.current.forEach((uri) => removePreview(uri, original));
+          currentFiles.current = Object.values(layers);
+          setPreview({ layers, options: layerOptions });
           setFailed(false);
         })
         .catch(() => {
@@ -129,20 +158,23 @@ export default function WorkoutPhotoEditor({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [photo, options, original, retry]);
+  }, [photo, layerOptions, original, retry, editable]);
   useEffect(
-    () => () => removePreview(currentFile.current, original),
+    () => () =>
+      currentFiles.current.forEach((uri) => removePreview(uri, original)),
     [original]
   );
 
   const share = async () => {
-    if (!preview || rendering || shareLock.current) return;
+    if (rendering || gesturing || shareLock.current) return;
     shareLock.current = true;
     setSharing(true);
+    let exportUri: string | null = null;
     try {
       if (!(await Sharing.isAvailableAsync()))
         throw new Error('Sharing unavailable');
-      await Sharing.shareAsync(preview.uri, {
+      exportUri = await createPhotoPreview(photo, options);
+      await Sharing.shareAsync(exportUri, {
         mimeType: 'image/jpeg',
         UTI: 'public.jpeg',
         dialogTitle: t('recording.sharePhoto', {
@@ -156,6 +188,7 @@ export default function WorkoutPhotoEditor({
         })
       );
     } finally {
+      removePreview(exportUri, original);
       shareLock.current = false;
       setSharing(false);
     }
@@ -225,6 +258,12 @@ export default function WorkoutPhotoEditor({
   const overlays: { id: PhotoOverlay; title: string }[] = [
     { id: 'none', title: t('recording.editor.none', { defaultValue: 'None' }) },
     {
+      id: 'black',
+      title: t('recording.editor.blackBackground', {
+        defaultValue: 'Black background',
+      }),
+    },
+    {
       id: 'soft',
       title: t('recording.editor.soft', { defaultValue: 'Soft shade' }),
     },
@@ -274,13 +313,14 @@ export default function WorkoutPhotoEditor({
         if (!shareLock.current) onDiscard();
       }}
     >
-      <View style={[styles.root, { paddingTop: insets.top }]}>
+      <GestureHandlerRootView style={[styles.root, { paddingTop: insets.top }]}>
         <StatusBar barStyle="light-content" />
         <View
           testID="workout-photo-stage"
           style={styles.stage}
           onLayout={({ nativeEvent: { layout } }) => {
             if (layout.width > 0 && layout.height > 0) {
+              setStage({ width: layout.width, height: layout.height });
               const aspectRatio = layout.width / layout.height;
               setOptions((current) =>
                 Math.abs(current.aspectRatio - aspectRatio) < 0.001
@@ -291,10 +331,40 @@ export default function WorkoutPhotoEditor({
           }}
         >
           <Image
-            source={{ uri: preview?.uri ?? original }}
+            source={{ uri: original }}
             resizeMode="cover"
             style={StyleSheet.absoluteFill}
           />
+          {preview && photo.composition && stage.width > 0 && (
+            <PhotoEditorCanvas
+              key={`${layoutVersion}-${stage.width}-${stage.height}`}
+              layers={preview.layers}
+              composition={photo.composition}
+              options={options}
+              width={stage.width}
+              height={stage.height}
+              disabled={sharing || rendering || filtersOpen}
+              onBusy={setGesturing}
+              onCommit={(statsTransform, routeTransform) =>
+                setOptions((current) => ({
+                  ...current,
+                  statsTransform,
+                  routeTransform,
+                }))
+              }
+            />
+          )}
+          {filtersOpen && (
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              testID="photo-filter-dismiss"
+              accessibilityRole="button"
+              accessibilityLabel={t('recording.editor.closeFilters', {
+                defaultValue: 'Close filters',
+              })}
+              onPress={() => setFiltersOpen(false)}
+            />
+          )}
           {editable && (
             <ScrollView
               style={styles.tools}
@@ -303,15 +373,26 @@ export default function WorkoutPhotoEditor({
               pointerEvents={sharing ? 'none' : 'auto'}
             >
               <EditorMenu
+                onOpen={() => setFiltersOpen(false)}
                 label={t('recording.editor.layout', { defaultValue: 'Layout' })}
                 icon="list"
                 actions={actions(layouts, options.layout)}
                 onSelect={(id) => {
                   const layout = layouts.find((item) => item.id === id)?.id;
-                  if (layout) setOptions((current) => ({ ...current, layout }));
+                  if (layout) {
+                    setOptions((current) => ({
+                      ...current,
+                      layout,
+                      statsTransform: undefined,
+                      routeTransform: undefined,
+                    }));
+                    setLayoutVersion((value) => value + 1);
+                    setGesturing(false);
+                  }
                 }}
               />
               <EditorMenu
+                onOpen={() => setFiltersOpen(false)}
                 label={t('recording.editor.font', {
                   defaultValue: 'Text font',
                 })}
@@ -322,7 +403,14 @@ export default function WorkoutPhotoEditor({
                   if (font) setOptions((current) => ({ ...current, font }));
                 }}
               />
-              <LiquidGlassSurface colorScheme="dark" style={styles.tool}>
+              <LiquidGlassSurface
+                colorScheme="dark"
+                style={styles.tool}
+                onTouchStart={() => {
+                  fireSelectionHaptic();
+                  setFiltersOpen(false);
+                }}
+              >
                 <PhotoTextColor
                   value={options.textColor}
                   onChange={(textColor) =>
@@ -330,7 +418,14 @@ export default function WorkoutPhotoEditor({
                   }
                 />
               </LiquidGlassSurface>
-              <LiquidGlassSurface colorScheme="dark" style={styles.tool}>
+              <LiquidGlassSurface
+                colorScheme="dark"
+                style={styles.tool}
+                onTouchStart={() => {
+                  fireSelectionHaptic();
+                  setFiltersOpen(false);
+                }}
+              >
                 <PhotoTextColor
                   label={t('recording.editor.routeColor', {
                     defaultValue: 'Route color',
@@ -342,6 +437,7 @@ export default function WorkoutPhotoEditor({
                 />
               </LiquidGlassSurface>
               <EditorMenu
+                onOpen={() => setFiltersOpen(false)}
                 label={t('recording.editor.overlay', {
                   defaultValue: 'Image overlay',
                 })}
@@ -363,6 +459,7 @@ export default function WorkoutPhotoEditor({
                   disabled: sharing,
                 }}
                 disabled={sharing}
+                onPressIn={fireSelectionHaptic}
                 onPress={() => setFiltersOpen((open) => !open)}
               >
                 <LiquidGlassSurface
@@ -374,6 +471,7 @@ export default function WorkoutPhotoEditor({
                 </LiquidGlassSurface>
               </Pressable>
               <EditorMenu
+                onOpen={() => setFiltersOpen(false)}
                 label={t('recording.editor.alignment', {
                   defaultValue: 'Text alignment',
                 })}
@@ -414,6 +512,7 @@ export default function WorkoutPhotoEditor({
                 }}
               />
               <EditorMenu
+                onOpen={() => setFiltersOpen(false)}
                 label={t('recording.editor.routeStyle', {
                   defaultValue: 'Route style',
                 })}
@@ -443,8 +542,83 @@ export default function WorkoutPhotoEditor({
                     setOptions((current) => ({ ...current, routeStyle }));
                 }}
               />
+              {options.routeStyle === 'map' && (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={sharing}
+                  onPressIn={fireSelectionHaptic}
+                  accessibilityLabel={
+                    options.mapPosition === 'top'
+                      ? t('recording.editor.mapBottom', {
+                          defaultValue: 'Move map to bottom',
+                        })
+                      : t('recording.editor.mapTop', {
+                          defaultValue: 'Move map to top',
+                        })
+                  }
+                  onPress={() => {
+                    setFiltersOpen(false);
+                    setOptions((current) => ({
+                      ...current,
+                      mapPosition:
+                        current.mapPosition === 'top' ? 'bottom' : 'top',
+                    }));
+                  }}
+                >
+                  <LiquidGlassSurface
+                    colorScheme="dark"
+                    isInteractive
+                    style={styles.tool}
+                  >
+                    <Icon
+                      name={
+                        options.mapPosition === 'top'
+                          ? 'arrow-down'
+                          : 'arrow-up'
+                      }
+                      size={24}
+                      color="white"
+                    />
+                  </LiquidGlassSurface>
+                </Pressable>
+              )}
               <Pressable
                 accessibilityRole="switch"
+                accessibilityLabel={t('recording.editor.showRoute', {
+                  defaultValue: 'Show route',
+                })}
+                accessibilityState={{
+                  checked: options.showRoute !== false,
+                  disabled: sharing,
+                }}
+                disabled={sharing}
+                onPressIn={fireSelectionHaptic}
+                onPress={() => {
+                  setFiltersOpen(false);
+                  setOptions((current) => ({
+                    ...current,
+                    showRoute: current.showRoute === false,
+                  }));
+                }}
+              >
+                <LiquidGlassSurface
+                  colorScheme="dark"
+                  isInteractive
+                  style={styles.tool}
+                >
+                  <Icon
+                    name={options.showRoute === false ? 'eye-off' : 'eye'}
+                    size={24}
+                    color="white"
+                  />
+                </LiquidGlassSurface>
+              </Pressable>
+              <Pressable
+                accessibilityRole="switch"
+                onPressIn={() => {
+                  fireSelectionHaptic();
+                  setFiltersOpen(false);
+                }}
                 accessibilityLabel={
                   photo.composition?.captureLocation
                     ? t('recording.editor.capturePin', {
@@ -493,9 +667,10 @@ export default function WorkoutPhotoEditor({
                 filters={filters}
                 selected={options.filter}
                 disabled={sharing}
-                onSelect={(filter) =>
-                  setOptions((current) => ({ ...current, filter }))
-                }
+                onSelect={(filter) => {
+                  fireSelectionHaptic();
+                  setOptions((current) => ({ ...current, filter }));
+                }}
               />
             </View>
           )}
@@ -508,6 +683,7 @@ export default function WorkoutPhotoEditor({
             styles.footer,
             { paddingBottom: Math.max(insets.bottom, 16) },
           ]}
+          onTouchStart={() => setFiltersOpen(false)}
         >
           {failed && (
             <Pressable
@@ -537,7 +713,7 @@ export default function WorkoutPhotoEditor({
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              disabled={rendering || sharing || failed}
+              disabled={rendering || sharing || failed || gesturing}
               onPress={() => void share()}
               style={[
                 styles.footerButton,
@@ -556,7 +732,7 @@ export default function WorkoutPhotoEditor({
             </Pressable>
           </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

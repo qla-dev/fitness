@@ -4,6 +4,7 @@ import {
   createPhotoPreview,
   createRecordingPhoto,
   deleteRecordingPhoto,
+  createPhotoEditorLayers,
 } from '../../../src/services/recording/photos';
 import { defaultPhotoEditorOptions } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
@@ -30,18 +31,25 @@ jest.mock('expo-file-system', () => ({
 }));
 jest.mock('@shopify/react-native-skia', () => {
   const canvas = {
+    clear: jest.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
+    rotate: jest.fn(),
+    scale: jest.fn(),
     drawImageRect: jest.fn(),
     drawRect: jest.fn(),
     drawText: jest.fn(),
     drawPath: jest.fn(),
   };
   return {
-    ImageFormat: { JPEG: 1 },
+    ImageFormat: { JPEG: 1, PNG: 2 },
     PaintStyle: { Stroke: 1, Fill: 0 },
     matchFont: () => ({
       getMetrics: () => ({ ascent: -80, descent: 20 }),
       measureText: () => ({ width: 100 }),
       setSize: jest.fn(),
+      dispose: jest.fn(),
     }),
     Skia: {
       Data: { fromURI: jest.fn().mockResolvedValue({}) },
@@ -69,6 +77,7 @@ jest.mock('@shopify/react-native-skia', () => {
         setColor: jest.fn(),
         setStyle: jest.fn(),
         setStrokeWidth: jest.fn(),
+        setAlphaf: jest.fn(),
       }),
       Color: (color: string) => color,
       XYWHRect: (x: number, y: number, width: number, height: number) => ({
@@ -122,11 +131,11 @@ it.each(['left', 'center', 'right'] as const)(
       textAlign === 'left'
         ? 0
         : textAlign === 'center'
-          ? (1080 * 0.83 - 100) / 2
-          : 1080 * 0.83 - 100;
+          ? (1080 - 100) / 2
+          : 1080 - 100;
     expect(canvas.drawText).toHaveBeenCalledWith(
       '5 km',
-      expect.closeTo(1080 * 0.12 + offset),
+      expect.closeTo(offset),
       expect.any(Number),
       expect.anything(),
       expect.anything()
@@ -191,8 +200,9 @@ it('re-renders the original for styling and shares the resulting file, leaving l
     '#111111',
     {
       centerX: 540,
-      top: 1920 * 0.552,
+      top: 1920 * 0.94,
       fontSize: 1080 * 0.04,
+      align: 'left',
     }
   );
   jest.mocked(Skia.Data.fromURI).mockClear();
@@ -236,4 +246,102 @@ it('filters the image before drawing the overlay and metrics', async () => {
   expect(canvas.drawRect.mock.invocationCallOrder[0]).toBeLessThan(
     canvas.drawText.mock.invocationCallOrder[0]
   );
+});
+
+it('centers the value and unit as one group, and centers its label separately', async () => {
+  await createPhotoPreview(
+    {
+      fileName: 'aaaa.jpg',
+      originalFileName: 'bbbb.jpg',
+      capturedAt: 0,
+      composition: {
+        ...composition,
+        metrics: [
+          {
+            text: '5',
+            unit: 'km',
+            label: 'Distance',
+            x: 24,
+            y: 90,
+            size: 48,
+            iconAbove: true,
+          },
+        ],
+      },
+    },
+    { ...defaultPhotoEditorOptions, textAlign: 'center' }
+  );
+  const canvas = jest
+    .mocked(Skia.Surface.MakeOffscreen)
+    .mock.results[0].value.getCanvas();
+  expect(canvas.drawText).toHaveBeenCalledWith(
+    '5',
+    440,
+    expect.any(Number),
+    expect.anything(),
+    expect.anything()
+  );
+  expect(canvas.drawText).toHaveBeenCalledWith(
+    ' km',
+    540,
+    expect.any(Number),
+    expect.anything(),
+    expect.anything()
+  );
+  expect(canvas.drawText).toHaveBeenCalledWith(
+    'DISTANCE',
+    490,
+    expect.any(Number),
+    expect.anything(),
+    expect.anything()
+  );
+});
+
+it('exports stats and route transforms separately, and hides the route when disabled', async () => {
+  const photo = {
+    fileName: 'aaaa.jpg',
+    originalFileName: 'bbbb.jpg',
+    capturedAt: 0,
+    composition,
+  };
+  await createPhotoPreview(photo, {
+    ...defaultPhotoEditorOptions,
+    statsTransform: { x: 0.1, y: 0.2, scale: 2, rotation: Math.PI / 2 },
+    routeTransform: { x: -0.1, y: -0.2, scale: 0.5, rotation: -Math.PI / 2 },
+    showRoute: false,
+  });
+  const canvas = jest
+    .mocked(Skia.Surface.MakeOffscreen)
+    .mock.results[0].value.getCanvas();
+  expect(canvas.drawPath).not.toHaveBeenCalled();
+  expect(canvas.translate).toHaveBeenCalledWith(432, 576);
+  expect(canvas.translate).toHaveBeenCalledWith(648, 1344);
+  expect(canvas.rotate).toHaveBeenCalledWith(90, 0, 0);
+  expect(canvas.rotate).toHaveBeenCalledWith(-90, 0, 0);
+  expect(canvas.scale).toHaveBeenCalledWith(2, 2);
+  expect(canvas.scale).toHaveBeenCalledWith(0.5, 0.5);
+});
+
+it('creates untransformed transparent layers for live gestures', async () => {
+  await createPhotoEditorLayers(
+    {
+      fileName: 'aaaa.jpg',
+      originalFileName: 'bbbb.jpg',
+      capturedAt: 0,
+      composition,
+    },
+    {
+      ...defaultPhotoEditorOptions,
+      statsTransform: { x: 0.1, y: 0.2, scale: 2, rotation: 1 },
+    }
+  );
+  expect(Skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(3);
+  const canvas = jest
+    .mocked(Skia.Surface.MakeOffscreen)
+    .mock.results[0].value.getCanvas();
+  expect(canvas.clear).toHaveBeenCalledTimes(3);
+  expect(canvas.drawImageRect).toHaveBeenCalledTimes(1);
+  expect(canvas.drawPath).toHaveBeenCalledTimes(1);
+  expect(canvas.rotate).not.toHaveBeenCalled();
+  expect(drawPhotoBranding).toHaveBeenCalledTimes(1);
 });

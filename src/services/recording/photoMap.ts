@@ -1,6 +1,8 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import {
   ClipOp,
+  BlendMode,
+  TileMode,
   Skia,
   matchFont,
   type SkCanvas,
@@ -97,7 +99,8 @@ async function tileUri(z: number, x: number, y: number): Promise<string> {
 export async function drawPhotoMap(
   canvas: SkCanvas,
   box: Box,
-  geometry: ReturnType<typeof photoMapGeometry>
+  geometry: ReturnType<typeof photoMapGeometry>,
+  position: 'top' | 'bottom' = 'bottom'
 ) {
   // Keep the preview to a small, bounded set of tiles even for a full-height layout.
   const zoom = Math.max(
@@ -134,6 +137,8 @@ export async function drawPhotoMap(
     ClipOp.Intersect,
     true
   );
+  canvas.saveLayer();
+  let layerOpen = true;
   try {
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
@@ -159,23 +164,37 @@ export async function drawPhotoMap(
         }
       }
     }
+    // Mask the whole tile layer, so tile seams cannot interrupt the fade.
+    const mask = Skia.Paint();
+    const shader = Skia.Shader.MakeLinearGradient(
+      { x: 0, y: top },
+      { x: 0, y: top + box.height },
+      (position === 'bottom'
+        ? ['transparent', 'white', 'white']
+        : ['white', 'white', 'transparent']
+      ).map((color) => Skia.Color(color)),
+      position === 'bottom' ? [0, 0.7, 1] : [0, 0.3, 1],
+      TileMode.Clamp
+    );
+    mask.setShader(shader);
+    mask.setBlendMode(BlendMode.DstIn);
+    canvas.drawRect(Skia.XYWHRect(left, top, box.width, box.height), mask);
+    mask.dispose();
+    shader.dispose();
+    canvas.restore();
+    layerOpen = false;
     paint.setAlphaf(1);
     paint.setColor(Skia.Color('rgba(0,0,0,0.8)'));
-    canvas.drawRect(
-      Skia.XYWHRect(left, top + box.height - 25, box.width, 25),
-      paint
-    );
-    paint.setColor(Skia.Color('#FFFFFF'));
+    const creditTop = position === 'top' ? top + 8 : top + box.height - 28;
+    const credit = '© OpenStreetMap contributors · openstreetmap.org/copyright';
     const font = matchFont({ fontSize: 16 });
-    canvas.drawText(
-      '© OpenStreetMap contributors',
-      left + 8,
-      top + box.height - 7,
-      paint,
-      font
-    );
+    const creditWidth = font.measureText(credit).width + 12;
+    canvas.drawRect(Skia.XYWHRect(left + 8, creditTop, creditWidth, 22), paint);
+    paint.setColor(Skia.Color('#FFFFFF'));
+    canvas.drawText(credit, left + 14, creditTop + 16, paint, font);
     font.dispose();
   } finally {
+    if (layerOpen) canvas.restore();
     canvas.restore();
     paint.dispose();
   }

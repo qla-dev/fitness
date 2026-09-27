@@ -33,7 +33,12 @@ export async function drawPhotoBranding(
   width: number,
   height: number,
   color: string,
-  placement?: { centerX: number; top: number; fontSize: number }
+  placement?: {
+    centerX: number;
+    top: number;
+    fontSize: number;
+    align?: 'left' | 'center' | 'right';
+  }
 ) {
   branding ??= loadBranding().catch((error) => {
     branding = undefined;
@@ -49,8 +54,13 @@ export async function drawPhotoBranding(
     const textWidth = font.measureText(name).width;
     const iconSize = size * 1.4;
     const gap = size * 0.18;
+    const totalWidth = iconSize + gap + textWidth;
     const x =
-      (placement?.centerX ?? width / 2) - (iconSize + gap + textWidth) / 2;
+      placement?.align === 'left'
+        ? 0
+        : placement?.align === 'right'
+          ? width - totalWidth
+          : (placement?.centerX ?? width / 2) - totalWidth / 2;
     const y = placement?.top ?? height * 0.965 - iconSize;
     paint.setColorFilter(tint);
     canvas.drawImageRect(
