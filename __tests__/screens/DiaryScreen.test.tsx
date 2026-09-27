@@ -689,6 +689,8 @@ describe('DiaryScreen custom queries', () => {
 
     // AI has its own action; measurements, meals and photos keep More.
     expect(getAllByLabelText('diary.askAI')).toHaveLength(1);
+    fireEvent.press(getAllByLabelText('diary.askAI')[0]);
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('MarkAI');
     expect(getAllByLabelText('measurements.more')).toHaveLength(3);
   });
 

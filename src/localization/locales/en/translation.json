@@ -1066,7 +1066,7 @@
     "emptyDay": "No entries recorded for this day",
     "subtitle": "Keep a track of your habits",
     "macrosSubtitle": "Need help in your optimal metrics?",
-    "askAI": "Ask AI",
+    "askAI": "Ask MarkAI",
     "mealsSubtitle": "Log your every meal, fast",
     "photosSubtitle": "See how the week actually went"
   },
@@ -6126,6 +6126,21 @@
     "date": "Food log date",
     "message": "Message MarkAI",
     "send": "Send",
-    "subtitle": "Macros, training help and free chat"
+    "subtitle": "Macros, training help and free chat",
+    "options": "Chat options",
+    "history": "Conversation history",
+    "thinking": "MarkAI is thinking…",
+    "chooseMode": "Start a new conversation",
+    "newChat": "New chat",
+    "noHistory": "Your conversations will appear here.",
+    "retry": "Not sent. Tap to retry.",
+    "logPrompt": "Help me log my meal: ",
+    "trainingPrompt": "Help me plan my next workout",
+    "lessPrompts": "Fewer ideas",
+    "morePrompts": "More ideas",
+    "analysing": "MarkAI is analysing…",
+    "reviewing": "MarkAI is reviewing…",
+    "patience": "MarkAI is working on your answer…",
+    "usingSkill": "MarkAI is using {{skill}}"
   }
 }

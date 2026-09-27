@@ -448,8 +448,8 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           subtitle={t('diary.macrosSubtitle', {
             defaultValue: 'Need help in your optimal metrics?',
           })}
-          actionLabel={t('diary.askAI', { defaultValue: 'Ask AI' })}
-          onPress={() => navigation.navigate('Macros')}
+          actionLabel={t('diary.askAI', { defaultValue: 'Ask MarkAI' })}
+          onPress={() => navigation.navigate('MarkAI')}
         />
         {/* Directly under the intro, above the body tiles: the day's calories
             and macros are the first thing this screen is asked for. Not gated
