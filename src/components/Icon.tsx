@@ -207,6 +207,11 @@ const ICON_MAP = {
   'device-watch': { sf: 'applewatch', ion: 'watch' },
   'device-phone': { sf: 'iphone', ion: 'phone-portrait' },
   'gps-track': { sf: 'location.fill', ion: 'location' },
+  'route-path': {
+    sf: 'point.topleft.down.to.point.bottomright.curvepath',
+    ion: 'trail-sign-outline',
+  },
+  'photo-pin': { sf: 'mappin.and.ellipse', ion: 'location-outline' },
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;

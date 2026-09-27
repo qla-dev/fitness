@@ -298,7 +298,7 @@ export default function WorkoutPhotoEditor({
           {editable && (
             <ScrollView
               style={styles.tools}
-              contentContainerStyle={{ gap: 12 }}
+              contentContainerStyle={styles.toolsContent}
               showsVerticalScrollIndicator={false}
               pointerEvents={sharing ? 'none' : 'auto'}
             >
@@ -417,7 +417,7 @@ export default function WorkoutPhotoEditor({
                 label={t('recording.editor.routeStyle', {
                   defaultValue: 'Route style',
                 })}
-                icon="gps-track"
+                icon="route-path"
                 actions={actions(
                   [
                     {
@@ -475,7 +475,7 @@ export default function WorkoutPhotoEditor({
                   ]}
                 >
                   <Icon
-                    name="gps-track"
+                    name="photo-pin"
                     size={24}
                     color={options.showCapturePin ? '#FF9F0A' : 'white'}
                   />
@@ -564,7 +564,10 @@ export default function WorkoutPhotoEditor({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   stage: { flex: 1, width: '100%', overflow: 'hidden', borderRadius: 24 },
-  tools: { position: 'absolute', right: 12, top: 16, bottom: 12 },
+  tools: { position: 'absolute', right: 0, top: 4, bottom: 0 },
+  // Leave room inside the scroll viewport for the glass press/hold expansion.
+  // The padding preserves the buttons' original position over the photo.
+  toolsContent: { gap: 12, padding: 12 },
   tool: {
     width: 48,
     height: 48,
