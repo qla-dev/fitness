@@ -1,4 +1,5 @@
 import ProfileSummary from '../components/ProfileSummary';
+import CoinPackagesSheet from '../components/CoinPackagesSheet';
 import {
   onlineRequest,
   updateOnlineAccount,
@@ -76,6 +77,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [showHeaderTitle, setShowHeaderTitle] = useState(false);
 
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
+  const [showCoinPackages, setShowCoinPackages] = useState(false);
   const fitPassSheet = React.useRef<FitPassConnectSheetRef>(null);
 
   const { isConnected } = useServerConnection();
@@ -288,7 +290,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 defaultValue: '100 AI coins when you create your account',
               })}
               onPress={() =>
-                navigation.navigate(onlineSession ? 'MarkAI' : 'OnlineAccount')
+                onlineSession
+                  ? setShowCoinPackages(true)
+                  : navigation.navigate('OnlineAccount')
               }
             />
             <SettingsRow
@@ -541,6 +545,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </ScrollView>
 
       <FitPassConnectSheet ref={fitPassSheet} />
+      <CoinPackagesSheet
+        open={showCoinPackages}
+        onClose={() => setShowCoinPackages(false)}
+      />
       <PrivacyPolicyModal
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}

@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
+import { AppState } from 'react-native';
+import { queryClient } from '../../hooks/queryClient';
 import { localTransaction, markLocalDatabaseDirty } from '../local/database';
 import {
   onlineRequest,
@@ -90,8 +92,9 @@ async function performSync() {
         for (const name of SYNC_COLLECTIONS) {
           const rows = db.tables[name] ?? [];
           const ids = new Set(rows.map((r) => String(r.id)));
+          const localById = new Map(rows.map((r) => [String(r.id), r]));
           for (const remoteRow of remote.tables[name] ?? []) {
-            const local = rows.find((r) => String(r.id) === remoteRow.id);
+            const local = localById.get(remoteRow.id);
             if (local && fingerprint(local) !== fingerprint(remoteRow.data))
               conflict = true;
           }
@@ -197,6 +200,13 @@ export function syncOnline(): Promise<void> {
     .finally(() => {
       running = null;
       useOnlineSync.setState({ busy: false });
+      // Background tasks and partial restores also change the diary. Queries
+      // have infinite staleTime, so invalidate even if a later batch failed.
+      void queryClient
+        .invalidateQueries({
+          refetchType: AppState.currentState === 'active' ? 'active' : 'none',
+        })
+        .catch(() => undefined);
     });
   return running;
 }
