@@ -84,7 +84,6 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
           },
           t
         ),
-        hideWorkoutActions: true,
       });
     },
     [cardExercises, navigation, t]

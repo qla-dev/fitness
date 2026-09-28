@@ -1,5 +1,5 @@
 import { useContext, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -64,9 +64,18 @@ export default function FooterCTA({
   glass = false,
   tint,
   onHeightChange,
+  note,
+  action: customAction,
 }: {
-  label: ReactNode;
-  onPress: () => void;
+  label?: ReactNode;
+  onPress?: () => void;
+  /** A line of small print above the action, pinned with it. */
+  note?: ReactNode;
+  /**
+   * Replaces the standard button, for an action with its own required look
+   * (Sign in with Apple) that still belongs in this footer's slot.
+   */
+  action?: ReactNode;
   disabled?: boolean;
   loading?: boolean;
   /**
@@ -104,10 +113,12 @@ export default function FooterCTA({
 
   const press = () => {
     fireSelectionHaptic();
-    onPress();
+    onPress?.();
   };
 
-  const action = usesGlass ? (
+  const action = customAction ? (
+    customAction
+  ) : usesGlass ? (
     // Tinted rather than clear: the action keeps its accent fill and white
     // label, and the glass only adds the material and the press response.
     <LiquidGlassSurface
@@ -141,7 +152,7 @@ export default function FooterCTA({
     <View
       // The glass capsule separates itself from the content by its own
       // material, so the rule above it is one line too many.
-      className={`px-5 pt-3 bg-background ${usesGlass ? '' : 'border-t border-border'}`}
+      className={`px-5 pt-3 bg-background ${usesGlass || customAction ? '' : 'border-t border-border'}`}
       style={{ paddingBottom: footerCtaRestingPadding(bottomInset) }}
       onLayout={
         onHeightChange
@@ -149,6 +160,9 @@ export default function FooterCTA({
           : undefined
       }
     >
+      {note ? (
+        <Text className="text-text-secondary text-sm mb-3">{note}</Text>
+      ) : null}
       {action}
     </View>
   );

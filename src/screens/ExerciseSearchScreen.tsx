@@ -221,7 +221,6 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
       runNavigationAction(() => {
         navigation.navigate('ExerciseDetail', {
           item,
-          hideWorkoutActions: true,
           selectionReturnKey: returnKey,
         });
       });
@@ -234,7 +233,6 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
       runNavigationAction(() => {
         navigation.navigate('ExerciseDetail', {
           item: exerciseFromExternalItem(item, t),
-          hideWorkoutActions: true,
           // Only importable sources get the Add action; a nutritionix preview
           // is read-only because mobile has no import path for it.
           ...(isImportableExerciseSource(item.source)

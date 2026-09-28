@@ -47,23 +47,27 @@ export default function MarkaiEmptyState({
     },
   ];
   return (
-    <View className="flex-1 items-center justify-center gap-4 py-6">
+    <View className="items-center gap-6">
       <Icon name="sparkles" size={36} />
-      {choices.map((choice) => (
-        <Pressable
-          key={choice.label}
-          disabled={disabled}
-          accessibilityRole="button"
-          onPress={() => onSelect(choice.prompt, choice.mode)}
-          className="bg-surface rounded-2xl px-4 py-3 flex-row items-center gap-3"
-          style={{ maxWidth: '100%' }}
-        >
-          <Icon name={choice.icon} size={20} />
-          <Text className="text-text-primary text-base flex-shrink">
-            {choice.label}
-          </Text>
-        </Pressable>
-      ))}
+      {/* Chips flow into rows as the width allows, rather than a column of
+          one per line. */}
+      <View className="flex-row flex-wrap justify-center gap-3">
+        {choices.map((choice) => (
+          <Pressable
+            key={choice.label}
+            disabled={disabled}
+            accessibilityRole="button"
+            onPress={() => onSelect(choice.prompt, choice.mode)}
+            className="bg-surface rounded-2xl px-4 py-3 flex-row items-center gap-3"
+            style={{ maxWidth: '100%' }}
+          >
+            <Icon name={choice.icon} size={20} />
+            <Text className="text-text-primary text-base flex-shrink">
+              {choice.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }

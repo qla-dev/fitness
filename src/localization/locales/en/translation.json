@@ -5866,6 +5866,9 @@
     "openingWatch": "Opening Apple Watch and waiting for its workout to start...",
     "watchConnection": "Watch connection",
     "connectingWatchName": "Connecting to {{watch}}",
+    "watchChecking": "Checking Apple Watch…",
+    "watchAsleepTitle": "Apple Watch is not responding",
+    "watchAsleepMessage": "Make sure your watch is charged, on your wrist and unlocked, then try again.",
     "watchConnectedName": "{{watch}} is ready",
     "watchConnectionHelp": "Keep your watch nearby. Your workout will start when your watch is ready.",
     "watchConnected": "Apple Watch connected",
@@ -6119,7 +6122,14 @@
     "keepDevice": "Keep this device’s version",
     "keepOnline": "Use the online version",
     "signOut": "Sign out",
-    "profileReward": "100 AI coins when you create your account"
+    "profileReward": "100 AI coins when you create your account",
+    "continueWithApple": "Continue with Apple",
+    "benefitCoinsTitle": "100 free AI coins",
+    "benefitCoinsBody": "Each MarkAI reply costs one coin: estimate a meal from a photo, plan a session or just ask. Logging a food card MarkAI suggests is free.",
+    "benefitSyncTitle": "Your diary follows you",
+    "benefitSyncBody": "Food, workouts and progress sync to your account, so a new phone picks up where the old one stopped.",
+    "benefitPrivateTitle": "Private, offline first",
+    "benefitPrivateBody": "Apple can hide your email, and the diary keeps working without a connection. Sync settings appear once you sign in."
   },
   "markai": {
     "title": "MarkAI",
@@ -6151,6 +6161,10 @@
     "analysing": "MarkAI is analysing…",
     "reviewing": "MarkAI is reviewing…",
     "patience": "MarkAI is working on your answer…",
-    "usingSkill": "MarkAI is using {{skill}}"
+    "usingSkill": "MarkAI is using {{skill}}",
+    "addPhoto": "Add photo",
+    "removePhoto": "Remove photo",
+    "photo": "Photo",
+    "photoFailed": "Could not attach that photo. Please try another one."
   }
 }

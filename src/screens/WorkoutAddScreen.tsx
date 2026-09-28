@@ -531,7 +531,6 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
                   onViewExercise={(exercise) =>
                     navigation.navigate('ExerciseDetail', {
                       item: exercise,
-                      hideWorkoutActions: true,
                     })
                   }
                   isEligibleForPrefill={isEligibleForPrefill}

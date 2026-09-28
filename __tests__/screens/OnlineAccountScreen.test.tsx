@@ -54,8 +54,8 @@ it('closes after authentication without waiting for sync or showing a credit scr
   jest.mocked(signInWithApple).mockResolvedValue(true);
   jest.mocked(syncOnline).mockReturnValue(new Promise(() => {}));
   const screen = render(<OnlineAccountScreen {...props} />);
-  await waitFor(() => expect(screen.getByText('Apple sign-in')).toBeTruthy());
-  fireEvent.press(screen.getByText('Apple sign-in'));
+  await waitFor(() => expect(screen.getByText('Continue with Apple')).toBeTruthy());
+  fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(goBack).toHaveBeenCalledTimes(1));
   expect(syncOnline).toHaveBeenCalledTimes(1);
   expect(screen.queryByText('100 AI coins')).toBeNull();
@@ -65,8 +65,8 @@ it('keeps the sign-in sheet open when authentication fails', async () => {
   goBack.mockClear();
   jest.mocked(signInWithApple).mockRejectedValue(new Error('Sign-in failed'));
   const screen = render(<OnlineAccountScreen {...props} />);
-  await waitFor(() => expect(screen.getByText('Apple sign-in')).toBeTruthy());
-  fireEvent.press(screen.getByText('Apple sign-in'));
+  await waitFor(() => expect(screen.getByText('Continue with Apple')).toBeTruthy());
+  fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(screen.getByText('Sign-in failed')).toBeTruthy());
   expect(goBack).not.toHaveBeenCalled();
 });

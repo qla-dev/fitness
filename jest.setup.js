@@ -833,3 +833,50 @@ jest.mock('@expo/ui/swift-ui/modifiers', () => {
 beforeEach(() => {
   require('./src/services/local/database').resetLocalDatabaseCache();
 });
+
+// iOS 26 scroll edge effect: a native view in the app, plain Views in tests.
+jest.mock('@bsky.app/expo-scroll-edge-effect', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    ScrollEdgeEffectProvider: ({ children }) => children,
+    useScrollEdgeEffectRef: () => () => undefined,
+    ScrollEdgeEffect: ({ edge: _edge, effect: _effect, ...props }) =>
+      React.createElement(View, props),
+  };
+});
+
+// expo-sqlite on Node's built-in SQLite: each open is a fresh in-memory
+// database, so SQL runs for real in tests without the native module.
+jest.mock('expo-sqlite', () => {
+  const { DatabaseSync } = require('node:sqlite');
+  const plain = (row) => (row ? { ...row } : null);
+  const wrap = (db) => ({
+    execAsync: async (sql) => {
+      db.exec(sql);
+    },
+    runAsync: async (sql, ...params) => {
+      const result = db.prepare(sql).run(...params.flat());
+      return {
+        changes: Number(result.changes),
+        lastInsertRowId: Number(result.lastInsertRowid),
+      };
+    },
+    getAllAsync: async (sql, ...params) =>
+      db.prepare(sql).all(...params.flat()).map(plain),
+    getFirstAsync: async (sql, ...params) =>
+      plain(db.prepare(sql).get(...params.flat())),
+    withTransactionAsync: async (task) => {
+      db.exec('BEGIN');
+      try {
+        await task();
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    },
+    closeAsync: async () => db.close(),
+  });
+  return { openDatabaseAsync: async () => wrap(new DatabaseSync(':memory:')) };
+});

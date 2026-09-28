@@ -293,16 +293,18 @@ export default function AddHubScreen() {
   // from pointing a camera at one. Workouts are not here — this screen is the
   // food dashboard, and exercise has the Activities tab.
   //
-  // AI leads, in the accent: it is the quickest way to log a meal, so it takes
+  // MarkAI leads, in the accent: it is the quickest way to log a meal, so it takes
   // the first card and the one colour that marks the primary action. Every
   // other card gets a category colour of its own, so no two read as related.
   const headline: HeadlineAction[] = [
     {
       key: 'ai',
-      label: t('addHub.logWithAi', { defaultValue: 'Log with AI' }),
+      // Opens the chat, where a meal photo is one attachment away, rather
+      // than jumping straight into the camera.
+      label: t('markai.title', { defaultValue: 'MarkAI' }),
       icon: 'sparkles',
       tint: accent,
-      onPress: actions.aiMealScan,
+      onPress: () => navigation.navigate('MarkAI'),
     },
     {
       key: 'food',

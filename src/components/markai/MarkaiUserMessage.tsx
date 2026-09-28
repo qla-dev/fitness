@@ -1,13 +1,20 @@
-import { Pressable, Text } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Icon from '../Icon';
 
 export default function MarkaiUserMessage({
   text,
+  imageUri,
+  hasImage = false,
   pending = false,
   failed = false,
   onRetry,
 }: {
   text: string;
+  /** The photo sent from this device. */
+  imageUri?: string;
+  /** A photo was sent but only its flag came back with the history. */
+  hasImage?: boolean;
   pending?: boolean;
   failed?: boolean;
   onRetry?: () => void;
@@ -28,9 +35,37 @@ export default function MarkaiUserMessage({
         opacity: pending ? 0.65 : 1,
       }}
     >
-      <Text style={{ color: '#FFFFFF', fontSize: 18, lineHeight: 25 }}>
-        {text}
-      </Text>
+      {imageUri ? (
+        <Image
+          source={{ uri: imageUri }}
+          accessibilityLabel={t('markai.photo', { defaultValue: 'Photo' })}
+          style={{
+            width: 200,
+            height: 200,
+            borderRadius: 12,
+            marginBottom: text ? 8 : 0,
+          }}
+        />
+      ) : hasImage ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: text ? 6 : 0,
+          }}
+        >
+          <Icon name="photo-library" size={16} color="#FFFFFF" />
+          <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>
+            {t('markai.photo', { defaultValue: 'Photo' })}
+          </Text>
+        </View>
+      ) : null}
+      {text ? (
+        <Text style={{ color: '#FFFFFF', fontSize: 18, lineHeight: 25 }}>
+          {text}
+        </Text>
+      ) : null}
       {failed ? (
         <Text style={{ color: '#FFFFFF', fontSize: 12, marginTop: 6 }}>
           {t('markai.retry', { defaultValue: 'Not sent. Tap to retry.' })}

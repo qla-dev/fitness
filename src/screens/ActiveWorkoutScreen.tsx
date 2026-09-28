@@ -587,7 +587,6 @@ function ActiveWorkoutScreen({ navigation, route }: Props) {
       runNavigationAction(() => {
         navigation.navigate('ExerciseDetail', {
           item: exercise,
-          hideWorkoutActions: true,
         });
       });
     },

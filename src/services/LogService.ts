@@ -1,5 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
+import {
+  countLogsBetween,
+  deleteAllLogs,
+  deleteLogsBefore,
+  insertLogs,
+  readLogs,
+  _resetLogDatabaseForTesting,
+} from './logDatabase';
 
 // Unified status type (replaces both LogLevel and LogStatus)
 export type LogStatus = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR';
@@ -33,7 +41,8 @@ export interface LogSummary {
   ERROR: number;
 }
 
-const LOG_KEY = 'app_logs';
+/** Where entries lived before they moved to SQLite; imported once, then removed. */
+const LEGACY_LOG_KEY = 'app_logs';
 const LOG_CAPTURE_LEVEL_KEY = 'log_capture_level';
 const LOG_VIEW_FILTER_KEY = 'log_view_filter';
 const LOG_VIEW_SELECTED_STATUSES_KEY = 'log_view_selected_statuses';
@@ -87,14 +96,9 @@ let flushPromise: Promise<void> | null = null;
 // yet written).
 let getViewPromise: Promise<LogThreshold> | null = null;
 let consecutiveFlushFailures = 0;
-// In-memory mirror of the persisted log array. Read from storage once, then
-// maintained by doFlush; null means "not loaded yet".
-let persistedLogs: LogEntry[] | null = null;
-let persistedLoadPromise: Promise<LogEntry[]> | null = null;
-// Set when the load had to normalize legacy on-disk entries (SUCCESS→INFO,
-// level→status). The mirror hands out already-normalized entries, so pruneLogs
-// can no longer detect that by re-inspecting them and relies on this instead.
-let persistedNeedsRewrite = false;
+// The one-time import of the old AsyncStorage array, shared by every first
+// caller in a process.
+let legacyImport: Promise<void> | null = null;
 let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
   null;
 
@@ -136,29 +140,43 @@ const migrateLogEntry = (
 };
 
 /**
- * The persisted log array, read from storage at most once per process.
- * Concurrent first callers share one read.
+ * Moves entries written by older builds (one AsyncStorage array, newest
+ * first) into the log database, normalizing legacy shapes on the way, then
+ * deletes the array. Runs at most once per process; a failure leaves the
+ * array in place for the next launch.
  */
-const loadPersistedLogs = async (): Promise<LogEntry[]> => {
-  if (persistedLogs) return persistedLogs;
-  if (!persistedLoadPromise) {
-    persistedLoadPromise = (async () => {
-      const raw = await AsyncStorage.getItem(LOG_KEY);
-      const parsed: StoredLogEntry[] = raw ? JSON.parse(raw) : [];
-      const migrated = (Array.isArray(parsed) ? parsed : []).map(
-        migrateLogEntry
+const importLegacyLogs = (): Promise<void> => {
+  if (!legacyImport) {
+    legacyImport = (async () => {
+      const raw = await AsyncStorage.getItem(LEGACY_LOG_KEY);
+      if (raw === null) return;
+      let parsed: unknown = [];
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        /* Unreadable old logs are not worth keeping the key around for. */
+      }
+      const entries = (Array.isArray(parsed) ? parsed : []).map(
+        (entry: StoredLogEntry) => migrateLogEntry(entry).entry
       );
-      persistedNeedsRewrite = migrated.some((m) => m.changed);
-      persistedLogs = migrated.map((m) => m.entry);
-      return persistedLogs;
-    })().finally(() => {
-      persistedLoadPromise = null;
+      await insertLogs(entries, MAX_LOG_ENTRIES);
+      await AsyncStorage.removeItem(LEGACY_LOG_KEY);
+    })().catch((error) => {
+      legacyImport = null;
+      throw error;
     });
   }
-  return persistedLoadPromise;
+  return legacyImport;
 };
 
+/** Statuses at or above a threshold's severity, e.g. no_debug → ERROR…INFO. */
+const statusesFor = (threshold: LogThreshold): LogStatus[] =>
+  ALL_LOG_STATUSES.filter(
+    (status) => STATUS_SEVERITY[status] <= THRESHOLD_LEVEL[threshold]
+  );
+
 /**
+ * Flushes the write buffer to the log database./**
  * Flushes the write buffer to AsyncStorage.
  * Serializes concurrent flush calls via flushPromise.
  */
@@ -184,22 +202,12 @@ const flushBuffer = async (): Promise<void> => {
 
   const doFlush = async (): Promise<void> => {
     try {
-      const existingLogs = await loadPersistedLogs();
-      const merged = [...entriesToFlush, ...existingLogs].slice(
-        0,
-        MAX_LOG_ENTRIES
-      );
-      // Kept in memory so the next flush does not re-read and re-parse the
-      // whole store. A burst of sync errors used to flush every 20 entries,
-      // each flush parsing and re-serializing the full ~240 KB of logs on the
-      // JS thread — hundreds of milliseconds of blocking per burst, which is
-      // itself enough to make taps queue up (#2191).
-      // Written first, mirrored second: the catch below requeues entriesToFlush
-      // on failure, so a mirror updated ahead of a rejected write would already
-      // contain them and the next flush would persist them twice.
-      await AsyncStorage.setItem(LOG_KEY, JSON.stringify(merged));
-      persistedLogs = merged;
-      persistedNeedsRewrite = false;
+      // Rows, not a rewritten array: a burst of sync errors used to parse and
+      // re-serialize the full ~240 KB of logs on every 20 entries (#2191).
+      // One transaction, so a failed flush inserts nothing and the requeue
+      // below cannot persist an entry twice.
+      await importLegacyLogs();
+      await insertLogs(entriesToFlush, MAX_LOG_ENTRIES);
       consecutiveFlushFailures = 0;
     } catch (error) {
       consecutiveFlushFailures++;
@@ -274,35 +282,22 @@ export const addLog = async (
 };
 
 /**
- * Clears logs older than a specified number of days and rewrites any
- * stored entries that need legacy-format normalization (SUCCESS→INFO,
- * level→status).
+ * Clears logs older than a specified number of days. Legacy-format
+ * entries (SUCCESS→INFO, level→status) are normalized when imported.
  */
 export const pruneLogs = async (daysToKeep: number = 3): Promise<void> => {
   try {
     await flushBuffer();
-
-    const logs = await loadPersistedLogs();
-    // loadPersistedLogs already normalized these; it reports whether the copy
-    // still on disk differs and therefore needs rewriting.
-    const didNormalize = persistedNeedsRewrite;
+    await importLegacyLogs();
 
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
     cutoffDate.setHours(0, 0, 0, 0); // Set to beginning of the day
 
-    const filteredLogs = logs.filter((log) => {
-      const logDate = new Date(log.timestamp);
-      return logDate >= cutoffDate;
-    });
-
-    const removedCount = logs.length - filteredLogs.length;
-    if (removedCount !== 0 || didNormalize) {
-      persistedLogs = filteredLogs;
-      persistedNeedsRewrite = false;
-      await AsyncStorage.setItem(LOG_KEY, JSON.stringify(filteredLogs));
+    const removedCount = await deleteLogsBefore(cutoffDate.toISOString());
+    if (removedCount !== 0) {
       console.log(
-        `[LogService] Pruned logs: removed ${removedCount} old entries${didNormalize ? ' and normalized legacy entries' : ''}.`
+        '[LogService] Pruned logs: removed ' + removedCount + ' old entries.'
       );
     }
   } catch (error) {
@@ -321,19 +316,10 @@ export const getLogs = async (
 ): Promise<LogEntry[]> => {
   try {
     await flushBuffer();
-
-    let logs: LogEntry[] = await loadPersistedLogs();
+    await importLegacyLogs();
 
     const viewFilter = filter || (await getViewFilter());
-    const viewThreshold = THRESHOLD_LEVEL[viewFilter];
-
-    logs = logs.filter((log) => {
-      const statusSeverity =
-        STATUS_SEVERITY[log.status] ?? STATUS_SEVERITY['INFO'];
-      return statusSeverity <= viewThreshold;
-    });
-
-    return logs.slice(offset, offset + limit);
+    return await readLogs(statusesFor(viewFilter), offset, limit);
   } catch (error) {
     console.error('Failed to get logs', error);
     return [];
@@ -359,9 +345,9 @@ export const clearLogs = async (): Promise<void> => {
       await flushPromise;
       writeBuffer = [];
     }
-    persistedLogs = [];
-    persistedNeedsRewrite = false;
-    await AsyncStorage.removeItem(LOG_KEY);
+    await deleteAllLogs();
+    // Not imported yet (a clear before anything was read): drop it too.
+    await AsyncStorage.removeItem(LEGACY_LOG_KEY);
     console.log('[LogService] All logs cleared.');
   } catch (error) {
     console.error('Failed to clear logs', error);
@@ -562,38 +548,27 @@ export const getLogSummary = async (
 ): Promise<LogSummary> => {
   try {
     await flushBuffer();
-
-    const logs: LogEntry[] = await loadPersistedLogs();
-
-    const summary: LogSummary = {
-      DEBUG: 0,
-      INFO: 0,
-      WARNING: 0,
-      ERROR: 0,
-    };
+    await importLegacyLogs();
 
     const viewFilter = filter || (await getViewFilter());
-    const viewThreshold = THRESHOLD_LEVEL[viewFilter];
 
-    // Filter logs for today
+    // Today in local time, as the ISO range the rows are stamped in.
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    logs.forEach((log) => {
-      const statusSeverity =
-        STATUS_SEVERITY[log.status] ?? STATUS_SEVERITY['INFO'];
-      if (statusSeverity > viewThreshold) {
-        return;
-      }
-
-      const logDate = new Date(log.timestamp);
-      logDate.setHours(0, 0, 0, 0);
-
-      if (logDate.getTime() === today.getTime()) {
-        summary[log.status]++;
-      }
-    });
-    return summary;
+    const counts = await countLogsBetween(
+      statusesFor(viewFilter),
+      today.toISOString(),
+      tomorrow.toISOString()
+    );
+    return {
+      DEBUG: counts.DEBUG ?? 0,
+      INFO: counts.INFO ?? 0,
+      WARNING: counts.WARNING ?? 0,
+      ERROR: counts.ERROR ?? 0,
+    };
   } catch (error) {
     console.error('Failed to get log summary', error);
     return { DEBUG: 0, INFO: 0, WARNING: 0, ERROR: 0 };
@@ -602,7 +577,7 @@ export const getLogSummary = async (
 
 /**
  * Initializes the log service. Call once at app startup.
- * Warms the filter caches, prunes + normalizes old logs, and registers
+ * Warms the filter caches, imports any pre-SQLite logs, prunes, and registers
  * an AppState listener to flush the buffer when the app backgrounds.
  */
 export const initLogService = async (): Promise<void> => {
@@ -635,9 +610,8 @@ export const _resetForTesting = (): void => {
   flushPromise = null;
   getViewPromise = null;
   consecutiveFlushFailures = 0;
-  persistedLogs = null;
-  persistedLoadPromise = null;
-  persistedNeedsRewrite = false;
+  legacyImport = null;
+  _resetLogDatabaseForTesting();
   appStateSubscription?.remove();
   appStateSubscription = null;
 };

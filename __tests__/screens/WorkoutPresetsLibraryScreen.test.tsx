@@ -12,6 +12,17 @@ import {
 } from '../../src/stores/appPreferencesStore';
 import { pressHeaderMenuAction } from './helpers/nativeHeaderTestUtils';
 
+jest.mock('../../src/services/programAccess', () => ({
+  programAccessScope: jest.fn(async () => 'local'),
+  readProgramAccess: jest.fn(async (_scope: string, presetId: string) =>
+    presetId === 'store-1'
+      ? { programId: 'glutes', startedAt: '', expiresAt: '2099-01-01' }
+      : null
+  ),
+}));
+jest.mock('../../src/constants/exercisePrograms', () => ({
+  getProgramById: (id: string) => (id === 'glutes' ? { id } : undefined),
+}));
 jest.mock('../../src/hooks', () => ({
   useServerConnection: jest.fn(),
   useWorkoutPresetsLibrary: jest.fn(),
@@ -168,6 +179,31 @@ describe('WorkoutPresetsLibraryScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetDetail', {
       preset,
     });
+  });
+
+  it('opens details from Start now instead of starting from the list', async () => {
+    const own = createPreset('p-1', 'Push Day', 2);
+    const store = createPreset('store-1', 'Glutes · Week 1', 4);
+    mockUseWorkoutPresetsLibrary.mockReturnValue(
+      buildHookReturn({ presets: [own, store] })
+    );
+    const screen = renderScreen();
+    await waitFor(() => expect(screen.getByText('Push Day')).toBeTruthy());
+    expect(screen.queryByTestId(/^share-status-/)).toBeNull();
+
+    const [ownStart, storeStart] = screen.getAllByLabelText('Start now');
+    fireEvent.press(ownStart);
+    await waitFor(() =>
+      expect(navigation.navigate).toHaveBeenCalledWith('WorkoutPresetDetail', {
+        preset: own,
+      })
+    );
+    fireEvent.press(storeStart);
+    await waitFor(() =>
+      expect(navigation.navigate).toHaveBeenCalledWith('ExerciseProgram', {
+        programId: 'glutes',
+      })
+    );
   });
 
   it('passes the typed term through to useWorkoutProgramsLibrary', async () => {

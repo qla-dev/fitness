@@ -24,6 +24,8 @@ private enum WatchMessageKind {
   static let workoutState = "workoutState"
   static let start = "start"
   static let stop = "stop"
+  /// The watch's answer to a wake-up probe launched through HealthKit.
+  static let probeReply = "probeReply"
 }
 
 /// Owns the phone side of the WCSession pair.
@@ -78,6 +80,53 @@ private final class WatchLink: NSObject {
       self?.completeGoalRequest(id: id, success: false)
     }
   }
+  private var probeCompletions: [(Bool) -> Void] = []
+  private var probeTimeout: DispatchWorkItem?
+
+  /// Whether the watch is on and answering right now. Paired and installed
+  /// stay true for a watch whose battery died, and isReachable alone is false
+  /// for a watch on the wrist with our app closed, so neither can say this.
+  /// The probe asks HealthKit to launch the watch app with a marker
+  /// configuration and waits for the app to answer.
+  func probe(completion: @escaping (Bool) -> Void) {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+      WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else {
+      completion(false)
+      return
+    }
+    // Already talking, or a real launch is under way: the watch is there.
+    if isReachable || startCompletion != nil {
+      completion(true)
+      return
+    }
+    probeCompletions.append(completion)
+    guard probeCompletions.count == 1 else { return }
+    let timeout = DispatchWorkItem { [weak self] in self?.finishProbe(false) }
+    probeTimeout = timeout
+    DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeout)
+    // "Wake up and answer", not "start a workout": no catalogue sport uses
+    // .other with an unknown location, so the watch can tell the two apart.
+    // Kept in sync with WatchAppDelegate in targets/watch/qlafitWatchApp.swift.
+    let configuration = HKWorkoutConfiguration()
+    configuration.activityType = .other
+    configuration.locationType = .unknown
+    healthStore.startWatchApp(with: configuration) { [weak self] success, error in
+      NSLog("[Watch probe] HealthKit result: %@, %@", success ? "launched" : "failed",
+        error?.localizedDescription ?? "no error")
+      // A launch request is not an answer; only a failure ends the probe early.
+      if !success { DispatchQueue.main.async { self?.finishProbe(false) } }
+    }
+  }
+
+  private func finishProbe(_ answered: Bool) {
+    guard !probeCompletions.isEmpty else { return }
+    probeTimeout?.cancel()
+    probeTimeout = nil
+    let completions = probeCompletions
+    probeCompletions = []
+    completions.forEach { $0(answered) }
+  }
+
   private var launchTimeout: DispatchWorkItem?
   private var launchAttempts = 0
   private var launchedAttempt = 0
@@ -248,6 +297,8 @@ private final class WatchLink: NSObject {
 
   fileprivate func handle(message: [String: Any]) {
     receiveIdentity(message)
+    // Anything from the watch means it is on; a probe reply says only that.
+    finishProbe(true)
     switch message[WatchMessageKey.kind] as? String {
     case WatchMessageKind.heartRate:
       guard let bpm = message[WatchMessageKey.heartRate] as? Double else { return }
@@ -272,6 +323,7 @@ private final class WatchLink: NSObject {
 
   fileprivate func reachabilityDidChange() {
     emitReachability()
+    if isReachable { finishProbe(true) }
     launchIfReady()
     flushDashboard()
     flushPrograms()
@@ -326,6 +378,11 @@ extension WatchLink: WCSessionDelegate {
     DispatchQueue.main.async {
       if message["kind"] as? String == "addMeasurement" {
         self.requestMeasurement(message, reply: replyHandler)
+        return
+      }
+      if message["kind"] as? String == WatchMessageKind.probeReply {
+        self.handle(message: message)
+        replyHandler([:])
         return
       }
       if message["kind"] as? String == "setNutrientGoal" {
@@ -391,6 +448,10 @@ public final class QlaFitWatchLinkModule: Module {
         if let error { promise.reject("WATCH_LAUNCH_FAILED", error.localizedDescription) }
         else { promise.resolve(nil) }
       }
+    }.runOnQueue(.main)
+
+    AsyncFunction("probeWatch") { (promise: Promise) in
+      self.link.probe { answered in promise.resolve(answered) }
     }.runOnQueue(.main)
 
     AsyncFunction("stopWorkout") {

@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   Alert,
   Linking,
@@ -23,7 +29,9 @@ import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
 import { useUpsertCheckIn } from '../hooks/useUpsertCheckIn';
 import {
+  checkWatchAwake,
   getSensorSnapshot,
+  isWatchAwake,
   setWheelCircumference,
   subscribeSensors,
 } from '../services/recording/sensors';
@@ -163,7 +171,48 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     sensors.watchAvailable ||
     sensors.watchStreaming ||
     sensors.heartRateSource === 'watch';
-  const watchEnabled = watchChoice ?? watchConnected;
+  // Paired and installed stay true after the watch's battery dies, so the
+  // chip only turns on for a watch that has answered. One already talking
+  // counts; otherwise tapping the chip wakes the watch app and waits for it.
+  const [watchCheck, setWatchCheck] = useState<
+    'unknown' | 'checking' | 'awake' | 'asleep'
+  >(() => (isWatchAwake() ? 'awake' : 'unknown'));
+  const watchAwake =
+    watchCheck === 'awake' ||
+    sensors.watchStreaming ||
+    sensors.heartRateSource === 'watch';
+  const watchUsable = watchConnected && watchAwake;
+  const watchEnabled = (watchChoice ?? watchUsable) && watchUsable;
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    []
+  );
+  const toggleWatch = () => {
+    if (watchEnabled) return setWatchEnabled(false);
+    if (watchAwake) return setWatchEnabled(true);
+    if (watchCheck === 'checking') return;
+    setWatchCheck('checking');
+    void checkWatchAwake().then((answered) => {
+      if (!mounted.current) return;
+      setWatchCheck(answered ? 'awake' : 'asleep');
+      if (answered) {
+        setWatchEnabled(true);
+        return;
+      }
+      Alert.alert(
+        t('workoutSetup.watchAsleepTitle', {
+          defaultValue: 'Apple Watch is not responding',
+        }),
+        t('workoutSetup.watchAsleepMessage', {
+          defaultValue:
+            'Make sure your watch is charged, on your wrist and unlocked, then try again.',
+        })
+      );
+    });
+  };
   // Wheel size only means anything on a bike, and only a bike sensor uses
   // it: it is what turns wheel revolutions into distance.
   const [wheelEdit, setWheelEdit] = useState<string | null>(null);
@@ -420,7 +469,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       );
       return;
     }
-    if (watchConnected && !watchEnabled) {
+    if (watchUsable && !watchEnabled) {
       Alert.alert(
         t('workoutSetup.noWatchTitle', {
           defaultValue: 'Start without your watch?',
@@ -603,17 +652,21 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 value: 'watch',
                 // The label describes whether this workout will use the watch.
                 label:
-                  watchConnected && watchEnabled
-                    ? t('workoutSetup.watchConnected', {
-                        defaultValue: 'Apple Watch connected',
+                  watchCheck === 'checking'
+                    ? t('workoutSetup.watchChecking', {
+                        defaultValue: 'Checking Apple Watch…',
                       })
-                    : t('workoutSetup.watchDisconnected', {
-                        defaultValue: 'Apple Watch not connected',
-                      }),
+                    : watchEnabled
+                      ? t('workoutSetup.watchConnected', {
+                          defaultValue: 'Apple Watch connected',
+                        })
+                      : t('workoutSetup.watchDisconnected', {
+                          defaultValue: 'Apple Watch not connected',
+                        }),
                 icon: 'device-watch',
                 on: watchEnabled,
-                // Nothing to turn on until one is paired.
-                disabled: !watchConnected && !watchEnabled,
+                // Nothing to turn on until one is paired, or while asking it.
+                disabled: !watchConnected || watchCheck === 'checking',
               },
               {
                 value: 'sensors',
@@ -645,7 +698,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 }
                 return setGpsEnabled(false);
               }
-              setWatchEnabled((on) => !(on ?? watchConnected));
+              toggleWatch();
             }}
           />
         </View>

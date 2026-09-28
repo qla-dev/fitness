@@ -39,6 +39,8 @@ interface WatchLinkNativeModule {
     startAt?: number
   ): Promise<void>;
   stopWorkout(): Promise<void>;
+  /** Missing on binaries built before the probe existed. */
+  probeWatch?(): Promise<boolean>;
   updateDashboard(snapshot: WatchDashboardSnapshot): Promise<void>;
   updateMetrics(snapshot: WatchWorkoutMetrics): Promise<void>;
   addListener(
@@ -214,6 +216,18 @@ export async function startWatchWorkout(
   options?: { sportId?: string; startAt?: number }
 ): Promise<void> {
   await native?.startWorkout(sport, options?.sportId, options?.startAt);
+}
+
+/**
+ * Whether the watch is on and answering. Paired and installed stay true for a
+ * watch whose battery ran out; this wakes the watch app (without starting a
+ * workout) and resolves true only once it answers, within about ten seconds.
+ * An older binary without the probe falls back to live reachability.
+ */
+export async function probeWatch(): Promise<boolean> {
+  if (!native) return false;
+  if (!native.probeWatch) return native.isReachable;
+  return native.probeWatch();
 }
 
 export async function stopWatchWorkout(): Promise<void> {

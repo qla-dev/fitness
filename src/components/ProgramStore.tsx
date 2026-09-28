@@ -114,12 +114,17 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
   const { t } = useTranslation();
   const accents = useProgramAccents();
   const installed = useInstalledPrograms();
-  // The label is the only installed-state cue on a row; the tap still opens
-  // the purchase sheet, which explains a second copy before creating one.
+  // An added program has nothing left to buy: its button reads "Start now"
+  // and opens the program page, whose own Start now begins this week.
   const startLabel = (program: ExerciseProgram) =>
     installed.has(program.id)
-      ? t('programs.added', { defaultValue: 'Added' })
+      ? t('presetLibrary.startNow', { defaultValue: 'Start now' })
       : t('programs.start', { defaultValue: 'Start' });
+  const pressStart = (program: ExerciseProgram) => {
+    fireSelectionHaptic();
+    if (installed.has(program.id)) onSelectProgram(program);
+    else onStartProgram(program);
+  };
   const { width } = useWindowDimensions();
   // The chips live in the screen header now, so the filter is a prop; the
   // internal state is only the fallback for a caller that renders no chips.
@@ -258,10 +263,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
             defaultValue: 'Start {{name}}',
             name: program.name,
           })}
-          onPress={() => {
-            fireSelectionHaptic();
-            onStartProgram(program);
-          }}
+          onPress={() => pressStart(program)}
           className="h-full px-4 items-center justify-center"
         >
           <Text className="text-accent-primary text-sm font-bold">
@@ -439,10 +441,7 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
                           defaultValue: 'Start {{name}}',
                           name: program.name,
                         })}
-                        onPress={() => {
-                          fireSelectionHaptic();
-                          onStartProgram(program);
-                        }}
+                        onPress={() => pressStart(program)}
                         className="h-full px-4 items-center justify-center"
                       >
                         <Text className="text-white text-sm font-bold">

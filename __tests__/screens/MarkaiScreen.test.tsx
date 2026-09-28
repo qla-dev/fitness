@@ -8,6 +8,7 @@ import { onlineRequest } from '../../src/services/online/account';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 beforeEach(async () => {
+  mockSignedIn = true;
   await AsyncStorage.clear();
   mockNavigate.mockClear();
   jest.mocked(onlineRequest).mockReset();
@@ -23,6 +24,7 @@ Object.assign(Reanimated.default, { Text });
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  SafeAreaInsetsContext: require('react').createContext(null),
 }));
 
 const mockNavigate = jest.fn();
@@ -42,9 +44,20 @@ jest.mock('../../src/components/CustomModal', () => ({
   __esModule: true,
   default: () => null,
 }));
+let mockSignedIn = true;
+jest.mock('../../src/hooks/useAppleSignIn', () => ({
+  useAppleSignIn: () => ({
+    available: true,
+    busy: false,
+    error: null,
+    signIn: jest.fn(),
+  }),
+}));
 jest.mock('../../src/services/online/account', () => ({
   useOnlineAccount: (selector: (state: unknown) => unknown) =>
-    selector({ session: { user: { id: 'account', ai_coins: 100 } } }),
+    selector({
+      session: mockSignedIn ? { user: { id: 'account', ai_coins: 100 } } : null,
+    }),
   onlineRequest: jest.fn(),
   updateOnlineAccount: jest.fn().mockResolvedValue(undefined),
   OnlineError: class OnlineError extends Error {},
@@ -56,18 +69,27 @@ jest.mock('../../src/components/markai/MarkaiComposer', () => ({
     value,
     onChangeText,
     onSend,
+    onAttach,
+    attachment,
     disabled,
     busy,
   }: {
     value: string;
     onChangeText: (value: string) => void;
     onSend: () => void;
+    onAttach: (source: 'camera' | 'library') => void;
+    attachment?: string | null;
     disabled: boolean;
     busy: boolean;
   }) => {
-    const { TextInput, Button, View } = require('react-native');
+    const { TextInput, Button, View, Text } = require('react-native');
     return (
       <View>
+        <Button
+          title="Choose from Library"
+          onPress={() => onAttach('library')}
+        />
+        {attachment ? <Text>{'attached:' + attachment}</Text> : null}
         <TextInput
           accessibilityLabel="Message MarkAI"
           value={value}
@@ -77,6 +99,18 @@ jest.mock('../../src/components/markai/MarkaiComposer', () => ({
       </View>
     );
   },
+}));
+
+jest.mock('../../src/utils/pickImage', () => ({
+  pickImageFromCamera: jest.fn(),
+  pickImagesFromLibrary: jest.fn(async () => [{ uri: 'file:///meal.jpg' }]),
+}));
+jest.mock('../../src/services/online/markai', () => ({
+  ...jest.requireActual('../../src/services/online/markai'),
+  prepareMarkaiImage: jest.fn(async () => ({
+    uri: 'file:///meal-small.jpg',
+    data: 'data:image/jpeg;base64,AAAA',
+  })),
 }));
 
 const reply = {
@@ -174,4 +208,40 @@ it('shows an optimistic message and thinking, retains failures, and retries the 
   expect(jest.mocked(onlineRequest).mock.calls[1]).toEqual(
     jest.mocked(onlineRequest).mock.calls[0]
   );
+});
+
+it('sends a library photo with no text and shows it in the chat', async () => {
+  jest.mocked(onlineRequest).mockResolvedValueOnce(reply);
+  const screen = render(<MarkaiScreen />);
+  await waitFor(() => expect(screen.getByText('Send')).toBeTruthy());
+  await act(async () => {
+    fireEvent.press(screen.getByText('Choose from Library'));
+  });
+  expect(screen.getByText('attached:file:///meal-small.jpg')).toBeTruthy();
+  await act(async () => {
+    fireEvent.press(screen.getByText('Send'));
+  });
+  expect(onlineRequest).toHaveBeenLastCalledWith(
+    '/markai/messages',
+    expect.objectContaining({ image: 'data:image/jpeg;base64,AAAA' })
+  );
+  expect(jest.mocked(onlineRequest).mock.lastCall?.[1]).not.toHaveProperty(
+    'prompt'
+  );
+  await waitFor(() =>
+    expect(screen.getByText('Here is your answer.')).toBeTruthy()
+  );
+  expect(screen.getByLabelText('Photo')).toBeTruthy();
+  expect(screen.queryByText(/^attached:/)).toBeNull();
+});
+
+it('signed out, shows a still screen with sign-in pinned in the footer', () => {
+  mockSignedIn = false;
+  const screen = render(<MarkaiScreen />);
+  expect(
+    screen.UNSAFE_queryByType(require('react-native').ScrollView)
+  ).toBeNull();
+  expect(screen.getByText('Sign in with Apple')).toBeTruthy();
+  expect(screen.getByText(/Sign in to get 100 AI coins/)).toBeTruthy();
+  expect(screen.getByText('Training help')).toBeTruthy();
 });

@@ -29,6 +29,7 @@ enum WatchMessageKind {
   static let workoutState = "workoutState"
   static let start = "start"
   static let stop = "stop"
+  static let probeReply = "probeReply"
 }
 
 /// Metadata the watch stamps on the HKWorkout it saves, read back by the
@@ -170,6 +171,25 @@ final class WorkoutManager: NSObject, ObservableObject {
     }, errorHandler: { _ in
       Task { @MainActor in completion(false) }
     })
+  }
+
+  /// Set when the phone woke this app only to learn whether the watch is on.
+  private var probeAnswerPending = false
+
+  /// Answer the phone's wake-up probe. No HealthKit session is started: the
+  /// system launched us with the probe configuration, not a workout.
+  func answerProbe() {
+    probeAnswerPending = true
+    flushProbeAnswer()
+  }
+
+  private func flushProbeAnswer() {
+    let connection = WCSession.default
+    guard probeAnswerPending, connection.activationState == .activated,
+      connection.isReachable else { return }
+    probeAnswerPending = false
+    send([WatchMessageKey.kind: WatchMessageKind.probeReply,
+      "watchName": WKInterfaceDevice.current().name])
   }
 
   private func activateConnectivity() {
@@ -682,6 +702,7 @@ extension WorkoutManager: WCSessionDelegate {
       receiveDashboard(session.receivedApplicationContext)
       try? session.updateApplicationContext(["watchName": WKInterfaceDevice.current().name])
       if phoneWorkoutRequested { requestPhoneWorkout() }
+      flushProbeAnswer()
     }
   }
 
@@ -693,6 +714,7 @@ extension WorkoutManager: WCSessionDelegate {
     Task { @MainActor in
       try? session.updateApplicationContext(["watchName": WKInterfaceDevice.current().name])
       if phoneWorkoutRequested { requestPhoneWorkout() }
+      flushProbeAnswer()
       sendState()
     }
   }

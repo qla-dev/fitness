@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   Pressable,
   Text,
@@ -15,6 +16,8 @@ import { useKeyboardHandler } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
+import { MenuView } from '@expo/ui/community/menu';
+import { ScrollEdgeEffect } from '@bsky.app/expo-scroll-edge-effect';
 import Icon from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 
@@ -43,6 +46,10 @@ export default function MarkaiComposer({
   onChangeText,
   onSend,
   onOptions,
+  onAttach,
+  attachment,
+  attaching = false,
+  onRemoveAttachment,
   modeLabel,
   busy,
   disabled,
@@ -52,6 +59,12 @@ export default function MarkaiComposer({
   onChangeText: (text: string) => void;
   onSend: () => void;
   onOptions: () => void;
+  /** The same camera / library choice the progress photos offer. */
+  onAttach: (source: 'camera' | 'library') => void;
+  /** The attached photo's local uri, previewed above the field. */
+  attachment?: string | null;
+  attaching?: boolean;
+  onRemoveAttachment: () => void;
   modeLabel: string;
   busy: boolean;
   disabled: boolean;
@@ -70,7 +83,11 @@ export default function MarkaiComposer({
   const lift = useAnimatedStyle(() => ({
     bottom: Math.max(insets.bottom, keyboard.value),
   }));
-  const ready = value.trim().length > 0 && !busy && !disabled;
+  const ready =
+    (value.trim().length > 0 || !!attachment) &&
+    !busy &&
+    !disabled &&
+    !attaching;
   const options = () => {
     input.current?.blur();
     Keyboard.dismiss();
@@ -81,7 +98,14 @@ export default function MarkaiComposer({
       style={[{ position: 'absolute', left: 0, right: 0 }, lift]}
       onLayout={(event) => onHeight(event.nativeEvent.layout.height)}
     >
-      <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+      {/* Marks the composer as sitting over the chat's bottom edge, so iOS 26
+          fades the messages under it (a plain View below iOS 26). It rides
+          inside the lifted view, so the effect follows the keyboard. */}
+      <ScrollEdgeEffect
+        edge="bottom"
+        effect="soft"
+        style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+      >
         <LiquidGlassSurface
           style={{
             borderRadius: 26,
@@ -90,6 +114,55 @@ export default function MarkaiComposer({
             paddingBottom: 8,
           }}
         >
+          {attachment || attaching ? (
+            <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  backgroundColor: raised,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {attachment ? (
+                  <Image
+                    source={{ uri: attachment }}
+                    style={{ width: 64, height: 64 }}
+                    accessibilityIgnoresInvertColors
+                  />
+                ) : (
+                  <ActivityIndicator color={foreground} />
+                )}
+              </View>
+              {attachment ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('markai.removePhoto', {
+                    defaultValue: 'Remove photo',
+                  })}
+                  hitSlop={8}
+                  disabled={busy}
+                  onPress={onRemoveAttachment}
+                  style={{
+                    position: 'absolute',
+                    left: 12 + 64 - 14,
+                    top: 4,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="close" size={12} color="#FFFFFF" />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <TextInput
             ref={input}
             value={value}
@@ -123,22 +196,52 @@ export default function MarkaiComposer({
               paddingHorizontal: 8,
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('markai.options', {
-                defaultValue: 'Chat options',
-              })}
-              onPress={options}
-              disabled={busy}
-              style={{
-                width: 36,
-                height: 36,
-                alignItems: 'center',
-                justifyContent: 'center',
+            <MenuView
+              actions={[
+                {
+                  id: 'camera',
+                  title: t('progressPhotos.takePhoto', {
+                    defaultValue: 'Take Photo',
+                  }),
+                  image: 'camera',
+                  attributes: { disabled: busy || attaching },
+                },
+                {
+                  id: 'library',
+                  title: t('progressPhotos.chooseLibrary', {
+                    defaultValue: 'Choose from Library',
+                  }),
+                  image: 'photo',
+                  attributes: { disabled: busy || attaching },
+                },
+              ]}
+              onPressAction={({ nativeEvent }) => {
+                if (
+                  nativeEvent.event === 'camera' ||
+                  nativeEvent.event === 'library'
+                )
+                  onAttach(nativeEvent.event);
               }}
             >
-              <Icon name="add" size={22} color={foreground} />
-            </Pressable>
+              <View
+                accessibilityRole="button"
+                accessibilityLabel={t('markai.addPhoto', {
+                  defaultValue: 'Add photo',
+                })}
+                onTouchStart={() => {
+                  input.current?.blur();
+                  Keyboard.dismiss();
+                }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="add" size={22} color={foreground} />
+              </View>
+            </MenuView>
             <Pressable
               accessibilityRole="button"
               onPress={options}
@@ -189,7 +292,7 @@ export default function MarkaiComposer({
             </Pressable>
           </View>
         </LiquidGlassSurface>
-      </View>
+      </ScrollEdgeEffect>
     </Animated.View>
   );
 }

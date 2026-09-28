@@ -275,7 +275,6 @@ describe('ExerciseSearchScreen', () => {
 
       expect(mockNavigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
         item: expect.objectContaining({ id: localExercise.id }),
-        hideWorkoutActions: true,
         selectionReturnKey: 'workout-form-key',
       });
       expect(mockNavigation.dispatch).not.toHaveBeenCalled();
@@ -290,7 +289,6 @@ describe('ExerciseSearchScreen', () => {
 
       expect(mockNavigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
         item: expect.objectContaining({ id: localExercise.id }),
-        hideWorkoutActions: true,
         selectionReturnKey: 'workout-form-key',
       });
       expect(mockNavigation.dispatch).not.toHaveBeenCalled();
@@ -415,7 +413,6 @@ describe('ExerciseSearchScreen', () => {
           instructions: ['Stand with the bar on your back.', 'Squat down.'],
           images: ['https://wger.de/media/squat.png'],
         }),
-        hideWorkoutActions: true,
         selectionReturnKey: 'workout-form-key',
       });
       expect(mockImportExercise).not.toHaveBeenCalled();
@@ -433,7 +430,6 @@ describe('ExerciseSearchScreen', () => {
           name: 'Wger Squat',
           source: 'wger',
         }),
-        hideWorkoutActions: true,
         selectionReturnKey: 'workout-form-key',
       });
       expect(mockImportExercise).not.toHaveBeenCalled();
@@ -448,7 +444,6 @@ describe('ExerciseSearchScreen', () => {
 
       expect(mockNavigation.navigate).toHaveBeenCalledWith('ExerciseDetail', {
         item: expect.objectContaining({ id: 'nx-1', source: 'nutritionix' }),
-        hideWorkoutActions: true,
       });
       const params = mockNavigation.navigate.mock.calls[0][1];
       expect('selectionReturnKey' in params).toBe(false);

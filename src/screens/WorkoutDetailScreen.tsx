@@ -429,7 +429,6 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           entry.exercise_id,
           t
         ),
-        hideWorkoutActions: true,
       });
     },
     [session, navigation, t]
@@ -877,7 +876,6 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               onViewExercise={(exercise) =>
                 navigation.navigate('ExerciseDetail', {
                   item: exercise,
-                  hideWorkoutActions: true,
                 })
               }
               isEligibleForPrefill={isEligibleForPrefill}

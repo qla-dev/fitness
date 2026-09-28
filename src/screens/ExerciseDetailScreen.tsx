@@ -41,10 +41,7 @@ import {
   useUpdateExercise,
 } from '../hooks';
 import { useExerciseStats } from '../hooks/useExerciseStats';
-import { useStartLiveWorkout } from '../hooks/useStartLiveWorkout';
-import { useDiaryDateStore } from '../stores/diaryDateStore';
 import {
-  buildSingleExerciseStartPayload,
   CATEGORY_ICON_MAP,
   formatRecentSessionSet,
   normalizeWeightUnit,
@@ -116,8 +113,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
-  const { item, updatedItem, hideWorkoutActions, selectionReturnKey } =
-    route.params;
+  const { item, updatedItem, selectionReturnKey } = route.params;
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -225,13 +221,6 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
         navigation.goBack();
       },
     });
-
-  const { startLiveWorkout, isStarting } = useStartLiveWorkout(navigation);
-  const handleStartWorkout = () => {
-    void startLiveWorkout({
-      exercises: buildSingleExerciseStartPayload(exercise),
-    });
-  };
 
   const imageSources = useMemo(() => {
     return (exercise.images ?? [])
@@ -429,14 +418,6 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
       </View>
     ) : null;
 
-  const handleLog = () => {
-    navigation.navigate('ActivityAdd', {
-      selectedExercise: exercise,
-      selectionNonce: Date.now(),
-      date: useDiaryDateStore.getState().selectedDate,
-    });
-  };
-
   const handleEdit = () => {
     navigation.navigate('ExerciseForm', {
       mode: 'edit-exercise',
@@ -549,6 +530,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
   ];
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: exercise.name,
     nativeTitle: exercise.name,
     borderless: true,
@@ -565,9 +547,13 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
         {header}
 
         <ScrollView
-      showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           ref={scrollRef}
           className="flex-1"
+          // The transparent bar reserves no space; iOS insets the content.
+          contentInsetAdjustmentBehavior={
+            usesNativeHeader ? 'automatic' : 'never'
+          }
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingTop: 16,
@@ -862,34 +848,9 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                   ) : null}
                 </TouchableOpacity>
               ) : null}
-              {!hideWorkoutActions && (
-                <>
-                  <Button
-                    variant="primary"
-                    onPress={handleStartWorkout}
-                    disabled={isStarting}
-                  >
-                    <Text className="text-white text-base font-semibold">
-                      {isStarting
-                        ? t('exerciseDetail.starting', {
-                            defaultValue: 'Starting…',
-                          })
-                        : t('exerciseDetail.startWorkout', {
-                            defaultValue: 'Start Workout',
-                          })}
-                    </Text>
-                  </Button>
-
-                  <Button variant="ghost" onPress={handleLog}>
-                    <Text className="text-accent-primary text-base font-semibold">
-                      {t('exerciseDetail.logExercise', {
-                        defaultValue: 'Log Exercise',
-                      })}
-                    </Text>
-                  </Button>
-                </>
-              )}
-
+              {/* No Start or Log here: a library exercise is a movement,
+                  started as part of a program. Activities start from the
+                  Start Workout list instead. */}
               {canManageExercise && (
                 <Button
                   variant="destructive"

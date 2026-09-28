@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { Image } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { localTransaction, saveRecord, table } from '../local/database';
 import { getTodayDate } from '../../utils/dateUtils';
 import { externalFoodItemToFoodInfo } from '../../types/foodInfo';
@@ -18,7 +20,47 @@ export type MarkaiReply = {
   food_id: string;
   log_requested: boolean;
 };
-export type MarkaiMessage = { id: string; prompt: string; reply: MarkaiReply };
+export type MarkaiMessage = {
+  id: string;
+  prompt: string;
+  reply: MarkaiReply;
+  /** The server keeps only this flag; the photo itself is never stored. */
+  has_image?: boolean;
+  /** The photo as sent from this device, shown until the chat is reloaded. */
+  imageUri?: string;
+};
+
+// A vision model reads a meal as well at 1024px as at full size, and the
+// request stays a few hundred kilobytes instead of several megabytes.
+const MARKAI_IMAGE_EDGE = 1024;
+
+/** Downscale a picked photo into the JPEG data URL the MarkAI endpoint takes. */
+export async function prepareMarkaiImage(uri: string) {
+  const { width, height } = await Image.getSize(uri);
+  const processed = await ImageManipulator.manipulateAsync(
+    uri,
+    Math.max(width, height) > MARKAI_IMAGE_EDGE
+      ? [
+          {
+            resize:
+              width >= height
+                ? { width: MARKAI_IMAGE_EDGE }
+                : { height: MARKAI_IMAGE_EDGE },
+          },
+        ]
+      : [],
+    {
+      compress: 0.7,
+      format: ImageManipulator.SaveFormat.JPEG,
+      base64: true,
+    }
+  );
+  if (!processed.base64) throw new Error('Photo could not be prepared');
+  return {
+    uri: processed.uri,
+    data: 'data:image/jpeg;base64,' + processed.base64,
+  };
+}
 
 /** A proposal is only a draft; the shared food-entry modal owns confirmation. */
 export function markaiFoodToFoodInfo(id: string, proposal: FoodProposal) {

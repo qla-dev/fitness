@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
+import { useStartInstalledProgram } from '../hooks/useStartInstalledProgram';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -52,6 +53,22 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   );
   const { getImageSource } = useExerciseImageSource();
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
+  const { startInstalledProgram, isStarting } =
+    useStartInstalledProgram(navigation);
+  const openPurchase = () =>
+    navigation.navigate('ProgramPurchase', {
+      programId: route.params.programId,
+    });
+  // Added: start this week's workout. If every week was deleted from My
+  // programs there is nothing to start, so it goes back to the purchase sheet.
+  const pressStart = () => {
+    if (!alreadyInstalled) return openPurchase();
+    void startInstalledProgram(route.params.programId)
+      .then((started) => {
+        if (!started) openPurchase();
+      })
+      .catch(openPurchase);
+  };
   const [scrollOffset, setScrollOffset] = useState(0);
   const [expandedSessions, setExpandedSessions] = useState<
     Record<string, boolean>
@@ -203,16 +220,14 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
             >
               <TouchableOpacity
                 accessibilityRole="button"
-                onPress={() =>
-                  navigation.navigate('ProgramPurchase', {
-                    programId: program.id,
-                  })
-                }
+                disabled={isStarting}
+                onPress={pressStart}
                 className="px-3 py-1 rounded-full"
+                style={{ opacity: isStarting ? 0.6 : 1 }}
               >
                 <Text className="text-accent-text text-base font-bold">
                   {alreadyInstalled
-                    ? t('programs.added', { defaultValue: 'Added' })
+                    ? t('presetLibrary.startNow', { defaultValue: 'Start now' })
                     : t('programs.startFor', {
                         defaultValue: 'Start for {{price}}',
                         price: formatLocalizedNumber(program.priceEur, {

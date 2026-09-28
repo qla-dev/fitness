@@ -8,6 +8,8 @@ import {
   isWatchAppInstalled,
   isWatchLinkAvailable,
   isWatchPaired,
+  isWatchReachable,
+  probeWatch,
   getWatchName,
   startWatchWorkout,
   stopWatchWorkout,
@@ -496,6 +498,28 @@ function refreshWatchAvailability() {
     watchNeedsApp: paired && !installed,
     watchName,
   });
+}
+
+/** True when the watch is answering right now, with no probe needed. */
+export const isWatchAwake = () =>
+  Platform.OS === 'ios' &&
+  isWatchLinkAvailable() &&
+  (isWatchReachable() || snapshot.watchStreaming);
+
+/**
+ * Wakes the watch app and waits for it to answer. The paired/installed flags
+ * behind `watchAvailable` outlive a watch whose battery died, so a setup that
+ * is about to hand the session to the watch asks this first.
+ */
+export async function checkWatchAwake(): Promise<boolean> {
+  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return false;
+  if (isWatchAwake()) return true;
+  try {
+    return await probeWatch();
+  } catch (error) {
+    addLog('[Watch] Probe failed', 'WARNING', [String(error)]);
+    return false;
+  }
 }
 
 // Watched for the life of the process rather than per screen: the answer is a

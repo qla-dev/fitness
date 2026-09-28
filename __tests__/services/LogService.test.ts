@@ -16,6 +16,11 @@ import {
   LogStatus,
   LogThreshold,
 } from '../../src/services/LogService';
+import * as logDatabase from '../../src/services/logDatabase';
+import { readLogs } from '../../src/services/logDatabase';
+
+/** Everything in the log database, newest first, bypassing the buffer. */
+const stored = () => readLogs(['DEBUG', 'INFO', 'WARNING', 'ERROR'], 0, 5000);
 
 describe('LogService', () => {
   beforeEach(async () => {
@@ -263,10 +268,11 @@ describe('LogService', () => {
 
       await pruneLogs(30);
 
-      const raw = await AsyncStorage.getItem('app_logs');
-      const parsed = JSON.parse(raw!);
+      // Imported into the database, normalized, and the old key removed.
+      const parsed = await stored();
       expect(parsed).toHaveLength(1);
       expect(parsed[0].status).toBe('INFO');
+      expect(await AsyncStorage.getItem('app_logs')).toBeNull();
     });
   });
 
@@ -344,23 +350,23 @@ describe('LogService', () => {
   describe('flush cost (#2191)', () => {
     /**
      * A burst of sync errors used to flush every 20 entries, and every flush
-     * re-read and re-parsed the whole ~240 KB log store on the JS thread. The
-     * store is now mirrored in memory, so storage is read at most once.
+     * re-read and re-serialized the whole ~240 KB log store on the JS thread.
+     * Entries are now rows: a burst inserts them and never rewrites a blob.
      */
-    test('a long burst of logs reads the store at most once', async () => {
+    test('a long burst of logs never rewrites the log store as one value', async () => {
       await setCaptureLevel('all');
-      const getItem = AsyncStorage.getItem as unknown as jest.Mock;
-      getItem.mockClear();
+      const setItem = AsyncStorage.setItem as unknown as jest.Mock;
+      setItem.mockClear();
 
       for (let i = 0; i < 200; i++) {
         await addLog(`burst ${i}`, 'ERROR');
       }
       await _flushBuffer();
 
-      const logKeyReads = getItem.mock.calls.filter(
-        ([key]) => key === 'app_logs'
-      );
-      expect(logKeyReads.length).toBeLessThanOrEqual(1);
+      expect(
+        setItem.mock.calls.filter(([key]) => key === 'app_logs')
+      ).toHaveLength(0);
+      expect(await stored()).toHaveLength(200);
     });
 
     test('the burst is still persisted and readable, newest first', async () => {
@@ -849,18 +855,15 @@ describe('LogService', () => {
       await addLog('Buffered entry 1');
       await addLog('Buffered entry 2');
 
-      // Entries should not be in AsyncStorage yet (below flush threshold)
-      const rawBefore = await AsyncStorage.getItem('app_logs');
-      expect(rawBefore).toBeNull();
+      // Not in the database yet (below flush threshold)
+      expect(await stored()).toHaveLength(0);
 
       // getLogs flushes before reading
       const logs = await getLogs(0, 30, 'all');
       expect(logs).toHaveLength(2);
 
-      // Now entries should be in AsyncStorage
-      const rawAfter = await AsyncStorage.getItem('app_logs');
-      expect(rawAfter).not.toBeNull();
-      expect(JSON.parse(rawAfter!)).toHaveLength(2);
+      // Now they are rows
+      expect(await stored()).toHaveLength(2);
     });
 
     test('flushes immediately when buffer hits threshold', async () => {
@@ -869,10 +872,8 @@ describe('LogService', () => {
         await addLog(`Entry ${i}`);
       }
 
-      // Should have been flushed to storage already
-      const raw = await AsyncStorage.getItem('app_logs');
-      expect(raw).not.toBeNull();
-      expect(JSON.parse(raw!).length).toBe(20);
+      // Should have been flushed to the database already
+      expect(await stored()).toHaveLength(20);
     });
 
     test('explicit _flushBuffer writes buffered entries to storage', async () => {
@@ -880,17 +881,15 @@ describe('LogService', () => {
 
       await _flushBuffer();
 
-      const raw = await AsyncStorage.getItem('app_logs');
-      expect(raw).not.toBeNull();
-      expect(JSON.parse(raw!)).toHaveLength(1);
-      expect(JSON.parse(raw!)[0].message).toBe('Manual flush test');
+      const rows = await stored();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].message).toBe('Manual flush test');
     });
 
     test('_flushBuffer is a no-op when buffer is empty', async () => {
       await _flushBuffer();
 
-      const raw = await AsyncStorage.getItem('app_logs');
-      expect(raw).toBeNull();
+      expect(await stored()).toHaveLength(0);
     });
 
     test('flush merges with existing entries in storage', async () => {
@@ -908,8 +907,8 @@ describe('LogService', () => {
       await addLog('New entry');
       await _flushBuffer();
 
-      const raw = await AsyncStorage.getItem('app_logs');
-      const logs = JSON.parse(raw!);
+      // The pre-SQLite array is imported behind the new entry.
+      const logs = await stored();
       expect(logs).toHaveLength(2);
       expect(logs[0].message).toBe('New entry');
       expect(logs[1].message).toBe('Existing');
@@ -931,8 +930,7 @@ describe('LogService', () => {
       }
       await _flushBuffer();
 
-      const raw = await AsyncStorage.getItem('app_logs');
-      const logs = JSON.parse(raw!);
+      const logs = await stored();
       expect(logs.length).toBe(1000);
       // Newest entries should be first
       expect(logs[0].message).toBe('New 9');
@@ -980,18 +978,18 @@ describe('LogService flush failure (PR #2218 review)', () => {
     jest.restoreAllMocks();
   });
 
-  test('a failed write does not leave the mirror ahead of storage', async () => {
+  test('a failed insert is retried without persisting duplicates', async () => {
     await setCaptureLevel('all');
-    const setItem = AsyncStorage.setItem as unknown as jest.Mock;
+    const insert = jest
+      .spyOn(logDatabase, 'insertLogs')
+      .mockRejectedValueOnce(new Error('disk full'));
 
     await addLog('first', 'ERROR');
-    setItem.mockRejectedValueOnce(new Error('disk full'));
     await _flushBuffer();
 
-    // The failed flush requeues its entries. If the mirror had already been
-    // updated, the retry would merge them into a copy that already held them
-    // and persist duplicates.
-    setItem.mockClear();
+    // The failed flush requeues its entries; the insert is one transaction,
+    // so nothing from the failed attempt is left behind to be doubled.
+    insert.mockRestore();
     await _flushBuffer();
 
     const logs = await getLogs(0, 50);

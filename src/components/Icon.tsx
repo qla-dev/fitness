@@ -78,6 +78,7 @@ const ICON_MAP = {
     ion: 'shield-checkmark-outline',
   },
   'cloud-offline': { sf: 'icloud.slash', ion: 'cloud-offline-outline' },
+  cloud: { sf: 'icloud', ion: 'cloud-outline' },
   'alert-circle': { sf: 'exclamationmark.circle', ion: 'alert-circle-outline' },
   warning: { sf: 'exclamationmark.triangle.fill', ion: 'warning' },
   'info-circle': { sf: 'info.circle', ion: 'information-circle-outline' },
@@ -204,6 +205,7 @@ const ICON_MAP = {
   spo2: { sf: 'lungs.fill', ion: 'pulse' },
   'heart-rate': { sf: 'heart.fill', ion: 'heart' },
   'apple-health': { sf: 'apple.logo', ion: 'logo-apple' },
+  'apple-logo': { sf: 'apple.logo', ion: 'logo-apple' },
   // Where a session was measured, and whether it carries a track. Named for
   // what they mean here rather than for the hardware, so a future Android
   // wearable does not need a second entry.

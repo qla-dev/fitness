@@ -65,13 +65,6 @@ jest.mock('../../src/hooks/useExerciseImageSource', () => ({
   useImagePairAspectMatch: jest.fn(() => undefined),
 }));
 
-jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
-  useStartLiveWorkout: jest.fn(() => ({
-    startLiveWorkout: jest.fn(),
-    isStarting: false,
-  })),
-}));
-
 jest.mock('uniwind', () => ({
   useCSSVariable: (keys: string | string[]) =>
     Array.isArray(keys) ? keys.map(() => '#111827') : '#111827',
@@ -236,44 +229,15 @@ describe('ExerciseDetailScreen', () => {
     expect(screen.getByText('sparky')).toBeTruthy();
   });
 
-  it('navigates to ActivityAdd with the selected exercise when Log Exercise is pressed', () => {
+  it('offers no Start Workout or Log Exercise: exercises start through a program', () => {
     const screen = renderScreen();
-
-    fireEvent.press(screen.getByText('Log Exercise'));
-
-    expect(navigation.navigate).toHaveBeenCalledWith(
-      'ActivityAdd',
-      expect.objectContaining({
-        selectedExercise: expect.objectContaining({
-          id: 'ex-1',
-          name: 'Bench Press',
-        }),
-        selectionNonce: expect.any(Number),
-      })
-    );
-  });
-
-  it('shows Start Workout and Log Exercise by default', () => {
-    const screen = renderScreen();
-
-    expect(screen.queryByText('Start Workout')).toBeTruthy();
-    expect(screen.queryByText('Log Exercise')).toBeTruthy();
-  });
-
-  it('hides Start Workout and Log Exercise when hideWorkoutActions is set', () => {
-    const route = {
-      key: 'ExerciseDetail-key',
-      name: 'ExerciseDetail' as const,
-      params: { item: baseExercise, hideWorkoutActions: true },
-    };
-    const screen = render(
-      <Providers>
-        <ExerciseDetailScreen navigation={navigation} route={route as any} />
-      </Providers>
-    );
 
     expect(screen.queryByText('Start Workout')).toBeNull();
     expect(screen.queryByText('Log Exercise')).toBeNull();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(
+      'ActivityAdd',
+      expect.anything()
+    );
   });
 
   it('hides empty optional sections', () => {
@@ -652,7 +616,6 @@ describe('ExerciseDetailScreen', () => {
                 name: 'ExerciseDetail' as const,
                 params: {
                   item: { ...baseExercise, ...overrides },
-                  hideWorkoutActions: true,
                   selectionReturnKey: returnKey,
                 },
               } as any

@@ -24,20 +24,21 @@ import {
   useProfile,
 } from '../hooks';
 import {
-  deriveShareStatus,
   filterByOwnership,
   ownershipFilterEmptyState,
   ownershipFilterHeaderMenu,
 } from '../utils/shareStatus';
-import ShareStatusBadge from '../components/ShareStatusBadge';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
-import { useStartLiveWorkout } from '../hooks/useStartLiveWorkout';
-import { buildPresetStartExercisesPayload } from '../utils/workoutSession';
+import {
+  programAccessScope,
+  readProgramAccess,
+} from '../services/programAccess';
+import { getProgramById } from '../constants/exercisePrograms';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import type { WorkoutPreset } from '../types/workoutPresets';
@@ -92,7 +93,19 @@ const WorkoutPresetsLibraryScreen: React.FC<
     [presets, ownershipFilter, profile?.id]
   );
 
-  const { startLiveWorkout, isStarting } = useStartLiveWorkout(navigation);
+  const openDetails = useCallback(
+    async (preset: WorkoutPreset) => {
+      const access = await programAccessScope()
+        .then((scope) => readProgramAccess(scope, preset.id))
+        .catch(() => null);
+      if (access && getProgramById(access.programId))
+        navigation.navigate('ExerciseProgram', {
+          programId: access.programId,
+        });
+      else navigation.navigate('WorkoutPresetDetail', { preset });
+    },
+    [navigation]
+  );
 
   const handlePresetPress = useCallback(
     (preset: WorkoutPreset) => {
@@ -162,7 +175,6 @@ const WorkoutPresetsLibraryScreen: React.FC<
       exercise.image_url?.trim()
     )?.image_url;
     const exerciseCount = item.exercises?.length ?? 0;
-    const status = deriveShareStatus(item.user_id, item.is_public, profile?.id);
     return (
       <TouchableOpacity
         className="px-4 py-3 flex-row items-center gap-3"
@@ -182,15 +194,12 @@ const WorkoutPresetsLibraryScreen: React.FC<
           }
         />
         <View className="flex-1">
-          <View className="flex-row items-center gap-1.5">
-            <Text
-              className="text-text-primary text-base font-medium flex-shrink"
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-            <ShareStatusBadge status={status} />
-          </View>
+          <Text
+            className="text-text-primary text-base font-medium"
+            numberOfLines={1}
+          >
+            {item.name}
+          </Text>
           <Text className="text-sm mt-0.5" style={{ color: textSecondary }}>
             {t('presetLibrary.exerciseCount', {
               defaultValue: '{{count}} exercises',
@@ -201,25 +210,19 @@ const WorkoutPresetsLibraryScreen: React.FC<
           </Text>
         </View>
         <ProgramCountdown presetId={item.id} />
-        {/* The store row's shape: the row opens the program, the button runs
-            it. A program you already own has nothing left to buy, so the word
-            is "Start now" rather than the store's "Start". */}
+        {/* Start now opens the details first: a store program's page, where
+            its own Start now begins this week, or the workout's own details
+            for one made here. Nothing starts from the list itself. */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('presetLibrary.startNow', {
             defaultValue: 'Start now',
           })}
-          disabled={isStarting}
           onPress={() => {
             fireSelectionHaptic();
-            void startLiveWorkout({
-              name: item.name,
-              exercises: buildPresetStartExercisesPayload(item),
-              sourcePresetId: item.id,
-            });
+            void openDetails(item);
           }}
           className="px-3 py-2 rounded-full bg-raised"
-          style={{ opacity: isStarting ? 0.5 : 1 }}
         >
           <Text
             className="text-sm font-semibold"

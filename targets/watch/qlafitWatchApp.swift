@@ -4,6 +4,13 @@ import HealthKit
 
 final class WatchAppDelegate: NSObject, WKApplicationDelegate {
   func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
+    // The phone's "are you on?" probe (QlaFitWatchLinkModule.probe): answer and
+    // start nothing. No catalogue sport uses .other with an unknown location.
+    if workoutConfiguration.activityType == .other
+      && workoutConfiguration.locationType == .unknown {
+      Task { @MainActor in WorkoutManager.shared.answerProbe() }
+      return
+    }
     // A background launch must open its HealthKit session immediately; waiting
     // for WatchConnectivity first can leave the app asleep without a workout.
     Task { @MainActor in WorkoutManager.shared.startFromPhoneLaunch(workoutConfiguration) }

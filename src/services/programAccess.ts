@@ -84,3 +84,30 @@ export async function markProgramInstalled(scope: string, programId: string) {
     JSON.stringify([...current, programId])
   );
 }
+
+/**
+ * The installed weekly presets of one program, with their access records.
+ * Access is stored per preset and names its program, so this reads every
+ * access record in the scope and keeps the program's own.
+ */
+export async function readProgramPresetAccess(
+  scope: string,
+  programId: string
+): Promise<{ presetId: number; access: ProgramAccess }[]> {
+  const prefix = `@Fitness/program-access/${encodeURIComponent(scope)}/`;
+  const keys = (await AsyncStorage.getAllKeys()).filter((item) =>
+    item.startsWith(prefix)
+  );
+  const entries = await Promise.all(
+    keys.map(async (item) => {
+      const presetId = Number(item.slice(prefix.length));
+      const access = Number.isFinite(presetId)
+        ? await readProgramAccess(scope, presetId)
+        : null;
+      return access?.programId === programId ? { presetId, access } : null;
+    })
+  );
+  return entries.filter(
+    (entry): entry is { presetId: number; access: ProgramAccess } => !!entry
+  );
+}

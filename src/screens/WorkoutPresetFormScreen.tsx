@@ -417,7 +417,6 @@ const CreatePresetMode: React.FC<CreatePresetModeProps> = ({
         onViewExercise={(exercise) =>
           navigation.navigate('ExerciseDetail', {
             item: exercise,
-            hideWorkoutActions: true,
           })
         }
         listRef={exerciseListRef}
@@ -686,7 +685,6 @@ const EditPresetMode: React.FC<EditPresetModeProps> = ({
         onViewExercise={(exercise) =>
           navigation.navigate('ExerciseDetail', {
             item: exercise,
-            hideWorkoutActions: true,
           })
         }
         listRef={exerciseListRef}
