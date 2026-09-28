@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  Switch,
   Text,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import Button from '../components/ui/Button';
+import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
 import AppleSignInButton from '../components/AppleSignInButton';
 import { useAppleSignIn } from '../hooks/useAppleSignIn';
@@ -24,7 +24,11 @@ import {
   syncOnline,
   useOnlineSync,
 } from '../services/online/sync';
-import { signOutOnline, useOnlineAccount } from '../services/online/account';
+import {
+  onlineAccountEntryLabel,
+  signOutOnline,
+  useOnlineAccount,
+} from '../services/online/account';
 import { queryClient } from '../hooks/queryClient';
 import type { RootStackScreenProps } from '../types/navigation';
 
@@ -97,7 +101,7 @@ export default function OnlineSyncScreen({
               />
             ) : (
               <Button onPress={() => navigation.navigate('OnlineAccount')}>
-                {t('online.signIn', { defaultValue: 'Sign in with Apple' })}
+                {onlineAccountEntryLabel(t)}
               </Button>
             )}
             {apple.busy && <ActivityIndicator />}

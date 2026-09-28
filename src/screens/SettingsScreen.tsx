@@ -5,6 +5,7 @@ import {
   updateOnlineAccount,
   useOnlineAccount,
   type OnlineAccount,
+  onlineAccountEntryLabel,
 } from '../services/online/account';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -284,7 +285,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                       defaultValue: '{{amount}} AI coins',
                       amount: onlineSession.user.ai_coins,
                     })
-                  : t('online.signIn', { defaultValue: 'Sign in with Apple' })
+                  : onlineAccountEntryLabel(t)
               }
               subtitle={t('online.profileReward', {
                 defaultValue: '100 AI coins when you create your account',

@@ -36,6 +36,7 @@ import {
   OnlineError,
   updateOnlineAccount,
   useOnlineAccount,
+  onlineAccountEntryLabel,
 } from '../services/online/account';
 import {
   markaiFoodToFoodInfo,
@@ -509,7 +510,7 @@ function MarkaiContent() {
               />
             ) : (
               <Button onPress={() => navigation.navigate('OnlineAccount')}>
-                {t('online.signIn', { defaultValue: 'Sign in with Apple' })}
+                {onlineAccountEntryLabel(t)}
               </Button>
             )
           }
