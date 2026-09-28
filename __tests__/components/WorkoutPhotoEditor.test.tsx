@@ -268,7 +268,8 @@ it('exports independent transforms without regenerating layers, then resets them
   await act(async () => fireEvent.press(screen.getByText('Share')));
   expect(createPhotoPreview).toHaveBeenLastCalledWith(
     photo,
-    expect.objectContaining({ statsTransform: stats, routeTransform: route })
+    expect.objectContaining({ statsTransform: stats, routeTransform: route }),
+    expect.stringMatching(/^qla.fit-.*.jpg$/)
   );
   fireEvent.press(screen.getByText('Compact signature'));
   await finishPreview();
@@ -279,7 +280,26 @@ it('exports independent transforms without regenerating layers, then resets them
       layout: 'compact',
       statsTransform: undefined,
       routeTransform: undefined,
-    })
+    }),
+    expect.any(String)
+  );
+});
+
+it('shares a file named after the workout and the person', async () => {
+  render(
+    <WorkoutPhotoEditor
+      photo={{ ...photo, capturedAt: new Date(2026, 8, 27, 16, 52).getTime() }}
+      onClose={jest.fn()}
+      workoutName="Running"
+      userName="Ćamil Sijarić"
+    />
+  );
+  await finishPreview();
+  await act(async () => fireEvent.press(screen.getByText('Share')));
+  expect(createPhotoPreview).toHaveBeenLastCalledWith(
+    expect.anything(),
+    expect.anything(),
+    'qla.fit-running-camil-2026-09-27-1652.jpg'
   );
 });
 

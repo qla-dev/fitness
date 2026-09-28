@@ -12,6 +12,9 @@ export const METRIC_COLORS = {
   distance: '#00D8EB',
   pace: '#00D8EB',
   heartRate: '#FF6B35',
+  speed: '#64D2FF',
+  elevation: '#30D158',
+  cadence: '#BF5AF2',
 } as const;
 
 export interface DetailStat {

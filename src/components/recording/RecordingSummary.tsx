@@ -12,6 +12,7 @@ import { formatLocalizedNumber } from '../../localization';
 import { usePreferences } from '../../hooks/usePreferences';
 import { distanceFromKm } from '../../utils/unitConversions';
 import type { ActivityDetailResponse } from '@workspace/shared';
+import { METRIC_COLORS, type DetailStat } from '../WorkoutDetailsCard';
 
 const number = z.number().finite();
 const nullable = number.nullable();
@@ -46,6 +47,88 @@ const detailSchema = z.object({
     })
   ),
 });
+
+type RecordingDetail = z.infer<typeof detailSchema>;
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** The recording blob a session was saved with, or null when absent/invalid. */
+export function parseRecordingDetail(
+  details: ActivityDetailResponse[] | undefined
+): RecordingDetail | null {
+  const blob = details?.find(
+    (d) => d.detail_type === RECORDING_DETAIL_TYPE
+  )?.detail_data;
+  const parsed = detailSchema.safeParse(blob);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * The recorder's own readings as Workout details tiles, so they sit beside
+ * duration and calories instead of as loose lines under the map. Average heart
+ * rate is left to the session's own tile when it already has one.
+ */
+export function recordingDetailStats(
+  detail: RecordingDetail,
+  unit: 'km' | 'miles',
+  t: Translate,
+  hasAverageHeartRate: boolean
+): DetailStat[] {
+  const fmt = (value: number) =>
+    formatLocalizedNumber(value, { maximumFractionDigits: 1 });
+  const label =
+    unit === 'miles'
+      ? t('recording.miles', { defaultValue: 'mi' })
+      : t('recording.km', { defaultValue: 'km' });
+  const bpm = t('recording.bpm', { defaultValue: 'bpm' });
+  const stats: DetailStat[] = [
+    {
+      label: t('recording.maxSpeed', { defaultValue: 'Max speed' }),
+      value: fmt(distanceFromKm(detail.maxSpeed * 3.6, unit)),
+      unit: t('recording.speedPerHour', {
+        defaultValue: '{{unit}}/h',
+        unit: label,
+      }),
+      color: METRIC_COLORS.speed,
+    },
+    {
+      label: t('recording.elevation', { defaultValue: 'Elevation gain' }),
+      value: fmt(
+        unit === 'miles' ? detail.elevationGain * 3.28084 : detail.elevationGain
+      ),
+      unit:
+        unit === 'miles'
+          ? t('recording.feet', { defaultValue: 'ft' })
+          : t('recording.meters', { defaultValue: 'm' }),
+      color: METRIC_COLORS.elevation,
+    },
+  ];
+  if (detail.avgHeartRate !== null && !hasAverageHeartRate)
+    stats.push({
+      label: t('recording.avgHeartRate', {
+        defaultValue: 'Average heart rate',
+      }),
+      value: fmt(detail.avgHeartRate),
+      unit: bpm,
+      color: METRIC_COLORS.heartRate,
+    });
+  if (detail.maxHeartRate !== null)
+    stats.push({
+      label: t('recording.maxHeartRate', {
+        defaultValue: 'Maximum heart rate',
+      }),
+      value: fmt(detail.maxHeartRate),
+      unit: bpm,
+      color: METRIC_COLORS.heartRate,
+    });
+  if (detail.avgCadence !== null)
+    stats.push({
+      label: t('recording.avgCadence', { defaultValue: 'Average cadence' }),
+      value: fmt(detail.avgCadence),
+      unit: t('recording.rpm', { defaultValue: 'rpm' }),
+      color: METRIC_COLORS.cadence,
+    });
+  return stats;
+}
 
 /** Render timestamped measurements without fabricating points in sensor gaps. */
 function Trace({
@@ -105,13 +188,7 @@ export default function RecordingSummary({
   const { t } = useTranslation();
   const { preferences } = usePreferences();
   const unit = preferences?.default_distance_unit === 'miles' ? 'miles' : 'km';
-  const detail = useMemo(() => {
-    const blob = details.find(
-      (d) => d.detail_type === RECORDING_DETAIL_TYPE
-    )?.detail_data;
-    const parsed = detailSchema.safeParse(blob);
-    return parsed.success ? parsed.data : null;
-  }, [details]);
+  const detail = useMemo(() => parseRecordingDetail(details), [details]);
   if (!detail) return null;
   const label =
     unit === 'miles'
@@ -135,45 +212,6 @@ export default function RecordingSummary({
             segments={routeSegments(detail.points)}
           />
         </View>
-      )}
-      <Text className="text-text-secondary">
-        {t('recording.maxSpeed', { defaultValue: 'Max speed' })}:{' '}
-        {fmt(distanceFromKm(detail.maxSpeed * 3.6, unit))}{' '}
-        {t('recording.speedPerHour', {
-          defaultValue: '{{unit}}/h',
-          unit: label,
-        })}
-      </Text>
-      <Text className="text-text-secondary">
-        {t('recording.elevation', { defaultValue: 'Elevation gain' })}:{' '}
-        {fmt(
-          unit === 'miles'
-            ? detail.elevationGain * 3.28084
-            : detail.elevationGain
-        )}{' '}
-        {unit === 'miles'
-          ? t('recording.feet', { defaultValue: 'ft' })
-          : t('recording.meters', { defaultValue: 'm' })}
-      </Text>
-      {detail.avgHeartRate !== null && (
-        <Text className="text-text-secondary">
-          {t('recording.avgHeartRate', { defaultValue: 'Average heart rate' })}:{' '}
-          {fmt(detail.avgHeartRate)}{' '}
-          {t('recording.bpm', { defaultValue: 'bpm' })}
-        </Text>
-      )}
-      {detail.maxHeartRate !== null && (
-        <Text className="text-text-secondary">
-          {t('recording.maxHeartRate', { defaultValue: 'Maximum heart rate' })}:{' '}
-          {fmt(detail.maxHeartRate)}{' '}
-          {t('recording.bpm', { defaultValue: 'bpm' })}
-        </Text>
-      )}
-      {detail.avgCadence !== null && (
-        <Text className="text-text-secondary">
-          {t('recording.avgCadence', { defaultValue: 'Average cadence' })}:{' '}
-          {fmt(detail.avgCadence)} {t('recording.rpm', { defaultValue: 'rpm' })}
-        </Text>
       )}
       <Trace
         label={t('recording.heartRate', { defaultValue: 'Heart rate' })}

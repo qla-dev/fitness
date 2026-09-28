@@ -29,15 +29,19 @@ import {
   pickImagesFromLibrary,
 } from '../../utils/pickImage';
 import WorkoutPhotoEditor from './WorkoutPhotoEditor';
+import { fetchProfile } from '../../services/api/profileApi';
+import { profileQueryKey } from '../../hooks/queryKeys';
 
 export default function WorkoutPhotos({
   details,
   sessionId,
   composition,
+  workoutName,
 }: {
   details: ActivityDetailResponse[];
   sessionId: string;
   composition: PhotoComposition;
+  workoutName?: string;
 }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<RecordingPhoto | null>(null);
@@ -53,6 +57,10 @@ export default function WorkoutPhotos({
   } = useQuery({
     queryKey: key,
     queryFn: () => localApiFetch<RecordingPhoto[]>({ endpoint }),
+  });
+  const { data: profile } = useQuery({
+    queryKey: profileQueryKey,
+    queryFn: fetchProfile,
   });
   const busy = useRef(false);
   const [adding, setAdding] = useState(false);
@@ -201,6 +209,8 @@ export default function WorkoutPhotos({
         <WorkoutPhotoEditor
           photo={selected}
           onClose={() => setSelected(null)}
+          workoutName={workoutName}
+          userName={profile?.full_name ?? undefined}
         />
       )}
     </View>

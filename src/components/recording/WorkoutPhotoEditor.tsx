@@ -34,6 +34,7 @@ import {
 } from '../../services/recording/photos';
 import {
   defaultPhotoEditorOptions,
+  photoShareFileName,
   type PhotoEditorOptions,
   type PhotoLayout,
   type PhotoFilter,
@@ -126,9 +127,14 @@ function ToolRow({
 export default function WorkoutPhotoEditor({
   photo,
   onClose,
+  workoutName,
+  userName,
 }: {
   photo: RecordingPhoto;
   onClose: () => void;
+  /** Named into the shared file, e.g. qla.fit-running-camil-2026-09-27-1652.jpg */
+  workoutName?: string;
+  userName?: string;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -238,7 +244,15 @@ export default function WorkoutPhotoEditor({
     try {
       if (!(await Sharing.isAvailableAsync()))
         throw new Error('Sharing unavailable');
-      exportUri = await createPhotoPreview(photo, options);
+      exportUri = await createPhotoPreview(
+        photo,
+        options,
+        photoShareFileName({
+          workout: workoutName,
+          user: userName,
+          capturedAt: photo.capturedAt,
+        })
+      );
       await Sharing.shareAsync(exportUri, {
         mimeType: 'image/jpeg',
         UTI: 'public.jpeg',

@@ -302,3 +302,46 @@ export const photoFilterMatrices: Record<
     0.9, 0, 0, 0, 0, 0, 1.02, 0, 0, 0.01, 0, 0.04, 1.08, 0, 0.02, 0, 0, 0, 1, 0,
   ],
 };
+
+const slug = (value: string | undefined) =>
+  (value ?? '')
+    .normalize('NFKD')
+    // Letters with strokes do not decompose, so name them before stripping.
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[łŁ]/g, 'l')
+    .replace(/[øØ]/g, 'o')
+    .replace(/ß/g, 'ss')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32)
+    .replace(/-+$/, '');
+
+/**
+ * The name a shared photo carries into other apps:
+ * `qla.fit-<workout>-<first name>-<YYYY-MM-DD>-<HHmm>.jpg`. Parts that are
+ * missing or have no Latin letters left after folding accents are skipped, so
+ * the name never shows an empty `--` slot. The capture time keeps two shares
+ * from the same day apart in a camera roll or a chat.
+ */
+export function photoShareFileName({
+  workout,
+  user,
+  capturedAt,
+}: {
+  workout?: string;
+  user?: string;
+  capturedAt: number;
+}) {
+  const date = new Date(capturedAt);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const stamp = Number.isFinite(date.getTime())
+    ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`
+    : '';
+  return (
+    ['qla.fit', slug(workout), slug(user?.trim().split(/\s+/)[0]), stamp]
+      .filter(Boolean)
+      .join('-') + '.jpg'
+  );
+}

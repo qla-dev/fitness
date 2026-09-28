@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity } from 'react-native';
 import FadeView from '../components/FadeView';
 import EditableSetList from '../components/EditableSetList';
-import RecordingSummary from '../components/recording/RecordingSummary';
+import RecordingSummary, {
+  parseRecordingDetail,
+  recordingDetailStats,
+} from '../components/recording/RecordingSummary';
 import WorkoutPhotos from '../components/recording/WorkoutPhotos';
 import WorkoutDetailsCard, {
   DetailSectionHeading,
@@ -41,7 +44,6 @@ import {
 import {
   buildActivitySetsPayload,
   effectiveSetDurationSec,
-  getSourceLabel,
   getWorkoutIcon,
   getWorkoutSummary,
   isCardioModality,
@@ -104,8 +106,6 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const { getImageSource } = useExerciseImageSource();
 
-  const sourceLabel = getSourceLabel(session.source);
-  const isAppleHealth = sourceLabel === getSourceLabel('HealthKit');
   const hasHeartRate = (session.avg_heart_rate ?? 0) > 0;
   const canEditSource = canEditGroupedWorkout(session.source);
   const entryDate = session.entry_date ?? '';
@@ -117,6 +117,13 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const recordingSource = resolveRecordingSource(
     session.activity_details,
     RECORDING_DETAIL_TYPE
+  );
+  // A recorded session is a measurement, not a log: its time, distance and
+  // route came from the sensors, so the header offers no Edit for it.
+  const isRecorded = recordingSource === 'app' || recordingSource === 'watch';
+  const recordingDetail = useMemo(
+    () => parseRecordingDetail(session.activity_details),
+    [session.activity_details]
   );
   const sessionHasRoute = hasRoute(
     session.activity_details,
@@ -641,12 +648,23 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           return METRIC_COLORS.pace;
       }
     };
-    return buildStats().map((stat) => ({
+    const stats: DetailStat[] = buildStats().map((stat) => ({
       label: stat.label,
       value: stat.value,
       unit: stat.editSuffix,
       color: colorFor(stat.editKey),
     }));
+    return recordingDetail
+      ? [
+          ...stats,
+          ...recordingDetailStats(
+            recordingDetail,
+            distanceUnit === 'miles' ? 'miles' : 'km',
+            t,
+            session.avg_heart_rate != null
+          ),
+        ]
+      : stats;
     // A map over at most six items, re-derived each render rather than
     // memoized: buildStats already reads most of this component's state, so a
     // dependency list would have to repeat all of it to stay correct.
@@ -706,7 +724,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           }),
           identifier: 'activity-detail-save',
         }
-      : canEditSource
+      : canEditSource && !isRecorded
         ? {
             kind: 'text',
             label: t('common.edit', { defaultValue: 'Edit' }),
@@ -816,17 +834,11 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               </FadeView>
             )}
             <View className="flex-row flex-wrap items-center">
-              {isAppleHealth && (
-                <Icon
-                  name="apple-health"
-                  size={14}
-                  color={textMuted}
-                  style={{ marginRight: 4 }}
-                />
-              )}
-              <Text className="text-sm text-text-muted">{sourceLabel}</Text>
+              {/* No source name first: every session reaches this screen
+                  through qla.fit or its watch, so it would say the same thing
+                  on every workout. The line starts with what varies. */}
               {(hasHeartRate || recordingSource === 'watch') && (
-                <View className="flex-row items-center ml-2">
+                <View className="flex-row items-center">
                   <Icon
                     name="device-watch"
                     size={14}
@@ -838,7 +850,9 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                   </Text>
                 </View>
               )}
-              <Text className="text-sm text-text-muted mx-2">{'\u2022'}</Text>
+              {(hasHeartRate || recordingSource === 'watch') && (
+                <Text className="text-sm text-text-muted mx-2">{'\u2022'}</Text>
+              )}
               {isEditing ? (
                 <TouchableOpacity
                   className="flex-row items-center"
@@ -891,6 +905,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <>
             <RecordingSummary details={session.activity_details} />
             <WorkoutPhotos
+              workoutName={name}
               details={session.activity_details}
               sessionId={session.type + ':' + session.id}
               composition={{

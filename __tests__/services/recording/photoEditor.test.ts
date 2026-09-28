@@ -5,6 +5,7 @@ import {
   identityPhotoTransform,
   movePhotoTransform,
   photoLocalPoint,
+  photoShareFileName,
 } from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
 import { liveMetricLayout } from '../../../src/services/recording/liveMetricLayout';
@@ -247,3 +248,26 @@ it.each(['trail', 'poster'] as const)(
     );
   }
 );
+
+it('names shared photos after the app, workout, person and capture time', () => {
+  const capturedAt = new Date(2026, 8, 27, 16, 52).getTime();
+  expect(
+    photoShareFileName({
+      workout: 'Jutarnje trčanje',
+      user: 'Ćamil Sijarić',
+      capturedAt,
+    })
+  ).toBe('qla.fit-jutarnje-trcanje-camil-2026-09-27-1652.jpg');
+  expect(photoShareFileName({ workout: 'Đurđevak', capturedAt })).toBe(
+    'qla.fit-durdevak-2026-09-27-1652.jpg'
+  );
+  // Nothing Latin left and no name: the slots drop instead of leaving "--".
+  expect(photoShareFileName({ workout: '跑步', user: ' ', capturedAt })).toBe(
+    'qla.fit-2026-09-27-1652.jpg'
+  );
+  expect(
+    photoShareFileName({ workout: 'Run', capturedAt }).match(
+      /^qla\.fit(-[a-z0-9]+(-[a-z0-9]+)*)*\.jpg$/
+    )
+  ).not.toBeNull();
+});

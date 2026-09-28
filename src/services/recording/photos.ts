@@ -379,7 +379,9 @@ export async function createRecordingPhoto(
 
 export async function createPhotoPreview(
   photo: RecordingPhoto,
-  options: PhotoEditorOptions
+  options: PhotoEditorOptions,
+  /** The shared file's name; other apps show it, so it should say what it is. */
+  fileName?: string
 ) {
   if (
     !photo.composition ||
@@ -392,7 +394,7 @@ export async function createPhotoPreview(
     photo.composition,
     options
   );
-  const file = new File(Paths.cache, `${randomUUID()}.jpg`);
+  const file = new File(Paths.cache, fileName ?? `${randomUUID()}.jpg`);
   file.write(bytes);
   return file.uri;
 }
