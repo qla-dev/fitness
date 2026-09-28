@@ -104,6 +104,9 @@
     "owner": "kulasinn-2",
     "ios": {
       "buildNumber": "20"
+    },
+    "android": {
+      "versionCode": 1
     }
   }
 }

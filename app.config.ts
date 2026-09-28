@@ -119,10 +119,27 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
 
   const isDev = environment === 'dev' || environment === 'development';
 
+  // A production build with no Maps key ships a Run or Ride screen with no
+  // map — `RouteMap` falls back to a placeholder rather than crashing, which
+  // means nothing fails and nothing is obviously wrong until someone opens
+  // the screen. Loud here, because the build log is the last place this can
+  // still be caught before a store upload.
+  if (!isDev && !process.env.GOOGLE_MAPS_API_KEY) {
+    console.warn(
+      [
+        '',
+        '  GOOGLE_MAPS_API_KEY is not set for this production build.',
+        '  Run or Ride will render a placeholder instead of the route map.',
+        '  Set it before building anything destined for the Play Store.',
+        '',
+      ].join('\n')
+    );
+  }
+
   // Single source of truth for the linked EAS project: the update URL is
   // derived from the same id EAS Build already reads out of app.json.
-  const easProjectId = (config.extra as { eas?: { projectId?: string } })
-    ?.eas?.projectId;
+  const easProjectId = (config.extra as { eas?: { projectId?: string } })?.eas
+    ?.projectId;
 
   if (isDev) {
     androidPermissions.push(...devAndroidPermissions);
@@ -234,12 +251,30 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // Set only when provided so `Constants.expoConfig` reflects absence and
       // `RouteMap` can fall back to a placeholder instead of crashing.
       ...(process.env.GOOGLE_MAPS_API_KEY
-        ? { config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY } } }
+        ? {
+            config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY } },
+          }
         : {}),
     },
     plugins: [
       ...(config.plugins ?? []),
       'expo-image',
+      [
+        // Autolinked with defaults, this one adds RECORD_AUDIO on Android —
+        // for video capture the app never does. The manifest carried a
+        // microphone permission nothing used, which on a health listing is a
+        // Data safety answer with no feature behind it. Setting the flag
+        // false does not just skip the permission: the plugin then BLOCKS it,
+        // so no other package can add it back.
+        'expo-image-picker',
+        {
+          photosPermission:
+            'qla.fit needs access to your photos so you can attach them to foods and progress entries.',
+          cameraPermission:
+            'qla.fit needs access to your camera to take progress photos and scan food labels.',
+          microphonePermission: false,
+        },
+      ],
       [
         // Foreground playback only (rest-timer chime): no mic permission, no
         // background-audio mode, no Android record/foreground-service perms.
@@ -311,6 +346,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
             'qla.fit uses Bluetooth to connect to fitness sensors such as heart-rate monitors.',
         },
       ],
+      './plugins/withAndroidSigning',
       './plugins/withGlanceAndroidSupport',
       './plugins/withAppLanguage',
       './plugins/withCalorieWidget',
