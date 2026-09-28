@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { create } from 'zustand';
 import { Platform } from 'react-native';
+import type { TFunction } from 'i18next';
 
 export type OnlineAccount = {
   id: string;
@@ -134,4 +135,21 @@ export async function signOutOnline(): Promise<void> {
   await onlineRequest('/session', undefined, true, 'DELETE');
   await SecureStore.deleteItemAsync(SESSION_KEY);
   useOnlineAccount.setState({ session: null });
+}
+
+/**
+ * What to call the row or button that opens the account screen.
+ *
+ * Apple sign-in is the only method there is, and the account screen gates it
+ * on `Platform.OS === 'ios'` — so on Android every one of these entry points
+ * was a primary action promising a sign-in that the screen it opens then says
+ * is unavailable. Off iOS it is named for where it actually leads instead.
+ *
+ * Takes `t` rather than reaching for the singleton, so a language switch
+ * re-renders the callers that hold it.
+ */
+export function onlineAccountEntryLabel(t: TFunction): string {
+  return Platform.OS === 'ios'
+    ? t('online.signIn', { defaultValue: 'Sign in with Apple' })
+    : t('online.account', { defaultValue: 'Your account' });
 }

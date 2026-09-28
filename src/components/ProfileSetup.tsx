@@ -43,6 +43,21 @@ export default function ProfileSetup({ enabled }: { enabled: boolean }) {
         className="flex-row items-center px-4"
         style={{ minHeight: 66, gap: 14 }}
       >
+        {/* The same leading slot the rows above use. Without it this row's
+            text started at the card's edge while the divider over it was
+            already indented to the icon column, so the row read as broken
+            rather than as the third member of the card. */}
+        <View
+          className="items-center justify-center"
+          style={{ width: 62, height: 30 }}
+        >
+          <View
+            className="rounded-full items-center justify-center"
+            style={{ width: 30, height: 30, backgroundColor: accent }}
+          >
+            <Icon name="goal-target" size={16} color="#FFFFFF" />
+          </View>
+        </View>
         <View className="flex-1">
           <Text className="text-text-primary text-base font-semibold">
             {t('setup.edit', { defaultValue: 'Personal setup & goals' })}

@@ -8,6 +8,7 @@ import {
 import {
   Alert,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -104,6 +105,26 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   const [editingStat, setEditingStat] = useState<
     'weight' | 'height' | 'wheel' | null
   >(null);
+
+  /**
+   * The in-place fields, so the one being opened can be focused deliberately.
+   *
+   * `autoFocus` does not survive here on Android: the EditText takes focus
+   * while it is still being laid out and loses it in the same frame, and that
+   * blur ran `onCommit`, which closed the editor again — 32ms from tap to
+   * gone, so weight and height simply could not be typed, and with no weight
+   * no session could be started. Focusing on the frame after the mount is the
+   * one that sticks.
+   */
+  const statInputs = useRef<Record<string, TextInput | null>>({});
+  useEffect(() => {
+    if (!editingStat) return;
+    const frame = requestAnimationFrame(() =>
+      statInputs.current[editingStat]?.focus()
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [editingStat]);
+
   const upsertCheckIn = useUpsertCheckIn();
   const usesGlass = canUseLiquidGlass();
   // Off means the session is timed but leaves no route — indoors, or on a
@@ -292,7 +313,13 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     },
   });
 
-  const canStart = parseDecimalInput(weight) > 0 && !starting;
+  // The calorie estimate is computed from body weight, so a session cannot
+  // start without one. A fresh profile has none, which used to disable every
+  // start button on the screen at once with nothing saying why — the press
+  // asks for the weight instead now, and the hint under the cards says so
+  // before it is pressed.
+  const needsWeight = !(parseDecimalInput(weight) > 0);
+  const canStart = !starting;
 
   // Written back to the day's check-in rather than kept on the screen: this is
   // the same weight the measurement tiles show, and a run started after an
@@ -365,7 +392,9 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
             <View className="flex-row items-baseline">
               {editing ? (
                 <TextInput
-                  autoFocus
+                  ref={(node) => {
+                    statInputs.current[field] = node;
+                  }}
                   selectTextOnFocus
                   value={value}
                   onChangeText={onChangeText}
@@ -374,7 +403,12 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                   keyboardType="decimal-pad"
                   returnKeyType="done"
                   className="text-text-primary text-base font-semibold"
-                  style={{ flexShrink: 1, padding: 0 }}
+                  // A minimum width, because an empty field has no content to
+                  // size itself from: it collapsed to nothing, and Android
+                  // will not give focus to a zero-width view, so a card with
+                  // no value yet could neither be focused programmatically
+                  // nor tapped into — which is every card on a fresh profile.
+                  style={{ flexShrink: 1, minWidth: 56, padding: 0 }}
                 />
               ) : (
                 <Text
@@ -440,6 +474,13 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
 
   const start = (goal: RecordingGoal) => {
     if (starting) return;
+    if (needsWeight) {
+      // Nothing to start yet: put the caret in the card that holds the
+      // missing number rather than letting the press do nothing.
+      fireSelectionHaptic();
+      setEditingStat('weight');
+      return;
+    }
     if (goal.type === 'route' && !goal.route) {
       setRouteSheetOpen(true);
       return;
@@ -628,6 +669,14 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               onCommit: commitWheel,
             })}
         </View>
+        {needsWeight ? (
+          <Text className="text-text-muted text-sm mb-3 -mt-1">
+            {t('workoutSetup.weightNeeded', {
+              defaultValue:
+                'Add your weight to start — it sets the calorie estimate.',
+            })}
+          </Text>
+        ) : null}
 
         {/* How this session gets measured. Two switches rather than a
             segmented control: tracing a route and reading the watch are
@@ -648,26 +697,38 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 icon: 'gps-track',
                 on: gpsEnabled && locationGranted !== false,
               },
-              {
-                value: 'watch',
-                // The label describes whether this workout will use the watch.
-                label:
-                  watchCheck === 'checking'
-                    ? t('workoutSetup.watchChecking', {
-                        defaultValue: 'Checking Apple Watch…',
-                      })
-                    : watchEnabled
-                      ? t('workoutSetup.watchConnected', {
-                          defaultValue: 'Apple Watch connected',
-                        })
-                      : t('workoutSetup.watchDisconnected', {
-                          defaultValue: 'Apple Watch not connected',
-                        }),
-                icon: 'device-watch',
-                on: watchEnabled,
-                // Nothing to turn on until one is paired, or while asking it.
-                disabled: !watchConnected || watchCheck === 'checking',
-              },
+              // The watch is an Apple Watch reached over WatchConnectivity,
+              // so off iOS this chip can only ever read "Apple Watch not
+              // connected" and can never be pressed: the native module is
+              // iOS-only, so watchConnected is permanently false there. Left
+              // out rather than shown as a dead control naming a device the
+              // phone cannot pair with.
+              ...(Platform.OS === 'ios'
+                ? [
+                    {
+                      value: 'watch',
+                      // The label describes whether this workout will use the
+                      // watch.
+                      label:
+                        watchCheck === 'checking'
+                          ? t('workoutSetup.watchChecking', {
+                              defaultValue: 'Checking Apple Watch…',
+                            })
+                          : watchEnabled
+                            ? t('workoutSetup.watchConnected', {
+                                defaultValue: 'Apple Watch connected',
+                              })
+                            : t('workoutSetup.watchDisconnected', {
+                                defaultValue: 'Apple Watch not connected',
+                              }),
+                      icon: 'device-watch' as IconName,
+                      on: watchEnabled,
+                      // Nothing to turn on until one is paired, or while
+                      // asking it.
+                      disabled: !watchConnected || watchCheck === 'checking',
+                    },
+                  ]
+                : []),
               {
                 value: 'sensors',
                 label:

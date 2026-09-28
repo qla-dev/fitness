@@ -5849,6 +5849,7 @@
     "editGoal": "Edit {{goal}}",
     "goalSheetMessage": "A goal is a target, not a limit — the session keeps recording past it until you finish.",
     "weightLabel": "Weight",
+    "weightNeeded": "Add your weight to start — it sets the calorie estimate.",
     "heightLabel": "Height",
     "wheelLabel": "Wheel",
     "gpsOn": "GPS tracking on",

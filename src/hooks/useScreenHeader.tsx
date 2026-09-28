@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated as RNAnimated,
   Platform,
+  type LayoutChangeEvent,
   Pressable,
   Text,
   View,
@@ -65,6 +66,9 @@ export const HEADER_CONTENT_GAP = 12;
  * that pad by nothing and had their first row sitting on the line.
  */
 const HEADER_BAR_BOTTOM_GAP = 8;
+
+/** The clearance between the title and the nearest header button. */
+const TITLE_SIDE_GAP = 8;
 
 export const SAVE_LABEL = 'Save';
 export const SAVING_LABEL = 'Saving…';
@@ -845,6 +849,10 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
   } | null>(null);
   const menuTriggerRefs = useRef<Record<string, View | null>>({});
 
+  // How wide the side cells are, so the title can stop short of them. See the
+  // note on the title layer below for why this is measured rather than flexed.
+  const [sideWidths, setSideWidths] = useState({ left: 0, right: 0 });
+
   const {
     variant = 'system',
     largeTitle = false,
@@ -1169,6 +1177,22 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     />
   );
 
+  /**
+   * Records a side cell's width, ignoring a repeat of the same number so the
+   * layout pass this triggers cannot feed itself.
+   */
+  const measureSide =
+    (side: 'left' | 'right') => (event: LayoutChangeEvent) => {
+      const width = Math.round(event.nativeEvent.layout.width);
+      setSideWidths((current) =>
+        current[side] === width ? current : { ...current, [side]: width }
+      );
+    };
+
+  /** The room to leave for the buttons on each side of the title. */
+  const titleSideInset =
+    Math.max(sideWidths.left, sideWidths.right) + TITLE_SIDE_GAP;
+
   const bar = (
     <View
       className={`px-4 py-3 ${borderless ? '' : 'border-b border-border-subtle'}`}
@@ -1196,13 +1220,23 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
           it can never squeeze them — and it still lands on the bar's true
           center regardless of how the left/right content widths differ.
           pointerEvents="box-none" keeps the title layer itself untouchable so
-          it can never sit "on top of" a button for hit-testing purposes. */}
+          it can never sit "on top of" a button for hit-testing purposes.
+
+          Being out of the flow, though, the layer spans the whole bar, so a
+          title only truncates once it reaches the bar's own edge — long
+          before that it is already drawing underneath the side buttons
+          (measured on Android: a program title ended 5px short of the share
+          button). Insetting it by the WIDER of the two measured cells fixes
+          that without giving the title any say in their layout: the inset is
+          equal on both sides, so the title still lands on the bar's true
+          center, and it now runs out of room — and ellipsizes — before it can
+          reach either one. */}
       <View
         pointerEvents="box-none"
         style={{
           position: 'absolute',
-          left: 16,
-          right: 16,
+          left: 16 + titleSideInset,
+          right: 16 + titleSideInset,
           top: 0,
           bottom: 0,
           alignItems: 'center',
@@ -1222,12 +1256,17 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
           never be squeezed by the title, at the cost of no longer truncating
           if their own content ever got wide enough to overflow — a non-issue
           for the icon/short-text buttons this bar renders. */}
-      <View className="flex-row items-center gap-2" style={{ flexShrink: 0 }}>
+      <View
+        className="flex-row items-center gap-2"
+        style={{ flexShrink: 0 }}
+        onLayout={measureSide('left')}
+      >
         {leftCustom}
       </View>
       <View
         className="flex-row items-center justify-end gap-2"
         style={{ flexShrink: 0 }}
+        onLayout={measureSide('right')}
       >
         {rightCustom}
       </View>
