@@ -72,10 +72,19 @@ export default function NativePromptSheet({
   children: React.ReactNode;
 }) {
   const sheet = useRef<CustomModalRef>(null);
+  const presented = useRef(false);
 
   useEffect(() => {
-    if (open) sheet.current?.present();
-    else sheet.current?.dismiss();
+    if (open) {
+      presented.current = true;
+      sheet.current?.present();
+    } else if (presented.current) {
+      // Never dismiss a sheet that was not presented: gorhom marks a fresh
+      // modal as DISMISSING, and its portal then skips every later present(),
+      // so the first tap on a closed-on-mount sheet silently did nothing.
+      presented.current = false;
+      sheet.current?.dismiss();
+    }
   }, [open]);
 
   return (

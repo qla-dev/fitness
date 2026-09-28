@@ -6,7 +6,10 @@ import {
   deleteRecordingPhoto,
   createPhotoEditorLayers,
 } from '../../../src/services/recording/photos';
-import { defaultPhotoEditorOptions } from '../../../src/services/recording/photoEditor';
+import {
+  defaultPhotoEditorOptions,
+  photoEditorLayout,
+} from '../../../src/services/recording/photoEditor';
 import type { PhotoComposition } from '../../../src/services/recording/types';
 import { drawPhotoBranding } from '../../../src/services/recording/photoBranding';
 
@@ -60,6 +63,10 @@ jest.mock('@shopify/react-native-skia', () => {
           dispose: jest.fn(),
         }),
       },
+      PictureRecorder: jest.fn(() => ({
+        beginRecording: () => canvas,
+        finishRecordingAsPicture: () => ({ picture: true }),
+      })),
       Surface: {
         MakeOffscreen: jest.fn(() => ({
           getCanvas: () => canvas,
@@ -127,12 +134,13 @@ it.each(['left', 'center', 'right'] as const)(
     const canvas = jest
       .mocked(Skia.Surface.MakeOffscreen)
       .mock.results[0].value.getCanvas();
+    // Classic keeps a 65px side padding on the 1080px export.
     const offset =
       textAlign === 'left'
-        ? 0
+        ? 65
         : textAlign === 'center'
           ? (1080 - 100) / 2
-          : 1080 - 100;
+          : 1080 - 65 - 100;
     expect(canvas.drawText).toHaveBeenCalledWith(
       '5 km',
       expect.closeTo(offset),
@@ -198,12 +206,7 @@ it('re-renders the original for styling and shares the resulting file, leaving l
     1080,
     1920,
     '#111111',
-    {
-      centerX: 540,
-      top: 1920 * 0.94,
-      fontSize: 1080 * 0.04,
-      align: 'left',
-    }
+    photoEditorLayout(composition, defaultPhotoEditorOptions).branding
   );
   jest.mocked(Skia.Data.fromURI).mockClear();
   expect(
@@ -335,11 +338,13 @@ it('creates untransformed transparent layers for live gestures', async () => {
       statsTransform: { x: 0.1, y: 0.2, scale: 2, rotation: 1 },
     }
   );
-  expect(Skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(3);
+  // Only the photo is a bitmap; route and stats stay vector for sharp zoom.
+  expect(Skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(1);
+  expect(Skia.PictureRecorder).toHaveBeenCalledTimes(2);
   const canvas = jest
     .mocked(Skia.Surface.MakeOffscreen)
     .mock.results[0].value.getCanvas();
-  expect(canvas.clear).toHaveBeenCalledTimes(3);
+  expect(canvas.clear).toHaveBeenCalledTimes(1);
   expect(canvas.drawImageRect).toHaveBeenCalledTimes(1);
   expect(canvas.drawPath).toHaveBeenCalledTimes(1);
   expect(canvas.rotate).not.toHaveBeenCalled();

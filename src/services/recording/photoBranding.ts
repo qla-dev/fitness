@@ -37,6 +37,7 @@ export async function drawPhotoBranding(
     centerX: number;
     top: number;
     fontSize: number;
+    inset?: number;
     align?: 'left' | 'center' | 'right';
   }
 ) {
@@ -55,11 +56,12 @@ export async function drawPhotoBranding(
     const iconSize = size * 1.4;
     const gap = size * 0.18;
     const totalWidth = iconSize + gap + textWidth;
+    const inset = placement?.inset ?? 0;
     const x =
       placement?.align === 'left'
-        ? 0
+        ? inset
         : placement?.align === 'right'
-          ? width - totalWidth
+          ? width - inset - totalWidth
           : (placement?.centerX ?? width / 2) - totalWidth / 2;
     const y = placement?.top ?? height * 0.965 - iconSize;
     paint.setColorFilter(tint);

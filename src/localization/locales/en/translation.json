@@ -5494,7 +5494,12 @@
       "layout": "Layout",
       "overlay": "Image overlay",
       "filter": "Photo filter",
-      "previewFailed": "Could not update the preview. Tap to retry."
+      "previewFailed": "Could not update the preview. Tap to retry.",
+      "adjusting": "Adjusting",
+      "saveDraft": "Save as draft",
+      "draftFailed": "Could not save this draft. Please try again.",
+      "moreOptions": "More options",
+      "fewerOptions": "Fewer options"
     }
   },
   "setup": {

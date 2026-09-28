@@ -8,6 +8,7 @@ import {
   screen,
 } from '@testing-library/react-native/pure';
 import * as Sharing from 'expo-sharing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import WorkoutPhotoEditor from '../../src/components/recording/WorkoutPhotoEditor';
 import {
   createPhotoPreview,
@@ -90,11 +91,14 @@ const photo: RecordingPhoto = {
   },
 };
 async function finishPreview() {
+  // Let a saved draft load before the debounced layer render starts.
+  await act(async () => {});
   await act(async () => {
     jest.advanceTimersByTime(150);
   });
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await AsyncStorage.clear();
   jest.clearAllMocks();
   jest.useFakeTimers();
 });
@@ -104,7 +108,7 @@ afterEach(() => {
 });
 
 it('fills the image width, exports the stage proportions and shares through the system sheet', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   fireEvent(screen.getByTestId('workout-photo-stage'), 'layout', {
     nativeEvent: { layout: { width: 390, height: 650 } },
   });
@@ -130,17 +134,17 @@ it('fills the image width, exports the stage proportions and shares through the 
 
 it('waits for the selected layout before allowing sharing and discards only the editor', async () => {
   const discard = jest.fn();
-  const view = render(<WorkoutPhotoEditor photo={photo} onDiscard={discard} />);
+  const view = render(<WorkoutPhotoEditor photo={photo} onClose={discard} />);
   await finishPreview();
   fireEvent.press(screen.getByText('Route poster'));
-  fireEvent.press(screen.getByText('Share'));
+  fireEvent.press(screen.getByText('Adjusting'));
   expect(Sharing.shareAsync).not.toHaveBeenCalled();
   await finishPreview();
   expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
     photo,
     expect.objectContaining({ layout: 'poster' })
   );
-  fireEvent.press(screen.getByText('Discard'));
+  fireEvent.press(screen.getByLabelText('Close'));
   expect(discard).toHaveBeenCalledTimes(1);
   view.unmount();
   expect(mockDelete).toHaveBeenCalled();
@@ -158,7 +162,7 @@ it('ignores a stale preview that finishes after a newer selection', async () => 
         resolveOld = resolve;
       })
   );
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   fireEvent(screen.getByTestId('workout-photo-stage'), 'layout', {
     nativeEvent: { layout: { width: 390, height: 650 } },
   });
@@ -179,10 +183,12 @@ it('ignores a stale preview that finishes after a newer selection', async () => 
 });
 
 it('updates the overlay font and waits for its export before sharing', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   await finishPreview();
-  fireEvent.press(screen.getByText('Anton'));
-  fireEvent.press(screen.getByText('Share'));
+  fireEvent.press(screen.getByLabelText('Text font'));
+  expect(screen.getAllByText('Aa')).toHaveLength(5);
+  fireEvent.press(screen.getByLabelText('Anton'));
+  fireEvent.press(screen.getByText('Adjusting'));
   expect(Sharing.shareAsync).not.toHaveBeenCalled();
   await finishPreview();
   expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
@@ -192,14 +198,15 @@ it('updates the overlay font and waits for its export before sharing', async () 
 });
 
 it('selects a filter from the thumbnail strip and waits for its export', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   await finishPreview();
+  fireEvent.press(screen.getByLabelText('More options'));
   fireEvent.press(screen.getByLabelText('Photo filter'));
   fireEvent.press(screen.getByLabelText('Monochrome'));
   expect(
     screen.getByLabelText('Monochrome').props.accessibilityState.selected
   ).toBe(true);
-  fireEvent.press(screen.getByText('Share'));
+  fireEvent.press(screen.getByText('Adjusting'));
   expect(Sharing.shareAsync).not.toHaveBeenCalled();
   await finishPreview();
   expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
@@ -209,8 +216,9 @@ it('selects a filter from the thumbnail strip and waits for its export', async (
 });
 
 it('closes filters on an outside tap and provides sidebar haptics', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   await finishPreview();
+  fireEvent.press(screen.getByLabelText('More options'));
   fireEvent(screen.getByLabelText('Photo filter'), 'pressIn');
   expect(fireSelectionHaptic).toHaveBeenCalled();
   fireEvent.press(screen.getByLabelText('Photo filter'));
@@ -222,9 +230,14 @@ it('closes filters on an outside tap and provides sidebar haptics', async () => 
 });
 
 it('positions a full-width map independently of route visibility', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   await finishPreview();
   expect(screen.queryByLabelText('Move map to top')).toBeNull();
+  expect(screen.queryByText('Faded map')).toBeNull();
+  fireEvent.press(screen.getByLabelText('More options'));
+  expect(
+    screen.getByText('Route style', { includeHiddenElements: true })
+  ).toBeTruthy();
   fireEvent.press(screen.getByText('Faded map'));
   fireEvent.press(screen.getByLabelText('Move map to top'));
   fireEvent.press(screen.getByLabelText('Show route'));
@@ -241,7 +254,7 @@ it('positions a full-width map independently of route visibility', async () => {
 });
 
 it('exports independent transforms without regenerating layers, then resets them on layout selection', async () => {
-  render(<WorkoutPhotoEditor photo={photo} onDiscard={jest.fn()} />);
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
   fireEvent(screen.getByTestId('workout-photo-stage'), 'layout', {
     nativeEvent: { layout: { width: 390, height: 650 } },
   });
@@ -267,5 +280,27 @@ it('exports independent transforms without regenerating layers, then resets them
       statsTransform: undefined,
       routeTransform: undefined,
     })
+  );
+});
+
+it('saves the setup as a draft and resumes it on the next open', async () => {
+  const close = jest.fn();
+  const view = render(<WorkoutPhotoEditor photo={photo} onClose={close} />);
+  await finishPreview();
+  fireEvent.press(screen.getByLabelText('Text font'));
+  fireEvent.press(screen.getByLabelText('Anton'));
+  await finishPreview();
+  await act(async () => {
+    fireEvent.press(screen.getByText('Save as draft'));
+  });
+  expect(close).toHaveBeenCalledTimes(1);
+  view.unmount();
+  jest.mocked(createPhotoEditorLayers).mockClear();
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  await finishPreview();
+  expect(createPhotoEditorLayers).toHaveBeenCalledTimes(1);
+  expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({ font: 'anton' })
   );
 });

@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -27,7 +33,6 @@ import { useCSSVariable } from 'uniwind';
 import { withAlpha } from '../../utils/colors';
 import { fireSelectionHaptic } from '../../services/haptics';
 import Button from '../ui/Button';
-import FormInput from '../FormInput';
 import { recordingClock, routeSegments } from './format';
 import { usePreferences } from '../../hooks/usePreferences';
 import { invalidateExerciseCache } from '../../hooks/invalidateExerciseCache';
@@ -57,8 +62,7 @@ import type {
 } from '../../services/recording/types';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { formatLocalizedNumber } from '../../localization';
-import { distanceFromKm, weightToKg } from '../../utils/unitConversions';
-import { parseDecimalInput } from '../../utils/numericInput';
+import { distanceFromKm } from '../../utils/unitConversions';
 
 function KeepRecordingAwake() {
   useKeepAwake('run-ride');
@@ -93,14 +97,12 @@ export default function RunRideRecorder({
   const queryClient = useQueryClient();
   const { preferences } = usePreferences();
   const unit = preferences?.default_distance_unit === 'miles' ? 'miles' : 'km';
-  const weightUnit = preferences?.default_weight_unit === 'lbs' ? 'lbs' : 'kg';
   const snapshot = useSyncExternalStore(
     subscribeRecording,
     getRecordingSnapshot
   );
   const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
-  const [sport, setSport] = useState<RecordingSport>(initialSport ?? 'run');
-  const [weight, setWeight] = useState('');
+  const sport: RecordingSport = initialSport ?? 'run';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -169,8 +171,8 @@ export default function RunRideRecorder({
   };
   // Arriving from the setup screen there is nothing left to ask: sport, goal
   // and weight came with the route, so the session starts itself as soon as
-  // permissions are ready. A bare entry — a resume, a deep link — still gets
-  // the form below.
+  // permissions are ready. A resume shows the session under way; a bare entry
+  // with nothing recording goes back to setup (see backToSetup below).
   const autoStarted = useRef(false);
   const [autoStartFailed, setAutoStartFailed] = useState(false);
   useEffect(() => {
@@ -213,15 +215,27 @@ export default function RunRideRecorder({
     snapshot.ready,
     t,
   ]);
-  // Discarding ends the route's claim on the screen. The auto start runs
-  // once, so without this the throw-away put the screen back to "no session,
-  // route weight still set" and the spinner returned — waiting on an attempt
-  // that had already happened and would never happen again.
-  const [discarded, setDiscarded] = useState(false);
   // Derived, not stored: the route asked for a session and there is not one
-  // yet, so the form it would have filled in has nothing left to ask.
-  const autoStarting =
-    !!initialWeightKg && !session && !autoStartFailed && !discarded;
+  // yet, so the screen waits for the auto start instead of redirecting.
+  const autoStarting = !!initialWeightKg && !session && !autoStartFailed;
+  // The recorder has no start form of its own: setup is where a session is
+  // chosen. A discard, a failed auto start or a bare entry (a deep link with
+  // nothing recording) all go back there for the same sport.
+  const backToSetup = useCallback(
+    (nextSport: RecordingSport) => {
+      leaving.current = true;
+      navigation.replace('WorkoutSetup', {
+        sport: nextSport,
+        sportId: initialSportId,
+      });
+    },
+    [navigation, initialSportId]
+  );
+  useEffect(() => {
+    if (!snapshot.ready || session || autoStarting || busy) return;
+    if (leaving.current) return;
+    backToSetup(initialSport ?? 'run');
+  }, [snapshot.ready, session, autoStarting, busy, backToSetup, initialSport]);
 
   const active = session?.phase === 'recording';
   const seconds = session ? elapsedSeconds(session, now) : 0;
@@ -352,12 +366,12 @@ export default function RunRideRecorder({
         {
           text: t('recording.discard', { defaultValue: 'Discard' }),
           style: 'destructive',
-          // Stays on the screen, unlike the discard that answers a back
-          // press — so the start form has to come back with it.
+          // Back to setup for the same sport, not to an empty recorder.
           onPress: () =>
             void perform(async () => {
+              const discardedSport = session?.sport ?? initialSport ?? 'run';
               await discardRecording();
-              setDiscarded(true);
+              backToSetup(discardedSport);
             }),
         },
       ]
@@ -525,62 +539,7 @@ export default function RunRideRecorder({
               {t('recording.starting', { defaultValue: 'Starting…' })}
             </Text>
           </View>
-        ) : !session ? (
-          <View className="gap-3">
-            <View className="flex-row gap-2">
-              <Button
-                className="flex-1"
-                variant={sport === 'run' ? 'primary' : 'secondary'}
-                onPress={() => setSport('run')}
-              >
-                {t('recording.run', { defaultValue: 'Run' })}
-              </Button>
-              <Button
-                className="flex-1"
-                variant={sport === 'ride' ? 'primary' : 'secondary'}
-                onPress={() => setSport('ride')}
-              >
-                {t('recording.ride', { defaultValue: 'Bike ride' })}
-              </Button>
-            </View>
-            <Text className="text-text-muted">
-              {t('recording.weight', {
-                defaultValue: 'Body weight ({{unit}}), for estimated calories',
-                unit: weightUnit,
-              })}
-            </Text>
-            <FormInput
-              accessibilityLabel={t('recording.weight', {
-                defaultValue: 'Body weight ({{unit}}), for estimated calories',
-                unit: weightUnit,
-              })}
-              value={weight}
-              onChangeText={setWeight}
-              keyboardType="decimal-pad"
-            />
-            <Button
-              loading={busy}
-              disabled={
-                !snapshot.ready || Platform.OS === 'web' || !weight.trim()
-              }
-              onPress={() =>
-                void perform(() =>
-                  startRecording(
-                    sport,
-                    weightToKg(parseDecimalInput(weight), weightUnit),
-                    t,
-                    undefined,
-                    initialSportId,
-                    initialGps,
-                    initialWatch
-                  )
-                )
-              }
-            >
-              {t('recording.start', { defaultValue: 'Start recording' })}
-            </Button>
-          </View>
-        ) : (
+        ) : !session ? null : (
           <View>
             {!active && (
               <Button variant="ghost" disabled={busy} onPress={discard}>

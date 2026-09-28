@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   ActivityIndicator,
@@ -22,6 +22,7 @@ import Icon, { type IconName } from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 import PhotoTextColor from './PhotoTextColor';
 import PhotoFilterPreviews from './PhotoFilterPreviews';
+import PhotoFontPreviews from './PhotoFontPreviews';
 import PhotoEditorCanvas from './PhotoEditorCanvas';
 import { fireSelectionHaptic } from '../../services/haptics';
 import type { RecordingPhoto } from '../../services/recording/types';
@@ -29,6 +30,7 @@ import {
   createPhotoPreview,
   createPhotoEditorLayers,
   recordingPhotoUri,
+  type PhotoEditorLayers,
 } from '../../services/recording/photos';
 import {
   defaultPhotoEditorOptions,
@@ -38,6 +40,10 @@ import {
   type PhotoOverlay,
   type PhotoFont,
 } from '../../services/recording/photoEditor';
+import {
+  loadPhotoDraft,
+  savePhotoDraft,
+} from '../../services/recording/photoDrafts';
 
 function removePreview(uri: string | null, original: string) {
   if (!uri || uri === original) return;
@@ -90,12 +96,39 @@ function EditorMenu({
   );
 }
 
+/** Labels only appear with the expanded toolbar, as in Instagram's editor. */
+function ToolRow({
+  label,
+  expanded,
+  children,
+}: {
+  label: string;
+  expanded: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.toolRow}>
+      {expanded && (
+        <Text
+          style={styles.toolLabel}
+          numberOfLines={1}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          {label}
+        </Text>
+      )}
+      {children}
+    </View>
+  );
+}
+
 export default function WorkoutPhotoEditor({
   photo,
-  onDiscard,
+  onClose,
 }: {
   photo: RecordingPhoto;
-  onDiscard: () => void;
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -109,7 +142,7 @@ export default function WorkoutPhotoEditor({
     routeColor: accent || defaultPhotoEditorOptions.routeColor,
   }));
   const [preview, setPreview] = useState<{
-    layers: { background: string; stats: string; route: string };
+    layers: PhotoEditorLayers;
     options: PhotoEditorOptions;
   } | null>(null);
   const [stage, setStage] = useState({ width: 0, height: 0 });
@@ -127,7 +160,27 @@ export default function WorkoutPhotoEditor({
   );
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [tray, setTray] = useState<'filters' | 'fonts' | null>(null);
+  const [moreTools, setMoreTools] = useState(false);
+  const [draftReady, setDraftReady] = useState(!editable);
+  useEffect(() => {
+    if (!editable) return;
+    let cancelled = false;
+    void loadPhotoDraft(photo).then((draft) => {
+      if (cancelled) return;
+      // The stage measures its own proportions; everything else resumes.
+      if (draft)
+        setOptions((current) => ({
+          ...current,
+          ...draft,
+          aspectRatio: current.aspectRatio,
+        }));
+      setDraftReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [photo, editable]);
   const [sharing, setSharing] = useState(false);
   const shareLock = useRef(false);
   const currentFiles = useRef<string[]>([]);
@@ -136,17 +189,16 @@ export default function WorkoutPhotoEditor({
     let cancelled = false;
     // Native color pickers can emit continuously while dragging the spectrum.
     const timer = setTimeout(() => {
-      if (!editable) return;
+      if (!editable || !draftReady) return;
       void createPhotoEditorLayers(photo, layerOptions)
         .then((layers) => {
+          // Vector layers are released by the GC; only the bitmap needs cleanup.
           if (cancelled) {
-            Object.values(layers).forEach((uri) =>
-              removePreview(uri, original)
-            );
+            removePreview(layers.background, original);
             return;
           }
           currentFiles.current.forEach((uri) => removePreview(uri, original));
-          currentFiles.current = Object.values(layers);
+          currentFiles.current = [layers.background];
           setPreview({ layers, options: layerOptions });
           setFailed(false);
         })
@@ -158,13 +210,26 @@ export default function WorkoutPhotoEditor({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [photo, layerOptions, original, retry, editable]);
+  }, [photo, layerOptions, original, retry, editable, draftReady]);
   useEffect(
     () => () =>
       currentFiles.current.forEach((uri) => removePreview(uri, original)),
     [original]
   );
 
+  const saveDraft = async () => {
+    if (shareLock.current) return;
+    try {
+      await savePhotoDraft(photo, options);
+      onClose();
+    } catch {
+      Alert.alert(
+        t('recording.editor.draftFailed', {
+          defaultValue: 'Could not save this draft. Please try again.',
+        })
+      );
+    }
+  };
   const share = async () => {
     if (rendering || gesturing || shareLock.current) return;
     shareLock.current = true;
@@ -230,7 +295,7 @@ export default function WorkoutPhotoEditor({
     {
       id: 'poster',
       title: t('recording.editor.poster', { defaultValue: 'Route poster' }),
-      image: 'map',
+      image: 'photo.artframe',
     },
   ];
   const fonts: { id: PhotoFont; title: string }[] = [
@@ -310,7 +375,7 @@ export default function WorkoutPhotoEditor({
       animationType="fade"
       presentationStyle="fullScreen"
       onRequestClose={() => {
-        if (!shareLock.current) onDiscard();
+        if (!shareLock.current) onClose();
       }}
     >
       <GestureHandlerRootView style={[styles.root, { paddingTop: insets.top }]}>
@@ -343,7 +408,7 @@ export default function WorkoutPhotoEditor({
               options={options}
               width={stage.width}
               height={stage.height}
-              disabled={sharing || rendering || filtersOpen}
+              disabled={sharing || rendering || !!tray}
               onBusy={setGesturing}
               onCommit={(statsTransform, routeTransform) =>
                 setOptions((current) => ({
@@ -354,7 +419,7 @@ export default function WorkoutPhotoEditor({
               }
             />
           )}
-          {filtersOpen && (
+          {tray && (
             <Pressable
               style={StyleSheet.absoluteFill}
               testID="photo-filter-dismiss"
@@ -362,7 +427,7 @@ export default function WorkoutPhotoEditor({
               accessibilityLabel={t('recording.editor.closeFilters', {
                 defaultValue: 'Close filters',
               })}
-              onPress={() => setFiltersOpen(false)}
+              onPress={() => setTray(null)}
             />
           )}
           {editable && (
@@ -372,292 +437,447 @@ export default function WorkoutPhotoEditor({
               showsVerticalScrollIndicator={false}
               pointerEvents={sharing ? 'none' : 'auto'}
             >
-              <EditorMenu
-                onOpen={() => setFiltersOpen(false)}
+              <ToolRow
                 label={t('recording.editor.layout', { defaultValue: 'Layout' })}
-                icon="list"
-                actions={actions(layouts, options.layout)}
-                onSelect={(id) => {
-                  const layout = layouts.find((item) => item.id === id)?.id;
-                  if (layout) {
-                    setOptions((current) => ({
-                      ...current,
-                      layout,
-                      statsTransform: undefined,
-                      routeTransform: undefined,
-                    }));
-                    setLayoutVersion((value) => value + 1);
-                    setGesturing(false);
-                  }
-                }}
-              />
-              <EditorMenu
-                onOpen={() => setFiltersOpen(false)}
+                expanded={moreTools}
+              >
+                <EditorMenu
+                  onOpen={() => setTray(null)}
+                  label={t('recording.editor.layout', {
+                    defaultValue: 'Layout',
+                  })}
+                  icon="layout"
+                  actions={actions(layouts, options.layout)}
+                  onSelect={(id) => {
+                    const layout = layouts.find((item) => item.id === id)?.id;
+                    if (layout) {
+                      setOptions((current) => ({
+                        ...current,
+                        layout,
+                        statsTransform: undefined,
+                        routeTransform: undefined,
+                      }));
+                      setLayoutVersion((value) => value + 1);
+                      setGesturing(false);
+                    }
+                  }}
+                />
+              </ToolRow>
+              <ToolRow
                 label={t('recording.editor.font', {
                   defaultValue: 'Text font',
                 })}
-                icon="document-text"
-                actions={actions(fonts, options.font)}
-                onSelect={(id) => {
-                  const font = fonts.find((item) => item.id === id)?.id;
-                  if (font) setOptions((current) => ({ ...current, font }));
-                }}
-              />
-              <LiquidGlassSurface
-                colorScheme="dark"
-                style={styles.tool}
-                onTouchStart={() => {
-                  fireSelectionHaptic();
-                  setFiltersOpen(false);
-                }}
+                expanded={moreTools}
               >
-                <PhotoTextColor
-                  value={options.textColor}
-                  onChange={(textColor) =>
-                    setOptions((current) => ({ ...current, textColor }))
-                  }
-                />
-              </LiquidGlassSurface>
-              <LiquidGlassSurface
-                colorScheme="dark"
-                style={styles.tool}
-                onTouchStart={() => {
-                  fireSelectionHaptic();
-                  setFiltersOpen(false);
-                }}
-              >
-                <PhotoTextColor
-                  label={t('recording.editor.routeColor', {
-                    defaultValue: 'Route color',
-                  })}
-                  value={options.routeColor}
-                  onChange={(routeColor) =>
-                    setOptions((current) => ({ ...current, routeColor }))
-                  }
-                />
-              </LiquidGlassSurface>
-              <EditorMenu
-                onOpen={() => setFiltersOpen(false)}
-                label={t('recording.editor.overlay', {
-                  defaultValue: 'Image overlay',
-                })}
-                icon="eye"
-                actions={actions(overlays, options.overlay)}
-                onSelect={(id) => {
-                  const overlay = overlays.find((item) => item.id === id)?.id;
-                  if (overlay)
-                    setOptions((current) => ({ ...current, overlay }));
-                }}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('recording.editor.filter', {
-                  defaultValue: 'Photo filter',
-                })}
-                accessibilityState={{
-                  expanded: filtersOpen,
-                  disabled: sharing,
-                }}
-                disabled={sharing}
-                onPressIn={fireSelectionHaptic}
-                onPress={() => setFiltersOpen((open) => !open)}
-              >
-                <LiquidGlassSurface
-                  colorScheme="dark"
-                  isInteractive
-                  style={styles.tool}
-                >
-                  <Icon name="sparkles" size={24} color="white" />
-                </LiquidGlassSurface>
-              </Pressable>
-              <EditorMenu
-                onOpen={() => setFiltersOpen(false)}
-                label={t('recording.editor.alignment', {
-                  defaultValue: 'Text alignment',
-                })}
-                icon="list"
-                actions={actions(
-                  [
-                    {
-                      id: 'left',
-                      title: t('recording.editor.alignLeft', {
-                        defaultValue: 'Align left',
-                      }),
-                      image: 'text.alignleft',
-                    },
-                    {
-                      id: 'center',
-                      title: t('recording.editor.alignCenter', {
-                        defaultValue: 'Align center',
-                      }),
-                      image: 'text.aligncenter',
-                    },
-                    {
-                      id: 'right',
-                      title: t('recording.editor.alignRight', {
-                        defaultValue: 'Align right',
-                      }),
-                      image: 'text.alignright',
-                    },
-                  ],
-                  options.textAlign ?? 'left'
-                )}
-                onSelect={(textAlign) => {
-                  if (
-                    textAlign === 'left' ||
-                    textAlign === 'center' ||
-                    textAlign === 'right'
-                  )
-                    setOptions((current) => ({ ...current, textAlign }));
-                }}
-              />
-              <EditorMenu
-                onOpen={() => setFiltersOpen(false)}
-                label={t('recording.editor.routeStyle', {
-                  defaultValue: 'Route style',
-                })}
-                icon="route-path"
-                actions={actions(
-                  [
-                    {
-                      id: 'line',
-                      title: t('recording.editor.routeLine', {
-                        defaultValue: 'Route outline',
-                      }),
-                      image:
-                        'point.topleft.down.to.point.bottomright.curvepath',
-                    },
-                    {
-                      id: 'map',
-                      title: t('recording.editor.fadedMap', {
-                        defaultValue: 'Faded map',
-                      }),
-                      image: 'map',
-                    },
-                  ],
-                  options.routeStyle ?? 'line'
-                )}
-                onSelect={(routeStyle) => {
-                  if (routeStyle === 'line' || routeStyle === 'map')
-                    setOptions((current) => ({ ...current, routeStyle }));
-                }}
-              />
-              {options.routeStyle === 'map' && (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('recording.editor.font', {
+                    defaultValue: 'Text font',
+                  })}
+                  accessibilityState={{
+                    expanded: tray === 'fonts',
+                    disabled: sharing,
+                  }}
                   disabled={sharing}
                   onPressIn={fireSelectionHaptic}
-                  accessibilityLabel={
-                    options.mapPosition === 'top'
-                      ? t('recording.editor.mapBottom', {
-                          defaultValue: 'Move map to bottom',
-                        })
-                      : t('recording.editor.mapTop', {
-                          defaultValue: 'Move map to top',
-                        })
+                  onPress={() =>
+                    setTray((open) => (open === 'fonts' ? null : 'fonts'))
                   }
-                  onPress={() => {
-                    setFiltersOpen(false);
-                    setOptions((current) => ({
-                      ...current,
-                      mapPosition:
-                        current.mapPosition === 'top' ? 'bottom' : 'top',
-                    }));
-                  }}
                 >
                   <LiquidGlassSurface
                     colorScheme="dark"
                     isInteractive
                     style={styles.tool}
                   >
-                    <Icon
-                      name={
-                        options.mapPosition === 'top'
-                          ? 'arrow-down'
-                          : 'arrow-up'
-                      }
-                      size={24}
-                      color="white"
-                    />
+                    <Icon name="font" size={24} color="white" />
                   </LiquidGlassSurface>
                 </Pressable>
-              )}
-              <Pressable
-                accessibilityRole="switch"
-                accessibilityLabel={t('recording.editor.showRoute', {
-                  defaultValue: 'Show route',
+              </ToolRow>
+              <ToolRow
+                label={t('recording.editor.alignment', {
+                  defaultValue: 'Text alignment',
                 })}
-                accessibilityState={{
-                  checked: options.showRoute !== false,
-                  disabled: sharing,
-                }}
-                disabled={sharing}
-                onPressIn={fireSelectionHaptic}
-                onPress={() => {
-                  setFiltersOpen(false);
-                  setOptions((current) => ({
-                    ...current,
-                    showRoute: current.showRoute === false,
-                  }));
-                }}
+                expanded={moreTools}
+              >
+                <EditorMenu
+                  onOpen={() => setTray(null)}
+                  label={t('recording.editor.alignment', {
+                    defaultValue: 'Text alignment',
+                  })}
+                  icon="list"
+                  actions={actions(
+                    [
+                      {
+                        id: 'left',
+                        title: t('recording.editor.alignLeft', {
+                          defaultValue: 'Align left',
+                        }),
+                        image: 'text.alignleft',
+                      },
+                      {
+                        id: 'center',
+                        title: t('recording.editor.alignCenter', {
+                          defaultValue: 'Align center',
+                        }),
+                        image: 'text.aligncenter',
+                      },
+                      {
+                        id: 'right',
+                        title: t('recording.editor.alignRight', {
+                          defaultValue: 'Align right',
+                        }),
+                        image: 'text.alignright',
+                      },
+                    ],
+                    options.textAlign ?? 'left'
+                  )}
+                  onSelect={(textAlign) => {
+                    if (
+                      textAlign === 'left' ||
+                      textAlign === 'center' ||
+                      textAlign === 'right'
+                    )
+                      setOptions((current) => ({ ...current, textAlign }));
+                  }}
+                />
+              </ToolRow>
+              <ToolRow
+                label={t('recording.editor.textColor', {
+                  defaultValue: 'Text color',
+                })}
+                expanded={moreTools}
               >
                 <LiquidGlassSurface
                   colorScheme="dark"
-                  isInteractive
                   style={styles.tool}
+                  onTouchStart={() => {
+                    fireSelectionHaptic();
+                    setTray(null);
+                  }}
                 >
-                  <Icon
-                    name={options.showRoute === false ? 'eye-off' : 'eye'}
-                    size={24}
-                    color="white"
+                  <PhotoTextColor
+                    value={options.textColor}
+                    onChange={(textColor) =>
+                      setOptions((current) => ({ ...current, textColor }))
+                    }
                   />
                 </LiquidGlassSurface>
-              </Pressable>
+              </ToolRow>
+              {moreTools && (
+                <>
+                  <ToolRow
+                    label={t('recording.editor.routeColor', {
+                      defaultValue: 'Route color',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <LiquidGlassSurface
+                      colorScheme="dark"
+                      style={styles.tool}
+                      onTouchStart={() => {
+                        fireSelectionHaptic();
+                        setTray(null);
+                      }}
+                    >
+                      <PhotoTextColor
+                        label={t('recording.editor.routeColor', {
+                          defaultValue: 'Route color',
+                        })}
+                        value={options.routeColor}
+                        onChange={(routeColor) =>
+                          setOptions((current) => ({ ...current, routeColor }))
+                        }
+                      />
+                    </LiquidGlassSurface>
+                  </ToolRow>
+                  <ToolRow
+                    label={t('recording.editor.overlay', {
+                      defaultValue: 'Image overlay',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <EditorMenu
+                      onOpen={() => setTray(null)}
+                      label={t('recording.editor.overlay', {
+                        defaultValue: 'Image overlay',
+                      })}
+                      icon="eye"
+                      actions={actions(overlays, options.overlay)}
+                      onSelect={(id) => {
+                        const overlay = overlays.find(
+                          (item) => item.id === id
+                        )?.id;
+                        if (overlay)
+                          setOptions((current) => ({ ...current, overlay }));
+                      }}
+                    />
+                  </ToolRow>
+                  <ToolRow
+                    label={t('recording.editor.filter', {
+                      defaultValue: 'Photo filter',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('recording.editor.filter', {
+                        defaultValue: 'Photo filter',
+                      })}
+                      accessibilityState={{
+                        expanded: tray === 'filters',
+                        disabled: sharing,
+                      }}
+                      disabled={sharing}
+                      onPressIn={fireSelectionHaptic}
+                      onPress={() =>
+                        setTray((open) =>
+                          open === 'filters' ? null : 'filters'
+                        )
+                      }
+                    >
+                      <LiquidGlassSurface
+                        colorScheme="dark"
+                        isInteractive
+                        style={styles.tool}
+                      >
+                        <Icon name="sparkles" size={24} color="white" />
+                      </LiquidGlassSurface>
+                    </Pressable>
+                  </ToolRow>
+                  <ToolRow
+                    label={t('recording.editor.routeStyle', {
+                      defaultValue: 'Route style',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <EditorMenu
+                      onOpen={() => setTray(null)}
+                      label={t('recording.editor.routeStyle', {
+                        defaultValue: 'Route style',
+                      })}
+                      icon="route-path"
+                      actions={actions(
+                        [
+                          {
+                            id: 'line',
+                            title: t('recording.editor.routeLine', {
+                              defaultValue: 'Route outline',
+                            }),
+                            image:
+                              'point.topleft.down.to.point.bottomright.curvepath',
+                          },
+                          {
+                            id: 'map',
+                            title: t('recording.editor.fadedMap', {
+                              defaultValue: 'Faded map',
+                            }),
+                            image: 'map',
+                          },
+                        ],
+                        options.routeStyle ?? 'line'
+                      )}
+                      onSelect={(routeStyle) => {
+                        if (routeStyle === 'line' || routeStyle === 'map')
+                          setOptions((current) => ({ ...current, routeStyle }));
+                      }}
+                    />
+                  </ToolRow>
+                  {options.routeStyle === 'map' && (
+                    <ToolRow
+                      label={
+                        options.mapPosition === 'top'
+                          ? t('recording.editor.mapBottom', {
+                              defaultValue: 'Move map to bottom',
+                            })
+                          : t('recording.editor.mapTop', {
+                              defaultValue: 'Move map to top',
+                            })
+                      }
+                      expanded={moreTools}
+                    >
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={sharing}
+                        onPressIn={fireSelectionHaptic}
+                        accessibilityLabel={
+                          options.mapPosition === 'top'
+                            ? t('recording.editor.mapBottom', {
+                                defaultValue: 'Move map to bottom',
+                              })
+                            : t('recording.editor.mapTop', {
+                                defaultValue: 'Move map to top',
+                              })
+                        }
+                        onPress={() => {
+                          setTray(null);
+                          setOptions((current) => ({
+                            ...current,
+                            mapPosition:
+                              current.mapPosition === 'top' ? 'bottom' : 'top',
+                          }));
+                        }}
+                      >
+                        <LiquidGlassSurface
+                          colorScheme="dark"
+                          isInteractive
+                          style={styles.tool}
+                        >
+                          <Icon
+                            name={
+                              options.mapPosition === 'top'
+                                ? 'arrow-down'
+                                : 'arrow-up'
+                            }
+                            size={24}
+                            color="white"
+                          />
+                        </LiquidGlassSurface>
+                      </Pressable>
+                    </ToolRow>
+                  )}
+                  <ToolRow
+                    label={t('recording.editor.showRoute', {
+                      defaultValue: 'Show route',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <Pressable
+                      accessibilityRole="switch"
+                      accessibilityLabel={t('recording.editor.showRoute', {
+                        defaultValue: 'Show route',
+                      })}
+                      accessibilityState={{
+                        checked: options.showRoute !== false,
+                        disabled: sharing,
+                      }}
+                      disabled={sharing}
+                      onPressIn={fireSelectionHaptic}
+                      onPress={() => {
+                        setTray(null);
+                        setOptions((current) => ({
+                          ...current,
+                          showRoute: current.showRoute === false,
+                        }));
+                      }}
+                    >
+                      <LiquidGlassSurface
+                        colorScheme="dark"
+                        isInteractive
+                        style={styles.tool}
+                      >
+                        <Icon
+                          name={options.showRoute === false ? 'eye-off' : 'eye'}
+                          size={24}
+                          color="white"
+                        />
+                      </LiquidGlassSurface>
+                    </Pressable>
+                  </ToolRow>
+                  <ToolRow
+                    label={t('recording.editor.capturePin', {
+                      defaultValue: 'Pin photo location',
+                    })}
+                    expanded={moreTools}
+                  >
+                    <Pressable
+                      accessibilityRole="switch"
+                      onPressIn={() => {
+                        fireSelectionHaptic();
+                        setTray(null);
+                      }}
+                      accessibilityLabel={
+                        photo.composition?.captureLocation
+                          ? t('recording.editor.capturePin', {
+                              defaultValue: 'Pin photo location',
+                            })
+                          : t('recording.editor.noCaptureLocation', {
+                              defaultValue: 'No location saved with this photo',
+                            })
+                      }
+                      accessibilityState={{
+                        checked: !!options.showCapturePin,
+                        disabled:
+                          sharing || !photo.composition?.captureLocation,
+                      }}
+                      disabled={sharing || !photo.composition?.captureLocation}
+                      onPress={() =>
+                        setOptions((current) => ({
+                          ...current,
+                          showCapturePin: !current.showCapturePin,
+                        }))
+                      }
+                    >
+                      <LiquidGlassSurface
+                        colorScheme="dark"
+                        isInteractive
+                        style={[
+                          styles.tool,
+                          {
+                            opacity: photo.composition?.captureLocation
+                              ? 1
+                              : 0.4,
+                          },
+                        ]}
+                      >
+                        <Icon
+                          name="photo-pin"
+                          size={24}
+                          color={options.showCapturePin ? '#FF9F0A' : 'white'}
+                        />
+                      </LiquidGlassSurface>
+                    </Pressable>
+                  </ToolRow>
+                </>
+              )}
               <Pressable
-                accessibilityRole="switch"
-                onPressIn={() => {
-                  fireSelectionHaptic();
-                  setFiltersOpen(false);
-                }}
+                accessibilityRole="button"
                 accessibilityLabel={
-                  photo.composition?.captureLocation
-                    ? t('recording.editor.capturePin', {
-                        defaultValue: 'Pin photo location',
+                  moreTools
+                    ? t('recording.editor.fewerOptions', {
+                        defaultValue: 'Fewer options',
                       })
-                    : t('recording.editor.noCaptureLocation', {
-                        defaultValue: 'No location saved with this photo',
+                    : t('recording.editor.moreOptions', {
+                        defaultValue: 'More options',
                       })
                 }
-                accessibilityState={{
-                  checked: !!options.showCapturePin,
-                  disabled: sharing || !photo.composition?.captureLocation,
+                accessibilityState={{ expanded: moreTools }}
+                onPressIn={fireSelectionHaptic}
+                onPress={() => {
+                  setTray(null);
+                  setMoreTools((open) => !open);
                 }}
-                disabled={sharing || !photo.composition?.captureLocation}
-                onPress={() =>
-                  setOptions((current) => ({
-                    ...current,
-                    showCapturePin: !current.showCapturePin,
-                  }))
-                }
               >
                 <LiquidGlassSurface
                   colorScheme="dark"
                   isInteractive
-                  style={[
-                    styles.tool,
-                    { opacity: photo.composition?.captureLocation ? 1 : 0.4 },
-                  ]}
+                  style={styles.more}
                 >
                   <Icon
-                    name="photo-pin"
-                    size={24}
-                    color={options.showCapturePin ? '#FF9F0A' : 'white'}
+                    name={moreTools ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color="white"
                   />
                 </LiquidGlassSurface>
               </Pressable>
             </ScrollView>
           )}
-          {editable && filtersOpen && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
+            disabled={sharing}
+            onPressIn={fireSelectionHaptic}
+            onPress={onClose}
+            style={styles.close}
+          >
+            <LiquidGlassSurface
+              colorScheme="dark"
+              isInteractive
+              style={styles.tool}
+            >
+              <Icon name="close" size={24} color="white" />
+            </LiquidGlassSurface>
+          </Pressable>
+          {editable && tray === 'filters' && (
             <View style={styles.filterTray}>
               <PhotoFilterPreviews
                 uri={recordingPhotoUri({
@@ -674,8 +894,18 @@ export default function WorkoutPhotoEditor({
               />
             </View>
           )}
-          {rendering && !failed && (
-            <ActivityIndicator color="white" style={styles.loading} />
+          {editable && tray === 'fonts' && (
+            <View style={styles.filterTray}>
+              <PhotoFontPreviews
+                fonts={fonts}
+                selected={options.font}
+                disabled={sharing}
+                onSelect={(font) => {
+                  fireSelectionHaptic();
+                  setOptions((current) => ({ ...current, font }));
+                }}
+              />
+            </View>
           )}
         </View>
         <View
@@ -683,7 +913,7 @@ export default function WorkoutPhotoEditor({
             styles.footer,
             { paddingBottom: Math.max(insets.bottom, 16) },
           ]}
-          onTouchStart={() => setFiltersOpen(false)}
+          onTouchStart={() => setTray(null)}
         >
           {failed && (
             <Pressable
@@ -704,11 +934,13 @@ export default function WorkoutPhotoEditor({
             <Pressable
               accessibilityRole="button"
               disabled={sharing}
-              onPress={onDiscard}
+              onPress={() => void saveDraft()}
               style={[styles.footerButton, styles.discard]}
             >
               <Text style={styles.buttonText}>
-                {t('recording.discard', { defaultValue: 'Discard' })}
+                {t('recording.editor.saveDraft', {
+                  defaultValue: 'Save as draft',
+                })}
               </Text>
             </Pressable>
             <Pressable
@@ -721,13 +953,17 @@ export default function WorkoutPhotoEditor({
                 { opacity: rendering || sharing || failed ? 0.45 : 1 },
               ]}
             >
-              {sharing ? (
-                <ActivityIndicator color="black" />
+              {sharing || (rendering && !failed) ? (
+                <ActivityIndicator size="small" color="black" />
               ) : (
                 <Icon name="share" size={20} color="black" />
               )}
               <Text style={[styles.buttonText, { color: 'black' }]}>
-                {t('common.share', { defaultValue: 'Share' })}
+                {rendering && !failed && !sharing
+                  ? t('recording.editor.adjusting', {
+                      defaultValue: 'Adjusting',
+                    })
+                  : t('common.share', { defaultValue: 'Share' })}
               </Text>
             </Pressable>
           </View>
@@ -743,7 +979,29 @@ const styles = StyleSheet.create({
   tools: { position: 'absolute', right: 0, top: 4, bottom: 0 },
   // Leave room inside the scroll viewport for the glass press/hold expansion.
   // The padding preserves the buttons' original position over the photo.
-  toolsContent: { gap: 12, padding: 12 },
+  toolsContent: { gap: 12, padding: 12, alignItems: 'flex-end' },
+  // Level with the first sidebar tool (tools top 4 + content padding 12).
+  close: { position: 'absolute', left: 12, top: 16 },
+  toolRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  toolLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 4,
+  },
+  more: {
+    width: 48,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tool: {
     width: 48,
     height: 48,
@@ -751,7 +1009,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loading: { position: 'absolute', left: 20, top: 20 },
   filterTray: {
     position: 'absolute',
     bottom: 12,

@@ -43,6 +43,7 @@ const ICON_MAP = {
   star: { sf: 'star.fill', ion: 'star' },
   link: { sf: 'link', ion: 'link-outline' },
   list: { sf: 'list.bullet', ion: 'list-outline' },
+  layout: { sf: 'rectangle.3.group', ion: 'grid-outline' },
   'checkmark-circle': {
     sf: 'checkmark.circle',
     ion: 'checkmark-circle-outline',
@@ -147,6 +148,7 @@ const ICON_MAP = {
   sync: { sf: 'arrow.triangle.2.circlepath', ion: 'sync' },
   book: { sf: 'book.fill', ion: 'book' },
   'document-text': { sf: 'doc.text', ion: 'document-text-outline' },
+  font: { sf: 'textformat', ion: 'text-outline' },
   flame: { sf: 'flame', ion: 'flame-outline' },
   scan: { sf: 'barcode.viewfinder', ion: 'barcode-outline' },
   'flashlight-on': { sf: 'flashlight.on.fill', ion: 'flash' },

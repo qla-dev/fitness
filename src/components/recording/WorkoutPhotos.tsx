@@ -200,7 +200,7 @@ export default function WorkoutPhotos({
       {selected && (
         <WorkoutPhotoEditor
           photo={selected}
-          onDiscard={() => setSelected(null)}
+          onClose={() => setSelected(null)}
         />
       )}
     </View>

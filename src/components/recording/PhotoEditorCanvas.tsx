@@ -1,19 +1,23 @@
-import { Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import { Canvas, Group, Picture } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
-  useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
+import { fireSelectionHaptic } from '../../services/haptics';
 import {
   identityPhotoTransform,
   movePhotoTransform,
   photoEditorLayout,
   photoLocalPoint,
+  snapPhotoRotation,
   type PhotoEditorOptions,
   type PhotoTransform,
 } from '../../services/recording/photoEditor';
 import type { PhotoComposition } from '../../services/recording/types';
+import type { PhotoEditorLayers } from '../../services/recording/photos';
 
 type Touch = { id: number; x: number; y: number };
 function pose(touches: Touch[]) {
@@ -42,7 +46,7 @@ export default function PhotoEditorCanvas({
   onCommit,
   onBusy,
 }: {
-  layers: { background: string; stats: string; route: string };
+  layers: PhotoEditorLayers;
   composition: PhotoComposition;
   options: PhotoEditorOptions;
   width: number;
@@ -58,6 +62,9 @@ export default function PhotoEditorCanvas({
     options.routeTransform ?? identityPhotoTransform
   );
   const selected = useSharedValue<'stats' | 'route' | null>(null);
+  // The unsnapped pose keeps accumulating so a slow twist can leave a snap.
+  const raw = useSharedValue(identityPhotoTransform);
+  const snapped = useSharedValue(false);
   const previous = useSharedValue({ x: 0, y: 0, distance: 0, angle: 0 });
   const layout = photoEditorLayout(composition, options);
   const ratio = width / layout.width;
@@ -93,13 +100,14 @@ export default function PhotoEditorCanvas({
     };
   });
   const brandWidth = layout.branding.fontSize * 5.5 * ratio;
+  const brandInset = layout.branding.inset * ratio;
   boxes.push({
     x:
       options.textAlign === 'right'
-        ? width - brandWidth
+        ? width - brandInset - brandWidth
         : options.textAlign === 'center'
           ? (width - brandWidth) / 2
-          : 0,
+          : brandInset,
     y: layout.branding.top * ratio,
     width: brandWidth,
     height: layout.branding.fontSize * 1.5 * ratio,
@@ -152,6 +160,8 @@ export default function PhotoEditorCanvas({
           manager.fail();
           return;
         }
+        raw.value = (selected.value === 'stats' ? stats : route).value;
+        snapped.value = false;
         manager.activate();
         runOnJS(onBusy)(true);
       }
@@ -161,13 +171,18 @@ export default function PhotoEditorCanvas({
       if (!selected.value || !event.allTouches.length) return;
       const next = pose(event.allTouches);
       const value = selected.value === 'stats' ? stats : route;
-      value.value = movePhotoTransform(
-        value.value,
+      raw.value = movePhotoTransform(
+        raw.value,
         previous.value,
         next,
         width,
         height
       );
+      const rotation = snapPhotoRotation(raw.value.rotation);
+      const isSnapped = rotation !== raw.value.rotation;
+      if (isSnapped && !snapped.value) runOnJS(fireSelectionHaptic)();
+      snapped.value = isSnapped;
+      value.value = { ...raw.value, rotation };
       previous.value = next;
     })
     .onTouchesUp((event, manager) => {
@@ -185,22 +200,21 @@ export default function PhotoEditorCanvas({
       }
       selected.value = null;
     });
-  const statsStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: stats.value.x * width },
-      { translateY: stats.value.y * height },
-      { rotate: `${stats.value.rotation}rad` },
-      { scale: stats.value.scale },
-    ],
-  }));
-  const routeStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: route.value.x * width },
-      { translateY: route.value.y * height },
-      { rotate: `${route.value.rotation}rad` },
-      { scale: route.value.scale },
-    ],
-  }));
+  // Pictures are drawn in export pixels, then posed like the Skia exporter.
+  const matrix = (value: PhotoTransform) => {
+    'worklet';
+    return [
+      { translateX: width / 2 + value.x * width },
+      { translateY: height / 2 + value.y * height },
+      { rotate: value.rotation },
+      { scale: value.scale },
+      { translateX: -width / 2 },
+      { translateY: -height / 2 },
+      { scale: ratio },
+    ];
+  };
+  const statsMatrix = useDerivedValue(() => matrix(stats.value));
+  const routeMatrix = useDerivedValue(() => matrix(route.value));
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View
@@ -212,26 +226,16 @@ export default function PhotoEditorCanvas({
           style={StyleSheet.absoluteFill}
           resizeMode="stretch"
         />
-        <Animated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, routeStyle]}
-        >
-          <Image
-            source={{ uri: layers.route }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="stretch"
-          />
-        </Animated.View>
-        <Animated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, statsStyle]}
-        >
-          <Image
-            source={{ uri: layers.stats }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="stretch"
-          />
-        </Animated.View>
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Canvas style={StyleSheet.absoluteFill}>
+            <Group transform={routeMatrix}>
+              <Picture picture={layers.route} />
+            </Group>
+            <Group transform={statsMatrix}>
+              <Picture picture={layers.stats} />
+            </Group>
+          </Canvas>
+        </View>
       </Animated.View>
     </GestureDetector>
   );

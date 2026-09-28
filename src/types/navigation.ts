@@ -103,8 +103,8 @@ export type RootStackParamList = {
   };
   /**
    * Started from `WorkoutSetup`, which passes the sport, the goal and the
-   * weight the calorie estimate needs; entered bare (a resume, a deep link)
-   * the recorder asks for those itself.
+   * weight the calorie estimate needs; entered bare (a resume, a deep link) it
+   * shows the session under way, or returns to setup when nothing is recording.
    */
   RunOrRide:
     | {

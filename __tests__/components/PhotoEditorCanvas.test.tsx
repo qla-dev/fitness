@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, render } from '@testing-library/react-native';
+import type { SkPicture } from '@shopify/react-native-skia';
 import PhotoEditorCanvas from '../../src/components/recording/PhotoEditorCanvas';
 import {
   defaultPhotoEditorOptions,
@@ -10,6 +11,9 @@ type Touch = { id: number; x: number; y: number };
 type Event = { allTouches: Touch[]; changedTouches: Touch[] };
 const mockHandlers: Record<string, (event: Event, manager: unknown) => void> =
   {};
+jest.mock('../../src/services/haptics', () => ({
+  fireSelectionHaptic: jest.fn(),
+}));
 jest.mock('react-native-gesture-handler', () => ({
   GestureDetector: ({ children }: { children: React.ReactNode }) => children,
   Gesture: {
@@ -53,7 +57,11 @@ function setup() {
   const busy = jest.fn();
   render(
     <PhotoEditorCanvas
-      layers={{ background: 'background', stats: 'stats', route: 'route' }}
+      layers={{
+        background: 'background',
+        stats: {} as SkPicture,
+        route: {} as SkPicture,
+      }}
       composition={composition}
       options={{ ...defaultPhotoEditorOptions, aspectRatio: 0.5 }}
       width={400}
@@ -103,4 +111,25 @@ it('pinches and rotates the route independently, without a jump when a finger li
   expect(route.rotation).toBeCloseTo(Math.PI / 2);
   expect(route.x).toBeCloseTo(1.285);
   expect(route.y).toBeCloseTo(0.065);
+});
+
+it('holds a nearly square rotation at the quarter turn', () => {
+  const { commit } = setup();
+  const { fireSelectionHaptic } = jest.requireMock(
+    '../../src/services/haptics'
+  );
+  touch('onTouchesDown', [
+    { id: 1, x: 268, y: 608 },
+    { id: 2, x: 308, y: 608 },
+  ]);
+  // A 93° twist lands inside the snap window around 90°.
+  const angle = (93 * Math.PI) / 180;
+  touch('onTouchesMove', [
+    { id: 1, x: 288 - 20 * Math.cos(angle), y: 608 - 20 * Math.sin(angle) },
+    { id: 2, x: 288 + 20 * Math.cos(angle), y: 608 + 20 * Math.sin(angle) },
+  ]);
+  touch('onTouchesUp', []);
+  touch('onFinalize', []);
+  expect(commit.mock.calls[0][1].rotation).toBe(Math.PI / 2);
+  expect(fireSelectionHaptic).toHaveBeenCalledTimes(1);
 });

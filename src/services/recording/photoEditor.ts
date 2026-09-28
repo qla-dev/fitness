@@ -83,6 +83,14 @@ export function movePhotoTransform(
   };
 }
 
+/** Within ~4° of a quarter turn, hold the layer square like Instagram does. */
+export function snapPhotoRotation(rotation: number) {
+  'worklet';
+  const quarter = Math.PI / 2;
+  const nearest = Math.round(rotation / quarter) * quarter;
+  return Math.abs(rotation - nearest) < 0.07 ? nearest : rotation;
+}
+
 export function photoLocalPoint(
   x: number,
   y: number,
@@ -119,30 +127,43 @@ export function photoEditorLayout(
         }
       : metric
   );
+  // Keep every layout's readings and wordmark off the photo's side edges.
+  const inset = Math.round(width * 0.06);
+  const contentWidth = width - inset * 2;
+  const brandSize =
+    width *
+    (options.layout === 'poster'
+      ? 0.05
+      : options.layout === 'compact'
+        ? 0.032
+        : 0.04);
+  const brandGap = brandSize * 0.8;
+  const classicBottom = Math.max(
+    ...sourceMetrics.map(
+      (item) =>
+        item.y +
+        (item.icon ? 24 : 0) +
+        item.size * 1.2 +
+        (item.label ? (item.labelSize ?? 12) * 1.2 : 0)
+    )
+  );
+  // Classic stacks its wordmark under the last reading, so reserve that row.
+  const classicScale = Math.min(
+    width / composition.width,
+    (height * 0.95 - brandGap - brandSize * 1.4) / classicBottom
+  );
   const metrics = sourceMetrics.map((metric, index) => {
     if (options.layout === 'classic') {
-      const bottom = Math.max(
-        ...sourceMetrics.map(
-          (item) =>
-            item.y +
-            (item.icon ? 24 : 0) +
-            item.size * 1.2 +
-            (item.label ? (item.labelSize ?? 12) * 1.2 : 0)
-        )
-      );
-      const scale = Math.min(
-        width / composition.width,
-        (height * 0.9) / bottom
-      );
+      const scale = classicScale;
       return {
         ...metric,
-        x: 0,
+        x: inset,
         y: metric.y * scale,
         size: metric.size * scale,
         labelSize: (metric.labelSize ?? 12) * scale,
         iconSize: 24 * scale,
         unitSize: 28 * scale,
-        maxWidth: width,
+        maxWidth: contentWidth,
       };
     }
     let x = 0,
@@ -198,22 +219,34 @@ export function photoEditorLayout(
         options.layout === 'compact' || options.layout === 'trail'
           ? undefined
           : metric.icon,
-      x: x * width,
+      x: inset + x * contentWidth,
       y: y * height,
       size: rowSize,
-      maxWidth: maxWidth * width,
+      maxWidth: maxWidth * contentWidth,
     };
   });
   const route =
     options.layout === 'trail'
-      ? { x: 0.5, y: 0.58, width: 0.9, height: 0.78 }
+      ? { x: 0.5, y: 0.64, width: 0.9, height: 0.66 }
       : options.layout === 'classic' || options.layout === 'compact'
         ? { x: 0.72, y: 0.76, width: 0.38, height: 0.3 }
         : options.layout === 'summit'
           ? { x: 0.55, y: 0.64, width: 0.72, height: 0.48 }
           : options.layout === 'hero'
             ? { x: 0.58, y: 0.46, width: 0.58, height: 0.4 }
-            : { x: 0.57, y: 0.35, width: 0.68, height: 0.5 };
+            : { x: 0.57, y: 0.34, width: 0.68, height: 0.48 };
+  // Story and poster keep the wordmark inside the stats block, so scaling
+  // the stats layer up cannot push the logo out of the frame on its own.
+  const metricsBottom = Math.max(
+    ...metrics.map(
+      (metric) =>
+        metric.y +
+        (metric.icon ? metric.iconSize : 0) +
+        metric.size * 1.2 +
+        (metric.label ? metric.labelSize * 1.2 : 0)
+    )
+  );
+  const brandHeight = brandSize * 1.4;
   return {
     width,
     height,
@@ -227,24 +260,18 @@ export function photoEditorLayout(
     // Place the centered wordmark in each composition's negative space.
     branding: {
       centerX: width / 2,
+      inset,
       align: options.textAlign ?? 'left',
       top:
-        height *
-        {
-          classic: 0.94,
-          summit: 0.325,
-          hero: 0.685,
-          poster: 0.025,
-          compact: 0.4,
-          trail: 0.07,
-        }[options.layout],
-      fontSize:
-        width *
-        (options.layout === 'poster'
-          ? 0.05
-          : options.layout === 'compact'
-            ? 0.032
-            : 0.04),
+        options.layout === 'classic'
+          ? classicBottom * classicScale + brandGap
+          : options.layout === 'trail'
+            ? metricsBottom + brandGap
+            : options.layout === 'poster'
+              ? (metrics[0]?.y ?? height * 0.69) - brandSize * 0.5 - brandHeight
+              : height *
+                { summit: 0.325, hero: 0.685, compact: 0.4 }[options.layout],
+      fontSize: brandSize,
     },
     route: {
       x: options.routeStyle === 'map' ? width / 2 : route.x * width,

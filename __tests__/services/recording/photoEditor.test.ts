@@ -26,8 +26,8 @@ it('keeps the live HUD sizing and stacked icons with full-width alignment boxes'
   const scale = 1080 / 390;
   expect(metrics[0].y).toBe(60);
   result.metrics.forEach((metric, index) => {
-    expect(metric.x).toBe(0);
-    expect(metric.maxWidth).toBe(1080);
+    expect(metric.x).toBe(result.branding.inset);
+    expect(metric.maxWidth).toBe(1080 - result.branding.inset * 2);
     expect(metric.y).toBeCloseTo(metrics[index].y * scale);
     expect(metric.size).toBeCloseTo(metrics[index].size * scale);
     expect(metric).toMatchObject({
@@ -101,8 +101,11 @@ it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster', 'compact'])(
       }
       const routeTop = result.route.y - result.route.height / 2;
       const routeBottom = result.route.y + result.route.height / 2;
+      const brandRight = result.branding.inset + result.branding.fontSize * 5.5;
       expect(
-        brandBottom <= routeTop || result.branding.top >= routeBottom
+        brandBottom <= routeTop ||
+          result.branding.top >= routeBottom ||
+          brandRight <= result.route.x - result.route.width / 2
       ).toBe(true);
       expect(result.metrics.map((metric) => metric.text)).toEqual(
         composition.metrics.map((metric) => metric.text)
@@ -131,8 +134,18 @@ it('puts the summit metrics above the centered route', () => {
   expect(bottom).toBeLessThan(result.route.y - result.route.height / 2);
 });
 
+it('stacks the classic wordmark directly under the last reading', () => {
+  const result = photoEditorLayout(composition, defaultPhotoEditorOptions);
+  const last = result.metrics[result.metrics.length - 1];
+  const lastBottom = last.y + (last.icon ? last.iconSize : 0) + last.size * 1.2;
+  expect(result.branding.top).toBeGreaterThan(lastBottom);
+  expect(result.branding.top).toBeLessThan(
+    lastBottom + result.branding.fontSize
+  );
+});
+
 it.each(['classic', 'compact', 'summit'] as const)(
-  '%s aligns across the complete photo width',
+  '%s aligns across the photo width inside the side padding',
   (layout) => {
     for (const textAlign of ['left', 'center', 'right'] as const) {
       const result = photoEditorLayout(composition, {
@@ -140,11 +153,12 @@ it.each(['classic', 'compact', 'summit'] as const)(
         layout,
         textAlign,
       });
-      expect(result.metrics[0].x).toBe(0);
+      expect(result.branding.inset).toBeGreaterThan(0);
+      expect(result.metrics[0].x).toBe(result.branding.inset);
       expect(
         result.metrics[layout === 'summit' ? 1 : 0].x +
           result.metrics[layout === 'summit' ? 1 : 0].maxWidth
-      ).toBe(result.width);
+      ).toBe(result.width - result.branding.inset);
       expect(result.branding.align).toBe(textAlign);
     }
   }
@@ -207,3 +221,29 @@ it('supports panning and bounds pinch scaling without changing the other layer',
     ).scale
   ).toBe(0.2);
 });
+
+it.each(['trail', 'poster'] as const)(
+  '%s keeps the wordmark beside its stats, clear of the edge and route',
+  (layout) => {
+    const result = photoEditorLayout(composition, {
+      ...defaultPhotoEditorOptions,
+      layout,
+    });
+    const brandBottom = result.branding.top + result.branding.fontSize * 1.4;
+    const nearest = Math.min(
+      ...result.metrics.map((metric) =>
+        Math.min(
+          Math.abs(metric.y - brandBottom),
+          Math.abs(metric.y + metric.size * 1.2 - result.branding.top)
+        )
+      )
+    );
+    expect(result.branding.top).toBeGreaterThan(result.height * 0.1);
+    expect(nearest).toBeLessThan(result.branding.fontSize * 1.5);
+    const routeTop = result.route.y - result.route.height / 2;
+    const routeBottom = result.route.y + result.route.height / 2;
+    expect(brandBottom <= routeTop || result.branding.top >= routeBottom).toBe(
+      true
+    );
+  }
+);
