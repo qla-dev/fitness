@@ -177,8 +177,10 @@ describe('useScreenHeader custom bar title layout', () => {
     const titleLayer = views.find(
       (view) => view.props.pointerEvents === 'box-none'
     );
+    // 24 = the bar's own 16 padding plus the 8 kept clear of the side cells,
+    // which have not reported a width yet in this render.
     expect(titleLayer?.props.style).toEqual(
-      expect.objectContaining({ position: 'absolute', left: 16, right: 16 })
+      expect.objectContaining({ position: 'absolute', left: 24, right: 24 })
     );
     expect(titleLayer?.props.children.props.children).toBe(
       'A very long program name that would otherwise overflow the header bar'
@@ -197,6 +199,36 @@ describe('useScreenHeader custom bar title layout', () => {
     );
     expect(rightContainer?.props.style).toEqual(
       expect.objectContaining({ flexShrink: 0 })
+    );
+  });
+
+  // Being out of the flow, the layer would otherwise span the whole bar and
+  // only ellipsize at its edge — long after the title has started drawing
+  // underneath the buttons (measured on Android: a program title ended 5px
+  // short of the share button). It insets by the WIDER of the two cells, on
+  // both sides, so the title still lands on the bar's true center.
+  it('insets the title layer past the wider side cell once the cells report a width', () => {
+    const { UNSAFE_getAllByType } = render(
+      <TestScreen
+        title="Iron Chest Protocol - Week 1"
+        right={[{ kind: 'text', label: 'Edit', onPress: jest.fn() }]}
+      />
+    );
+
+    const rightContainer = UNSAFE_getAllByType(View).find(
+      (view) =>
+        view.props.className === 'flex-row items-center justify-end gap-2'
+    );
+    fireEvent(rightContainer!, 'layout', {
+      nativeEvent: { layout: { width: 132, height: 44, x: 0, y: 0 } },
+    });
+
+    const titleLayer = UNSAFE_getAllByType(View).find(
+      (view) => view.props.pointerEvents === 'box-none'
+    );
+    // 156 = 16 padding + the 132 the cell reported + the 8 kept clear of it.
+    expect(titleLayer?.props.style).toEqual(
+      expect.objectContaining({ position: 'absolute', left: 156, right: 156 })
     );
   });
 });
