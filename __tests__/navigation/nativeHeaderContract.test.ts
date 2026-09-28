@@ -7,6 +7,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   OnlineAccount:
     'Authentication uses the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   Onboarding: 'First-run setup route shown before the tab host exists.',
+  Macros:
+    'Legacy alias kept so the old Tracker route still opens the MarkAI chat; the same screen above the tab host, like MarkAI itself.',
   FoodsLibrary: 'Root-stack library drill-in presented above the tab host.',
   MealsLibrary: 'Root-stack library drill-in presented above the tab host.',
   ExercisesLibrary: 'Root-stack library drill-in presented above the tab host.',
