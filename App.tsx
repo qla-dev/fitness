@@ -36,7 +36,8 @@ import {
   SafeMarkAI,
   SafeFoodsLibrary,
   SafeMealsLibrary,
-  SafeMealPlans,
+  SafeWeeklyPlans,
+  SafeWeeklyPlan,
   SafeMealPlanForm,
   SafeExercisesLibrary,
   SafeWorkoutPresetsLibrary,
@@ -481,8 +482,13 @@ function AppContent() {
             options={createStackScreenOptions(t('screens.meals', { defaultValue: 'Meals' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
-            name="MealPlans"
-            component={SafeMealPlans}
+            name="WeeklyPlans"
+            component={SafeWeeklyPlans}
+            options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="WeeklyPlan"
+            component={SafeWeeklyPlan}
             options={createStackScreenOptions(t('mealPlans.title', { defaultValue: 'Meal plans' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
@@ -1076,13 +1082,30 @@ function SafeAreaToast() {
   // Flush with the safe area rather than 5 below it: the toast sits closest
   // to the status bar of anything on screen, and the gap read as a misalignment
   // against the header beside it.
-  const toast = <Toast config={toastConfig} topOffset={insets.top} />;
+  // Swipe-to-dismiss lives in the toast itself (Gesture Handler); the
+  // library's own PanResponder is off so the two never fight over a drag.
+  const toast = (
+    <Toast config={toastConfig} topOffset={insets.top} swipeable={false} />
+  );
   // On iOS a plain Toast renders in the normal view tree, so it appears *under*
   // native modals (rename dialogs, form sheets, anchored menus). A
   // FullWindowOverlay hoists it above every window — matching how the app's
   // bottom sheets escape modal contexts. Android modal layering doesn't have
   // this problem, and FullWindowOverlay is a no-op there.
-  return Platform.OS === 'ios' ? <FullWindowOverlay>{toast}</FullWindowOverlay> : toast;
+  // The overlay is its own native root, outside the app's
+  // GestureHandlerRootView, so gestures inside it need a root of their own.
+  return Platform.OS === 'ios' ? (
+    <FullWindowOverlay>
+      <GestureHandlerRootView
+        style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+        pointerEvents="box-none"
+      >
+        {toast}
+      </GestureHandlerRootView>
+    </FullWindowOverlay>
+  ) : (
+    toast
+  );
 }
 
 function UniwindInsetsBridge() {

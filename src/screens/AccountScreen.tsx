@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 
 import Icon from '../components/Icon';
+import AppleConnectionRow from '../components/AppleConnectionRow';
+import {
+  onlineRequest,
+  updateOnlineAccount,
+  useOnlineAccount,
+  type OnlineAccount,
+} from '../services/online/account';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import { accountPasswordQueryKey, profileQueryKey } from '../hooks/queryKeys';
 import { useScreenHeader } from '../hooks/useScreenHeader';
@@ -44,6 +51,18 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
       queryKey: accountPasswordQueryKey,
       queryFn: hasAccountPassword,
     }).data ?? false;
+
+  const appleEmail = useOnlineAccount(
+    (s) => s.session?.user.sign_in?.email ?? null
+  );
+  // Picks up the email the server saved at the last Apple sign-in.
+  const accountId = useOnlineAccount((s) => s.session?.user.id);
+  useEffect(() => {
+    if (accountId)
+      void onlineRequest<OnlineAccount>('/account')
+        .then(updateOnlineAccount)
+        .catch(() => undefined);
+  }, [accountId]);
 
   const header = useScreenHeader({
     variant: 'transparent',
@@ -91,7 +110,9 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
             iconColor={iconColor}
             title={t('profile.name', { defaultValue: 'Name' })}
             rightAccessory={value(profile?.full_name)}
-            onPress={() => navigation.navigate('ProfileEdit', { field: 'name' })}
+            onPress={() =>
+              navigation.navigate('ProfileEdit', { field: 'name' })
+            }
           />
           <SettingsRow
             icon="account-username"
@@ -100,9 +121,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
             subtitle={
               profile?.username ? profileLinkLabel(profile.username) : undefined
             }
-            rightAccessory={
-              profile?.username ? undefined : value(null)
-            }
+            rightAccessory={profile?.username ? undefined : value(null)}
             onPress={() =>
               navigation.navigate('ProfileEdit', { field: 'username' })
             }
@@ -112,12 +131,17 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
         <SettingsRowGroup
           title={t('account.signIn', { defaultValue: 'Sign-in methods' })}
         >
+          <AppleConnectionRow />
           <SettingsRow
             icon="account-email"
             iconColor={iconColor}
             title={t('profile.email', { defaultValue: 'Email' })}
-            rightAccessory={value(profile?.email)}
-            onPress={() => navigation.navigate('ProfileEdit', { field: 'email' })}
+            // The profile's own email first; signed in with Apple and none
+            // typed, the address Apple verified.
+            rightAccessory={value(profile?.email || appleEmail)}
+            onPress={() =>
+              navigation.navigate('ProfileEdit', { field: 'email' })
+            }
           />
           <SettingsRow
             icon="lock-closed"

@@ -3,7 +3,18 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 
-export type OnlineAccount = { id: string; name: string; ai_coins: number };
+export type OnlineAccount = {
+  id: string;
+  name: string;
+  ai_coins: number;
+  /** How this account signs in; the email is what Apple verified, if sent. */
+  sign_in?: {
+    provider: 'apple';
+    email: string | null;
+    private_email: boolean;
+    connected_at?: string | null;
+  };
+};
 const SESSION_KEY = 'qla.online.session';
 const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || 'https://fit.qla.dev/endpoints/api'

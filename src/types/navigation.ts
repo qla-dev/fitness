@@ -87,7 +87,9 @@ export type RootStackParamList = {
   PregnancySetup: { pregnancy?: SharedPregnancy } | undefined;
   FoodsLibrary: undefined;
   MealsLibrary: undefined;
-  MealPlans: undefined;
+  /** MarkAI weekly plans, stored on the device (works in local mode). */
+  WeeklyPlans: undefined;
+  WeeklyPlan: { planId: string };
   MealPlanForm: { template?: MealPlanTemplate; initialMeal?: Meal } | undefined;
   ExercisesLibrary: undefined;
   /** A training program's product page, opened from the Exercises store. */

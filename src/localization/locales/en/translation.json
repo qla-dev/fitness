@@ -505,7 +505,8 @@
       "loadingRecentItems": "Loading recent items...",
       "failedRecentItems": "Failed to load recent items.",
       "noRecentItems": "No recent items yet",
-      "recentItemsHint": "Foods, meals, and exercises you log will appear here for quick access."
+      "recentItemsHint": "Foods, meals, and exercises you log will appear here for quick access.",
+      "weeklyPlansSubtitle": "Weekly plans from your food & kitchen preferences"
     },
     "sleep": "Sleep",
     "healthTrendsSettings": "Health Trends",
@@ -5170,7 +5171,15 @@
     "title": "Account",
     "notSet": "Not set",
     "signIn": "Sign-in methods",
-    "passwordSet": "Set"
+    "passwordSet": "Set",
+    "apple": "Apple",
+    "appleConnect": "Connect Apple",
+    "appleConnectHint": "Sync across phones · 100 free AI coins",
+    "appleConnected": "Apple, connected. {{detail}}",
+    "appleRelay": "{{email}} · Hidden by Apple",
+    "appleEmailMissing": "Tap to sign in again and show your email",
+    "connected": "Connected",
+    "connect": "Connect"
   },
   "profile": {
     "username": "Username",
@@ -5668,7 +5677,10 @@
       "days": "Enter how many days to plan",
       "dislikes": "Enter ingredients you avoid",
       "otherAllergies": "Enter any other allergies"
-    }
+    },
+    "region": "Where do you shop?",
+    "regionHint": "Meal plans are priced for this country. In Croatia they use real store prices, updated daily.",
+    "planMeals": "Plan meals for the week"
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6166,5 +6178,66 @@
     "removePhoto": "Remove photo",
     "photo": "Photo",
     "photoFailed": "Could not attach that photo. Please try another one."
+  },
+  "weeklyPlans": {
+    "noCoins": "Not enough AI coins for a meal plan.",
+    "failed": "MarkAI could not plan this week. Your coins were refunded.",
+    "confirmTitle": "Plan a week with MarkAI?",
+    "confirmMessage": "7 days of meals from your food and kitchen preferences. Uses {{coins}} AI coins.",
+    "plan": "Plan my week",
+    "makeActive": "Make active",
+    "perWeek": "{{amount}} / week",
+    "livePrices": "Store prices",
+    "estimated": "Estimated",
+    "heroTitle": "Plan a week of meals",
+    "heroBody": "Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.",
+    "planning": "MarkAI is planning your week…",
+    "create": "Create meal plan · {{coins}} coins",
+    "signIn": "Sign in to plan with MarkAI",
+    "preferencesHint": "Diet, allergies, budget, region and appliances",
+    "yourPlans": "Your plans",
+    "longPressHint": "Touch and hold a plan to make it active or delete it.",
+    "empty": "Your meal plans will appear here.",
+    "attribution": "Croatian prices: cijene.dev, updated daily.",
+    "listNoteLive": "From {{plan}}. Prices are Croatian store averages from {{date}}.",
+    "listNoteEstimate": "From {{plan}}. Prices are estimates.",
+    "missing": "This meal plan was deleted.",
+    "forServings_one": "/ week for {{count}} person",
+    "forServings_other": "/ week for {{count}} people",
+    "livePriceNote": "Priced from {{region}} store prices on {{date}} (cijene.dev).",
+    "estimateNote": "Estimated prices for {{region}}.",
+    "weekList": "{{plan}} · whole week",
+    "addWeek": "Add week to grocery list",
+    "dayTotals": "{{kcal}} kcal · {{cost}}",
+    "macros": "{{kcal}} kcal · P {{protein}} g · C {{carbs}} g · F {{fat}} g",
+    "dayList": "{{plan}} · {{day}}",
+    "addDay": "Add day to grocery list",
+    "slots": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    }
+  },
+  "regions": {
+    "HR": "Croatia",
+    "BA": "Bosnia and Herzegovina",
+    "RS": "Serbia",
+    "SI": "Slovenia",
+    "ME": "Montenegro",
+    "MK": "North Macedonia",
+    "XK": "Kosovo",
+    "DE": "Germany",
+    "AT": "Austria",
+    "FR": "France",
+    "IT": "Italy",
+    "ES": "Spain",
+    "NL": "Netherlands",
+    "BE": "Belgium",
+    "CH": "Switzerland",
+    "PL": "Poland",
+    "SE": "Sweden",
+    "GB": "United Kingdom",
+    "US": "United States"
   }
 }

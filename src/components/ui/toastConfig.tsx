@@ -1,6 +1,14 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useCSSVariable } from 'uniwind';
-import type { ToastConfig } from 'react-native-toast-message';
+import Toast, { type ToastConfig } from 'react-native-toast-message';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { fireSelectionHaptic } from '../../services/haptics';
 import Icon, { type IconName } from '../Icon';
 import MenuItem from '../MenuItem';
 import MenuItemIcon from '../MenuItemIcon';
@@ -118,8 +126,7 @@ function ToastContent({
     </View>
   );
 
-  if (!onPress) return body;
-  return (
+  const content = onPress ? (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
@@ -127,6 +134,47 @@ function ToastContent({
     >
       {body}
     </TouchableOpacity>
+  ) : (
+    body
+  );
+  return <SwipeToDismiss>{content}</SwipeToDismiss>;
+}
+
+const dismiss = () => {
+  fireSelectionHaptic();
+  Toast.hide();
+};
+
+/**
+ * Swipe up to put a toast away. Whatever it reports carries on: a dismissed
+ * "Syncing…" leaves the sync running, and its result still shows when it
+ * finishes. Driven by Gesture Handler rather than the library's PanResponder,
+ * which never received the swipe inside the iOS FullWindowOverlay.
+ */
+function SwipeToDismiss({ children }: { children: React.ReactNode }) {
+  const offset = useSharedValue(0);
+  const pan = Gesture.Pan()
+    // Vertical only, and only after a real drag, so taps still reach onPress.
+    .activeOffsetY([-8, 8])
+    .onUpdate((event) => {
+      // Follows the finger up; a downward pull only gives a little.
+      offset.value =
+        event.translationY < 0 ? event.translationY : event.translationY / 6;
+    })
+    .onEnd((event) => {
+      if (event.translationY < -24 || event.velocityY < -600) {
+        runOnJS(dismiss)();
+      } else {
+        offset.value = withSpring(0);
+      }
+    });
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: offset.value }],
+  }));
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View style={style}>{children}</Animated.View>
+    </GestureDetector>
   );
 }
 

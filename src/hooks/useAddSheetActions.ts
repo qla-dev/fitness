@@ -183,8 +183,11 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('MealAdd', {});
   }, [navigateFromSheet]);
 
+  // Weekly plans live on the device, so they open in every data mode; the
+  // new-plan entry lands on the same screen, where a plan starts from the
+  // food and kitchen questionnaire.
   const handleOpenMealPlans = useCallback(() => {
-    navigateFromSheet('MealPlans');
+    navigateFromSheet('WeeklyPlans');
   }, [navigateFromSheet]);
 
   const handleNewGroceryList = useCallback(() => {
@@ -192,7 +195,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
   }, [navigateFromSheet]);
 
   const handleNewMealPlan = useCallback(() => {
-    navigateFromSheet('MealPlanForm', undefined);
+    navigateFromSheet('WeeklyPlans');
   }, [navigateFromSheet]);
 
   const handleOpenGroceryList = useCallback(() => {

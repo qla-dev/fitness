@@ -1,5 +1,6 @@
 import type { DailyGoals } from '../../types/goals';
 import { photoRepository } from './photoRepository';
+import { mealPlanRepository } from './mealPlanRepository';
 import { saveWatchMeasurement } from './watchMeasurementRepository';
 import {
   asRecord,
@@ -366,6 +367,8 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   }
   const photo = photoRepository(db, request);
   if (photo) return photo.value;
+  const mealPlan = mealPlanRepository(db, request);
+  if (mealPlan) return mealPlan.value;
   const food = foodRepository(db, request);
   if (food) return food.value;
   const workout = workoutRepository(db, request);
@@ -379,7 +382,6 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
         '/api/custom-nutrients',
         '/api/identity/users/accessible-users',
         '/api/sleep',
-        '/api/meal-plan-templates',
         '/api/measurements/check-in-photos',
         '/api/measurements/check-in-photos/dates',
       ].includes(path)

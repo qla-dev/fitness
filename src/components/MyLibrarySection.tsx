@@ -105,18 +105,20 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
         />
       </View>
 
-      {!localMode && (
-        <SettingsRowGroup>
-          <SettingsRow
-            icon="calendar"
-            title={t('screens.library.mealPlans', {
-              defaultValue: 'Meal plans',
-            })}
-            subtitle={t('screens.library.mealPlansSubtitle', {
-              defaultValue: 'Repeat meals on selected days',
-            })}
-            onPress={() => navigation.navigate('MealPlans')}
-          />
+      <SettingsRowGroup>
+        {/* On the device in every data mode, so it is no longer server-only;
+            the food and kitchen preferences live inside it now. */}
+        <SettingsRow
+          icon="calendar"
+          title={t('screens.library.mealPlans', {
+            defaultValue: 'Meal plans',
+          })}
+          subtitle={t('screens.library.weeklyPlansSubtitle', {
+            defaultValue: 'Weekly plans from your food & kitchen preferences',
+          })}
+          onPress={() => navigation.navigate('WeeklyPlans')}
+        />
+        {!localMode && (
           <SettingsRow
             icon="medication"
             title={t('screens.library.medications', {
@@ -125,8 +127,8 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
             subtitle={countLabel(medications?.length)}
             onPress={() => navigation.navigate('MedicationsList')}
           />
-        </SettingsRowGroup>
-      )}
+        )}
+      </SettingsRowGroup>
     </View>
   );
 }

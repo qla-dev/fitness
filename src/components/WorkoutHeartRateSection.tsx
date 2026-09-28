@@ -186,7 +186,9 @@ export default function WorkoutHeartRateSection({
                       n: zone.key,
                     })}
                   </Text>
-                  <View className="flex-1 h-2 rounded-full bg-raised mx-2 overflow-hidden">
+                  {/* Gray, not bg-raised: raised is white in light mode and vanished on
+                      the white card, so an empty zone read as a blank. */}
+                  <View className="flex-1 h-2 rounded-full bg-border-strong mx-2 overflow-hidden">
                     <View
                       style={{
                         backgroundColor: zone.color,

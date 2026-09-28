@@ -55,6 +55,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
   MeasurementsAdd: 'Root-stack measurement modal presented from the tab host.',
   ExerciseProgram: 'Root-stack program detail pushed from the Exercises store.',
   Cart: 'Root-stack cart route pushed from the Exercises store header.',
+  WeeklyPlans: 'Root-stack meal plans opened from Profile and the food hub.',
+  WeeklyPlan: 'Root-stack weekly plan detail pushed from Meal plans.',
   RunOrRide:
     'Root-stack recorder opened from Start Workout, above the tab host.',
   WorkoutSetup:

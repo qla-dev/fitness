@@ -5,6 +5,17 @@ import {
   LOCAL_DATABASE_KEY,
   type LocalRecord,
 } from '../../src/services/local/database';
+import * as localStore from '../../src/services/local/localStore';
+
+/** The database as SQLite holds it, in the in-memory shape. */
+const storedDatabase = async () => {
+  const { stored } = (await localStore.readStoredDatabase())!;
+  return { ...stored.meta, tables: stored.tables } as {
+    schemaVersion: number;
+    changes: { method: string; endpoint: string }[];
+    tables: Record<string, LocalRecord[]>;
+  };
+};
 import {
   exerciseSessionResponseSchema,
   workoutPresetResponseSchema,
@@ -65,7 +76,7 @@ test('persists the profile name without creating duplicate profile rows', async 
     full_name: 'Updated Name',
     bio: null,
   });
-  const stored = JSON.parse((await AsyncStorage.getItem(LOCAL_DATABASE_KEY))!);
+  const stored = await storedDatabase();
   expect(stored.tables.profile).toHaveLength(1);
 });
 
@@ -110,7 +121,7 @@ test('persists food and diary snapshots across module reload, edits and deletes'
   expect(
     (await request('/api/daily-summary?date=' + date)).foodEntries
   ).toEqual([]);
-  const db = JSON.parse((await AsyncStorage.getItem(LOCAL_DATABASE_KEY))!);
+  const db = await storedDatabase();
   expect(db.schemaVersion).toBe(1);
   expect(db.changes.at(-1)).toMatchObject({
     method: 'DELETE',
@@ -234,7 +245,7 @@ test('workouts and programs match shared backend schemas and preserve set IDs', 
 test('a failed disk write does not report success or poison subsequent saves', async () => {
   await request('/api/meal-types');
   jest
-    .mocked(AsyncStorage.setItem)
+    .spyOn(localStore, 'writeStoredDatabase')
     .mockRejectedValueOnce(new Error('disk full'));
   await expect(request('/api/foods', 'POST', foodPayload)).rejects.toThrow(
     'disk full'

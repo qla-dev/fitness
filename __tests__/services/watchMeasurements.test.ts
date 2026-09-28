@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { localApiFetch } from '../../src/services/local/localApi';
 import { resetLocalDatabaseCache } from '../../src/services/local/database';
+import * as localStore from '../../src/services/local/localStore';
 
 beforeEach(async () => {
   await AsyncStorage.clear();
@@ -49,7 +50,7 @@ it('updates only weight and preserves other check-in fields', async () => {
 
 it('does not leave a receipt or increment behind if storage fails', async () => {
   jest
-    .mocked(AsyncStorage.setItem)
+    .spyOn(localStore, 'writeStoredDatabase')
     .mockRejectedValueOnce(new Error('Disk full'));
   await expect(save(entry)).rejects.toThrow('Disk full');
   await save(entry);

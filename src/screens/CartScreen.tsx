@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { randomUUID } from 'expo-crypto';
@@ -17,12 +17,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
-import { grocerySteps } from '../constants/setupSteps';
 import type { GroceryList } from '../services/personalSetup';
-import {
-  isSetupWizardOpen,
-  openSetupWizardSession,
-} from '../services/setupWizardSession';
 import type {
   RootStackParamList,
   RootStackScreenProps,
@@ -40,15 +35,12 @@ const blank = (): GroceryList => ({
   createdAt: new Date().toISOString(),
 });
 
-export default function CartScreen({
-  route,
-}: RootStackScreenProps<'Cart'>) {
+export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const native = useNativeIOSHeadersActive();
   const padding = useActiveWorkoutBarPadding('stack');
   const setup = usePersonalSetup();
-  const [wizard, setWizard] = useState(false);
   const [archived, setArchived] = useState(false);
   // Opened on a blank list when the Food dashboard's card asked for one, so
   // that card lands where its name says rather than on the list of lists.
@@ -59,28 +51,8 @@ export default function CartScreen({
     () => route.params?.planList ?? (route.params?.newList ? blank() : null)
   );
   const state = setup.state;
-  const focused = useIsFocused();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const showWizard =
-    focused && !!state && (wizard || !state.groceryDone) && !draft;
-  // The wizard is a root-stack route so it gets a real native header.
-  useEffect(() => {
-    if (!showWizard || !state || isSetupWizardOpen()) return;
-    openSetupWizardSession({
-      steps: grocerySteps(t),
-      initial: state.grocery,
-      onClose: () => setWizard(false),
-      onSave: async (answers, done) => {
-        await setup.save((s) => ({
-          ...s,
-          grocery: answers,
-          groceryDone: done,
-        }));
-      },
-    });
-    navigation.navigate('SetupWizard');
-  });
   const header = useScreenHeader({
     variant: 'transparent',
     title: t('cart.title', { defaultValue: 'Meals' }),
@@ -130,9 +102,12 @@ export default function CartScreen({
                     'Build a sample meal plan around your kitchen, budget and tastes. Or start with a simple list.',
                 })}
               </Text>
-              <Button variant="secondary" onPress={() => setWizard(true)}>
-                {t('groceries.preferences', {
-                  defaultValue: 'My food & kitchen preferences',
+              <Button
+                variant="secondary"
+                onPress={() => navigation.navigate('WeeklyPlans')}
+              >
+                {t('groceries.planMeals', {
+                  defaultValue: 'Plan meals for the week',
                 })}
               </Button>
             </View>

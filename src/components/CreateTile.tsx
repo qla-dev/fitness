@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 
 interface CreateTileProps {
   icon: IconName;
@@ -24,7 +25,11 @@ const CreateTile: React.FC<CreateTileProps> = ({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      // The same tick every row in the app gives, so the tiles feel alike.
+      onPress={() => {
+        fireSelectionHaptic();
+        onPress();
+      }}
       disabled={disabled}
       activeOpacity={0.7}
       accessibilityState={{ disabled }}

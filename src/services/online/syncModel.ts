@@ -29,6 +29,8 @@ export const SYNC_COLLECTIONS = [
   'workoutPhotos',
   'watchMeasurementReceipts',
   'markaiReceipts',
+  'mealPlans',
+  'mealPlanTemplates',
 ];
 export type SyncRecord = {
   id: string;

@@ -4,6 +4,7 @@ import {
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
+import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
 
 /** A one-question step headed by the field's own label. */
 function questionStep(field: SetupField, hint: string): SetupStep {
@@ -450,14 +451,26 @@ export function grocerySteps(t: TFunction): SetupStep[] {
     ),
     questionStep(
       {
+        id: 'region',
+        label: t('groceries.region', { defaultValue: 'Where do you shop?' }),
+        options: SHOPPING_REGIONS.map((region) => ({
+          value: region.code,
+          label: regionName(t, region.code),
+        })),
+      },
+      t('groceries.regionHint', {
+        defaultValue:
+          'Meal plans are priced for this country. In Croatia they use real store prices, updated daily.',
+      })
+    ),
+    questionStep(
+      {
         id: 'currency',
         label: t('groceries.currency', { defaultValue: 'Currency' }),
-        options: [
-          { value: 'BAM', label: 'BAM' },
-          { value: 'EUR', label: 'EUR' },
-          { value: 'USD', label: 'USD' },
-          { value: 'GBP', label: 'GBP' },
-        ],
+        options: SHOPPING_CURRENCIES.map((code) => ({
+          value: code,
+          label: code,
+        })),
       },
       t('groceries.currencyHint', {
         defaultValue: 'Your budget and price estimates will use this currency.',

@@ -846,27 +846,43 @@ jest.mock('@bsky.app/expo-scroll-edge-effect', () => {
   };
 });
 
-// expo-sqlite on Node's built-in SQLite: each open is a fresh in-memory
-// database, so SQL runs for real in tests without the native module.
+// expo-sqlite on Node's built-in SQLite, one in-memory database per file
+// name so SQL runs for real without the native module. Every test starts
+// empty: the registry is cleared before each test, and a database opened
+// earlier is recreated on its next use with the schema it had set up (the
+// execAsync scripts replayed) but none of its rows.
 jest.mock('expo-sqlite', () => {
   const { DatabaseSync } = require('node:sqlite');
+  const live = new Map();
+  const schemas = new Map();
+  const current = (name) => {
+    let db = live.get(name);
+    if (!db) {
+      db = new DatabaseSync(':memory:');
+      for (const sql of schemas.get(name) ?? []) db.exec(sql);
+      live.set(name, db);
+    }
+    return db;
+  };
   const plain = (row) => (row ? { ...row } : null);
-  const wrap = (db) => ({
+  const wrap = (name) => ({
     execAsync: async (sql) => {
-      db.exec(sql);
+      current(name).exec(sql);
+      schemas.set(name, [...(schemas.get(name) ?? []), sql]);
     },
     runAsync: async (sql, ...params) => {
-      const result = db.prepare(sql).run(...params.flat());
+      const result = current(name).prepare(sql).run(...params.flat());
       return {
         changes: Number(result.changes),
         lastInsertRowId: Number(result.lastInsertRowid),
       };
     },
     getAllAsync: async (sql, ...params) =>
-      db.prepare(sql).all(...params.flat()).map(plain),
+      current(name).prepare(sql).all(...params.flat()).map(plain),
     getFirstAsync: async (sql, ...params) =>
-      plain(db.prepare(sql).get(...params.flat())),
+      plain(current(name).prepare(sql).get(...params.flat())),
     withTransactionAsync: async (task) => {
+      const db = current(name);
       db.exec('BEGIN');
       try {
         await task();
@@ -876,7 +892,19 @@ jest.mock('expo-sqlite', () => {
         throw error;
       }
     },
-    closeAsync: async () => db.close(),
+    closeAsync: async () => {
+      live.get(name)?.close();
+      live.delete(name);
+    },
   });
-  return { openDatabaseAsync: async () => wrap(new DatabaseSync(':memory:')) };
+  return {
+    openDatabaseAsync: async (name) => wrap(name),
+    __resetDatabases: () => {
+      for (const db of live.values()) db.close();
+      live.clear();
+    },
+  };
+});
+beforeEach(() => {
+  require('expo-sqlite').__resetDatabases?.();
 });

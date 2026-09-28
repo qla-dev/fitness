@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { z } from 'zod';
+import {
+  readStoredDatabase,
+  writeStoredDatabase,
+  type StoredDatabase,
+  type StoredSnapshot,
+} from './localStore';
+import { addLog } from '../LogService';
 
 export type LocalRecord = Record<string, unknown>;
 const record = z.record(z.string(), z.unknown());
@@ -25,6 +32,10 @@ const databaseSchema = z.object({
   onlineSync: z.unknown().optional(),
 });
 export type LocalDatabase = z.infer<typeof databaseSchema>;
+/**
+ * Where the database lived before SQLite. Read once to transfer it, then
+ * deleted; still written only while SQLite cannot be opened.
+ */
 export const LOCAL_DATABASE_KEY = '@Fitness/local-database/v1';
 
 const initialDatabase = (): LocalDatabase => ({
@@ -74,13 +85,12 @@ const summarizeForChangeLog = (value: unknown): unknown => {
 /**
  * The parsed database, held between transactions.
  *
- * The whole database is a single AsyncStorage value, so re-reading it per
- * request made every tap pay for everything the user had ever synced: read the
- * string, `JSON.parse` it, validate every row of every table through Zod, then
- * serialize all of it again just to find out whether anything had changed. The
- * queue below is the only writer, so the object it already holds *is* the
- * database — storage is read once per launch and written only when a request
- * actually changed something.
+ * Re-reading storage per request made every tap pay for everything the user
+ * had ever synced: parse it, validate every row of every table through Zod,
+ * then serialize all of it again just to find out whether anything had
+ * changed. The queue below is the only writer, so the object it already holds
+ * *is* the database — storage is read once per launch and written only when a
+ * request actually changed something, and then only the changed tables.
  *
  * Dropped back to `null` whenever an operation or a write fails, so the next
  * transaction re-reads storage rather than carrying half-applied state
@@ -88,6 +98,129 @@ const summarizeForChangeLog = (value: unknown): unknown => {
  * advances the in-memory state nor poisons the queue.
  */
 let cache: LocalDatabase | null = null;
+
+/**
+ * Where this launch persists: SQLite, or AsyncStorage for a session in which
+ * SQLite could not be opened (the next launch compares the two and keeps the
+ * newer, so nothing written meanwhile is lost).
+ */
+let backend: 'sqlite' | 'asyncStorage' = 'sqlite';
+/** What SQLite holds per table, so a save writes only what changed. */
+let snapshot: StoredSnapshot = new Map();
+
+const split = (db: LocalDatabase): StoredDatabase => {
+  const { tables, ...meta } = db;
+  return { meta, tables };
+};
+
+/**
+ * Copies the AsyncStorage database into SQLite, reads it back, and deletes
+ * the AsyncStorage copy only once every table matches. Any failure leaves
+ * AsyncStorage as it was and keeps this session on it, so the transfer is
+ * retried at the next launch.
+ */
+async function transferToSqlite(
+  legacy: LocalDatabase,
+  base: StoredSnapshot
+): Promise<void> {
+  try {
+    const written = await writeStoredDatabase(split(legacy), base);
+    const check = await readStoredDatabase();
+    const matches =
+      check !== null &&
+      check.stored.meta.revision === legacy.revision &&
+      check.snapshot.size === Object.keys(legacy.tables).length &&
+      Object.entries(legacy.tables).every(
+        ([name, rows]) => check.snapshot.get(name) === JSON.stringify(rows)
+      );
+    if (!matches) throw new Error('Transferred database did not read back');
+    snapshot = written;
+    backend = 'sqlite';
+    await AsyncStorage.removeItem(LOCAL_DATABASE_KEY);
+    addLog('[LocalDatabase] Moved from AsyncStorage to SQLite', 'INFO', [
+      `${Object.keys(legacy.tables).length} tables, revision ${legacy.revision}`,
+    ]);
+  } catch (error) {
+    backend = 'asyncStorage';
+    addLog(
+      '[LocalDatabase] SQLite transfer failed; kept AsyncStorage',
+      'WARNING',
+      [String(error)]
+    );
+  }
+}
+
+async function loadDatabase(): Promise<LocalDatabase> {
+  const raw = await AsyncStorage.getItem(LOCAL_DATABASE_KEY);
+  const parseLegacy = () =>
+    raw === null ? null : databaseSchema.parse(JSON.parse(raw));
+  let stored: Awaited<ReturnType<typeof readStoredDatabase>>;
+  try {
+    stored = await readStoredDatabase();
+  } catch (error) {
+    backend = 'asyncStorage';
+    addLog(
+      '[LocalDatabase] SQLite unavailable; using AsyncStorage',
+      'WARNING',
+      [String(error)]
+    );
+    // Corrupt/unknown versions must fail visibly, never reset user data.
+    return parseLegacy() ?? initialDatabase();
+  }
+  backend = 'sqlite';
+  let legacy: LocalDatabase | null;
+  try {
+    legacy = parseLegacy();
+  } catch (error) {
+    // The only copy is damaged: fail visibly, never reset user data.
+    if (!stored) throw error;
+    // A damaged leftover beside a good SQLite copy must not lock the app
+    // out; it is left untouched in case it is needed.
+    addLog(
+      '[LocalDatabase] Ignored an unreadable AsyncStorage copy',
+      'WARNING',
+      [String(error)]
+    );
+    legacy = null;
+  }
+  // A newer AsyncStorage copy is one written during a fallback session (or a
+  // transfer that never finished): it wins, and is transferred again.
+  if (
+    stored &&
+    (legacy === null || Number(stored.stored.meta.revision) >= legacy.revision)
+  ) {
+    const db = databaseSchema.parse({
+      ...stored.stored.meta,
+      tables: stored.stored.tables,
+    });
+    snapshot = stored.snapshot;
+    // Left over from a transfer interrupted after SQLite committed.
+    if (legacy) await AsyncStorage.removeItem(LOCAL_DATABASE_KEY);
+    return db;
+  }
+  snapshot = stored?.snapshot ?? new Map();
+  if (legacy === null) return initialDatabase();
+  await transferToSqlite(legacy, snapshot);
+  return legacy;
+}
+
+async function persistDatabase(db: LocalDatabase): Promise<void> {
+  if (backend === 'sqlite') {
+    snapshot = await writeStoredDatabase(split(db), snapshot);
+  } else {
+    await AsyncStorage.setItem(LOCAL_DATABASE_KEY, JSON.stringify(db));
+  }
+}
+
+/**
+ * Loads the database once at launch, off the first screen's critical path,
+ * which is also when an AsyncStorage database moves into SQLite. Requests
+ * that arrive meanwhile wait in the same queue.
+ */
+export const warmLocalDatabase = (): Promise<void> =>
+  localTransaction(() => undefined).catch((error: unknown) => {
+    addLog('[LocalDatabase] Load at launch failed', 'ERROR', [String(error)]);
+  });
 
 /**
  * Set by the mutating primitives below, and by the seeding in `localApi.ts`,
@@ -115,14 +248,7 @@ export function localTransaction<T>(
   mutation?: { method: string; endpoint: string; body?: unknown }
 ): Promise<T> {
   const task = tail.then(async () => {
-    if (cache === null) {
-      const raw = await AsyncStorage.getItem(LOCAL_DATABASE_KEY);
-      // Corrupt/unknown versions must fail visibly, never reset user data.
-      cache =
-        raw === null
-          ? initialDatabase()
-          : databaseSchema.parse(JSON.parse(raw));
-    }
+    if (cache === null) cache = await loadDatabase();
     const db = cache;
     dirty = false;
 
@@ -153,7 +279,7 @@ export function localTransaction<T>(
     if (dirty) {
       dirty = false;
       try {
-        await AsyncStorage.setItem(LOCAL_DATABASE_KEY, JSON.stringify(db));
+        await persistDatabase(db);
       } catch (error) {
         resetLocalDatabaseCache();
         throw error;

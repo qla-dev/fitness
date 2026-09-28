@@ -4,8 +4,9 @@ import {
 } from '../../src/components/ActiveWorkoutBar';
 
 describe('shouldSuppressActiveWorkoutBar', () => {
-  it('keeps the HUD off meal-plan routes with sticky bottom actions', () => {
-    expect(shouldSuppressActiveWorkoutBar('MealPlans')).toBe(true);
+  it('keeps the HUD off editors with sticky bottom actions', () => {
+    expect(shouldSuppressActiveWorkoutBar('WorkoutAdd')).toBe(true);
+    expect(shouldSuppressActiveWorkoutBar('ActivityAdd')).toBe(true);
     expect(shouldSuppressActiveWorkoutBar('MealPlanForm')).toBe(true);
   });
 });

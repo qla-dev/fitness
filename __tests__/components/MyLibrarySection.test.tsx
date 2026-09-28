@@ -24,7 +24,7 @@ describe('MyLibrarySection', () => {
     ['My Meals', 'MealsLibrary'],
     ['My Logs', 'MyLogs'],
     ['My Programs', 'WorkoutPresetsLibrary'],
-    ['Meal plans', 'MealPlans'],
+    ['Meal plans', 'WeeklyPlans'],
     ['Medications', 'MedicationsList'],
   ])('opens the saved %s list', (label, destination) => {
     const screen = render(<MyLibrarySection enabled />);
