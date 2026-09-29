@@ -14,6 +14,15 @@ export const foodProposalSchema = z.object({
   fat: z.number().min(0).max(2000),
 });
 export type FoodProposal = z.infer<typeof foodProposalSchema>;
+export type MarkaiMode = 'macros' | 'training' | 'free';
+/** One conversation in the history list. */
+export type MarkaiThread = {
+  conversation_id: string;
+  mode: MarkaiMode;
+  title: string;
+  updated_at: string;
+  message_count: number;
+};
 export type MarkaiReply = {
   text: string;
   food: FoodProposal | null;

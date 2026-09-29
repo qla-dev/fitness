@@ -52,7 +52,18 @@ export type TabParamList = {
 export type RootStackParamList = {
   OnlineAccount: undefined;
   OnlineSync: undefined;
-  MarkAI: undefined;
+  /** Params carry a choice made on MarkaiHistory back to the chat. */
+  MarkAI:
+    | {
+        thread?: { id: string; mode: 'macros' | 'training' | 'free' };
+        /** A timestamp, so two New chat taps in a row are two changes. */
+        newChat?: number;
+      }
+    | undefined;
+  /** Conversation history. Modal, like GoalEdit. */
+  MarkaiHistory: { activeConversation?: string } | undefined;
+  /** AI coin packages. Modal, like GoalEdit. */
+  CoinPackages: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   /**

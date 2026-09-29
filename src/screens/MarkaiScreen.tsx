@@ -3,7 +3,11 @@ import {
   ScrollEdgeEffectProvider,
   useScrollEdgeEffectRef,
 } from '@bsky.app/expo-scroll-edge-effect';
-import { useNavigation } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
@@ -14,7 +18,6 @@ import {
   View,
 } from 'react-native';
 import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon from '../components/Icon';
@@ -42,21 +45,15 @@ import {
   markaiFoodToFoodInfo,
   prepareMarkaiImage,
   type MarkaiMessage,
+  type MarkaiMode,
   type MarkaiReply,
 } from '../services/online/markai';
 import { getTodayDate } from '../utils/dateUtils';
 import { pickImageFromCamera, pickImagesFromLibrary } from '../utils/pickImage';
 import type { RootStackParamList } from '../types/navigation';
 
-type Mode = 'macros' | 'training' | 'free';
+type Mode = MarkaiMode;
 type Attachment = { uri: string; data: string };
-type Thread = {
-  conversation_id: string;
-  mode: Mode;
-  title: string;
-  updated_at: string;
-  message_count: number;
-};
 export default function MarkaiScreen() {
   const accountId = useOnlineAccount((s) => s.session?.user.id);
   // The provider ties the chat's scroll view to the composer, so iOS 26 draws
@@ -79,9 +76,7 @@ function MarkaiContent() {
   const accountId = session?.user.id;
   const [mode, setMode] = useState<Mode>('free');
   const [loading, setLoading] = useState(Boolean(accountId));
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const route = useRoute<RouteProp<RootStackParamList, 'MarkAI'>>();
   // The message on its way, kept for a retry. A photo-only message has an
   // empty prompt, so this is an object rather than the prompt string.
   const [pending, setPending] = useState<{
@@ -92,7 +87,6 @@ function MarkaiContent() {
   const [attaching, setAttaching] = useState(false);
   const [barHeight, setBarHeight] = useState(110);
   const apple = useAppleSignIn();
-  const historySheet = useRef<CustomModalRef>(null);
   const optionsSheet = useRef<CustomModalRef>(null);
   const scroller =
     useRef<React.ElementRef<typeof KeyboardChatScrollView>>(null);
@@ -131,7 +125,7 @@ function MarkaiContent() {
       accessibilityLabel: t('markai.history', {
         defaultValue: 'Conversation history',
       }),
-      onPress: () => void openHistory(),
+      onPress: () => openHistory(),
       disabled: busy || loading || !session,
     },
   });
@@ -182,18 +176,11 @@ function MarkaiContent() {
       alive = false;
     };
   }, [accountId]);
-  const openHistory = async () => {
+  const openHistory = () => {
     Keyboard.dismiss();
-    historySheet.current?.present();
-    setHistoryLoading(true);
-    setHistoryError(null);
-    try {
-      setThreads(await onlineRequest<Thread[]>('/markai/messages'));
-    } catch (e: unknown) {
-      setHistoryError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setHistoryLoading(false);
-    }
+    navigation.navigate('MarkaiHistory', {
+      activeConversation: conversation ?? undefined,
+    });
   };
   const newChat = (nextMode: Mode = 'free') => {
     if (busy || loading) return;
@@ -214,25 +201,23 @@ function MarkaiContent() {
     pendingRequest.current = null;
     atBottom.current = true;
     optionsSheet.current?.dismiss();
-    historySheet.current?.dismiss();
   };
-  const selectThread = async (thread: Thread) => {
+  const selectThread = async (thread: { id: string; mode: Mode }) => {
     if (busy || loading) return;
     const version = ++loadVersion.current;
     setLoading(true);
     setError(null);
-    historySheet.current?.dismiss();
     try {
       const history = await onlineRequest<MarkaiMessage[]>(
-        '/markai/messages?conversation_id=' + thread.conversation_id
+        '/markai/messages?conversation_id=' + thread.id
       );
       if (version !== loadVersion.current) return;
       setMode(thread.mode);
-      setConversation(thread.conversation_id);
+      setConversation(thread.id);
       setMessages(history);
       await AsyncStorage.setItem(
         '@qla/markai/' + accountId + '/active',
-        JSON.stringify({ id: thread.conversation_id, mode: thread.mode })
+        JSON.stringify({ id: thread.id, mode: thread.mode })
       );
       setText('');
       setAttachment(null);
@@ -245,6 +230,18 @@ function MarkaiContent() {
       if (version === loadVersion.current) setLoading(false);
     }
   };
+  // A choice made on the history screen arrives as params; act on it once and
+  // clear it, so a re-render or a later visit does not replay it.
+  const historyChoice = route.params;
+  useEffect(() => {
+    if (!historyChoice?.thread && !historyChoice?.newChat) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the params are navigation's state, not this component's.
+    if (historyChoice.thread) void selectThread(historyChoice.thread);
+    else newChat();
+    navigation.setParams({ thread: undefined, newChat: undefined });
+    // Only a new choice should run this, not the handlers being recreated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyChoice]);
   const reviewFood = (reply: MarkaiReply) => {
     if (!reply.food) return;
     Keyboard.dismiss();
@@ -404,8 +401,11 @@ function MarkaiContent() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           contentInsetAdjustmentBehavior={nativeHeader ? 'automatic' : 'never'}
+          // No flexGrow: stretched to the frame, a short chat was always one
+          // header inset taller than the screen, so it could be dragged up and
+          // left sitting under the header. The empty state that needed the
+          // stretch is drawn outside this scroll view now.
           contentContainerStyle={{
-            flexGrow: 1,
             padding: 20,
             gap: 16,
             paddingBottom: session ? barHeight + insets.bottom + 12 : 20,
@@ -554,84 +554,6 @@ function MarkaiContent() {
             })}
           </Text>
         </View>
-      </CustomModal>
-      <CustomModal
-        ref={historySheet}
-        fullHeight
-        title={t('markai.history', { defaultValue: 'Conversation history' })}
-      >
-        <View className="px-4 pb-3">
-          <Button disabled={busy || loading} onPress={() => newChat()}>
-            {t('markai.newChat', { defaultValue: 'New chat' })}
-          </Button>
-        </View>
-        {historyLoading ? <ActivityIndicator /> : null}
-        {historyError ? (
-          <View className="px-4 gap-3">
-            <Text accessibilityRole="alert" className="text-text-primary">
-              {historyError}
-            </Text>
-            <Button onPress={() => void openHistory()}>
-              {t('common.retry', { defaultValue: 'Retry' })}
-            </Button>
-          </View>
-        ) : null}
-        <BottomSheetScrollView contentContainerStyle={{ padding: 16, gap: 4 }}>
-          {!historyLoading && !historyError && !threads.length ? (
-            <Text className="text-text-secondary">
-              {t('markai.noHistory', {
-                defaultValue: 'Your conversations will appear here.',
-              })}
-            </Text>
-          ) : null}
-          {threads.map((thread) => (
-            <Pressable
-              key={thread.conversation_id + thread.mode}
-              accessibilityRole="button"
-              disabled={busy || loading}
-              onPress={() => void selectThread(thread)}
-              className={
-                conversation === thread.conversation_id ? 'bg-raised' : ''
-              }
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 11,
-                borderRadius: 14,
-                paddingHorizontal: 12,
-                paddingVertical: 11,
-              }}
-            >
-              <View
-                className="bg-surface"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="history" size={16} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  numberOfLines={1}
-                  className="text-text-primary"
-                  style={{ fontSize: 14, fontWeight: '700' }}
-                >
-                  {thread.title || t('markai.photo', { defaultValue: 'Photo' })}
-                </Text>
-                <Text
-                  className="text-text-muted"
-                  style={{ fontSize: 12, marginTop: 2 }}
-                >
-                  {labels[thread.mode]}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </BottomSheetScrollView>
       </CustomModal>
     </View>
   );

@@ -67,7 +67,9 @@ export function useSyncHealthData(options?: {
           text1: t('syncHealth.syncing', {
             defaultValue: 'Syncing health data…',
           }),
-          visibilityTime: 2000,
+          // Up until the result replaces it. On a timer it went away after
+          // two seconds, so a longer sync showed nothing until "Sync complete".
+          autoHide: false,
         });
       }
     },

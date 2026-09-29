@@ -32,7 +32,8 @@ jest.mock('react-native-keyboard-controller', () => ({
   KeyboardChatScrollView: require('react-native').ScrollView,
 }));
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockNavigate }),
+  useNavigation: () => ({ navigate: mockNavigate, setParams: jest.fn() }),
+  useRoute: () => ({ params: undefined }),
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,

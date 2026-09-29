@@ -5741,6 +5741,8 @@
     "burned": "Burned",
     "kcalLeft": "kcal left",
     "kcalLeftOfGoal": "kcal left of {{goal}}",
+    "kcalOver": "{{amount}} over",
+    "percentOfGoal": "{{percent}}% of goal",
     "amountLeft": "{{amount}} left",
     "addGoal": "Add Goal",
     "editGoalFor": "Change your {{nutrient}} goal"

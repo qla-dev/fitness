@@ -34,6 +34,8 @@ import {
   SafeOnlineAccount,
   SafeOnlineSync,
   SafeMarkAI,
+  SafeMarkaiHistory,
+  SafeCoinPackages,
   SafeFoodsLibrary,
   SafeMealsLibrary,
   SafeWeeklyPlans,
@@ -429,6 +431,8 @@ function AppContent() {
           <Stack.Screen name="OnlineAccount" component={SafeOnlineAccount} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
           <Stack.Screen name="OnlineSync" component={SafeOnlineSync} options={createStackScreenOptions(t('online.sync', { defaultValue: 'Online sync' }), { headerBackButtonDisplayMode: 'minimal' })} />
           <Stack.Screen name="MarkAI" component={SafeMarkAI} options={createStackScreenOptions(t('markai.title', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })} />
+          <Stack.Screen name="MarkaiHistory" component={SafeMarkaiHistory} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
+          <Stack.Screen name="CoinPackages" component={SafeCoinPackages} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
           <Stack.Screen name="Tabs" options={{ gestureEnabled: false }}>
             {() => (
               <TabsLayout

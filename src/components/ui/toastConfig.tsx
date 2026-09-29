@@ -173,7 +173,12 @@ function SwipeToDismiss({ children }: { children: React.ReactNode }) {
   }));
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={style}>{children}</Animated.View>
+      {/* Full width: the library centres its toast, so a wrapper sized to its
+          content shrank to the icon tile and the flex-1 text column under it
+          collapsed to nothing. */}
+      <Animated.View style={[{ width: '100%' }, style]}>
+        {children}
+      </Animated.View>
     </GestureDetector>
   );
 }

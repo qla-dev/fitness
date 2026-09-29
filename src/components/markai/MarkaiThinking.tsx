@@ -42,7 +42,7 @@ function Letter({
     };
   });
   return (
-    <Animated.Text style={[{ fontSize: 14.5, lineHeight: 20 }, style]}>
+    <Animated.Text style={[{ fontSize: 18, lineHeight: 27 }, style]}>
       {letter}
     </Animated.Text>
   );

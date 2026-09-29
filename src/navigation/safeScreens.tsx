@@ -68,6 +68,8 @@ import ChatScreen from '../screens/ChatScreen';
 import OnlineAccountScreen from '../screens/OnlineAccountScreen';
 import OnlineSyncScreen from '../screens/OnlineSyncScreen';
 import MarkaiScreen from '../screens/MarkaiScreen';
+import MarkaiHistoryScreen from '../screens/MarkaiHistoryScreen';
+import CoinPackagesScreen from '../screens/CoinPackagesScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import CycleSettingsScreen from '../screens/CycleSettingsScreen';
 import CycleOnboardingScreen from '../screens/CycleOnboardingScreen';
@@ -142,6 +144,8 @@ export const SafeChat = withErrorBoundary(ChatScreen, 'Chat', { canGoBack: true 
 export const SafeOnlineAccount = withErrorBoundary(OnlineAccountScreen, 'OnlineAccount');
 export const SafeOnlineSync = withErrorBoundary(OnlineSyncScreen, 'OnlineSync', { canGoBack: true });
 export const SafeMarkAI = withErrorBoundary(MarkaiScreen, 'MarkAI', { canGoBack: true });
+export const SafeMarkaiHistory = withErrorBoundary(MarkaiHistoryScreen, 'MarkaiHistory', { canGoBack: true });
+export const SafeCoinPackages = withErrorBoundary(CoinPackagesScreen, 'CoinPackages', { canGoBack: true });
 export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'ExerciseProgram', { canGoBack: true });
 export const SafeProgramPurchase = withErrorBoundary(ProgramPurchaseScreen, 'ProgramPurchase', { canGoBack: true });
 export const SafeCart = withErrorBoundary(CartScreen, 'Cart', { canGoBack: true });

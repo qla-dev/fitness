@@ -39,6 +39,7 @@ export default function PromptScreen({
   footerTint,
   dismissDisabled = false,
   hasTextInput = false,
+  topAligned = false,
   children,
 }: {
   /**
@@ -61,6 +62,11 @@ export default function PromptScreen({
   dismissDisabled?: boolean;
   /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
+  /**
+   * Starts the content under the explanation instead of centring it, for a
+   * control that is a list (conversation history) and fills the room.
+   */
+  topAligned?: boolean;
   children: React.ReactNode;
 }) {
   const navigation = useNavigation();
@@ -103,7 +109,7 @@ export default function PromptScreen({
       </View>
 
       <View
-        className={`flex-1 px-5 ${hasTextInput ? 'pt-6' : 'justify-center'}`}
+        className={`flex-1 px-5 ${hasTextInput || topAligned ? 'pt-6' : 'justify-center'}`}
       >
         {children}
       </View>
