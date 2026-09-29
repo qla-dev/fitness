@@ -33,10 +33,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
     queryFn: fetchProfile,
     enabled,
   });
-  const [textSecondary, accent] = useCSSVariable([
-    '--color-text-secondary',
-    '--color-accent-primary',
-  ]) as [string, string];
+  const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
   const editable = isLocalDataMode();
   // The row is the person, so an empty profile asks for a name rather than
@@ -112,6 +109,8 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           )}
         </Pressable>
 
+        <ProfileSetup enabled={enabled} />
+
         <View className="h-px bg-border-subtle" style={{ marginLeft: 84 }} />
 
         <Pressable
@@ -120,17 +119,9 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           className="flex-row items-center px-4"
           style={{ minHeight: 66, gap: 14 }}
         >
-          <View
-            className="items-center justify-center"
-            style={{ width: 62, height: 30 }}
-          >
-            <View
-              className="rounded-full items-center justify-center"
-              style={{ width: 30, height: 30, backgroundColor: accent }}
-            >
-              <Icon name="people" size={16} color="#FFFFFF" />
-            </View>
-          </View>
+          {/* The leading slot stays, empty, so the text lines up with the
+              rows above and the divider indent. */}
+          <View style={{ width: 62 }} />
           <View className="flex-1">
             <Text className="text-text-primary text-base font-semibold">
               {t('profile.clients', { defaultValue: 'My Clients' })}
@@ -147,8 +138,6 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           </View>
           <Icon name="chevron-forward" size={12} color={textSecondary} />
         </Pressable>
-
-        <ProfileSetup enabled={enabled} />
       </View>
 
       <ProfileStats enabled={enabled} />
