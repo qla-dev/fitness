@@ -91,11 +91,6 @@ import {
   SafeProfileTheme,
   SafeProfilePremium,
   SafeCalorieSettings,
-  SafeMealTypeSettings,
-  SafeFoodSettings,
-  SafeDashboardSettings,
-  SafeHealthTrendsSettings,
-  SafeDiarySettings,
   SafeWorkoutSettings,
   SafeServerSettings,
   SafePasskeySettings,
@@ -107,10 +102,6 @@ import {
   SafeDayMeals,
   SafeMacros,
   SafeNutrientTrends,
-  SafeFamilyMembers,
-  SafeFamilyDiary,
-  SafeFamilyMealDetail,
-  SafeFamilyCopyReview,
   SafeCycleSettings,
   SafeCycleOnboarding,
   SafeGoalEdit,
@@ -441,35 +432,6 @@ function AppContent() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen
-            name="FamilyMembers"
-            component={SafeFamilyMembers}
-            options={createStackScreenOptions(t('familyDiary.title', { defaultValue: 'Family Diaries' }), {
-              headerBackButtonDisplayMode: 'minimal',
-            })}
-          />
-          <Stack.Screen
-            name="FamilyDiary"
-            component={SafeFamilyDiary}
-            options={({ route }) => createStackScreenOptions(
-              route.params.familyUser.displayName.trim() || t('familyDiary.unnamedMember', { defaultValue: 'Family member' }),
-              { headerBackButtonDisplayMode: 'minimal' },
-            )}
-          />
-          <Stack.Screen
-            name="FamilyMealDetail"
-            component={SafeFamilyMealDetail}
-            options={({ route }) => createStackScreenOptions(route.params.mealTypeName, {
-              headerBackButtonDisplayMode: 'minimal',
-            })}
-          />
-          <Stack.Screen
-            name="FamilyCopyReview"
-            component={SafeFamilyCopyReview}
-            options={createStackScreenOptions(t('familyDiary.copyReview', { defaultValue: 'Review copy' }), {
-              headerBackButtonDisplayMode: 'minimal',
-            })}
-          />
           <Stack.Screen
             name="FoodsLibrary"
             component={SafeFoodsLibrary}
@@ -854,31 +816,6 @@ function AppContent() {
             name="CalorieSettings"
             component={SafeCalorieSettings}
             options={createStackScreenOptions(t('screens.calorieSettings', { defaultValue: 'Calorie Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
-          />
-          <Stack.Screen
-            name="FoodSettings"
-            component={SafeFoodSettings}
-            options={createStackScreenOptions(t('screens.foodSettings', { defaultValue: 'Food Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
-          />
-          <Stack.Screen
-            name="MealTypeSettings"
-            component={SafeMealTypeSettings}
-            options={createStackScreenOptions(t('screens.mealTypes', { defaultValue: 'Meal Types' }), { headerBackButtonDisplayMode: 'minimal' })}
-          />
-          <Stack.Screen
-            name="DashboardSettings"
-            component={SafeDashboardSettings}
-            options={createStackScreenOptions(t('screens.dashboardSettings', { defaultValue: 'Activities Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
-          />
-          <Stack.Screen
-            name="HealthTrendsSettings"
-            component={SafeHealthTrendsSettings}
-            options={createStackScreenOptions(t('screens.healthTrendsSettings', { defaultValue: 'Health Trends' }), { headerBackButtonDisplayMode: 'minimal' })}
-          />
-          <Stack.Screen
-            name="DiarySettings"
-            component={SafeDiarySettings}
-            options={createStackScreenOptions(t('screens.diarySettings', { defaultValue: 'Nutrition Settings' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="WorkoutSettings"

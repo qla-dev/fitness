@@ -25,7 +25,6 @@ import type {
 import type { AssumedSetValues } from '../utils/workoutSession';
 import type { PhotoType } from './checkInPhotos';
 import type { Exercise } from './exercise';
-import type { FamilyDiaryUser } from './familyDiary';
 import type { FoodEntry } from './foodEntries';
 import type { FoodEntryMeal } from './foodEntryMeals';
 import type { FoodInfoItem } from './foodInfo';
@@ -72,23 +71,6 @@ export type RootStackParamList = {
    */
   Profile: undefined;
   MyLogs: undefined;
-  FamilyMembers: undefined;
-  FamilyDiary: { familyUser: FamilyDiaryUser };
-  FamilyMealDetail: {
-    familyUser: FamilyDiaryUser;
-    sourceDate: string;
-    mealTypeId: string | null;
-    mealTypeName: string;
-    entries: FoodEntry[];
-  };
-  FamilyCopyReview: {
-    familyUser: FamilyDiaryUser;
-    sourceDate: string;
-    mealTypeId: string | null;
-    mealTypeName: string;
-    sourceEntries: FoodEntry[];
-    selectedEntryIds: string[];
-  };
   CycleSettings: undefined;
   CycleOnboarding: undefined;
   SetupWizard: undefined;
@@ -402,11 +384,6 @@ export type RootStackParamList = {
   /** Preview of the paid tier reached from the profile card's premium rows. */
   ProfilePremium: undefined;
   CalorieSettings: undefined;
-  MealTypeSettings: undefined;
-  FoodSettings: undefined;
-  DashboardSettings: undefined;
-  HealthTrendsSettings: undefined;
-  DiarySettings: undefined;
   WorkoutSettings: undefined;
   ServerSettings: undefined;
   PasskeySettings: undefined;

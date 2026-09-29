@@ -41,7 +41,6 @@ import WaterTile from '../components/WaterTile';
 import StatusView from '../components/StatusView';
 import {
   useDailySummary,
-  useFamilyUsers,
   useMealTypes,
   useServerConnection,
   useWaterIntakeMutation,
@@ -87,8 +86,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     : 'en-US';
   const insets = useSafeAreaInsets();
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
-  const { data: familyUsers = [] } = useFamilyUsers({ enabled: isConnected });
-  const hasFamilyDiaries = isConnected && familyUsers.length > 0;
   const selectedDate = useDiaryDateStore((s) => s.selectedDate);
   const setSelectedDate = useDiaryDateStore((s) => s.setSelectedDate);
   const goToPreviousDay = useDiaryDateStore((s) => s.goToPreviousDay);
@@ -109,8 +106,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   // entries and the top of the screen. Through the hook rather than this
   // screen's own navigation: under the native tab bar the screen sits in a
   // tab-local stack that never sees `tabPress`.
-  const { scrollToTop, onScroll, onScrollBeginDrag } =
-    useScrollTopOffset();
+  const { scrollToTop, onScroll, onScrollBeginDrag } = useScrollTopOffset();
   useTabPress(navigation, () => {
     goToToday();
     scrollToTop(scrollViewRef.current);
@@ -143,13 +139,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
     setCalendarOpened(true);
     calendarRef.current?.present();
   }, []);
-  const openFamilyDiaries = useCallback(
-    () => navigation.navigate('FamilyMembers'),
-    [navigation]
-  );
-  const familyDiariesAccessibilityLabel = t('familyDiary.openFamilyDiaries', {
-    defaultValue: 'Open family diaries',
-  });
   const accentColor = useCSSVariable('--color-accent-primary') as string;
   const usesNativeTabs = useNativeIOSTabsActive();
   const { defaultColor: nativeHeaderActionColor } = useHeaderActionColors();
@@ -170,19 +159,9 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
         dateLabel: `${formatDateLabel(selectedDate, t, dateLocale)} ▾`,
         t,
         locale: dateLocale,
-        // Family diaries first, then the cart, then the profile button, so
-        // profile stays in the corner position it occupies on every other tab.
+        // Workouts, then the profile button, so profile stays in the corner
+        // position it occupies on every other tab.
         trailingActions: [
-          ...(hasFamilyDiaries
-            ? [
-                {
-                  sfSymbol: 'person.2.fill',
-                  onPress: openFamilyDiaries,
-                  accessibilityLabel: familyDiariesAccessibilityLabel,
-                  identifier: 'family-diaries',
-                },
-              ]
-            : []),
           createNativeWorkoutsAction(
             startWorkout,
             t('presetSearch.title', { defaultValue: 'Start Workout' })
@@ -197,11 +176,8 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   }, [
     nativeHeaderActionColor,
     navigation,
-    openFamilyDiaries,
     openCalendar,
     selectedDate,
-    familyDiariesAccessibilityLabel,
-    hasFamilyDiaries,
     startWorkout,
     usesNativeTabs,
     t,
@@ -624,15 +600,6 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           selectedDate={selectedDate}
           onDatePress={openCalendar}
           onProfilePress={() => navigation.navigate('Profile')}
-          action={
-            hasFamilyDiaries
-              ? {
-                  icon: 'people',
-                  accessibilityLabel: familyDiariesAccessibilityLabel,
-                  onPress: openFamilyDiaries,
-                }
-              : undefined
-          }
         />
       ) : (
         !isConnectionLoading && (

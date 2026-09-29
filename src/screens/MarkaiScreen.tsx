@@ -120,8 +120,11 @@ function MarkaiContent() {
     left: { kind: 'back' },
     right: {
       kind: 'icon',
-      sfSymbol: 'bubble.left.and.bubble.right',
-      ionicon: 'chatbubbles-outline',
+      // Square, so iOS 26 draws the glass item as a circle like the back
+      // button; the two side-by-side bubbles were wider than tall and
+      // stretched it into a capsule.
+      sfSymbol: 'clock.arrow.circlepath',
+      ionicon: 'time-outline',
       accessibilityLabel: t('markai.history', {
         defaultValue: 'Conversation history',
       }),

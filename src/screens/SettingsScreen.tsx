@@ -113,11 +113,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     catSlate,
     catPink,
     catViolet,
-    catOrange,
     catCalories,
     hydration,
-    macroGreen,
-    catTeal,
     catBlue,
   ] = useCSSVariable([
     '--color-icon-success',
@@ -125,25 +122,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     '--color-cat-slate',
     '--color-cat-pink',
     '--color-cat-violet',
-    '--color-cat-orange',
     '--color-calories',
     '--color-hydration',
-    '--color-cat-green',
-    '--color-cat-teal',
     '--color-cat-blue',
-  ]) as [
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-  ];
+  ]) as [string, string, string, string, string, string, string, string];
 
   const serverSubtitle = activeConfig ? (
     <View className="flex-row items-center">
@@ -297,7 +279,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             <SettingsRow
               icon="sync"
               title={t('online.sync', { defaultValue: 'Online sync' })}
-              onPress={() => navigation.navigate('OnlineSync')}
+              // Signed out there is nothing to sync yet, so this opens the same
+              // sign-in sheet as the row above instead of an empty sync screen.
+              onPress={() =>
+                navigation.navigate(
+                  onlineSession ? 'OnlineSync' : 'OnlineAccount'
+                )
+              }
             />
             <SettingsRow
               icon="sparkles"
@@ -383,16 +371,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               />
               {isConnected && (
                 <SettingsRow
-                  icon="people"
-                  title={t('familyDiary.title', {
-                    defaultValue: 'Family Diaries',
-                  })}
-                  onPress={() => navigation.navigate('FamilyMembers')}
-                  iconColor={catTeal}
-                />
-              )}
-              {isConnected && (
-                <SettingsRow
                   icon="calorie-settings"
                   title={t('settings.rows.calories', {
                     defaultValue: 'Calories & BMR',
@@ -402,43 +380,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   })}
                   onPress={() => navigation.navigate('CalorieSettings')}
                   iconColor={catCalories}
-                />
-              )}
-              {isConnected && (
-                <SettingsRow
-                  icon="food-search-settings"
-                  title={t('settings.rows.food', { defaultValue: 'Food' })}
-                  subtitle={t('profile.foodSubtitle', {
-                    defaultValue: 'Search providers and food preferences',
-                  })}
-                  onPress={() => navigation.navigate('FoodSettings')}
-                  iconColor={catOrange}
-                />
-              )}
-              {isConnected && (
-                <SettingsRow
-                  icon="dashboard-settings"
-                  title={t('settings.rows.dashboard', {
-                    defaultValue: 'Activities',
-                  })}
-                  subtitle={t('profile.dashboardSubtitle', {
-                    defaultValue: 'Cards, nutrients, and health trends',
-                  })}
-                  onPress={() => navigation.navigate('DashboardSettings')}
-                  iconColor={macroGreen}
-                />
-              )}
-              {isConnected && (
-                <SettingsRow
-                  icon="diary-settings"
-                  title={t('settings.rows.diary', {
-                    defaultValue: 'Nutrition',
-                  })}
-                  subtitle={t('profile.diarySubtitle', {
-                    defaultValue: 'Meal types and diary layout',
-                  })}
-                  onPress={() => navigation.navigate('DiarySettings')}
-                  iconColor={catTeal}
                 />
               )}
               {/* Cycle tracking is server-backed; the Dashboard hides its card

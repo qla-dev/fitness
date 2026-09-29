@@ -48,11 +48,6 @@ import MyLogsScreen from '../screens/MyLogsScreen';
 import ProfileThemeScreen from '../screens/ProfileThemeScreen';
 import ProfilePremiumScreen from '../screens/ProfilePremiumScreen';
 import CalorieSettingsScreen from '../screens/CalorieSettingsScreen';
-import MealTypeSettingsScreen from '../screens/MealTypeSettingsScreen';
-import FoodSettingsScreen from '../screens/FoodSettingsScreen';
-import DashboardSettingsScreen from '../screens/DashboardSettingsScreen';
-import HealthTrendsSettingsScreen from '../screens/HealthTrendsSettingsScreen';
-import DiarySettingsScreen from '../screens/DiarySettingsScreen';
 import WorkoutSettingsScreen from '../screens/WorkoutSettingsScreen';
 import ServerSettingsScreen from '../screens/ServerSettingsScreen';
 import PasskeySettingsScreen from '../screens/PasskeySettingsScreen';
@@ -90,10 +85,6 @@ import DailyNutritionDetailsScreen from '../screens/DailyNutritionDetailsScreen'
 import DayMealsScreen from '../screens/DayMealsScreen';
 import MacrosScreen from '../screens/MacrosScreen';
 import NutrientTrendsScreen from '../screens/NutrientTrendsScreen';
-import FamilyMembersScreen from '../screens/FamilyMembersScreen';
-import FamilyDiaryScreen from '../screens/FamilyDiaryScreen';
-import FamilyMealDetailScreen from '../screens/FamilyMealDetailScreen';
-import FamilyCopyReviewScreen from '../screens/FamilyCopyReviewScreen';
 import { withErrorBoundary } from '../components/ScreenErrorBoundary';
 
 // Onboarding — no Go Back (initial route for new users)
@@ -160,11 +151,6 @@ export const SafeMyLogs = withErrorBoundary(MyLogsScreen, 'MyLogs', { canGoBack:
 export const SafeProfileTheme = withErrorBoundary(ProfileThemeScreen, 'ProfileTheme', { canGoBack: true });
 export const SafeProfilePremium = withErrorBoundary(ProfilePremiumScreen, 'ProfilePremium', { canGoBack: true });
 export const SafeCalorieSettings = withErrorBoundary(CalorieSettingsScreen, 'CalorieSettings', { canGoBack: true });
-export const SafeMealTypeSettings = withErrorBoundary(MealTypeSettingsScreen, 'MealTypeSettings', { canGoBack: true });
-export const SafeFoodSettings = withErrorBoundary(FoodSettingsScreen, 'FoodSettings', { canGoBack: true });
-export const SafeDashboardSettings = withErrorBoundary(DashboardSettingsScreen, 'DashboardSettings', { canGoBack: true });
-export const SafeHealthTrendsSettings = withErrorBoundary(HealthTrendsSettingsScreen, 'HealthTrendsSettings', { canGoBack: true });
-export const SafeDiarySettings = withErrorBoundary(DiarySettingsScreen, 'DiarySettings', { canGoBack: true });
 export const SafeWorkoutSettings = withErrorBoundary(WorkoutSettingsScreen, 'WorkoutSettings', { canGoBack: true });
 export const SafeServerSettings = withErrorBoundary(ServerSettingsScreen, 'ServerSettings', { canGoBack: true });
 export const SafePasskeySettings = withErrorBoundary(PasskeySettingsScreen, 'PasskeySettings', { canGoBack: true });
@@ -176,10 +162,6 @@ export const SafeDailyNutritionDetails = withErrorBoundary(DailyNutritionDetails
 export const SafeDayMeals = withErrorBoundary(DayMealsScreen, 'DayMeals', { canGoBack: true });
 export const SafeMacros = withErrorBoundary(MacrosScreen, 'Macros', { canGoBack: true });
 export const SafeNutrientTrends = withErrorBoundary(NutrientTrendsScreen, 'NutrientTrends', { canGoBack: true });
-export const SafeFamilyMembers = withErrorBoundary(FamilyMembersScreen, 'FamilyMembers', { canGoBack: true });
-export const SafeFamilyDiary = withErrorBoundary(FamilyDiaryScreen, 'FamilyDiary', { canGoBack: true });
-export const SafeFamilyMealDetail = withErrorBoundary(FamilyMealDetailScreen, 'FamilyMealDetail', { canGoBack: true });
-export const SafeFamilyCopyReview = withErrorBoundary(FamilyCopyReviewScreen, 'FamilyCopyReview', { canGoBack: true });
 
 export const SafeCycleSettings = withErrorBoundary(CycleSettingsScreen, 'CycleSettings', { canGoBack: true });
 export const SafeCycleOnboarding = withErrorBoundary(CycleOnboardingScreen, 'CycleOnboarding', { canGoBack: true });

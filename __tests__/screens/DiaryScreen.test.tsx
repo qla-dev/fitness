@@ -616,15 +616,7 @@ describe('DiaryScreen custom queries', () => {
     expect(UNSAFE_getByType(RefreshControl).props.refreshing).toBe(false);
   });
 
-  test('opens family diaries from the custom date header', () => {
-    const { getByLabelText } = renderScreen();
-
-    fireEvent.press(getByLabelText('Open family diaries'));
-
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('FamilyMembers');
-  });
-
-  test('opens family diaries from the native trailing header action', () => {
+  test('carries only the workouts and profile actions in the native header', () => {
     mockUseNativeIOSTabsActive.mockReturnValue(true);
 
     renderScreen();
@@ -633,19 +625,11 @@ describe('DiaryScreen custom queries', () => {
       mockSetNativeHeaderDatePickerOptions.mock.calls[
         mockSetNativeHeaderDatePickerOptions.mock.calls.length - 1
       ]?.[1];
-    // Family diaries first, then the workouts and profile pair every tab header
-    // carries, with profile last so it keeps the corner position.
+    // The pair every tab header carries, profile last so it keeps the corner.
     expect(options?.trailingActions).toEqual([
-      expect.objectContaining({
-        sfSymbol: 'person.2.fill',
-        accessibilityLabel: 'Open family diaries',
-      }),
       expect.objectContaining({ identifier: 'tab-header-workouts' }),
       expect.objectContaining({ identifier: 'tab-header-profile' }),
     ]);
-    options?.trailingActions?.[0]?.onPress();
-
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('FamilyMembers');
   });
 
   // The subtitle row under the screen's name carries the link into the full
