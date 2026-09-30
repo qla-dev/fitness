@@ -29,10 +29,15 @@ jest.mock('expo-maps', () => {
 
 jest.mock('uniwind', () => ({ useCSSVariable: () => '#3B82F6' }));
 
-// Google Maps needs a manifest API key; RouteMap reads its presence from the
-// embedded config. Most tests run with one set so the map branch is exercised.
+// Google Maps needs a manifest API key; RouteMap reads its PRESENCE from the
+// embedded config. Deliberately a flag under `extra` rather than the key under
+// `android.config`: `expo config --type public` strips that block as a secret,
+// and the public config is what expo-constants embeds and serves as
+// `Constants.expoConfig` — so the key is never readable at runtime and asking
+// for it always answered "no key" on a properly keyed build. Most tests run
+// with the flag set so the map branch is exercised.
 const mockExpoConfig: {
-  android?: { config?: { googleMaps?: { apiKey?: string } } };
+  extra?: { hasGoogleMapsKey?: boolean };
 } = {};
 jest.mock('expo-constants', () => ({
   __esModule: true,
@@ -44,7 +49,7 @@ jest.mock('expo-constants', () => ({
 }));
 
 const setGoogleMapsApiKey = (apiKey: string | undefined) => {
-  mockExpoConfig.android = apiKey ? { config: { googleMaps: { apiKey } } } : {};
+  mockExpoConfig.extra = { hasGoogleMapsKey: Boolean(apiKey) };
 };
 
 const A = { latitude: 1, longitude: 2 };
