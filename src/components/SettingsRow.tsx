@@ -6,6 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -70,6 +71,45 @@ export const SettingsRowGroup: React.FC<SettingsRowGroupProps> = ({
     </SettingsRowGroupContext.Provider>
   );
 };
+
+interface SettingsValueSubtitleProps {
+  /** The current choice; falls back to the picker's "Select an option". */
+  value: string | undefined;
+  /** Explanations of the setting, shown in full beneath the value. */
+  description?: string | readonly (string | false | null | undefined)[];
+}
+
+/**
+ * Subtitle for a row that opens a choice (a BottomSheetPicker trigger or a
+ * sheet of its own): the current value on one line, like Theme in App
+ * Settings, with any explanation of the setting wrapping freely beneath it.
+ */
+export function SettingsValueSubtitle({
+  value,
+  description,
+}: SettingsValueSubtitleProps) {
+  const { t } = useTranslation();
+  const descriptions = (
+    Array.isArray(description) ? description : [description]
+  ).filter((line): line is string => typeof line === 'string' && line !== '');
+  return (
+    <>
+      <Text
+        className="text-sm text-text-secondary"
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {value ||
+          t('common.selectOption', { defaultValue: 'Select an option' })}
+      </Text>
+      {descriptions.map((line) => (
+        <Text key={line} className="text-sm text-text-muted mt-1">
+          {line}
+        </Text>
+      ))}
+    </>
+  );
+}
 
 interface SettingsRowProps {
   icon?: IconName;

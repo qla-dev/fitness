@@ -202,3 +202,35 @@ test('files sleep under the wake-up day and filters the requested range', async 
     await request('/api/sleep?startDate=2026-09-09&endDate=2026-09-09')
   ).toEqual([]);
 });
+
+test('keeps one row per night when the same night arrives in pieces', async () => {
+  const night = {
+    type: 'SleepSession',
+    source: 'HealthKit',
+    bedtime: '2026-09-09T21:06:00Z',
+    wake_time: '2026-09-10T06:46:00Z',
+    duration_in_seconds: 34800,
+    record_timezone: 'Europe/Sarajevo',
+  };
+  const tail = (bedtime: string) => ({
+    ...night,
+    timestamp: bedtime,
+    bedtime,
+    wake_time: '2026-09-10T06:43:00Z',
+    duration_in_seconds: 10000,
+  });
+  const range = `/api/sleep?startDate=${date}&endDate=${date}`;
+
+  // Tails stored before the full night (the old reader) are replaced by it.
+  await syncHealthData([tail('2026-09-10T01:06:00Z')]);
+  await syncHealthData([{ ...night, timestamp: night.bedtime }]);
+  expect(await request<LocalRecord[]>(range)).toEqual([
+    expect.objectContaining({ bedtime: night.bedtime }),
+  ]);
+
+  // A tail arriving after the full night lies inside it and is dropped.
+  await syncHealthData([tail('2026-09-10T03:22:00Z')]);
+  expect(await request<LocalRecord[]>(range)).toEqual([
+    expect.objectContaining({ bedtime: night.bedtime }),
+  ]);
+});

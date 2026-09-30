@@ -1296,16 +1296,59 @@ describe('readHealthRecords', () => {
         sourceName: 'Apple Watch',
         sourceId: 'com.apple.health',
       });
-      // Window pushed into the native query; overlap semantics keep boundary-spanning
-      // sessions (asserted below) while limit: 0 avoids the newest-N-of-all-history trap.
+      // Window pushed into the native query, reaching a day back so a night already under
+      // way is read from its bedtime; limit: 0 avoids the newest-N-of-all-history trap.
       expect(mockQueryCategorySamples).toHaveBeenCalledWith(
         'HKCategoryTypeIdentifierSleepAnalysis',
         expect.objectContaining({
           ascending: false,
           limit: 0,
-          filter: { date: { startDate, endDate } },
+          filter: {
+            date: {
+              startDate: new Date('2024-01-14T00:00:00Z'),
+              endDate,
+            },
+          },
         })
       );
+    });
+
+    test('reads a night under way at the window start from its bedtime', async () => {
+      await initHealthConnect();
+
+      mockQueryCategorySamples.mockResolvedValue([
+        // The previous night: ends long before the window opens, so it is dropped.
+        {
+          startDate: '2024-01-14T22:00:00Z',
+          endDate: '2024-01-15T06:00:00Z',
+          value: 'ASLEEP',
+        },
+        // Tonight: began before the window opened and is read whole.
+        {
+          startDate: '2024-01-15T21:00:00Z',
+          endDate: '2024-01-16T01:00:00Z',
+          value: 'ASLEEP',
+        },
+        {
+          startDate: '2024-01-16T01:00:00Z',
+          endDate: '2024-01-16T06:40:00Z',
+          value: 'ASLEEP',
+        },
+      ]);
+
+      const result = await readHealthRecords(
+        'SleepSession',
+        new Date('2024-01-16T03:00:00Z'),
+        new Date('2024-01-16T09:00:00Z')
+      );
+
+      expect(result.map((r) => (r as { startTime: string }).startTime)).toEqual(
+        expect.arrayContaining([
+          '2024-01-15T21:00:00Z',
+          '2024-01-16T01:00:00Z',
+        ])
+      );
+      expect(result).toHaveLength(2);
     });
 
     test('normalizes flattened metadataTimeZone into metadata.HKTimeZone', async () => {

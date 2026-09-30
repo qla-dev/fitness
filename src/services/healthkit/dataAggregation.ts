@@ -181,6 +181,65 @@ const finalizeSession = (
   return result;
 };
 
+// Define a threshold for what constitutes a new sleep session (e.g., 4 hours awake)
+const SESSION_GAP_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+/**
+ * How far before a sync window the sleep read reaches back, so a night already in
+ * progress when the window opens is read from its real bedtime.
+ */
+export const SLEEP_READ_LOOKBACK_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Keeps only the samples of sessions that overlap `[rangeStart, rangeEnd]`, grouping
+ * with the same gap rule as `aggregateSleepSessions`.
+ *
+ * The reader queries from `rangeStart - SLEEP_READ_LOOKBACK_MS` because a window that
+ * opens mid-night (background sync starts at the cursor minus 6h) would otherwise see
+ * only the night's tail. That tail aggregates into a session with a later bedtime, and
+ * bedtime is the session's identity, so it was stored beside the real night and the
+ * Diary showed it as a nap. The lookback in turn clips whichever session straddles its
+ * own start, so every session that ends before the real window is dropped here.
+ */
+export const keepSessionsOverlapping = <
+  T extends { startTime: string | Date; endTime: string | Date },
+>(
+  records: T[],
+  rangeStart: Date,
+  rangeEnd: Date
+): T[] => {
+  const sorted = [...records].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  );
+  const kept: T[] = [];
+  let group: T[] = [];
+  let groupStart = 0;
+  let groupEnd = 0;
+  const flush = () => {
+    if (
+      group.length > 0 &&
+      groupStart < rangeEnd.getTime() &&
+      groupEnd > rangeStart.getTime()
+    ) {
+      kept.push(...group);
+    }
+  };
+  for (const record of sorted) {
+    const start = new Date(record.startTime).getTime();
+    const end = new Date(record.endTime).getTime();
+    if (group.length === 0 || start - groupEnd > SESSION_GAP_THRESHOLD_MS) {
+      flush();
+      group = [];
+      groupStart = start;
+      groupEnd = end;
+    }
+    group.push(record);
+    groupEnd = Math.max(groupEnd, end);
+  }
+  flush();
+  return kept;
+};
+
 export const aggregateSleepSessions = (
   records: HKSleepRecord[]
 ): AggregatedSleepSession[] => {
@@ -193,9 +252,6 @@ export const aggregateSleepSessions = (
 
   const aggregatedSessions: AggregatedSleepSession[] = [];
   let currentSession: SleepSessionAccumulator | null = null;
-
-  // Define a threshold for what constitutes a new sleep session (e.g., 4 hours awake)
-  const SESSION_GAP_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours
 
   for (const record of sortedRecords) {
     const recordStartTime = new Date(record.startTime);

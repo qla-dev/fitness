@@ -1,6 +1,7 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from '../Icon';
+import MarkaiPhoto from './MarkaiPhoto';
 
 export default function MarkaiUserMessage({
   text,
@@ -36,16 +37,9 @@ export default function MarkaiUserMessage({
       }}
     >
       {imageUri ? (
-        <Image
-          source={{ uri: imageUri }}
-          accessibilityLabel={t('markai.photo', { defaultValue: 'Photo' })}
-          style={{
-            width: 200,
-            height: 200,
-            borderRadius: 12,
-            marginBottom: text ? 8 : 0,
-          }}
-        />
+        <View style={{ marginBottom: text ? 8 : 0 }}>
+          <MarkaiPhoto uri={imageUri} scanning={pending} />
+        </View>
       ) : hasImage ? (
         <View
           style={{

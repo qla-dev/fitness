@@ -376,6 +376,43 @@ describe('classifySleepDay', () => {
     expect(result.naps.map((n) => n.id)).toEqual(['second']);
   });
 
+  test('does not list partial copies of the night as naps', () => {
+    // A night synced in pieces: the full session plus two tails that begin mid-night
+    // and end with it. Nobody naps while asleep, so neither is a nap.
+    const night = buildSleepEntry({
+      id: 'night',
+      bedtime: '2026-08-22T21:06:00+00:00',
+      wake_time: '2026-08-23T06:46:00+00:00',
+      duration_in_seconds: 34800,
+    });
+    const firstTail = buildSleepEntry({
+      id: 'first-tail',
+      bedtime: '2026-08-23T01:06:00+00:00',
+      wake_time: '2026-08-23T06:43:00+00:00',
+      duration_in_seconds: 20220,
+    });
+    const secondTail = buildSleepEntry({
+      id: 'second-tail',
+      bedtime: '2026-08-23T03:22:00+00:00',
+      wake_time: '2026-08-23T06:42:00+00:00',
+      duration_in_seconds: 12000,
+    });
+    const realNap = buildSleepEntry({
+      id: 'real-nap',
+      bedtime: '2026-08-23T13:00:00+00:00',
+      wake_time: '2026-08-23T13:40:00+00:00',
+      duration_in_seconds: 2400,
+    });
+
+    const result = classifySleepDay(
+      [firstTail, night, realNap, secondTail],
+      DAY
+    );
+
+    expect(result.mainSleep?.id).toBe('night');
+    expect(result.naps.map((n) => n.id)).toEqual(['real-nap']);
+  });
+
   test('does not mutate the caller’s array', () => {
     const entries = [
       buildSleepEntry({ id: 'a', duration_in_seconds: 1800 }),

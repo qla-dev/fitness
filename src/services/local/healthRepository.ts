@@ -9,6 +9,7 @@ import type {
 } from '../api/healthDataApi';
 import {
   asRecords,
+  deleteRecord,
   newId,
   saveRecord,
   table,
@@ -131,6 +132,56 @@ function recordDate(db: LocalDatabase, record: HealthDataPayloadItem): string {
   );
 }
 
+const instantMs = (value: unknown): number =>
+  typeof value === 'string' ? new Date(value).getTime() : Number.NaN;
+
+/**
+ * Resolves an incoming sleep session against stored ones from the same source that
+ * overlap it in time. Returns the health keys it deleted, or null when the incoming
+ * session should be skipped.
+ *
+ * A session's identity key is its bedtime, so a read that saw only the tail of a night
+ * produced a second row with a later bedtime, and the Diary listed it as a nap inside
+ * the night. One source cannot sleep twice at once, so overlapping rows are copies of
+ * the same night: an incoming session lying wholly inside a stored one is such a
+ * truncated read and is dropped, and otherwise the incoming session replaces every row
+ * it overlaps. The reader now always reads a night from its bedtime, so the incoming
+ * copy is the fuller one; re-syncing a day also clears copies stored before that fix.
+ */
+function supersedeOverlappingSleep(
+  db: LocalDatabase,
+  record: HealthDataPayloadItem,
+  source: string,
+  key: string
+): Set<string> | null {
+  const start = instantMs(record.bedtime);
+  const end = instantMs(record.wake_time);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return new Set();
+
+  const overlapping = table(db, 'sleep').filter((row) => {
+    if (row.health_key === key || row.source !== source) return false;
+    const rowStart = instantMs(row.bedtime);
+    const rowEnd = instantMs(row.wake_time);
+    return rowStart < end && rowEnd > start;
+  });
+  if (
+    overlapping.some(
+      (row) => instantMs(row.bedtime) <= start && instantMs(row.wake_time) >= end
+    )
+  ) {
+    return null;
+  }
+
+  const staleKeys = new Set(overlapping.map((row) => String(row.health_key)));
+  for (const row of overlapping) deleteRecord(db, 'sleep', row.id);
+  for (const row of table(db, 'healthRecords').filter((item) =>
+    staleKeys.has(String(item.health_key))
+  )) {
+    deleteRecord(db, 'healthRecords', row.id);
+  }
+  return staleKeys;
+}
+
 /** Stable source keys replace imported values; manual records are never overwritten. */
 export function importHealthData(
   db: LocalDatabase,
@@ -211,6 +262,14 @@ export function importHealthData(
         ? date
         : record.source_id || record.timestamp || date,
     ]);
+    if (record.type === 'SleepSession') {
+      const staleKeys = supersedeOverlappingSleep(db, record, source, key);
+      if (!staleKeys) continue;
+      for (const stale of staleKeys) {
+        healthKeyIndexes.get('sleep')?.delete(stale);
+        healthKeyIndexes.get('healthRecords')?.delete(stale);
+      }
+    }
     saveByHealthKey('healthRecords', key, {
       ...record,
       entry_date: date,

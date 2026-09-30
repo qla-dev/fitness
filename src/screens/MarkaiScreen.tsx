@@ -24,6 +24,8 @@ import Icon from '../components/Icon';
 import MarkaiEmptyState from '../components/markai/MarkaiEmptyState';
 import MarkaiThinking from '../components/markai/MarkaiThinking';
 import MarkaiUserMessage from '../components/markai/MarkaiUserMessage';
+import MarkaiNutrition from '../components/markai/MarkaiNutrition';
+import { useCSSVariable } from 'uniwind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +50,10 @@ import {
   type MarkaiMode,
   type MarkaiReply,
 } from '../services/online/markai';
+import {
+  saveMarkaiPhoto,
+  withSavedMarkaiPhotos,
+} from '../services/online/markaiImages';
 import { getTodayDate } from '../utils/dateUtils';
 import { pickImageFromCamera, pickImagesFromLibrary } from '../utils/pickImage';
 import type { RootStackParamList } from '../types/navigation';
@@ -87,6 +93,7 @@ function MarkaiContent() {
   const [attaching, setAttaching] = useState(false);
   const [barHeight, setBarHeight] = useState(110);
   const apple = useAppleSignIn();
+  const coinColor = useCSSVariable('--color-macro-fat') as string;
   const optionsSheet = useRef<CustomModalRef>(null);
   const scroller =
     useRef<React.ElementRef<typeof KeyboardChatScrollView>>(null);
@@ -162,7 +169,7 @@ function MarkaiContent() {
       if (alive) {
         setConversation(id);
         setMode(active?.mode ?? 'macros');
-        setMessages(history);
+        setMessages(withSavedMarkaiPhotos(history));
       }
     };
     void load()
@@ -217,7 +224,7 @@ function MarkaiContent() {
       if (version !== loadVersion.current) return;
       setMode(thread.mode);
       setConversation(thread.id);
-      setMessages(history);
+      setMessages(withSavedMarkaiPhotos(history));
       await AsyncStorage.setItem(
         '@qla/markai/' + accountId + '/active',
         JSON.stringify({ id: thread.id, mode: thread.mode })
@@ -335,7 +342,9 @@ function MarkaiContent() {
           prompt,
           reply: response.reply,
           has_image: !!image,
-          imageUri: image?.uri,
+          imageUri: image
+            ? saveMarkaiPhoto(response.id, image.uri)
+            : undefined,
         },
       ]);
       setPending(null);
@@ -455,13 +464,7 @@ function MarkaiContent() {
                   <Text className="text-text-secondary">
                     {message.reply.food.serving}
                   </Text>
-                  <Text className="text-text-primary">
-                    {t('markai.nutrition', {
-                      defaultValue:
-                        '{{calories}} kcal · P {{protein}} g · C {{carbs}} g · F {{fat}} g',
-                      ...message.reply.food,
-                    })}
-                  </Text>
+                  <MarkaiNutrition food={message.reply.food} />
                   <Text className="text-text-secondary">
                     {t('markai.estimate', {
                       defaultValue:
@@ -538,6 +541,29 @@ function MarkaiContent() {
       <CustomModal
         ref={optionsSheet}
         title={t('markai.options', { defaultValue: 'Chat options' })}
+        headerRight={
+          session ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('online.balance', {
+                defaultValue: '{{amount}} AI coins',
+                amount: session.user.ai_coins,
+              })}
+              hitSlop={8}
+              onPress={() => {
+                optionsSheet.current?.dismiss();
+                navigation.navigate('CoinPackages');
+              }}
+              className="bg-raised rounded-full flex-row items-center"
+              style={{ height: 36, paddingHorizontal: 12, gap: 6 }}
+            >
+              <Icon name="ai-coin" size={16} color={coinColor} />
+              <Text className="text-text-primary font-semibold">
+                {session.user.ai_coins}
+              </Text>
+            </Pressable>
+          ) : null
+        }
       >
         <View className="px-4 gap-3">
           <Text className="text-text-secondary">
@@ -550,12 +576,6 @@ function MarkaiContent() {
             disabled={busy || loading}
             onSelect={newChat}
           />
-          <Text className="text-text-muted">
-            {t('online.balance', {
-              defaultValue: '{{amount}} AI coins',
-              amount: session?.user.ai_coins ?? 0,
-            })}
-          </Text>
         </View>
       </CustomModal>
     </View>

@@ -25,6 +25,8 @@ import { getDeviceTimezone } from '../../utils/dateUtils';
 import {
   toLocalDateString,
   mapDayStatisticsToMinMaxAvg,
+  keepSessionsOverlapping,
+  SLEEP_READ_LOOKBACK_MS,
 } from './dataAggregation';
 import { BLOOD_GLUCOSE_MG_DL_PER_MMOL_L } from '../shared/dataTransformation';
 import { DIETARY_WRITE_IDENTIFIERS } from './writebackMappers';
@@ -1226,27 +1228,34 @@ const handleSleepSession: RecordHandler = async (
   startDate,
   endDate
 ) => {
+  // Read back past the window so a night already under way when it opens is read from
+  // its bedtime; keepSessionsOverlapping then drops the sessions the window never saw.
+  const readStart = new Date(startDate.getTime() - SLEEP_READ_LOOKBACK_MS);
   const samples = await queryCategorySamples(
     identifier as Parameters<typeof queryCategorySamples>[0],
     {
       ascending: false,
       limit: 0,
-      filter: { date: { startDate, endDate } },
+      filter: { date: { startDate: readStart, endDate } },
     }
   );
 
   // Use overlap check to include sessions that span range boundaries
   // (e.g., overnight sleep starting before midnight, ending after)
-  const filteredSamples = samples.filter((s) => {
-    const recordStartDate = new Date(s.startDate);
-    const recordEndDate = new Date(s.endDate);
-    return overlapsDateRange(
-      recordStartDate,
-      recordEndDate,
-      startDate,
-      endDate
-    );
-  });
+  const filteredSamples = keepSessionsOverlapping(
+    samples
+      .filter((s) =>
+        overlapsDateRange(
+          new Date(s.startDate),
+          new Date(s.endDate),
+          readStart,
+          endDate
+        )
+      )
+      .map((s) => ({ ...s, startTime: s.startDate, endTime: s.endDate })),
+    startDate,
+    endDate
+  );
 
   return filteredSamples.map((s) => {
     // Normalize timezone: HealthKit exposes timezone as both metadata.HKTimeZone

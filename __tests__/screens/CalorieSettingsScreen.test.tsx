@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import i18n, { initializeI18n } from '../../src/localization/i18n';
 import CalorieSettingsScreen from '../../src/screens/CalorieSettingsScreen';
 
@@ -25,26 +25,48 @@ jest.mock('../../src/components/BottomSheetPicker', () => {
   const { Pressable: MockPressable, Text: MockText } = require('react-native');
   return {
     __esModule: true,
+    // Renders the screen's own trigger (the settings row) and, as radios, the
+    // options the sheet would list, so tests can both read the row and pick.
     default: ({
+      value,
       options,
       onSelect,
+      title,
+      renderTrigger,
     }: {
+      value: string;
       options: { label: string; value: string }[];
       onSelect: (value: string) => void;
+      title?: string;
+      renderTrigger?: (props: {
+        onPress: () => void;
+        selectedOption: { label: string; value: string } | undefined;
+      }) => unknown;
     }) =>
       ReactModule.createElement(
         ReactModule.Fragment,
         null,
+        renderTrigger?.({
+          onPress: () => mockOpenPicker(title),
+          selectedOption: options.find((option) => option.value === value),
+        }),
         ...options.map((option: { label: string; value: string }) =>
           ReactModule.createElement(
             MockPressable,
-            { key: option.value, onPress: () => onSelect(option.value) },
+            {
+              key: option.value,
+              accessibilityRole: 'radio',
+              accessibilityLabel: option.label,
+              onPress: () => onSelect(option.value),
+            },
             ReactModule.createElement(MockText, null, option.label)
           )
         )
       ),
   };
 });
+
+const mockOpenPicker = jest.fn();
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
@@ -105,16 +127,49 @@ describe('CalorieSettingsScreen', () => {
   });
 
   it('offers and saves Goal Mode percentages on Android', () => {
-    const { getByText } = render(
+    const { getByRole } = render(
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
 
-    expect(getByText('Maintain (0%)')).toBeTruthy();
-    expect(getByText('Body Recomposition (-10%)')).toBeTruthy();
-    expect(getByText('Lean Bulk (+10%)')).toBeTruthy();
+    expect(getByRole('radio', { name: 'Maintain (0%)' })).toBeTruthy();
+    expect(getByRole('radio', { name: 'Body Recomposition (-10%)' })).toBeTruthy();
+    expect(getByRole('radio', { name: 'Lean Bulk (+10%)' })).toBeTruthy();
 
-    fireEvent.press(getByText('Body Recomposition (-10%)'));
+    fireEvent.press(getByRole('radio', { name: 'Body Recomposition (-10%)' }));
     expect(mockMutate).toHaveBeenCalledWith({ goal_mode: 'recomp' });
+  });
+
+  it('shows each choice as a settings row with its current value that opens its sheet', () => {
+    mockPreferences.goal_mode = 'lean_bulk';
+    const { getByRole } = render(
+      <CalorieSettingsScreen navigation={navigation} route={route} />
+    );
+
+    const rows = [
+      ['Calorie Mode', 'Adjustment Mode'],
+      ['Activity Level', 'Activity Level'],
+      ['Goal Mode', 'Goal Mode'],
+      ['Safety Floor', 'Safety Floor'],
+    ] as const;
+    for (const [rowTitle, sheetTitle] of rows) {
+      const row = getByRole('button', { name: rowTitle });
+      expect(row.props.accessibilityHint).toBe('Opens selection menu');
+      mockOpenPicker.mockClear();
+      fireEvent.press(row);
+      expect(mockOpenPicker).toHaveBeenCalledWith(sheetTitle);
+    }
+
+    // The current value sits under the title; the explanation stays too.
+    const goalRow = getByRole('button', { name: 'Goal Mode' });
+    expect(within(goalRow).getByText('Lean Bulk (+10%)')).toBeTruthy();
+    expect(
+      within(goalRow).getByText(
+        'Adjusts your calorie target for maintenance, a deficit, or a surplus.'
+      )
+    ).toBeTruthy();
+    const floorRow = getByRole('button', { name: 'Safety Floor' });
+    expect(within(floorRow).getByText('Standard')).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 
   it('saves a bounded custom Goal Mode percentage', () => {
@@ -134,22 +189,22 @@ describe('CalorieSettingsScreen', () => {
   });
 
   it('offers standard, custom, and disabled safety floor modes', () => {
-    const { getByText } = render(
+    const { getByRole, getByText } = render(
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
 
     expect(getByText('Safety Floor')).toBeTruthy();
-    expect(getByText('Standard')).toBeTruthy();
-    expect(getByText('Custom')).toBeTruthy();
-    expect(getByText('Disabled')).toBeTruthy();
+    expect(getByRole('radio', { name: 'Standard' })).toBeTruthy();
+    expect(getByRole('radio', { name: 'Custom' })).toBeTruthy();
+    expect(getByRole('radio', { name: 'Disabled' })).toBeTruthy();
   });
 
   it('saves a selected safety floor mode', () => {
-    const { getByText } = render(
+    const { getByRole } = render(
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
 
-    fireEvent.press(getByText('Disabled'));
+    fireEvent.press(getByRole('radio', { name: 'Disabled' }));
     expect(mockMutate).toHaveBeenCalledWith({
       calorie_safety_floor_mode: 'disabled',
     });
@@ -223,9 +278,9 @@ describe('CalorieSettingsScreen', () => {
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
     expect(screen.getByText('Bezpieczne minimum')).toBeTruthy();
-    expect(screen.getByText('Standardowe')).toBeTruthy();
-    expect(screen.getByText('Własne')).toBeTruthy();
-    expect(screen.getByText('Wyłączone')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Standardowe' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Własne' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Wyłączone' })).toBeTruthy();
     for (const [mode, description] of cases) {
       mockPreferences.calorie_safety_floor_mode = mode;
       screen.rerender(
@@ -236,9 +291,9 @@ describe('CalorieSettingsScreen', () => {
         expect(screen.getByText('Własne minimum (kcal)')).toBeTruthy();
       }
     }
-    fireEvent.press(screen.getByText('Standardowe'));
-    fireEvent.press(screen.getByText('Własne'));
-    fireEvent.press(screen.getByText('Wyłączone'));
+    fireEvent.press(screen.getByRole('radio', { name: 'Standardowe' }));
+    fireEvent.press(screen.getByRole('radio', { name: 'Własne' }));
+    fireEvent.press(screen.getByRole('radio', { name: 'Wyłączone' }));
     expect(mockMutate).toHaveBeenNthCalledWith(1, {
       calorie_safety_floor_mode: 'standard',
     });

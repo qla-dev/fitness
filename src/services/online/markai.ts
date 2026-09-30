@@ -33,9 +33,9 @@ export type MarkaiMessage = {
   id: string;
   prompt: string;
   reply: MarkaiReply;
-  /** The server keeps only this flag; the photo itself is never stored. */
+  /** The server keeps only this flag; the photo itself is never stored there. */
   has_image?: boolean;
-  /** The photo as sent from this device, shown until the chat is reloaded. */
+  /** The photo as sent from this device, kept by `markaiImages.ts`. */
   imageUri?: string;
 };
 

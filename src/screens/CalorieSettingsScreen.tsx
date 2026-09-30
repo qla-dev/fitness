@@ -10,6 +10,10 @@ import Toast from 'react-native-toast-message';
 import Icon from '../components/Icon';
 import BottomSheetPicker from '../components/BottomSheetPicker';
 import FormInput from '../components/FormInput';
+import SettingsRow, {
+  SettingsRowGroup,
+  SettingsValueSubtitle,
+} from '../components/SettingsRow';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import Switch from '../components/ui/Switch';
 import { usePreferences } from '../hooks/usePreferences';
@@ -459,6 +463,10 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
     t,
   ]);
 
+  const openPickerHint = t('common.openSelectionMenu', {
+    defaultValue: 'Opens selection menu',
+  });
+
   const header = useScreenHeader({
     variant: 'transparent',
     title: t('calorieSettings.title', {
@@ -485,36 +493,82 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
         }
       >
         {/* Mode */}
-        <View className="bg-surface rounded-xl p-3 mb-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.modeLabel', { defaultValue: 'Calorie Mode' })}
-            </Text>
-            <BottomSheetPicker
-              value={normalized.mode}
-              options={modeOptions}
-              onSelect={handleModeChange}
-              title={t('calorieSettings.adjustmentMode', {
-                defaultValue: 'Adjustment Mode',
+        <BottomSheetPicker
+          value={normalized.mode}
+          options={modeOptions}
+          onSelect={handleModeChange}
+          title={t('calorieSettings.adjustmentMode', {
+            defaultValue: 'Adjustment Mode',
+          })}
+          renderTrigger={({ onPress, selectedOption }) => (
+            <SettingsRow
+              title={t('calorieSettings.modeLabel', {
+                defaultValue: 'Calorie Mode',
               })}
-              containerStyle={{ flex: 1, maxWidth: 200, marginLeft: 16 }}
+              subtitle={
+                <SettingsValueSubtitle
+                  value={selectedOption?.label}
+                  description={[
+                    t('calorieSettings.modeDescription', {
+                      defaultValue:
+                        'Controls how your daily calorie goal adjusts based on activity.',
+                    }),
+                    normalized.mode === 'tdee' &&
+                      t('calorieSettings.deviceProjectionDescription', {
+                        defaultValue:
+                          'Current-day Health Connect total calories are projected to midnight; completed days use the recorded total. Goal Mode is applied to that TDEE, with BMR + active calories as a fallback.',
+                      }),
+                  ]}
+                />
+              }
+              onPress={onPress}
+              accessibilityHint={openPickerHint}
             />
-          </View>
-          <Text className="text-text-secondary text-sm mt-3">
-            {t('calorieSettings.modeDescription', {
-              defaultValue:
-                'Controls how your daily calorie goal adjusts based on activity.',
-            })}
-          </Text>
-          {normalized.mode === 'tdee' && (
-            <Text className="text-text-secondary text-sm mt-3">
-              {t('calorieSettings.deviceProjectionDescription', {
-                defaultValue:
-                  'Current-day Health Connect total calories are projected to midnight; completed days use the recorded total. Goal Mode is applied to that TDEE, with BMR + active calories as a fallback.',
-              })}
-            </Text>
           )}
-        </View>
+        />
+
+        {/* Activity Level */}
+        {showActivityLevel && (
+          <Animated.View layout={optionsLayout}>
+            <BottomSheetPicker
+              value={normalized.activityLevel}
+              options={activityLevelOptions}
+              onSelect={handleActivityLevelChange}
+              title={t('calorieSettings.activityLevel', {
+                defaultValue: 'Activity Level',
+              })}
+              renderTrigger={({ onPress, selectedOption }) => (
+                <SettingsRow
+                  title={t('calorieSettings.activityLevel', {
+                    defaultValue: 'Activity Level',
+                  })}
+                  subtitle={
+                    <SettingsValueSubtitle
+                      value={selectedOption?.label}
+                      description={[
+                        normalized.mode === 'tdee'
+                          ? t('calorieSettings.deviceProjectionFallback', {
+                              defaultValue:
+                                'Only used for the BMR + active calories fallback when a device total is unavailable.',
+                            })
+                          : t('calorieSettings.activityBaseline', {
+                              defaultValue: 'Used as a baseline for TDEE.',
+                            }),
+                        normalized.mode === 'adaptive' &&
+                          t('calorieSettings.adaptiveFallback', {
+                            defaultValue:
+                              'Acts as a fallback until you have enough tracking data.',
+                          }),
+                      ]}
+                    />
+                  }
+                  onPress={onPress}
+                  accessibilityHint={openPickerHint}
+                />
+              )}
+            />
+          </Animated.View>
+        )}
 
         {/* Options */}
         <Animated.View
@@ -547,47 +601,6 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
                     'How much of your exercise calories are added back to your daily goal.',
                 })}
               </Text>
-              <View className="border-t border-border-subtle my-3" />
-            </Animated.View>
-          )}
-
-          {/* Activity Level */}
-          {showActivityLevel && (
-            <Animated.View layout={optionsLayout}>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-base font-semibold text-text-primary">
-                  {t('calorieSettings.activityLevel', {
-                    defaultValue: 'Activity Level',
-                  })}
-                </Text>
-                <BottomSheetPicker
-                  value={normalized.activityLevel}
-                  options={activityLevelOptions}
-                  onSelect={handleActivityLevelChange}
-                  title={t('calorieSettings.activityLevel', {
-                    defaultValue: 'Activity Level',
-                  })}
-                  containerStyle={{ flex: 1, maxWidth: 200, marginLeft: 16 }}
-                />
-              </View>
-              <Text className="text-text-secondary text-sm mt-1">
-                {normalized.mode === 'tdee'
-                  ? t('calorieSettings.deviceProjectionFallback', {
-                      defaultValue:
-                        'Only used for the BMR + active calories fallback when a device total is unavailable.',
-                    })
-                  : t('calorieSettings.activityBaseline', {
-                      defaultValue: 'Used as a baseline for TDEE.',
-                    })}
-              </Text>
-              {normalized.mode === 'adaptive' && (
-                <Text className="text-text-secondary text-sm mt-3">
-                  {t('calorieSettings.adaptiveFallback', {
-                    defaultValue:
-                      'Acts as a fallback until you have enough tracking data.',
-                  })}
-                </Text>
-              )}
               <View className="border-t border-border-subtle my-3" />
             </Animated.View>
           )}
@@ -645,16 +658,8 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
         </Animated.View>
 
         {/* Goal Mode */}
-        <Animated.View
-          className="bg-surface rounded-xl p-4 mb-4"
-          layout={optionsLayout}
-        >
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.goalMode.title', {
-                defaultValue: 'Goal Mode',
-              })}
-            </Text>
+        <Animated.View layout={optionsLayout}>
+          <SettingsRowGroup>
             <BottomSheetPicker
               value={normalized.goalMode}
               options={goalModeOptions}
@@ -662,59 +667,67 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
               title={t('calorieSettings.goalMode.title', {
                 defaultValue: 'Goal Mode',
               })}
-              containerStyle={{ flex: 1, maxWidth: 230, marginLeft: 16 }}
+              renderTrigger={({ onPress, selectedOption }) => (
+                <SettingsRow
+                  title={t('calorieSettings.goalMode.title', {
+                    defaultValue: 'Goal Mode',
+                  })}
+                  subtitle={
+                    <SettingsValueSubtitle
+                      value={selectedOption?.label}
+                      description={
+                        normalized.mode === 'tdee'
+                          ? t(
+                              'calorieSettings.goalMode.deviceProjectionDescription',
+                              {
+                                defaultValue:
+                                  'This percentage is applied directly to the projected device TDEE.',
+                              }
+                            )
+                          : t('calorieSettings.goalMode.description', {
+                              defaultValue:
+                                'Adjusts your calorie target for maintenance, a deficit, or a surplus.',
+                            })
+                      }
+                    />
+                  }
+                  onPress={onPress}
+                  accessibilityHint={openPickerHint}
+                />
+              )}
             />
-          </View>
-          <Text className="text-text-secondary text-sm mt-3">
-            {normalized.mode === 'tdee'
-              ? t('calorieSettings.goalMode.deviceProjectionDescription', {
-                  defaultValue:
-                    'This percentage is applied directly to the projected device TDEE.',
-                })
-              : t('calorieSettings.goalMode.description', {
-                  defaultValue:
-                    'Adjusts your calorie target for maintenance, a deficit, or a surplus.',
-                })}
-          </Text>
-          {normalized.goalMode === 'manual' && (
-            <View className="mt-4">
-              <Text className="text-sm font-semibold text-text-primary mb-2">
-                {t('calorieSettings.goalMode.customPercentage', {
-                  defaultValue: 'Custom percentage',
-                })}
-              </Text>
-              <FormInput
-                value={goalModePercentageText}
-                onChangeText={setGoalModePercentageText}
-                onBlur={handleGoalModePercentageBlur}
-                keyboardType="numbers-and-punctuation"
-                maxLength={3}
-                returnKeyType="done"
-                accessibilityLabel={t(
-                  'calorieSettings.goalMode.customPercentage',
-                  { defaultValue: 'Custom percentage' }
-                )}
-              />
-              <Text className="text-text-secondary text-sm mt-3">
-                {t('calorieSettings.goalMode.customPercentageDescription', {
-                  defaultValue:
-                    'Positive adds calories; negative creates a deficit. Limited to ±40%.',
-                })}
-              </Text>
-            </View>
-          )}
+            {normalized.goalMode === 'manual' && (
+              <View className="p-4">
+                <Text className="text-sm font-semibold text-text-primary mb-2">
+                  {t('calorieSettings.goalMode.customPercentage', {
+                    defaultValue: 'Custom percentage',
+                  })}
+                </Text>
+                <FormInput
+                  value={goalModePercentageText}
+                  onChangeText={setGoalModePercentageText}
+                  onBlur={handleGoalModePercentageBlur}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={3}
+                  returnKeyType="done"
+                  accessibilityLabel={t(
+                    'calorieSettings.goalMode.customPercentage',
+                    { defaultValue: 'Custom percentage' }
+                  )}
+                />
+                <Text className="text-text-secondary text-sm mt-3">
+                  {t('calorieSettings.goalMode.customPercentageDescription', {
+                    defaultValue:
+                      'Positive adds calories; negative creates a deficit. Limited to ±40%.',
+                  })}
+                </Text>
+              </View>
+            )}
+          </SettingsRowGroup>
         </Animated.View>
 
-        <Animated.View
-          className="bg-surface rounded-xl p-4 mb-4"
-          layout={optionsLayout}
-        >
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.safetyFloor.title', {
-                defaultValue: 'Safety Floor',
-              })}
-            </Text>
+        <Animated.View layout={optionsLayout}>
+          <SettingsRowGroup>
             <BottomSheetPicker
               value={normalized.calorieSafetyFloorMode}
               options={safetyFloorOptions}
@@ -722,43 +735,65 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
               title={t('calorieSettings.safetyFloor.title', {
                 defaultValue: 'Safety Floor',
               })}
-              containerStyle={{ flex: 1, maxWidth: 200, marginLeft: 16 }}
-            />
-          </View>
-          {normalized.calorieSafetyFloorMode === 'custom' && (
-            <View className="mt-4">
-              <Text className="text-sm font-semibold text-text-primary mb-2">
-                {t('calorieSettings.safetyFloor.customMinimum', {
-                  defaultValue: 'Custom minimum ({{unit}})',
-                  unit: normalized.energyUnit,
-                })}
-              </Text>
-              <FormInput
-                value={safetyFloorText}
-                onChangeText={setSafetyFloorText}
-                onBlur={handleSafetyFloorBlur}
-                keyboardType="number-pad"
-                maxLength={5}
-                returnKeyType="done"
-              />
-            </View>
-          )}
-          <Text className="text-text-secondary text-sm mt-3">
-            {normalized.calorieSafetyFloorMode === 'standard'
-              ? t('calorieSettings.safetyFloor.standardDescription', {
-                  defaultValue:
-                    'Uses the higher of your estimated RMR and the clinical minimum.',
-                })
-              : normalized.calorieSafetyFloorMode === 'custom'
-                ? t('calorieSettings.safetyFloor.customDescription', {
-                    defaultValue:
-                      'Replaces the standard floor with your chosen minimum. Health recommendations remain visible.',
-                  })
-                : t('calorieSettings.safetyFloor.disabledDescription', {
-                    defaultValue:
-                      'Stops automatic target clamping. Health warnings remain visible.',
+              renderTrigger={({ onPress, selectedOption }) => (
+                <SettingsRow
+                  title={t('calorieSettings.safetyFloor.title', {
+                    defaultValue: 'Safety Floor',
                   })}
-          </Text>
+                  subtitle={
+                    <SettingsValueSubtitle
+                      value={selectedOption?.label}
+                      description={
+                        normalized.calorieSafetyFloorMode === 'standard'
+                          ? t(
+                              'calorieSettings.safetyFloor.standardDescription',
+                              {
+                                defaultValue:
+                                  'Uses the higher of your estimated RMR and the clinical minimum.',
+                              }
+                            )
+                          : normalized.calorieSafetyFloorMode === 'custom'
+                            ? t(
+                                'calorieSettings.safetyFloor.customDescription',
+                                {
+                                  defaultValue:
+                                    'Replaces the standard floor with your chosen minimum. Health recommendations remain visible.',
+                                }
+                              )
+                            : t(
+                                'calorieSettings.safetyFloor.disabledDescription',
+                                {
+                                  defaultValue:
+                                    'Stops automatic target clamping. Health warnings remain visible.',
+                                }
+                              )
+                      }
+                    />
+                  }
+                  onPress={onPress}
+                  accessibilityHint={openPickerHint}
+                />
+              )}
+            />
+            {normalized.calorieSafetyFloorMode === 'custom' && (
+              <View className="p-4">
+                <Text className="text-sm font-semibold text-text-primary mb-2">
+                  {t('calorieSettings.safetyFloor.customMinimum', {
+                    defaultValue: 'Custom minimum ({{unit}})',
+                    unit: normalized.energyUnit,
+                  })}
+                </Text>
+                <FormInput
+                  value={safetyFloorText}
+                  onChangeText={setSafetyFloorText}
+                  onBlur={handleSafetyFloorBlur}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  returnKeyType="done"
+                />
+              </View>
+            )}
+          </SettingsRowGroup>
         </Animated.View>
 
         {/* Calculation Pipeline */}

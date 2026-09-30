@@ -19,12 +19,30 @@ jest.mock('../../src/components/BottomSheetPicker', () => {
     accessibilityHint?: string;
     onSelect?: (value: string | number) => void;
     value?: string | number;
+    options?: { label: string; value: string | number }[];
     title?: string;
+    renderTrigger?: (props: {
+      onPress: () => void;
+      selectedOption: { label: string; value: string | number } | undefined;
+    }) => unknown;
   }
-  const MockPicker = (props: MockPickerProps) =>
-    React.createElement(View, { testID: 'bottom-sheet-picker', ...props });
+  // Renders the screen's own trigger so the row it supplies is on screen;
+  // pressing it records which sheet would have been presented.
+  const MockPicker = ({ renderTrigger, ...props }: MockPickerProps) =>
+    React.createElement(
+      View,
+      { testID: 'bottom-sheet-picker', ...props },
+      renderTrigger?.({
+        onPress: () => mockPresentPicker(props.title),
+        selectedOption: props.options?.find(
+          (option) => option.value === props.value
+        ),
+      })
+    );
   return { __esModule: true, default: MockPicker };
 });
+
+const mockPresentPicker = jest.fn();
 
 jest.mock('../../src/services/appLanguageNative', () => ({
   AppLanguageNative: {
@@ -80,17 +98,10 @@ function renderScreen() {
 
 function picker() {
   // Language is the screen's only BottomSheetPicker; theme moved to a row that
-  // pushes ProfileTheme. The hint check survives as an identity assertion.
+  // pushes ProfileTheme.
   const pickers = screen.getAllByTestId('bottom-sheet-picker');
-  const languagePicker = pickers.find(
-    (p) => p.props.accessibilityHint !== undefined
-  );
-  if (!languagePicker) {
-    throw new Error('Language BottomSheetPicker not found');
-  }
-  return languagePicker.props as {
-    accessibilityHint?: string;
-    containerStyle?: { flex?: number; minWidth?: number };
+  expect(pickers).toHaveLength(1);
+  return pickers[0].props as {
     onSelect?: (value: string | number) => Promise<unknown> | void;
   };
 }
@@ -122,22 +133,33 @@ describe('AppSettingsScreen', () => {
   });
 
   /**
-   * The row's trailing slot is absolutely positioned and sizes itself to its
-   * content, so a flexed trigger filled the row's height while its label
-   * resolved against a zero-width parent and disappeared.
+   * Language reads like Theme: a row with the current choice under its title
+   * and a chevron, not a dropdown box. Tapping it presents the same sheet.
    */
-  it('gives the language trigger a width rather than flexing it', () => {
+  it('shows the current language under the row title and opens the sheet on tap', () => {
+    useAppPreferencesStore.setState({ languagePreference: 'pl' });
     renderScreen();
 
-    const style = picker().containerStyle;
-    expect(style?.flex).toBeUndefined();
-    expect(style?.minWidth).toBeGreaterThan(0);
+    const row = screen.getByTestId('language-row');
+    expect(within(row).getByText('Language')).toBeTruthy();
+    expect(within(row).getByText('Polski')).toBeTruthy();
+    expect(
+      within(row).getByText(
+        'Use your device language or choose a language for qla.fit.'
+      )
+    ).toBeTruthy();
+
+    fireEvent.press(row);
+    expect(mockPresentPicker).toHaveBeenCalledWith('Language');
+    expect(useAppPreferencesStore.getState().languagePreference).toBe('pl');
   });
 
   it('announces the English picker hint in English UI', () => {
     renderScreen();
 
-    expect(picker().accessibilityHint).toBe('Opens language selection menu');
+    expect(screen.getByTestId('language-row').props.accessibilityHint).toBe(
+      'Opens language selection menu'
+    );
   });
 
   it('announces the Polish picker hint in Polish UI', async () => {
@@ -145,7 +167,9 @@ describe('AppSettingsScreen', () => {
 
     renderScreen();
 
-    expect(picker().accessibilityHint).toBe('Otwiera menu wyboru języka');
+    expect(screen.getByTestId('language-row').props.accessibilityHint).toBe(
+      'Otwiera menu wyboru języka'
+    );
   });
 
   it('renders the native iOS language and opens Settings without changing language state', async () => {

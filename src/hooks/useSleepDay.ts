@@ -29,7 +29,8 @@ const compareByBedtime = (first: SleepEntry, second: SleepEntry): number =>
 /**
  * Splits one calendar day's sleep into its main sleep and its naps.
  *
- * The longest entry filed under `day` is the main sleep and everything else is a nap.
+ * The longest entry filed under `day` is the main sleep and every other entry that does
+ * not overlap it is a nap.
  * There is deliberately no minimum-duration floor: any threshold would misclassify shift
  * workers and polyphasic sleepers. The trade-off is that a day holding only two short
  * naps promotes the longer one to "main sleep", which is accepted as the simpler rule.
@@ -45,9 +46,18 @@ export const classifySleepDay = (
   const entriesForDay = entries.filter((entry) => entry.entry_date === day);
   if (entriesForDay.length === 0) return { mainSleep: null, naps: [] };
 
-  const [mainSleep, ...naps] = [...entriesForDay].sort(compareByMainSleepRank);
+  const [mainSleep, ...rest] = [...entriesForDay].sort(compareByMainSleepRank);
+  const naps = rest.filter((entry) => !overlaps(entry, mainSleep));
   return { mainSleep, naps: naps.sort(compareByBedtime) };
 };
+
+/**
+ * A session overlapping the main sleep is another copy of that night (a partial read,
+ * or a second app recording the same sleep), never a nap: nobody naps while asleep.
+ */
+const overlaps = (first: SleepEntry, second: SleepEntry): boolean =>
+  new Date(first.bedtime).getTime() < new Date(second.wake_time).getTime() &&
+  new Date(first.wake_time).getTime() > new Date(second.bedtime).getTime();
 
 /**
  * Splits a `[D, D+1]` window into the three Diary cards.

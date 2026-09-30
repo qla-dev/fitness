@@ -7,7 +7,7 @@ import Toast from 'react-native-toast-message';
 import { addLog } from '../services/LogService';
 
 import BottomSheetPicker from '../components/BottomSheetPicker';
-import SettingsRow from '../components/SettingsRow';
+import SettingsRow, { SettingsValueSubtitle } from '../components/SettingsRow';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import Switch from '../components/ui/Switch';
 import { useThemePreference } from '../services/themeService';
@@ -167,37 +167,34 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
             testID="ios-language-row"
           />
         ) : (
-          <SettingsRow
+          // Android only (iOS sends this row to the system settings): the row
+          // itself is the picker's trigger, so it reads like Theme above —
+          // the current language under the title — and opens the same sheet.
+          <BottomSheetPicker
+            value={languagePreference}
+            options={languagePickerOptions}
+            onSelect={handleLanguageSelect}
             title={t('settings.language.title', 'Language')}
-            subtitle={t(
-              'languageSettings.subtitle',
-              'Use your device language or choose a language for qla.fit.'
-            )}
-            subtitleNumberOfLines={0}
-            rightAccessory={
-              <BottomSheetPicker
-                value={languagePreference}
-                options={languagePickerOptions}
-                onSelect={handleLanguageSelect}
+            renderTrigger={({ onPress, selectedOption }) => (
+              <SettingsRow
                 title={t('settings.language.title', 'Language')}
+                subtitle={
+                  <SettingsValueSubtitle
+                    value={selectedOption?.label}
+                    description={t(
+                      'languageSettings.subtitle',
+                      'Use your device language or choose a language for qla.fit.'
+                    )}
+                  />
+                }
+                onPress={onPress}
                 accessibilityHint={t(
                   'settings.language.pickerHint',
                   'Opens language selection menu'
                 )}
-                // A width rather than `flex: 1`. The row's trailing slot is
-                // absolutely positioned and sizes itself to its content, so
-                // `flex` there filled the row's HEIGHT — two lines of subtitle
-                // tall — while the label, which is `flex-1` inside the
-                // trigger, resolved against a zero-width parent and vanished,
-                // leaving a tall empty box with a chevron in it. Android only:
-                // iOS sends this row to the system settings instead.
-                containerStyle={{
-                  minWidth: 140,
-                  maxWidth: 200,
-                  alignSelf: 'center',
-                }}
+                testID="language-row"
               />
-            }
+            )}
           />
         )}
 

@@ -25,6 +25,12 @@ interface Props {
   /** Plain text, or a node when the title mixes faces (e.g. the wordmark). */
   title: React.ReactNode;
   titleStyle?: StyleProp<TextStyle>;
+  /**
+   * Shown opposite the close chip. Positioned over the balancing spacer rather
+   * than in the row's flow, so a wider accessory never pushes the title off
+   * centre.
+   */
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
   onDismiss?: () => void;
   onAnimate?: (fromIndex: number, toIndex: number) => void;
@@ -67,6 +73,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
     {
       title,
       titleStyle,
+      headerRight,
       children,
       onDismiss,
       onAnimate,
@@ -178,6 +185,19 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
               {title}
             </Text>
             <View style={{ width: CLOSE_CHIP_SIZE }} />
+            {headerRight ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  right: 16,
+                  top: 4,
+                  height: CLOSE_CHIP_SIZE,
+                  justifyContent: 'center',
+                }}
+              >
+                {headerRight}
+              </View>
+            ) : null}
           </View>
           {children}
         </Container>

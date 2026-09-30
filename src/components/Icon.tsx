@@ -173,6 +173,7 @@ const ICON_MAP = {
 
   // AI features
   sparkles: { sf: 'sparkles', ion: 'sparkles' },
+  'ai-coin': { sf: 'circle.hexagongrid.circle.fill', ion: 'disc' },
 
   // Biometrics/Security
   fingerprint: { sf: 'touchid', ion: 'finger-print-outline' },

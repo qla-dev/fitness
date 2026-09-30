@@ -6,7 +6,10 @@ import Toast from 'react-native-toast-message';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 
-import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
+import SettingsRow, {
+  SettingsRowGroup,
+  SettingsValueSubtitle,
+} from '../components/SettingsRow';
 import StatusView from '../components/StatusView';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useCycleSettings } from '../hooks/useCycleSettings';
@@ -313,6 +316,10 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
         defaultValue: 'Cycle & Pregnancy',
       });
 
+  const openPickerHint = t('common.openSelectionMenu', {
+    defaultValue: 'Opens selection menu',
+  });
+
   const header = useScreenHeader({
     variant: 'transparent',
     title: headerTitle,
@@ -397,37 +404,45 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
                 defaultValue: 'Feature Configuration',
               })}
             >
-              <SettingsRow
-                title={t('cycleSettings.fields.trackingMode', {
-                  defaultValue: 'Tracking Mode',
+              <BottomSheetPicker
+                value={settings.mode}
+                options={modeOptions}
+                onSelect={handleModeChange}
+                title={t('cycleSettings.pickers.mode', {
+                  defaultValue: 'Select Mode',
                 })}
-                rightAccessory={
-                  <BottomSheetPicker
-                    value={settings.mode}
-                    options={modeOptions}
-                    onSelect={handleModeChange}
-                    title={t('cycleSettings.pickers.mode', {
-                      defaultValue: 'Select Mode',
+                renderTrigger={({ onPress, selectedOption }) => (
+                  <SettingsRow
+                    title={t('cycleSettings.fields.trackingMode', {
+                      defaultValue: 'Tracking Mode',
                     })}
-                    containerStyle={{ flex: 1, maxWidth: 200 }}
+                    subtitle={
+                      <SettingsValueSubtitle value={selectedOption?.label} />
+                    }
+                    onPress={onPress}
+                    accessibilityHint={openPickerHint}
                   />
-                }
+                )}
               />
-              <SettingsRow
-                title={t('cycleSettings.fields.birthControl', {
-                  defaultValue: 'Birth Control Method',
+              <BottomSheetPicker
+                value={settings.birth_control_method}
+                options={bcOptions}
+                onSelect={handleBcChange}
+                title={t('cycleSettings.pickers.method', {
+                  defaultValue: 'Select Method',
                 })}
-                rightAccessory={
-                  <BottomSheetPicker
-                    value={settings.birth_control_method}
-                    options={bcOptions}
-                    onSelect={handleBcChange}
-                    title={t('cycleSettings.pickers.method', {
-                      defaultValue: 'Select Method',
+                renderTrigger={({ onPress, selectedOption }) => (
+                  <SettingsRow
+                    title={t('cycleSettings.fields.birthControl', {
+                      defaultValue: 'Birth Control Method',
                     })}
-                    containerStyle={{ flex: 1, maxWidth: 200 }}
+                    subtitle={
+                      <SettingsValueSubtitle value={selectedOption?.label} />
+                    }
+                    onPress={onPress}
+                    accessibilityHint={openPickerHint}
                   />
-                }
+                )}
               />
             </SettingsRowGroup>
 
@@ -550,21 +565,25 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
                   />
                 }
               />
-              <SettingsRow
-                title={t('cycleSettings.fields.terminology', {
-                  defaultValue: 'Terminology',
+              <BottomSheetPicker
+                value={settings.terminology}
+                options={terminologyOptions}
+                onSelect={handleTerminologyChange}
+                title={t('cycleSettings.pickers.terminology', {
+                  defaultValue: 'Select Terminology',
                 })}
-                rightAccessory={
-                  <BottomSheetPicker
-                    value={settings.terminology}
-                    options={terminologyOptions}
-                    onSelect={handleTerminologyChange}
-                    title={t('cycleSettings.pickers.terminology', {
-                      defaultValue: 'Select Terminology',
+                renderTrigger={({ onPress, selectedOption }) => (
+                  <SettingsRow
+                    title={t('cycleSettings.fields.terminology', {
+                      defaultValue: 'Terminology',
                     })}
-                    containerStyle={{ flex: 1, maxWidth: 200 }}
+                    subtitle={
+                      <SettingsValueSubtitle value={selectedOption?.label} />
+                    }
+                    onPress={onPress}
+                    accessibilityHint={openPickerHint}
                   />
-                }
+                )}
               />
             </SettingsRowGroup>
 

@@ -162,10 +162,15 @@ export default function WeeklyPlansScreen({
     navigation.navigate('SetupWizard');
   };
 
+  const [columnWidth, setColumnWidth] = useState<number | null>(null);
   const planCard = (plan: WeeklyPlan) => (
     <MenuView
       key={plan.id}
       shouldOpenOnLongPress
+      // A MenuView is a native host that sizes itself to its content, so the
+      // card took the summary's unwrapped width and ran off the screen. It is
+      // handed the measured column width instead, as WaterTile does.
+      style={{ width: columnWidth ?? '100%' }}
       actions={[
         ...(plan.is_active
           ? []
@@ -200,9 +205,10 @@ export default function WeeklyPlansScreen({
           navigation.navigate('WeeklyPlan', { planId: plan.id });
         }}
         className="bg-surface rounded-2xl p-4 gap-2"
-        style={
-          plan.is_active ? { borderWidth: 2, borderColor: accent } : undefined
-        }
+        style={[
+          { width: columnWidth ?? '100%' },
+          plan.is_active ? { borderWidth: 2, borderColor: accent } : null,
+        ]}
       >
         <View className="flex-row items-center gap-2">
           <Text
@@ -366,7 +372,13 @@ export default function WeeklyPlansScreen({
           </View>
         ) : null}
         {plans.length > 0 ? (
-          <View className="gap-3">
+          <View
+            className="gap-3"
+            onLayout={(event) => {
+              const { width } = event.nativeEvent.layout;
+              setColumnWidth((current) => (current === width ? current : width));
+            }}
+          >
             <Text className="text-text-primary text-xl font-bold">
               {t('weeklyPlans.yourPlans', { defaultValue: 'Your plans' })}
             </Text>

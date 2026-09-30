@@ -6,9 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RestPeriodSheet, {
   type RestPeriodSheetRef,
 } from '../components/RestPeriodSheet';
-import { PickerTrigger } from '../components/BottomSheetPicker';
 import { formatRestLabel } from '../components/RestPeriodChip';
-import SettingsRow from '../components/SettingsRow';
+import SettingsRow, { SettingsValueSubtitle } from '../components/SettingsRow';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import Switch from '../components/ui/Switch';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
@@ -39,6 +38,10 @@ const WorkoutSettingsScreen: React.FC<WorkoutSettingsScreenProps> = () => {
     (s) => s.setWorkoutKeepAwakeEnabled
   );
   const restSheetRef = useRef<RestPeriodSheetRef>(null);
+  const defaultRestLabel = formatRestLabel(
+    defaultRestSec,
+    t('restPeriod.off', { defaultValue: 'Off' })
+  );
   const header = useScreenHeader({
     variant: 'transparent',
     title: t('workoutSettings.title', { defaultValue: 'Workout Settings' }),
@@ -65,30 +68,22 @@ const WorkoutSettingsScreen: React.FC<WorkoutSettingsScreenProps> = () => {
           title={t('workoutSettings.defaultRest', {
             defaultValue: 'Default rest period',
           })}
-          subtitle={t('workoutSettings.defaultRestSubtitle', {
-            defaultValue: 'Rest between sets for newly added exercises.',
-          })}
-          subtitleNumberOfLines={0}
-          rightAccessory={
-            <PickerTrigger
-              label={formatRestLabel(
-                defaultRestSec,
-                t('restPeriod.off', { defaultValue: 'Off' })
-              )}
-              onPress={() => restSheetRef.current?.present(defaultRestSec)}
-              accessibilityLabel={t(
-                'workoutSettings.defaultRestAccessibility',
-                {
-                  defaultValue: 'Default rest period, {{duration}}',
-                  duration: formatRestLabel(
-                    defaultRestSec,
-                    t('restPeriod.off', { defaultValue: 'Off' })
-                  ),
-                }
-              )}
-              containerStyle={{ width: 110 }}
+          subtitle={
+            <SettingsValueSubtitle
+              value={defaultRestLabel}
+              description={t('workoutSettings.defaultRestSubtitle', {
+                defaultValue: 'Rest between sets for newly added exercises.',
+              })}
             />
           }
+          onPress={() => restSheetRef.current?.present(defaultRestSec)}
+          accessibilityLabel={t('workoutSettings.defaultRestAccessibility', {
+            defaultValue: 'Default rest period, {{duration}}',
+            duration: defaultRestLabel,
+          })}
+          accessibilityHint={t('common.openSelectionMenu', {
+            defaultValue: 'Opens selection menu',
+          })}
         />
 
         <SettingsRow
