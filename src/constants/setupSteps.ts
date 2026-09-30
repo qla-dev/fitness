@@ -1,12 +1,18 @@
 import type { TFunction } from 'i18next';
 import {
   answerValues,
+  type SetupAssist,
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
 import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
 import type { Vendor } from '../services/online/prices';
-import { calorieGoalPrompt } from '../services/markaiGoalPrompt';
+import {
+  calorieGoalPrompt,
+  macroPlanPrompt,
+  proteinGoalPrompt,
+} from '../services/markaiGoalPrompt';
+import { MARKAI_TASK_COINS } from '../services/online/markai';
 
 /** A one-question step headed by the field's own label. */
 function questionStep(field: SetupField, hint: string): SetupStep {
@@ -34,6 +40,16 @@ export function profileSteps(t: TFunction): SetupStep[] {
 }
 
 function profileQuestions(t: TFunction): SetupStep[] {
+  // Offered on both the calorie and the protein question: one priced
+  // request that answers calories, protein, carbs and fat together.
+  const allMacros: SetupAssist = {
+    label: t('setup.calculateAllMacros', {
+      defaultValue: 'Calculate all macros · {{coins}} coins',
+      coins: MARKAI_TASK_COINS.all_macros,
+    }),
+    prompt: (facts) => macroPlanPrompt(t, facts),
+    task: 'all_macros',
+  };
   return [
     {
       id: 'focus',
@@ -291,12 +307,15 @@ function profileQuestions(t: TFunction): SetupStep[] {
         numeric: true,
         min: 1,
         max: 10000,
-        assist: {
-          label: t('setup.calculateWithMarkai', {
-            defaultValue: 'Calculate with MarkAI',
-          }),
-          prompt: (facts) => calorieGoalPrompt(t, facts),
-        },
+        assists: [
+          {
+            label: t('setup.calculateWithMarkai', {
+              defaultValue: 'Calculate with MarkAI',
+            }),
+            prompt: (facts) => calorieGoalPrompt(t, facts),
+          },
+          allMacros,
+        ],
       },
       t('setup.caloriesHintMarkai', {
         defaultValue:
@@ -315,10 +334,19 @@ function profileQuestions(t: TFunction): SetupStep[] {
         suggestion: 120,
         numeric: true,
         max: 500,
+        assists: [
+          {
+            label: t('setup.calculateWithMarkai', {
+              defaultValue: 'Calculate with MarkAI',
+            }),
+            prompt: (facts) => proteinGoalPrompt(t, facts),
+          },
+          allMacros,
+        ],
       },
-      t('setup.proteinHint', {
+      t('setup.proteinHintMarkai', {
         defaultValue:
-          'Protein helps your muscles recover and keeps you fuller for longer.',
+          'Protein helps your muscles recover and keeps you fuller for longer. MarkAI can work it out from your answers.',
       })
     ),
   ];

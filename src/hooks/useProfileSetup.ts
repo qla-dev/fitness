@@ -127,11 +127,15 @@ export function useProfileSetup(enabled: boolean) {
           // Keep the same contract; server mode retains these questionnaire choices locally.
           if (!single && isLocalDataMode()) {
             const goals: Record<string, number> = {};
+            // Carbs and fat are not asked; they arrive with MarkAI's macro
+            // plan, alongside the calorie and protein answers.
             for (const field of [
               'steps',
               'water_goal_ml',
               'calories',
               'protein',
+              'carbs',
+              'fat',
             ])
               if (answers[field])
                 goals[field] = Number(String(answers[field]).replace(',', '.'));

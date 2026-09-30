@@ -7,11 +7,42 @@ import type { TFunction } from 'i18next';
  * and a goal the user can apply.
  */
 export function calorieGoalPrompt(t: TFunction, facts: string[]): string {
-  const ask = t('markai.goalPrompt.calories', {
-    defaultValue:
-      'Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply.',
-  });
-  return facts.length
+  return withFacts(
+    t('markai.goalPrompt.calories', {
+      defaultValue:
+        'Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply.',
+    }),
+    facts
+  );
+}
+
+/** The same, for a daily protein goal in grams. */
+export function proteinGoalPrompt(t: TFunction, facts: string[]): string {
+  return withFacts(
+    t('markai.goalPrompt.protein', {
+      defaultValue:
+        'Work out my daily protein goal in grams from my details below. Show the calculation, then propose one daily protein goal I can apply.',
+    }),
+    facts
+  );
+}
+
+/**
+ * The paid macro plan: calories first, then protein, carbs and fat from
+ * them. A calorie goal already among the facts is worked from, not replaced
+ * without reason.
+ */
+export function macroPlanPrompt(t: TFunction, facts: string[]): string {
+  return withFacts(
+    t('markai.goalPrompt.macros', {
+      defaultValue:
+        'Calculate all my daily macros from my details below: calories, protein, carbs and fat. If I already gave a calorie goal, work from it. Show the calculation step by step.',
+    }),
+    facts
+  );
+}
+
+const withFacts = (ask: string, facts: string[]) =>
+  facts.length
     ? `${ask}\n\n${facts.map((fact) => `- ${fact}`).join('\n')}`
     : ask;
-}

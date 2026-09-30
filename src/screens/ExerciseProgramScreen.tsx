@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useInstalledPrograms } from '../hooks/useInstalledPrograms';
+import { useOwnedPrograms, useProgramPrice } from '../hooks/usePurchases';
 import { useStartInstalledProgram } from '../hooks/useStartInstalledProgram';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -9,7 +10,6 @@ import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
 import ProgramCover from '../components/ProgramCover';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
-import { formatLocalizedNumber } from '../localization';
 import ProgramExerciseRow from '../components/ProgramExerciseRow';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import StatusView from '../components/StatusView';
@@ -53,6 +53,9 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   );
   const { getImageSource } = useExerciseImageSource();
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
+  // Bought on this account, maybe on another device: no price any more.
+  const owned = useOwnedPrograms().has(route.params.programId);
+  const price = useProgramPrice(program?.priceTier ?? 'program499');
   const { startInstalledProgram, isStarting } =
     useStartInstalledProgram(navigation);
   const openPurchase = () =>
@@ -228,13 +231,14 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
                 <Text className="text-accent-text text-base font-bold">
                   {alreadyInstalled
                     ? t('presetLibrary.startNow', { defaultValue: 'Start now' })
-                    : t('programs.startFor', {
-                        defaultValue: 'Start for {{price}}',
-                        price: formatLocalizedNumber(program.priceEur, {
-                          style: 'currency',
-                          currency: 'EUR',
-                        }),
-                      })}
+                    : owned
+                      ? t('programs.addOwned', {
+                          defaultValue: 'Add to my programs',
+                        })
+                      : t('programs.startFor', {
+                          defaultValue: 'Start for {{price}}',
+                          price,
+                        })}
                 </Text>
               </TouchableOpacity>
             </LiquidGlassSurface>

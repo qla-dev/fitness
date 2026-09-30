@@ -1,3 +1,4 @@
+import type { ProgramPriceTier } from '../services/purchases/products';
 import type { IconName } from '../components/Icon';
 
 /**
@@ -61,8 +62,11 @@ export interface ExerciseProgram {
   minutesPerSession: number;
   rating: number;
   ratingCount: number;
-  /** Display price only; installing a program does not charge the user. */
-  priceEur: number;
+  /**
+   * One of the three program prices (services/purchases/products.ts); the
+   * backend unlocks the program only for a purchase at this price.
+   */
+  priceTier: ProgramPriceTier;
   /** CSS variable name supplying the card accent. */
   accentVar: string;
   icon: IconName;

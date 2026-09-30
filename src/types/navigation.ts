@@ -66,6 +66,8 @@ export type RootStackParamList = {
           prompt: string;
           mode: 'macros' | 'training' | 'free';
           returnToSetup?: boolean;
+          /** A priced request, such as the ten-coin macro plan. */
+          task?: 'all_macros';
         };
       }
     | undefined;

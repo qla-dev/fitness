@@ -27,7 +27,20 @@ export type MarkaiThread = {
  * A daily goal MarkAI worked out, offered for the user to apply. Never
  * applied by itself: applying pre-fills the goal for review.
  */
-export type GoalProposal = { key: 'calories'; value: number };
+export type GoalProposal =
+  /** kcal a day, or protein in grams a day. */
+  | { key: 'calories' | 'protein'; value: number }
+  /** The paid macro plan: all four at once. */
+  | {
+      key: 'macros';
+      values: { calories: number; protein: number; carbs: number; fat: number };
+    };
+/**
+ * A request priced above a reply. The backend sets the price
+ * (fitness.markai_task_coins); MARKAI_TASK_COINS only tells the user.
+ */
+export type MarkaiTask = 'all_macros';
+export const MARKAI_TASK_COINS: Record<MarkaiTask, number> = { all_macros: 10 };
 export type MarkaiReply = {
   text: string;
   food: FoodProposal | null;

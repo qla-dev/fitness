@@ -7,6 +7,7 @@ import {
   isSetupComplete,
   openSetupWizardSession,
   type SetupStep,
+  offerSetupAnswer,
   type SetupWizardSession,
 } from '../../src/services/setupWizardSession';
 
@@ -264,6 +265,84 @@ describe('SetupWizardScreen', () => {
         />
       );
       expect(screen.getByText('Skip')).toBeTruthy();
+    });
+  });
+
+  describe('MarkAI assists', () => {
+    const goalSteps: SetupStep[] = [
+      steps[1],
+      {
+        id: 'calories',
+        heading: 'Calories heading',
+        hint: '',
+        fields: [
+          {
+            id: 'calories',
+            label: 'Daily calorie goal',
+            numeric: true,
+            unit: 'kcal',
+            assists: [
+              { label: 'Calculate with MarkAI', prompt: (f) => f.join('|') },
+              {
+                label: 'Calculate all macros · 10 coins',
+                prompt: (f) => 'ALL ' + f.join('|'),
+                task: 'all_macros',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    it('asks MarkAI from the answers, and takes back what it worked out', async () => {
+      let focus = () => {};
+      const navigation = {
+        goBack: jest.fn(),
+        setOptions: jest.fn(),
+        push: jest.fn(),
+        addListener: jest.fn((event: string, listener: () => void) => {
+          if (event === 'focus') focus = listener;
+          return jest.fn();
+        }),
+      };
+      openSetupWizardSession({
+        steps: goalSteps,
+        initial: { b: '30', calories: '1800', __step: '1' },
+        onSave: jest.fn().mockResolvedValue(undefined),
+        onClose: jest.fn(),
+      });
+      render(
+        <SetupWizardScreen
+          navigation={navigation as never}
+          route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
+        />
+      );
+
+      fireEvent.press(screen.getByText('Calculate with MarkAI'));
+      // One goal leaves its own question out of the facts…
+      expect(navigation.push).toHaveBeenLastCalledWith('MarkAI', {
+        preset: {
+          prompt: 'Age: 30 years old',
+          mode: 'free',
+          returnToSetup: true,
+          task: undefined,
+        },
+      });
+      fireEvent.press(screen.getByText('Calculate all macros · 10 coins'));
+      // …the macro plan works from every answer, the calorie goal included.
+      expect(navigation.push).toHaveBeenLastCalledWith('MarkAI', {
+        preset: {
+          prompt: 'ALL Age: 30 years old|Daily calorie goal: 1800 kcal',
+          mode: 'free',
+          returnToSetup: true,
+          task: 'all_macros',
+        },
+      });
+
+      offerSetupAnswer('calories', '2200');
+      offerSetupAnswer('protein', '150');
+      act(() => focus());
+      expect(screen.getByDisplayValue('2200')).toBeTruthy();
     });
   });
 });

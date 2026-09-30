@@ -23,6 +23,18 @@ import {
 } from '../services/programToPresets';
 import { fireSuccessHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
+import {
+  purchasesQueryKey,
+  useOwnedPrograms,
+  useProgramPrice,
+} from '../hooks/usePurchases';
+import {
+  buyProgram,
+  purchasesAvailable,
+  PurchaseCancelledError,
+  restoreProgram,
+} from '../services/purchases/revenueCat';
+import { OnlineError, useOnlineAccount } from '../services/online/account';
 import type { RootStackScreenProps } from '../types/navigation';
 
 export default function ProgramPurchaseScreen({
@@ -36,11 +48,22 @@ export default function ProgramPurchaseScreen({
   const queryClient = useQueryClient();
   const { providers } = useExternalProviders({ category: 'exercise' });
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
+  const owned = useOwnedPrograms().has(route.params.programId);
+  const signedIn = useOnlineAccount((state) => !!state.session);
+  const price = useProgramPrice(program?.priceTier ?? 'program499');
+  // A build without a RevenueCat key cannot sell. Development builds still
+  // install, so programs can be worked on; release builds say so and stop.
+  const canSell = purchasesAvailable();
+  const free = owned || alreadyInstalled || (!canSell && __DEV__);
+  const [buying, setBuying] = useState(false);
+  // The store took the money but the unlock did not come back (closed app,
+  // lost network): restoring asks the backend to grant it again.
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const locked = useRef(false);
   const [progress, setProgress] = useState<ProgramInstallProgress | null>(null);
   const [result, setResult] = useState<ProgramInstallResult | null>(null);
   const [failed, setFailed] = useState(false);
-  const busy = progress !== null;
+  const busy = progress !== null || buying;
   usePreventRemove(busy, () => {});
   useEffect(() => {
     if (result?.preset) fireSuccessHaptic();
@@ -83,6 +106,31 @@ export default function ProgramPurchaseScreen({
       setProgress(null);
     }
   };
+  // Buys the program at its price, has the backend verify and unlock it,
+  // then installs it as before.
+  const purchase = async (restore = false) => {
+    if (!program || locked.current) return;
+    if (!signedIn) {
+      navigation.navigate('OnlineAccount');
+      return;
+    }
+    setBuying(true);
+    setFailed(false);
+    try {
+      const state = await (restore
+        ? restoreProgram(program.id, program.priceTier)
+        : buyProgram(program.id, program.priceTier));
+      queryClient.setQueryData(purchasesQueryKey, state);
+      setUnconfirmed(false);
+      setBuying(false);
+      await install();
+    } catch (error) {
+      setBuying(false);
+      if (error instanceof PurchaseCancelledError) return;
+      setUnconfirmed(error instanceof OnlineError && error.status === 402);
+      setFailed(true);
+    }
+  };
   const openProgram = () => {
     if (result?.preset)
       navigation.replace('WorkoutPresetDetail', { preset: result.preset });
@@ -94,9 +142,9 @@ export default function ProgramPurchaseScreen({
       description={
         result
           ? undefined
-          : t('programs.purchase.weeklyExplainer', {
+          : t('programs.purchase.weeklyExplainerPaid', {
               defaultValue:
-                'Each week is saved as a separate program in My Programs, with all its sessions and exercises. Nothing is charged.',
+                'Each week is saved as a separate program in My Programs, with all its sessions and exercises.',
             })
       }
       dismissDisabled={busy}
@@ -110,13 +158,26 @@ export default function ProgramPurchaseScreen({
               })}
             </Text>
           </View>
-        ) : (
+        ) : free ? (
           t('programs.purchase.confirm', { defaultValue: 'Add to my programs' })
+        ) : unconfirmed ? (
+          t('programs.purchase.restore', { defaultValue: 'Restore purchase' })
+        ) : (
+          t('programs.purchase.buy', {
+            defaultValue: 'Buy for {{price}}',
+            price,
+          })
         )
       }
-      onFooterPress={result ? openProgram : () => void install()}
+      onFooterPress={
+        result
+          ? openProgram
+          : free
+            ? () => void install()
+            : () => void purchase(unconfirmed)
+      }
       footerLoading={busy}
-      footerDisabled={busy || !program}
+      footerDisabled={busy || !program || (!free && !canSell)}
     >
       <ScrollView
         contentContainerStyle={{
@@ -188,7 +249,22 @@ export default function ProgramPurchaseScreen({
                   })}
                 </Text>
                 <Text className="text-text-secondary">
-                  {t('programs.purchase.free', { defaultValue: 'Free' })}
+                  {owned
+                    ? t('programs.purchase.owned', {
+                        defaultValue: 'Bought on your account',
+                      })
+                    : free
+                      ? t('programs.purchase.free', { defaultValue: 'Free' })
+                      : !canSell
+                        ? t('programs.purchase.unavailable', {
+                            defaultValue:
+                              'Purchases are not available in this version yet.',
+                          })
+                        : t('programs.purchase.oneTime', {
+                            defaultValue:
+                              '{{price}}, once. Yours on every device you sign in on.',
+                            price,
+                          })}
                 </Text>
               </View>
             )}
@@ -209,9 +285,15 @@ export default function ProgramPurchaseScreen({
                 accessibilityRole="alert"
                 className="text-text-primary mt-4"
               >
-                {t('programs.purchase.failed', {
-                  defaultValue: 'Could not add this program. Please try again.',
-                })}
+                {unconfirmed
+                  ? t('programs.purchase.unconfirmed', {
+                      defaultValue:
+                        'Your purchase has not been confirmed yet. Restore it to unlock the program; you will not be charged again.',
+                    })
+                  : t('programs.purchase.failed', {
+                      defaultValue:
+                        'Could not add this program. Please try again.',
+                    })}
               </Text>
             )}
             {alreadyInstalled && !busy && (

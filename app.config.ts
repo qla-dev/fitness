@@ -387,6 +387,15 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // dev builds ran locally. Only FITNESS_DATA_MODE flips it now.
       dataMode: process.env.FITNESS_DATA_MODE || 'local',
       iosAppGroup: getIosAppGroup(),
+      // Public RevenueCat SDK keys (appl_…, goog_…, test_…); the secret key
+      // lives on the backend only. Empty until set: purchases stay off.
+      revenueCat: {
+        iosApiKey: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY || '',
+        androidApiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY || '',
+        testStoreApiKey:
+          process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY || '',
+        useTestStore: process.env.EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE === '1',
+      },
     },
   };
 };

@@ -33,12 +33,23 @@ export interface SetupField {
   placeholder?: string;
   showWhen?: (answers: SetupAnswers) => boolean;
   /**
-   * Hands the question to MarkAI: the wizard offers a button that opens a
-   * chat with `prompt(facts)`, the facts being the answers given so far as
+   * Hands the question to MarkAI: the wizard offers a button per assist
+   * that opens a chat with `prompt(facts)`, the facts being the answers given so far as
    * "Label: value" lines. A value MarkAI proposes comes back through
    * `offerSetupAnswer` and fills the field for review.
    */
-  assist?: { label: string; prompt: (facts: string[]) => string };
+  assists?: SetupAssist[];
+}
+
+/**
+ * One way MarkAI can answer a question. `task` marks a priced request: the
+ * macro plan answers several questions at once, and works from every
+ * answer, this question's included.
+ */
+export interface SetupAssist {
+  label: string;
+  prompt: (facts: string[]) => string;
+  task?: 'all_macros';
 }
 export interface SetupStep {
   id: string;

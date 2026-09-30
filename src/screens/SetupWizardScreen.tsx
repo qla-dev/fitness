@@ -27,6 +27,7 @@ import {
   takeOfferedSetupAnswers,
   visibleFields,
   type SetupFlash,
+  type SetupAssist,
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
@@ -184,15 +185,15 @@ export default function SetupWizardScreen({
       });
   // Pushed, never navigated to: a chat already in the stack below this modal
   // would be reached by popping the wizard.
-  const askMarkai = (field: SetupField) => {
-    if (!field.assist) return;
+  const askMarkai = (field: SetupField, assist: SetupAssist) => {
     Keyboard.dismiss();
     fireSelectionHaptic();
     navigation.push('MarkAI', {
       preset: {
-        prompt: field.assist.prompt(describeAnswers(field.id)),
+        prompt: assist.prompt(describeAnswers(assist.task ? '' : field.id)),
         mode: 'free',
         returnToSetup: true,
+        task: assist.task,
       },
     });
   };
@@ -503,16 +504,17 @@ export default function SetupWizardScreen({
                       editable={!busy}
                     />
                   )}
-                  {field.assist ? (
+                  {field.assists?.map((assist) => (
                     <Button
-                      variant="secondary"
+                      key={assist.label}
+                      variant={assist.task ? 'outline' : 'secondary'}
                       className="mt-3"
                       disabled={busy}
-                      onPress={() => askMarkai(field)}
+                      onPress={() => askMarkai(field, assist)}
                     >
-                      {field.assist.label}
+                      {assist.label}
                     </Button>
-                  ) : null}
+                  ))}
                 </View>
               ))
             : allSteps

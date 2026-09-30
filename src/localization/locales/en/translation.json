@@ -5359,12 +5359,19 @@
       "myPrograms": "My Programs",
       "contents": "{{sessions}} sessions · {{exercises}} exercises",
       "singleAlreadyAdded": "This program is already in My Programs. Adding it again creates one additional copy.",
-      "weeklyExplainer": "Each week is saved as a separate program in My Programs, with all its sessions and exercises. Nothing is charged.",
-      "weekName": "{{name}} · Week {{week}}"
+      "weekName": "{{name}} · Week {{week}}",
+      "weeklyExplainerPaid": "Each week is saved as a separate program in My Programs, with all its sessions and exercises.",
+      "restore": "Restore purchase",
+      "buy": "Buy for {{price}}",
+      "owned": "Bought on your account",
+      "unavailable": "Purchases are not available in this version yet.",
+      "oneTime": "{{price}}, once. Yours on every device you sign in on.",
+      "unconfirmed": "Your purchase has not been confirmed yet. Restore it to unlock the program; you will not be charged again."
     },
     "searchResults": "Programs",
     "searchEmpty": "No programs match that search",
-    "searchPlaceholder": "Search programs..."
+    "searchPlaceholder": "Search programs...",
+    "addOwned": "Add to my programs"
   },
   "trends": {
     "loading": "Loading goals..."
@@ -5561,7 +5568,6 @@
     "stepsHint": "Walking adds up quickly. Start with a number that feels easy to hit.",
     "waterHint": "Most adults feel good around two litres. Drink more on hot or active days.",
     "sleepHint": "Most adults feel their best with seven to nine hours a night.",
-    "proteinHint": "Protein helps your muscles recover and keeps you fuller for longer.",
     "placeholders": {
       "age": "Enter your age",
       "height": "Enter your height",
@@ -5585,7 +5591,9 @@
       "caption": "From your height and weight. A few optional questions to go."
     },
     "calculateWithMarkai": "Calculate with MarkAI",
-    "caloriesHintMarkai": "The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile."
+    "caloriesHintMarkai": "The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile.",
+    "calculateAllMacros": "Calculate all macros · {{coins}} coins",
+    "proteinHintMarkai": "Protein helps your muscles recover and keeps you fuller for longer. MarkAI can work it out from your answers."
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",
@@ -6199,13 +6207,19 @@
     "photo": "Photo",
     "photoFailed": "Could not attach that photo. Please try another one.",
     "goalPrompt": {
-      "calories": "Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply."
+      "calories": "Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply.",
+      "protein": "Work out my daily protein goal in grams from my details below. Show the calculation, then propose one daily protein goal I can apply.",
+      "macros": "Calculate all my daily macros from my details below: calories, protein, carbs and fat. If I already gave a calorie goal, work from it. Show the calculation step by step."
     },
     "goalCard": {
       "calories": "Daily calorie goal",
       "value": "{{value}} kcal",
       "hint": "Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.",
-      "apply": "Apply to my goal"
+      "apply": "Apply to my goal",
+      "grams": "{{value}} g",
+      "macros": "Daily macro goals",
+      "protein": "Daily protein goal",
+      "applyAll": "Apply to my goals"
     },
     "goalFacts": {
       "currentGoal": "Current calorie goal: {{value}} kcal",
@@ -6327,5 +6341,17 @@
     "adaptiveBody": "Maintenance is estimated at {{base}} from your body and activity, and adapts as you track.",
     "askMarkai": "Work it out with MarkAI",
     "askMarkaiBody": "MarkAI calculates a goal from your details. You apply it yourself."
+  },
+  "coins": {
+    "title": "A little more room to ask.",
+    "description": "Food, daily metrics and training help. One coin for each MarkAI reply.",
+    "currentBalance": "Your current balance",
+    "unit": "AI coins",
+    "bestValue": "Best value",
+    "starter": "A small top-up",
+    "failedTitle": "Purchase not completed",
+    "oneTime": "A one-time purchase. Coins stay on your account and never expire.",
+    "unavailable": "Purchases are not available in this version yet.",
+    "buy": "Buy {{coins}} coins · {{price}}"
   }
 }

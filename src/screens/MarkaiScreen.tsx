@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
 import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
+import MarkaiGoalCard from '../components/markai/MarkaiGoalCard';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon from '../components/Icon';
@@ -51,10 +52,10 @@ import {
   type MarkaiMode,
   type GoalProposal,
   type MarkaiReply,
+  type MarkaiTask,
 } from '../services/online/markai';
 import { offerSetupAnswer } from '../services/setupWizardSession';
 import { fireSelectionHaptic } from '../services/haptics';
-import { formatLocalizedNumber } from '../localization';
 import {
   saveMarkaiPhoto,
   withSavedMarkaiPhotos,
@@ -144,6 +145,7 @@ function MarkaiContent() {
     mode: Mode;
     conversation: string;
     id: string;
+    task?: MarkaiTask;
   } | null>(null);
   const header = useScreenHeader({
     variant: 'transparent',
@@ -298,14 +300,21 @@ function MarkaiContent() {
   const applyGoal = (goal: GoalProposal) => {
     Keyboard.dismiss();
     fireSelectionHaptic();
+    // The whole plan fills every question it answers; outside the
+    // questionnaire the calorie goal opens with it, the one the others
+    // follow from.
+    const values: Record<string, number> =
+      goal.key === 'macros' ? goal.values : { [goal.key]: goal.value };
     if (returnToSetup.current) {
-      offerSetupAnswer(goal.key, String(Math.round(goal.value)));
+      for (const [key, value] of Object.entries(values))
+        offerSetupAnswer(key, String(Math.round(value)));
       navigation.goBack();
       return;
     }
+    const key = goal.key === 'macros' ? 'calories' : goal.key;
     navigation.navigate('GoalEdit', {
-      goalKey: goal.key,
-      prefill: Math.round(goal.value),
+      goalKey: key,
+      prefill: Math.round(values[key]),
     });
   };
   const reviewFood = (reply: MarkaiReply) => {
@@ -345,7 +354,7 @@ function MarkaiContent() {
       setAttaching(false);
     }
   };
-  const send = async (value = text, image = attachment) => {
+  const send = async (value = text, image = attachment, task?: MarkaiTask) => {
     if (
       lock.current ||
       loading ||
@@ -368,7 +377,8 @@ function MarkaiContent() {
       pendingRequest.current.prompt !== prompt ||
       pendingRequest.current.image !== (image?.data ?? null) ||
       pendingRequest.current.mode !== mode ||
-      pendingRequest.current.conversation !== conversation
+      pendingRequest.current.conversation !== conversation ||
+      pendingRequest.current.task !== task
     ) {
       pendingRequest.current = {
         prompt,
@@ -376,6 +386,7 @@ function MarkaiContent() {
         mode,
         conversation,
         id: randomUUID(),
+        task,
       };
     }
     let delivered = false;
@@ -390,6 +401,7 @@ function MarkaiContent() {
         mode,
         ...(prompt ? { prompt } : null),
         ...(image ? { image: image.data } : null),
+        ...(task ? { task } : null),
       });
       delivered = true;
       animateNext.current = true;
@@ -430,7 +442,7 @@ function MarkaiContent() {
     const preset = pendingPreset.current;
     if (!preset || loading || busy || !conversation || !session) return;
     pendingPreset.current = null;
-    void send(preset.prompt, null);
+    void send(preset.prompt, null, preset.task);
     // send is recreated each render; these are the conditions it waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation, loading, busy, session]);
@@ -584,40 +596,13 @@ function MarkaiContent() {
                 </View>
               )}
               {message.reply.goal && typingId !== message.id && (
-                <View className="bg-surface rounded-2xl p-4 gap-3">
-                  <View className="flex-row items-center gap-2">
-                    <Icon name="flame" size={24} color={accent} />
-                    <Text className="text-text-primary text-lg font-semibold">
-                      {t('markai.goalCard.calories', {
-                        defaultValue: 'Daily calorie goal',
-                      })}
-                    </Text>
-                  </View>
-                  <Text className="text-text-primary text-3xl font-bold">
-                    {t('markai.goalCard.value', {
-                      defaultValue: '{{value}} kcal',
-                      value: formatLocalizedNumber(
-                        Math.round(message.reply.goal.value)
-                      ),
-                    })}
-                  </Text>
-                  <Text className="text-text-secondary">
-                    {t('markai.goalCard.hint', {
-                      defaultValue:
-                        'Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.',
-                    })}
-                  </Text>
-                  <Button
-                    disabled={busy}
-                    onPress={() =>
-                      message.reply.goal && applyGoal(message.reply.goal)
-                    }
-                  >
-                    {t('markai.goalCard.apply', {
-                      defaultValue: 'Apply to my goal',
-                    })}
-                  </Button>
-                </View>
+                <MarkaiGoalCard
+                  goal={message.reply.goal}
+                  disabled={busy}
+                  onApply={() =>
+                    message.reply.goal && applyGoal(message.reply.goal)
+                  }
+                />
               )}
             </View>
           ))}
@@ -627,7 +612,13 @@ function MarkaiContent() {
               imageUri={pending.image?.uri}
               pending={busy}
               failed={!busy}
-              onRetry={() => void send(pending.prompt, pending.image)}
+              onRetry={() =>
+                void send(
+                  pending.prompt,
+                  pending.image,
+                  pendingRequest.current?.task
+                )
+              }
             />
           ) : null}
           {pending && busy ? <MarkaiThinking skill={labels[mode]} /> : null}

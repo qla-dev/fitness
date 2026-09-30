@@ -388,6 +388,22 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
 });
 
 // Mock react-native-reanimated
+// RevenueCat's native module is absent under Jest. Tests that buy mock the
+// calls they need; everything else sees a store with nothing on sale.
+jest.mock('react-native-purchases', () => {
+  const Purchases = {
+    configure: jest.fn(),
+    setLogLevel: jest.fn(),
+    logIn: jest.fn(async () => ({ customerInfo: {}, created: false })),
+    logOut: jest.fn(async () => ({})),
+    getOfferings: jest.fn(async () => ({ all: {}, current: null })),
+    purchasePackage: jest.fn(async () => ({ customerInfo: {} })),
+    restorePurchases: jest.fn(async () => ({})),
+    LOG_LEVEL: { DEBUG: 'DEBUG' },
+  };
+  return { __esModule: true, default: Purchases };
+});
+
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const { View, ScrollView } = require('react-native');
@@ -881,16 +897,25 @@ jest.mock('expo-sqlite', () => {
       schemas.set(name, [...(schemas.get(name) ?? []), sql]);
     },
     runAsync: async (sql, ...params) => {
-      const result = current(name).prepare(sql).run(...params.flat());
+      const result = current(name)
+        .prepare(sql)
+        .run(...params.flat());
       return {
         changes: Number(result.changes),
         lastInsertRowId: Number(result.lastInsertRowid),
       };
     },
     getAllAsync: async (sql, ...params) =>
-      current(name).prepare(sql).all(...params.flat()).map(plain),
+      current(name)
+        .prepare(sql)
+        .all(...params.flat())
+        .map(plain),
     getFirstAsync: async (sql, ...params) =>
-      plain(current(name).prepare(sql).get(...params.flat())),
+      plain(
+        current(name)
+          .prepare(sql)
+          .get(...params.flat())
+      ),
     withTransactionAsync: async (task) => {
       const db = current(name);
       db.exec('BEGIN');
