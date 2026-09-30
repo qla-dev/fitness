@@ -18,9 +18,14 @@ import { useCSSVariable } from 'uniwind';
 // Google Maps refuses to initialise without `com.google.android.geo.API_KEY`
 // in the manifest and throws from native code, which no error boundary
 // catches. The key reaches the manifest through `android.config.googleMaps`
-// in app.config.ts, so its absence there means its absence in the build.
+// in app.config.ts — but it cannot be read back from there at runtime:
+// `expo config --type public` strips `android.config` as a secret, and that
+// public config is what expo-constants embeds and serves as
+// `Constants.expoConfig`. Asking it for the key therefore always answered
+// "no key", and a properly keyed build still rendered the placeholder. The
+// flag in `extra` survives that stripping and says the same thing.
 const hasGoogleMapsApiKey = (): boolean =>
-  Boolean(Constants.expoConfig?.android?.config?.googleMaps?.apiKey);
+  Boolean(Constants.expoConfig?.extra?.hasGoogleMapsKey);
 
 export type RouteCoordinate = { latitude: number; longitude: number };
 
