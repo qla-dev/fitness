@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useCSSVariable } from 'uniwind';
 import { profileSteps } from '../constants/setupSteps';
 import { usePersonalSetup } from './usePersonalSetup';
 import {
@@ -11,11 +12,14 @@ import { fetchProfile } from '../services/api/profileApi';
 import { localApiFetch } from '../services/local/localApi';
 import { isLocalDataMode } from '../services/dataMode';
 import { getTodayDate } from '../utils/dateUtils';
+import { bmi, bmiCategory } from '../utils/bmi';
+import { formatLocalizedNumber } from '../localization';
 import type { SetupAnswers } from '../services/personalSetup';
 import {
   isSetupComplete,
   isSetupWizardOpen,
   openSetupWizardSession,
+  type SetupFlash,
   type SetupWizardSession,
 } from '../services/setupWizardSession';
 
@@ -29,6 +33,11 @@ export function useProfileSetup(enabled: boolean) {
   const setup = usePersonalSetup(enabled);
   const client = useQueryClient();
   const saveSetup = setup.save;
+  const [green, amber, danger] = useCSSVariable([
+    '--color-cat-green',
+    '--color-icon-warning',
+    '--color-icon-danger',
+  ]) as string[];
   const source = useQuery({
     queryKey: ['profileSetupSource'],
     enabled: enabled && !!setup.state,
@@ -68,10 +77,7 @@ export function useProfileSetup(enabled: boolean) {
   const isComplete = ready && isSetupComplete(profileSteps(t), existing);
 
   const save = useCallback(
-    (
-      data: SetupAnswers,
-      single = false
-    ): SetupWizardSession['onSave'] =>
+    (data: SetupAnswers, single = false): SetupWizardSession['onSave'] =>
       async (answers, done) => {
         if (done) {
           // Age is asked as a number of years, but the profile stores a date
@@ -159,6 +165,37 @@ export function useProfileSetup(enabled: boolean) {
     [client, saveSetup]
   );
 
+  // The first round's result: the BMI from the height and weight just
+  // answered, in the band it falls in. Worked out here, from the answers,
+  // before any check-in is written.
+  const bmiFlash = (answers: SetupAnswers): SetupFlash | null => {
+    const value = bmi(
+      Number(String(answers.weight ?? '').replace(',', '.')),
+      Number(String(answers.height ?? '').replace(',', '.'))
+    );
+    if (value === null) return null;
+    const band = bmiCategory(value);
+    const labels = {
+      underweight: t('setup.bmi.underweight', { defaultValue: 'Underweight' }),
+      healthy: t('setup.bmi.healthy', { defaultValue: 'Healthy weight' }),
+      overweight: t('setup.bmi.overweight', { defaultValue: 'Overweight' }),
+      obese: t('setup.bmi.obese', { defaultValue: 'Obesity' }),
+    };
+    return {
+      eyebrow: t('setup.bmi.eyebrow', { defaultValue: 'Your BMI' }),
+      value: formatLocalizedNumber(value, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+      title: labels[band],
+      caption: t('setup.bmi.caption', {
+        defaultValue:
+          'From your height and weight. A few optional questions to go.',
+      }),
+      tint: band === 'healthy' ? green : band === 'obese' ? danger : amber,
+    };
+  };
+
   /**
    * Parks the wizard session and calls `navigate` to show it. Returns false
    * when the data is not loaded yet or a wizard is already open.
@@ -175,6 +212,14 @@ export function useProfileSetup(enabled: boolean) {
       onClose,
       onSave: save(sourceData, singleStep !== undefined),
       singleStep,
+      firstRound: singleStep
+        ? undefined
+        : {
+            label: t('setup.calculateBmi', {
+              defaultValue: 'Calculate my BMI',
+            }),
+            flash: bmiFlash,
+          },
     });
     navigate();
     return true;

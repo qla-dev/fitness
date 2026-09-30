@@ -12,16 +12,36 @@ function questionStep(field: SetupField, hint: string): SetupStep {
   return { id: field.id, heading: field.label, hint, fields: [field] };
 }
 
+/**
+ * The first round of the profile tour: enough to work out a BMI, and the
+ * goal and routine it is read against. Asked before anything optional.
+ */
+export const FIRST_ROUND_STEPS = [
+  'focus',
+  'activity',
+  'age',
+  'height',
+  'weight',
+  'targetWeight',
+  'sessions',
+];
+
 export function profileSteps(t: TFunction): SetupStep[] {
+  return profileQuestions(t).map((step) =>
+    FIRST_ROUND_STEPS.includes(step.id) ? { ...step, required: true } : step
+  );
+}
+
+function profileQuestions(t: TFunction): SetupStep[] {
   return [
     {
       id: 'focus',
       heading: t('setup.focusHeading', {
         defaultValue: 'Make room for your goals',
       }),
-      hint: t('setup.focusHint', {
+      hint: t('setup.focusHintBmi', {
         defaultValue:
-          'Start with what matters to you. Every question is optional.',
+          'Start with what matters to you. This first round of questions works out your BMI; everything after it is optional.',
       }),
       fields: [
         {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardProvider,
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import FooterCTA, { footerCtaKeyboardTrim } from '../components/ui/FooterCTA';
 import PillInput from '../components/ui/PillInput';
+import FlashOverlay from '../components/ui/FlashOverlay';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
@@ -21,7 +22,9 @@ import {
   clearSetupWizardSession,
   answerValues,
   getSetupWizardSession,
+  isFirstRoundAnswered,
   visibleFields,
+  type SetupFlash,
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
@@ -94,7 +97,27 @@ export default function SetupWizardScreen({
   const leaving = useRef(false);
   const step = steps[index];
   const fields = step ? visibleFields(step, answers) : [];
-  const valid = !step || isStepValid(step, answers);
+  // The first round is required only when it was not already answered on
+  // opening; someone who filled it in before tours it freely, without the
+  // flash at its end.
+  const [enforced] = useState(
+    () =>
+      !!session?.firstRound &&
+      !singleStep &&
+      !isFirstRoundAnswered(allSteps, initial)
+  );
+  const mandatory = enforced && !!step?.required;
+  const lastRequired = enforced
+    ? steps.map((candidate) => !!candidate.required).lastIndexOf(true)
+    : -1;
+  const [flash, setFlash] = useState<SetupFlash | null>(null);
+  const valid =
+    !step ||
+    (isStepValid(step, answers) &&
+      (!mandatory ||
+        fields.every((field) =>
+          answerValues(answers, field.id).some((value) => value.trim() !== '')
+        )));
   // Multiple-choice steps show how many choices are picked on Continue.
   const selectedCount = fields
     .filter((field) => field.multiple)
@@ -115,13 +138,14 @@ export default function SetupWizardScreen({
   // keyboard is up without an extra tap. Waits for the step's layout to settle
   // so KeyboardAwareScrollView can scroll the field into view.
   useEffect(() => {
-    if (!firstInputId) return;
+    // Not under the flash: the keyboard would come up over it.
+    if (!firstInputId || flash) return;
     const timer = setTimeout(
       () => inputRefs.current[firstInputId]?.focus(),
       350
     );
     return () => clearTimeout(timer);
-  }, [index, firstInputId]);
+  }, [index, firstInputId, flash]);
 
   const fieldError = (field: SetupField) => {
     if (isFieldValid(field, answers)) return undefined;
@@ -152,7 +176,7 @@ export default function SetupWizardScreen({
     done: boolean,
     shouldClose: boolean
   ) => {
-    if (lock.current || !session) return;
+    if (lock.current || !session) return false;
     lock.current = true;
     setBusy(true);
     setError(false);
@@ -172,8 +196,10 @@ export default function SetupWizardScreen({
       if (done && !step) fireSuccessHaptic();
       if (shouldClose) close();
       else setIndex((i) => i + 1);
+      return true;
     } catch {
       setError(true);
+      return false;
     } finally {
       setBusy(false);
       lock.current = false;
@@ -257,7 +283,7 @@ export default function SetupWizardScreen({
       disabled: busy,
     },
     right:
-      step && !singleStep
+      step && !singleStep && !mandatory
         ? {
             kind: 'text',
             label: t('common.skip', { defaultValue: 'Skip' }),
@@ -487,22 +513,40 @@ export default function SetupWizardScreen({
           onPress={() => {
             fireSelectionHaptic();
             if (singleStep) void persist(answers, true, true);
-            else void persist(answers, !step, !step);
+            else if (index === lastRequired && session.firstRound) {
+              const result = session.firstRound.flash(answers);
+              Keyboard.dismiss();
+              void persist(answers, false, false).then(
+                (saved) => saved && setFlash(result)
+              );
+            } else void persist(answers, !step, !step);
           }}
           label={
             singleStep
               ? t('common.save', { defaultValue: 'Save' })
-              : step
-                ? selectedCount > 0
-                  ? t('setup.continueCount', {
-                      defaultValue: 'Continue ({{count}})',
-                      defaultValue_one: 'Continue ({{count}})',
-                      defaultValue_other: 'Continue ({{count}})',
-                      count: selectedCount,
-                    })
-                  : t('common.continue', { defaultValue: 'Continue' })
-                : t('setup.finish', { defaultValue: 'Save and start' })
+              : index === lastRequired && session.firstRound
+                ? session.firstRound.label
+                : step
+                  ? selectedCount > 0
+                    ? t('setup.continueCount', {
+                        defaultValue: 'Continue ({{count}})',
+                        defaultValue_one: 'Continue ({{count}})',
+                        defaultValue_other: 'Continue ({{count}})',
+                        count: selectedCount,
+                      })
+                    : t('common.continue', { defaultValue: 'Continue' })
+                  : t('setup.finish', { defaultValue: 'Save and start' })
           }
+        />
+        <FlashOverlay
+          visible={!!flash}
+          icon="scale"
+          eyebrow={flash?.eyebrow}
+          value={flash?.value ?? ''}
+          title={flash?.title}
+          caption={flash?.caption}
+          tint={flash?.tint}
+          onDone={() => setFlash(null)}
         />
       </View>
     </KeyboardProvider>

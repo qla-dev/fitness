@@ -38,6 +38,21 @@ export interface SetupStep {
   heading: string;
   hint: string;
   fields: SetupField[];
+  /**
+   * Part of the first round, answered before anything optional: no Skip,
+   * and Continue waits for an answer. Only while that round was not
+   * already complete when the wizard opened; see `firstRound`.
+   */
+  required?: boolean;
+}
+
+/** What the full-screen flash shows once the first round is answered. */
+export interface SetupFlash {
+  eyebrow: string;
+  value: string;
+  title?: string;
+  caption?: string;
+  tint?: string;
 }
 
 /**
@@ -58,7 +73,9 @@ export function visibleFields(step: SetupStep, answers: SetupAnswers) {
   return step.fields
     .filter((field) => !field.showWhen || field.showWhen(answers))
     .map((field) =>
-      field.optionsFor ? { ...field, options: field.optionsFor(answers) } : field
+      field.optionsFor
+        ? { ...field, options: field.optionsFor(answers) }
+        : field
     );
 }
 
@@ -87,6 +104,29 @@ export interface SetupWizardSession {
    * it is shown — the Age tile on the Profile — without the rest of the tour.
    */
   singleStep?: string;
+  /**
+   * A result worked out from the required steps. When they were not all
+   * answered on opening, the last one's action reads `label`, and its
+   * answer is followed by a flash of `flash(answers)` before the tour goes on.
+   */
+  firstRound?: {
+    label: string;
+    flash: (answers: SetupAnswers) => SetupFlash | null;
+  };
+}
+
+/** True when every visible field of the required steps has an answer. */
+export function isFirstRoundAnswered(
+  steps: SetupStep[],
+  answers: SetupAnswers
+) {
+  return steps
+    .filter((step) => step.required)
+    .every((step) =>
+      visibleFields(step, answers).every((field) =>
+        answerValues(answers, field.id).some((value) => value.trim() !== '')
+      )
+    );
 }
 
 // Route params must stay serializable, so the opener parks its callbacks here

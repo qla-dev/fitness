@@ -5521,7 +5521,6 @@
     "edit": "Personal setup & goals",
     "editSubtitle": "Your details, activity level and daily targets",
     "focusHeading": "Make room for your goals",
-    "focusHint": "Start with what matters to you. Every question is optional.",
     "focus": "Your focus",
     "lose": "Lose weight",
     "maintain": "Maintain weight",
@@ -5575,6 +5574,16 @@
       "sleep": "Enter hours of sleep a night",
       "calories": "Enter a daily calorie goal",
       "protein": "Enter a daily protein goal"
+    },
+    "focusHintBmi": "Start with what matters to you. This first round of questions works out your BMI; everything after it is optional.",
+    "calculateBmi": "Calculate my BMI",
+    "bmi": {
+      "eyebrow": "Your BMI",
+      "underweight": "Underweight",
+      "healthy": "Healthy weight",
+      "overweight": "Overweight",
+      "obese": "Obesity",
+      "caption": "From your height and weight. A few optional questions to go."
     }
   },
   "groceries": {

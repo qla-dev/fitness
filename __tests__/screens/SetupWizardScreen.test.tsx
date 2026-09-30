@@ -7,6 +7,7 @@ import {
   isSetupComplete,
   openSetupWizardSession,
   type SetupStep,
+  type SetupWizardSession,
 } from '../../src/services/setupWizardSession';
 
 jest.mock('../../src/services/haptics', () => ({
@@ -72,7 +73,10 @@ const steps: SetupStep[] = [
   },
 ];
 
-function renderWizard(wizardSteps: SetupStep[] = steps) {
+function renderWizard(
+  wizardSteps: SetupStep[] = steps,
+  extra: Partial<SetupWizardSession> = {}
+) {
   const onSave = jest.fn().mockResolvedValue(undefined);
   const onClose = jest.fn();
   const navigation = {
@@ -85,6 +89,7 @@ function renderWizard(wizardSteps: SetupStep[] = steps) {
     initial: {},
     onSave,
     onClose,
+    ...extra,
   });
   render(
     <SetupWizardScreen
@@ -186,5 +191,79 @@ describe('SetupWizardScreen', () => {
     expect(screen.queryByText('Hidden heading')).toBeNull();
     expect(screen.getByText('Second heading')).toBeTruthy();
     expect(screen.getByText('Step 2 of 3')).toBeTruthy();
+  });
+
+  describe('first round', () => {
+    const round: SetupStep[] = [
+      { ...steps[0], required: true },
+      { ...steps[1], required: true },
+      {
+        id: 'three',
+        heading: 'Third heading',
+        hint: '',
+        fields: [{ id: 'c', label: 'Notes' }],
+      },
+    ];
+    const firstRound = {
+      label: 'Calculate my BMI',
+      flash: jest.fn(() => ({
+        eyebrow: 'Your BMI',
+        value: '22.9',
+        title: 'Healthy weight',
+      })),
+    };
+
+    it('asks it without Skip, then flashes the result and goes on', async () => {
+      const { onSave } = renderWizard(round, { firstRound });
+      expect(screen.queryByText('Skip')).toBeNull();
+      // Continue waits for an answer.
+      await act(async () => {
+        fireEvent.press(screen.getByText('Continue'));
+      });
+      expect(onSave).not.toHaveBeenCalled();
+
+      fireEvent.press(screen.getByText('Lose weight'));
+      await act(async () => {
+        fireEvent.press(screen.getByText('Continue (1)'));
+      });
+      expect(screen.getByText('Second heading')).toBeTruthy();
+      expect(screen.queryByText('Skip')).toBeNull();
+
+      fireEvent.changeText(screen.getByLabelText('Age'), '30');
+      await act(async () => {
+        fireEvent.press(screen.getByText('Calculate my BMI'));
+      });
+      expect(firstRound.flash).toHaveBeenCalledWith(
+        expect.objectContaining({ a: ['lose'], b: '30' })
+      );
+      expect(screen.getByText('22.9')).toBeTruthy();
+      expect(screen.getByText('Healthy weight')).toBeTruthy();
+      // Everything after the first round can be skipped.
+      expect(screen.getByText('Third heading')).toBeTruthy();
+      expect(screen.getByText('Skip')).toBeTruthy();
+    });
+
+    it('is a normal tour when it was answered before', () => {
+      openSetupWizardSession({
+        steps: round,
+        initial: { a: ['lose'], b: '30' },
+        onSave: jest.fn(),
+        onClose: jest.fn(),
+        firstRound,
+      });
+      render(
+        <SetupWizardScreen
+          navigation={
+            {
+              goBack: jest.fn(),
+              setOptions: jest.fn(),
+              addListener: jest.fn(() => jest.fn()),
+            } as never
+          }
+          route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
+        />
+      );
+      expect(screen.getByText('Skip')).toBeTruthy();
+    });
   });
 });

@@ -211,18 +211,20 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     },
     []
   );
-  const toggleWatch = () => {
-    if (watchEnabled) return setWatchEnabled(false);
-    if (watchAwake) return setWatchEnabled(true);
-    if (watchCheck === 'checking') return;
+  // Wakes the watch app and waits for it to answer. A tap turns the watch
+  // on when it does and says so when it does not; the automatic wake on
+  // opening only turns it on, and stays quiet about a watch left on the
+  // charger.
+  const wakeWatch = (silent: boolean) => {
     setWatchCheck('checking');
     void checkWatchAwake().then((answered) => {
       if (!mounted.current) return;
       setWatchCheck(answered ? 'awake' : 'asleep');
       if (answered) {
-        setWatchEnabled(true);
+        if (!silent) setWatchEnabled(true);
         return;
       }
+      if (silent) return;
       Alert.alert(
         t('workoutSetup.watchAsleepTitle', {
           defaultValue: 'Apple Watch is not responding',
@@ -234,6 +236,26 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       );
     });
   };
+  const toggleWatch = () => {
+    if (watchEnabled) return setWatchEnabled(false);
+    if (watchAwake) return setWatchEnabled(true);
+    if (watchCheck === 'checking') return;
+    wakeWatch(false);
+  };
+  // Opening setup wakes the watch as a tap on its chip would, so the watch
+  // app is up by the time Start is pressed. Once per screen, as soon as a
+  // paired watch with the app is known, and never against a choice to leave
+  // the watch out. Once it answers, the chip is on by default.
+  const autoWoken = useRef(false);
+  useEffect(() => {
+    if (autoWoken.current || !watchConnected || watchAwake) return;
+    if (watchChoice === false || watchCheck !== 'unknown') return;
+    autoWoken.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- waking the watch is the external system this effect talks to.
+    wakeWatch(true);
+    // wakeWatch is recreated each render; the conditions above are what matter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchConnected, watchAwake, watchChoice, watchCheck]);
   // Wheel size only means anything on a bike, and only a bike sensor uses
   // it: it is what turns wheel revolutions into distance.
   const [wheelEdit, setWheelEdit] = useState<string | null>(null);

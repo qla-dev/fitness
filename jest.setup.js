@@ -412,7 +412,17 @@ jest.mock('react-native-reanimated', () => {
       ScrollView,
       createAnimatedComponent: (Component) => Component,
     },
-    useSharedValue: (init) => React.useRef({ value: init }).current,
+    // With get/set, as Reanimated 4's shared values have them.
+    useSharedValue: (init) =>
+      React.useRef({
+        value: init,
+        get() {
+          return this.value;
+        },
+        set(next) {
+          this.value = typeof next === 'function' ? next(this.value) : next;
+        },
+      }).current,
     useAnimatedStyle: (fn) => fn(),
     // Same shape as useAnimatedStyle: run the worklet once and hand back the
     // props, which is what a synchronous render assertion needs.

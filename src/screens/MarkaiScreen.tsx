@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
+import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon from '../components/Icon';
@@ -105,8 +106,20 @@ function MarkaiContent() {
     },
     [edgeEffectRef]
   );
+  // Follows the end of the chat until the user drags away from it. Only
+  // drags decide: iOS scrolls the view itself while it settles the header
+  // inset on the way in from another tab, and taking those events as the
+  // user's left a conversation opened from the Tracker short of its end.
   const atBottom = useRef(true);
+  const dragging = useRef(false);
   const viewport = useRef(0);
+  const contentHeight = useRef(0);
+  // The next pin glides instead of jumping: a message just sent, or the
+  // reply that answers it, from wherever the chat was scrolled to.
+  const animateNext = useRef(false);
+  // The one reply being typed out: only a reply that just arrived, never
+  // a conversation loaded from history.
+  const [typingId, setTypingId] = useState<string | null>(null);
   const loadVersion = useRef(0);
   const [conversation, setConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<MarkaiMessage[]>([]);
@@ -306,6 +319,7 @@ function MarkaiContent() {
     setText('');
     setAttachment(null);
     atBottom.current = true;
+    animateNext.current = true;
     if (
       !pendingRequest.current ||
       pendingRequest.current.prompt !== prompt ||
@@ -335,6 +349,8 @@ function MarkaiContent() {
         ...(image ? { image: image.data } : null),
       });
       delivered = true;
+      animateNext.current = true;
+      setTypingId(response.id);
       setMessages((items) => [
         ...items,
         {
@@ -342,9 +358,7 @@ function MarkaiContent() {
           prompt,
           reply: response.reply,
           has_image: !!image,
-          imageUri: image
-            ? saveMarkaiPhoto(response.id, image.uri)
-            : undefined,
+          imageUri: image ? saveMarkaiPhoto(response.id, image.uri) : undefined,
         },
       ]);
       setPending(null);
@@ -368,6 +382,29 @@ function MarkaiContent() {
     }
   };
   const empty = !messages.length && !pending && !loading;
+  // Keeps a followed chat on its last line, whichever of the content and the
+  // viewport was measured last.
+  const pinToEnd = () => {
+    if (
+      (messages.length || pending) &&
+      atBottom.current &&
+      viewport.current > 0 &&
+      contentHeight.current > viewport.current
+    ) {
+      const animated = animateNext.current;
+      animateNext.current = false;
+      scroller.current?.scrollToEnd({ animated });
+    }
+  };
+  const pinRef = useRef(pinToEnd);
+  useEffect(() => {
+    pinRef.current = pinToEnd;
+  });
+  // The push from another tab settles the header inset as it ends.
+  useEffect(
+    () => navigation.addListener('transitionEnd', () => pinRef.current()),
+    [navigation]
+  );
   return (
     <View
       className="flex-1 bg-background"
@@ -409,6 +446,7 @@ function MarkaiContent() {
           offset={insets.bottom}
           onLayout={(event) => {
             viewport.current = event.nativeEvent.layout.height;
+            pinToEnd();
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
@@ -423,19 +461,21 @@ function MarkaiContent() {
             paddingBottom: session ? barHeight + insets.bottom + 12 : 20,
           }}
           scrollEventThrottle={16}
+          onScrollBeginDrag={() => {
+            dragging.current = true;
+          }}
+          onMomentumScrollEnd={() => {
+            dragging.current = false;
+          }}
           onScroll={({ nativeEvent: e }) => {
+            if (!dragging.current) return;
             atBottom.current =
               e.contentOffset.y >=
               e.contentSize.height - e.layoutMeasurement.height - 100;
           }}
           onContentSizeChange={(_width, height) => {
-            if (
-              (messages.length || pending) &&
-              atBottom.current &&
-              viewport.current > 0 &&
-              height > viewport.current
-            )
-              scroller.current?.scrollToEnd({ animated: false });
+            contentHeight.current = height;
+            pinToEnd();
           }}
         >
           {loading ? <ActivityIndicator /> : null}
@@ -446,14 +486,25 @@ function MarkaiContent() {
                 imageUri={message.imageUri}
                 hasImage={message.has_image}
               />
-              <Text
-                selectable
-                className="text-text-primary"
-                style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
-              >
-                {message.reply.text}
-              </Text>
-              {message.reply.food && (
+              {typingId === message.id ? (
+                <MarkaiTypewriterText
+                  text={message.reply.text}
+                  style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
+                  onComplete={() =>
+                    setTypingId((id) => (id === message.id ? null : id))
+                  }
+                />
+              ) : (
+                <Text
+                  selectable
+                  className="text-text-primary"
+                  style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
+                >
+                  {message.reply.text}
+                </Text>
+              )}
+              {/* The food card follows the reply once it is typed out. */}
+              {message.reply.food && typingId !== message.id && (
                 <View className="bg-surface rounded-2xl p-4 gap-3">
                   <View className="flex-row items-center gap-2">
                     <Icon name="food" size={24} />
