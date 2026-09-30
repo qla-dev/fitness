@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,30 +10,19 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { randomUUID } from 'expo-crypto';
 import Button from '../components/ui/Button';
-import GroceryListEditor from '../components/GroceryListEditor';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
-import type { GroceryList } from '../services/personalSetup';
+import { blankGroceryList } from '../services/personalSetup';
 import type {
   RootStackParamList,
   RootStackScreenProps,
 } from '../types/navigation';
 import { formatLocalizedNumber } from '../localization';
-
-/** An empty list, ready to be named. Nothing here depends on the screen. */
-const blank = (): GroceryList => ({
-  id: randomUUID(),
-  name: '',
-  note: '',
-  store: '',
-  archived: false,
-  items: [],
-  createdAt: new Date().toISOString(),
-});
+import { listTotal } from '../services/online/prices';
+import { planMoney } from '../services/weeklyPlans';
 
 export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
   const { t } = useTranslation();
@@ -42,17 +31,22 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
   const padding = useActiveWorkoutBarPadding('stack');
   const setup = usePersonalSetup();
   const [archived, setArchived] = useState(false);
-  // Opened on a blank list when the Food dashboard's card asked for one, so
-  // that card lands where its name says rather than on the list of lists.
-  // A blank list when the Food dashboard's card asked for one, or the list the
-  // sample meal plan just composed — either way this screen is where a list is
-  // edited and saved, so it opens straight on the editor.
-  const [draft, setDraft] = useState<GroceryList | null>(
-    () => route.params?.planList ?? (route.params?.newList ? blank() : null)
-  );
   const state = setup.state;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  // Each list is its own pushed screen, so it slides in natively.
+  const openList = (listId: string) =>
+    navigation.navigate('GroceryList', { listId });
+  const newList = () =>
+    navigation.navigate('GroceryList', { draft: blankGroceryList() });
+  // The Food dashboard's card asks for a blank list: it lands on one, with
+  // the list of lists behind it for Back.
+  const openedBlank = useRef(false);
+  useEffect(() => {
+    if (!route.params?.newList || openedBlank.current) return;
+    openedBlank.current = true;
+    navigation.navigate('GroceryList', { draft: blankGroceryList() });
+  }, [navigation, route.params?.newList]);
   const header = useScreenHeader({
     variant: 'transparent',
     title: t('cart.title', { defaultValue: 'Meals' }),
@@ -60,7 +54,7 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
     right: {
       kind: 'primary',
       label: t('groceries.newList', { defaultValue: 'New list' }),
-      onPress: () => setDraft(blank()),
+      onPress: newList,
     },
   });
   return (
@@ -130,7 +124,7 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
                   <Pressable
                     key={list.id}
                     accessibilityRole="button"
-                    onPress={() => setDraft(list)}
+                    onPress={() => openList(list.id)}
                     className="bg-surface rounded-2xl p-5"
                     style={{ width: '47%' }}
                   >
@@ -138,6 +132,11 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
                       {list.name}
                     </Text>
                     <Text className="text-text-secondary">{list.store}</Text>
+                    {listTotal(list) !== null ? (
+                      <Text className="text-text-primary font-semibold mt-1">
+                        {planMoney(listTotal(list) ?? 0, list.currency ?? 'EUR')}
+                      </Text>
+                    ) : null}
                     <Text className="text-accent-primary mt-3">
                       {t('groceries.checked', {
                         defaultValue: '{{done}} / {{total}} checked',
@@ -167,7 +166,7 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
             <Button
               variant="outline"
               className="mt-4"
-              onPress={() => setDraft(blank())}
+              onPress={newList}
             >
               {t('groceries.blankList', {
                 defaultValue: 'Create a blank list',
@@ -176,27 +175,6 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
           </>
         )}
       </ScrollView>
-      {draft && (
-        <GroceryListEditor
-          initial={draft}
-          existing={!!state?.lists.some((l) => l.id === draft.id)}
-          onClose={() => setDraft(null)}
-          onSave={async (list) => {
-            await setup.save((s) => ({
-              ...s,
-              lists: s.lists.some((l) => l.id === list.id)
-                ? s.lists.map((l) => (l.id === list.id ? list : l))
-                : [list, ...s.lists],
-            }));
-          }}
-          onDelete={async () => {
-            await setup.save((s) => ({
-              ...s,
-              lists: s.lists.filter((l) => l.id !== draft.id),
-            }));
-          }}
-        />
-      )}
     </View>
   );
 }

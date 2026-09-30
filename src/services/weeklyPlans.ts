@@ -20,6 +20,11 @@ export type PlanIngredient = {
   quantity: number;
   unit: 'g' | 'ml' | 'piece';
   price?: number | null;
+  /** The basket staple it was priced from; Croatian plans only. */
+  staple?: string;
+  /** The shelf product it was priced from, and that product's barcode. */
+  product?: string;
+  ean?: string | null;
 };
 export type PlanMeal = {
   slot: 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -139,7 +144,9 @@ const UNIT_LABEL: Record<PlanIngredient['unit'], string> = {
 /**
  * One grocery list for the given days: the same ingredient in the same unit
  * is added up across meals, scaled by the plan's servings, and priced from
- * the plan. Names are kept as MarkAI wrote them.
+ * the plan. Names are kept as MarkAI wrote them. Items keep the staple and
+ * barcode they were priced from, so the list can be compared across stores
+ * and show product photos.
  */
 export function planGroceryList(
   plan: WeeklyPlan,
@@ -155,6 +162,8 @@ export function planGroceryList(
       quantity: number;
       price: number;
       priced: boolean;
+      staple?: string;
+      ean?: string;
     }
   >();
   for (const day of days)
@@ -167,6 +176,8 @@ export function planGroceryList(
           quantity: 0,
           price: 0,
           priced: false,
+          staple: ingredient.staple,
+          ean: ingredient.ean ?? undefined,
         };
         entry.quantity += ingredient.quantity * plan.servings;
         if (typeof ingredient.price === 'number') {
@@ -180,7 +191,14 @@ export function planGroceryList(
     name: entry.name,
     quantity: `${Math.round(entry.quantity * 10) / 10} ${UNIT_LABEL[entry.unit]}`,
     checked: false,
-    ...(entry.priced ? { price: Math.round(entry.price * 100) / 100 } : null),
+    ...(entry.priced
+      ? {
+          price: Math.round(entry.price * 100) / 100,
+          basePrice: Math.round(entry.price * 100) / 100,
+        }
+      : null),
+    ...(entry.staple ? { staple: entry.staple } : null),
+    ...(entry.ean ? { ean: entry.ean } : null),
   }));
   return {
     id: randomUUID(),
@@ -190,6 +208,8 @@ export function planGroceryList(
     archived: false,
     createdAt: new Date().toISOString(),
     items,
+    region: plan.region,
+    currency: plan.currency,
   };
 }
 

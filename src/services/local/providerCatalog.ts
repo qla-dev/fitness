@@ -874,6 +874,22 @@ async function fetchOffProduct(code: string): Promise<Json | null> {
   return null;
 }
 
+/**
+ * A product's photo by barcode, through the same Open Food Facts lookup a
+ * scan uses. For products the app only knows by barcode, like the shelf
+ * products a meal plan was priced from. Null when OFF has no photo.
+ */
+export async function fetchProductImageByBarcode(
+  code: string
+): Promise<string | null> {
+  const product = await fetchOffProduct(code);
+  return (
+    (product?.image_front_url as string | undefined) ||
+    (product?.image_url as string | undefined) ||
+    null
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Routing
 // ---------------------------------------------------------------------------

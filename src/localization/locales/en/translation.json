@@ -5639,7 +5639,7 @@
     "budgetHint": "Your weekly budget covers the whole household. Leave it blank for no limit. Prices are sample estimates.",
     "budget": "Weekly grocery budget",
     "currency": "Currency",
-    "storeHint": "Save your favourite store with your list. These are sample choices, not live store prices or stock.",
+    "storeHint": "Where you usually shop. Stores come from the published shelf prices of your region, and a list from a meal plan compares them all.",
     "market": "Local market",
     "customStore": "Another store",
     "kitchenHint": "Pick every appliance you can use. No appliances means no-cook recipes; skip to leave equipment unspecified.",
@@ -5680,7 +5680,9 @@
     },
     "region": "Where do you shop?",
     "regionHint": "Meal plans are priced for this country. In Croatia they use real store prices, updated daily.",
-    "planMeals": "Plan meals for the week"
+    "planMeals": "Plan meals for the week",
+    "listTotal": "Total {{total}}",
+    "missing": "This list was deleted."
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6225,6 +6227,13 @@
       "lunch": "Lunch",
       "dinner": "Dinner",
       "snack": "Snack"
+    },
+    "addToList": "Add to grocery list",
+    "ingredient": "{{name}} · {{quantity}} {{unit}}",
+    "units": {
+      "g": "g",
+      "ml": "ml",
+      "piece": "pcs"
     }
   },
   "regions": {
@@ -6247,5 +6256,24 @@
     "SE": "Sweden",
     "GB": "United Kingdom",
     "US": "United States"
+  },
+  "shopComparison": {
+    "header": "Groceries",
+    "title": "Where to shop",
+    "description_one": "Your cart of {{count}} item at every store in {{region}}.",
+    "description_other": "Your cart of {{count}} items at every store in {{region}}.",
+    "footnote": "Store averages from {{date}} (cijene.dev). Items a store does not list keep their typical price.",
+    "use": "Shop at {{store}}",
+    "useTypical": "Use typical prices",
+    "open": "Compare stores",
+    "planPrices": "Typical prices",
+    "planPricesHint": "What the meal plan was priced at, before a store.",
+    "loading": "Comparing stores…",
+    "error": "Store prices could not be loaded.",
+    "none": "Store prices are not published for this region, so the list keeps its typical prices.",
+    "stores": "Stores",
+    "matched": "{{matched}} of {{total}} items at store prices",
+    "cheapest": "Cheapest",
+    "selected": "Selected"
   }
 }

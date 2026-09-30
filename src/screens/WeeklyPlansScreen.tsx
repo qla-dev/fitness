@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 import { MenuView } from '@expo/ui/community/menu';
 import Icon from '../components/Icon';
@@ -19,7 +19,12 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { grocerySteps } from '../constants/setupSteps';
-import { regionName } from '../constants/regions';
+import { LIVE_PRICE_REGIONS, regionName } from '../constants/regions';
+import {
+  fetchVendors,
+  vendorsQueryKey,
+  type Vendor,
+} from '../services/online/prices';
 import {
   isSetupWizardOpen,
   openSetupWizardSession,
@@ -55,6 +60,17 @@ export default function WeeklyPlansScreen({
   const insets = useSafeAreaInsets();
   const nativeHeader = useNativeIOSHeadersActive();
   const client = useQueryClient();
+  // The questionnaire's store question lists these; fetched with the screen
+  // so they are in hand by the time it is reached.
+  useQueries({
+    queries: LIVE_PRICE_REGIONS.map((region) => ({
+      queryKey: vendorsQueryKey(region),
+      queryFn: () => fetchVendors(region),
+      staleTime: 6 * 60 * 60 * 1000,
+    })),
+  });
+  const vendorsFor = (region: string) =>
+    client.getQueryData<Vendor[]>(vendorsQueryKey(region)) ?? [];
   const session = useOnlineAccount((s) => s.session);
   const setup = usePersonalSetup();
   const [accent, green, muted] = useCSSVariable([
@@ -144,7 +160,7 @@ export default function WeeklyPlansScreen({
     }
     saved.current = null;
     openSetupWizardSession({
-      steps: grocerySteps(t),
+      steps: grocerySteps(t, vendorsFor),
       initial: setup.state.grocery,
       onSave: async (answers, done) => {
         await setup.save((s) => ({

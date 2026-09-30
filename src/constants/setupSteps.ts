@@ -5,6 +5,7 @@ import {
   type SetupStep,
 } from '../services/setupWizardSession';
 import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
+import type { Vendor } from '../services/online/prices';
 
 /** A one-question step headed by the field's own label. */
 function questionStep(field: SetupField, hint: string): SetupStep {
@@ -296,7 +297,16 @@ export function profileSteps(t: TFunction): SetupStep[] {
   ];
 }
 
-export function grocerySteps(t: TFunction): SetupStep[] {
+/**
+ * The kitchen questionnaire. `vendorsFor` gives the stores of a region as
+ * the backend lists them from cijene.dev; a region without published
+ * prices has none, and the store question offers only the local market,
+ * no preference and a store typed by hand.
+ */
+export function grocerySteps(
+  t: TFunction,
+  vendorsFor: (region: string) => Vendor[] = () => []
+): SetupStep[] {
   return [
     questionStep(
       {
@@ -497,10 +507,10 @@ export function grocerySteps(t: TFunction): SetupStep[] {
       {
         id: 'store',
         label: t('groceries.store', { defaultValue: 'Store' }),
-        options: [
-          ...['Bingo', 'Konzum', 'Lidl'].map((name) => ({
-            value: name,
-            label: name,
+        optionsFor: (answers) => [
+          ...vendorsFor(String(answers.region || 'HR')).map((vendor) => ({
+            value: vendor.code,
+            label: vendor.name,
           })),
           {
             value: 'market',
@@ -514,7 +524,7 @@ export function grocerySteps(t: TFunction): SetupStep[] {
       },
       t('groceries.storeHint', {
         defaultValue:
-          'Save your favourite store with your list. These are sample choices, not live store prices or stock.',
+          'Where you usually shop. Stores come from the published shelf prices of your region, and a list from a meal plan compares them all.',
       })
     ),
     questionStep(

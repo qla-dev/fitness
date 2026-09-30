@@ -12,6 +12,7 @@ import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
 import Button from '../components/ui/Button';
 import StatusView from '../components/StatusView';
+import ProductThumb from '../components/ProductThumb';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { regionName } from '../constants/regions';
@@ -71,8 +72,10 @@ export default function WeeklyPlanScreen({
 
   const openList = (target: WeeklyPlan, days: PlanDay[], name: string) => {
     fireSelectionHaptic();
-    navigation.navigate('Cart', {
-      planList: planGroceryList(
+    // The comparison opens at once; store prices load behind it.
+    navigation.navigate('ShopComparison', {
+      mode: 'add',
+      list: planGroceryList(
         target,
         days,
         name,
@@ -230,6 +233,29 @@ export default function WeeklyPlanScreen({
                       fat: Math.round(meal.fat),
                     })}
                   </Text>
+                  <View className="gap-1.5 mt-2">
+                    {meal.ingredients.map((ingredient, i) => (
+                      <View key={i} className="flex-row items-center gap-2">
+                        <ProductThumb ean={ingredient.ean} size={28} />
+                        <Text
+                          className="text-text-secondary text-sm flex-1"
+                          numberOfLines={1}
+                        >
+                          {t('weeklyPlans.ingredient', {
+                            defaultValue: '{{name}} · {{quantity}} {{unit}}',
+                            name: ingredient.name,
+                            quantity: formatLocalizedNumber(
+                              Math.round(ingredient.quantity * 10) / 10
+                            ),
+                            unit: t(`weeklyPlans.units.${ingredient.unit}`, {
+                              defaultValue:
+                                ingredient.unit === 'piece' ? 'pcs' : ingredient.unit,
+                            }),
+                          })}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
             ))}

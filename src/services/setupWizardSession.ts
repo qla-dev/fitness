@@ -1,12 +1,19 @@
 import type { SetupAnswers } from './personalSetup';
 import type { IconName } from '../components/Icon';
 
+export type SetupOption = { value: string; label: string; icon?: IconName };
+
 export interface SetupField {
   id: string;
   label: string;
   /** Icon shown before the field's label. */
   icon?: IconName;
-  options?: { value: string; label: string; icon?: IconName }[];
+  options?: SetupOption[];
+  /**
+   * Options that depend on other answers — the stores of the region picked
+   * a step earlier. Resolved into `options` by `visibleFields`.
+   */
+  optionsFor?: (answers: SetupAnswers) => SetupOption[];
   multiple?: boolean;
   numeric?: boolean;
   min?: number;
@@ -43,11 +50,16 @@ export function answerValues(answers: SetupAnswers, id: string): string[] {
   return typeof value === 'string' && value ? [value] : [];
 }
 
-/** The fields of a step that apply given the answers so far. */
+/**
+ * The fields of a step that apply given the answers so far, with options
+ * that depend on those answers resolved.
+ */
 export function visibleFields(step: SetupStep, answers: SetupAnswers) {
-  return step.fields.filter(
-    (field) => !field.showWhen || field.showWhen(answers)
-  );
+  return step.fields
+    .filter((field) => !field.showWhen || field.showWhen(answers))
+    .map((field) =>
+      field.optionsFor ? { ...field, options: field.optionsFor(answers) } : field
+    );
 }
 
 /**

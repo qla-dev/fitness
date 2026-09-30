@@ -90,7 +90,22 @@ export type RootStackParamList = {
   ProgramPurchase: { programId: string };
   /** The store cart, opened from the cart button in the Exercises store header. */
   /** `newList` opens it straight on a blank list, for the dashboard card. */
-  Cart: { newList?: boolean; planList?: GroceryList } | undefined;
+  Cart: { newList?: boolean } | undefined;
+  /**
+   * One grocery list, pushed: a saved one by `listId`, or an unsaved
+   * `draft`. `pickedList` is the list ShopComparison repriced for a store.
+   */
+  GroceryList: {
+    listId?: string;
+    draft?: GroceryList;
+    pickedList?: GroceryList;
+  };
+  /**
+   * Where to buy a list, compared across the region's stores. Modal, like
+   * GoalEdit. `add` saves a list a meal plan composed; `pick` hands the
+   * repriced list back to GroceryList.
+   */
+  ShopComparison: { list: GroceryList; mode: 'add' | 'pick' };
   WorkoutSetup: { sport: RecordingSport; sportId?: string };
   WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & {
     sport: RecordingSport;

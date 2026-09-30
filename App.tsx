@@ -80,6 +80,8 @@ import {
   SafeExerciseProgram,
   SafeProgramPurchase,
   SafeCart,
+  SafeGroceryList,
+  SafeShopComparison,
   SafeRunOrRide,
   SafeWorkoutSetup,
   SafeWatchWorkoutStart,
@@ -781,6 +783,21 @@ function AppContent() {
             name="Cart"
             component={SafeCart}
             options={createStackScreenOptions(t('screens.cart', { defaultValue: 'Grocery List' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          <Stack.Screen
+            name="GroceryList"
+            component={SafeGroceryList}
+            options={createStackScreenOptions(t('screens.cart', { defaultValue: 'Grocery List' }), { headerBackButtonDisplayMode: 'minimal' })}
+          />
+          {/* Modal, like GoalEdit: the one-decision sheet of where to shop. */}
+          <Stack.Screen
+            name="ShopComparison"
+            component={SafeShopComparison}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
           />
           <Stack.Screen
             name="Profile"

@@ -37,7 +37,14 @@ const day = (weekday: number, beans: number, price: number): PlanDay => ({
       carbs: 80,
       fat: 12,
       ingredients: [
-        { name: 'Beans', quantity: beans, unit: 'g', price },
+        {
+          name: 'Beans',
+          quantity: beans,
+          unit: 'g',
+          price,
+          staple: 'beans',
+          ean: '3850000000011',
+        },
         { name: 'Onions', quantity: 1, unit: 'piece', price: null },
       ],
     },
@@ -81,6 +88,15 @@ it('adds the same ingredient up across days, scaled by servings', () => {
     ['Beans', '700 g', 2.5],
     ['Onions', '4 pcs', undefined],
   ]);
+  // Staple and barcode travel with the item for the store comparison and
+  // its photo; the list keeps the plan's region and currency.
+  expect(list.items[0]).toMatchObject({
+    basePrice: 2.5,
+    staple: 'beans',
+    ean: '3850000000011',
+  });
+  expect(list.items[1].staple).toBeUndefined();
+  expect(list).toMatchObject({ region: 'HR', currency: 'EUR' });
   const monday = planGroceryList(plan, [plan.days[0]], 'Monday', 'note');
   expect(monday.items[0].quantity).toBe('400 g');
 });

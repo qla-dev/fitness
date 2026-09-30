@@ -38,6 +38,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ExerciseProgramScreen from '../screens/ExerciseProgramScreen';
 import ProgramPurchaseScreen from '../screens/ProgramPurchaseScreen';
 import CartScreen from '../screens/CartScreen';
+import GroceryListScreen from '../screens/GroceryListScreen';
+import ShopComparisonScreen from '../screens/ShopComparisonScreen';
 import RunOrRideScreen from '../screens/RunOrRideScreen';
 import WorkoutSetupScreen from '../screens/WorkoutSetupScreen';
 import WatchWorkoutStartScreen from '../screens/WatchWorkoutStartScreen';
@@ -140,6 +142,8 @@ export const SafeCoinPackages = withErrorBoundary(CoinPackagesScreen, 'CoinPacka
 export const SafeExerciseProgram = withErrorBoundary(ExerciseProgramScreen, 'ExerciseProgram', { canGoBack: true });
 export const SafeProgramPurchase = withErrorBoundary(ProgramPurchaseScreen, 'ProgramPurchase', { canGoBack: true });
 export const SafeCart = withErrorBoundary(CartScreen, 'Cart', { canGoBack: true });
+export const SafeGroceryList = withErrorBoundary(GroceryListScreen, 'GroceryList', { canGoBack: true });
+export const SafeShopComparison = withErrorBoundary(ShopComparisonScreen, 'ShopComparison', { canGoBack: true });
 export const SafeRunOrRide = withErrorBoundary(RunOrRideScreen, 'RunOrRide', { canGoBack: true });
 export const SafeWorkoutSetup = withErrorBoundary(WorkoutSetupScreen, 'WorkoutSetup', { canGoBack: true });
 export const SafeWatchWorkoutStart = withErrorBoundary(WatchWorkoutStartScreen, 'WatchWorkoutStart', { canGoBack: true });
