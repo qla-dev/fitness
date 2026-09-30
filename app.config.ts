@@ -386,6 +386,15 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // so TestFlight/production builds silently ran against the backend while
       // dev builds ran locally. Only FITNESS_DATA_MODE flips it now.
       dataMode: process.env.FITNESS_DATA_MODE || 'local',
+      // Whether the Maps key made it into this build, for `RouteMap` to decide
+      // between the real map and its placeholder. It has to live here rather
+      // than be read back from `android.config`, because `expo config --type
+      // public` strips that block as a secret — and the public config is
+      // exactly what expo-constants embeds as `assets/app.config` and serves
+      // as `Constants.expoConfig`. Reading the key there always answered "no
+      // key", so a keyed build still rendered the placeholder. Only the flag
+      // is exposed; the SDK itself reads the key from the manifest.
+      hasGoogleMapsKey: Boolean(process.env.GOOGLE_MAPS_API_KEY),
       iosAppGroup: getIosAppGroup(),
       // Public RevenueCat SDK keys (appl_…, goog_…, test_…); the secret key
       // lives on the backend only. Empty until set: purchases stay off.
