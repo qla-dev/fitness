@@ -23,9 +23,16 @@ export type MarkaiThread = {
   updated_at: string;
   message_count: number;
 };
+/**
+ * A daily goal MarkAI worked out, offered for the user to apply. Never
+ * applied by itself: applying pre-fills the goal for review.
+ */
+export type GoalProposal = { key: 'calories'; value: number };
 export type MarkaiReply = {
   text: string;
   food: FoodProposal | null;
+  /** Absent on replies from before goals were proposed. */
+  goal?: GoalProposal | null;
   food_id: string;
   log_requested: boolean;
 };

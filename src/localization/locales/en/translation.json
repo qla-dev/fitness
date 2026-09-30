@@ -5561,7 +5561,6 @@
     "stepsHint": "Walking adds up quickly. Start with a number that feels easy to hit.",
     "waterHint": "Most adults feel good around two litres. Drink more on hot or active days.",
     "sleepHint": "Most adults feel their best with seven to nine hours a night.",
-    "caloriesHint": "The energy you want to eat each day. Not sure yet? Skip it and set it later in Profile.",
     "proteinHint": "Protein helps your muscles recover and keeps you fuller for longer.",
     "placeholders": {
       "age": "Enter your age",
@@ -5584,7 +5583,9 @@
       "overweight": "Overweight",
       "obese": "Obesity",
       "caption": "From your height and weight. A few optional questions to go."
-    }
+    },
+    "calculateWithMarkai": "Calculate with MarkAI",
+    "caloriesHintMarkai": "The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile."
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",
@@ -6196,7 +6197,23 @@
     "addPhoto": "Add photo",
     "removePhoto": "Remove photo",
     "photo": "Photo",
-    "photoFailed": "Could not attach that photo. Please try another one."
+    "photoFailed": "Could not attach that photo. Please try another one.",
+    "goalPrompt": {
+      "calories": "Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply."
+    },
+    "goalCard": {
+      "calories": "Daily calorie goal",
+      "value": "{{value}} kcal",
+      "hint": "Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.",
+      "apply": "Apply to my goal"
+    },
+    "goalFacts": {
+      "currentGoal": "Current calorie goal: {{value}} kcal",
+      "goalMode": "Goal mode: {{mode}}",
+      "target": "Today's target: {{value}} kcal",
+      "maintenance": "Estimated maintenance: {{value}} kcal",
+      "activity": "Activity level: {{level}}"
+    }
   },
   "weeklyPlans": {
     "noCoins": "Not enough AI coins for a meal plan.",
@@ -6284,5 +6301,31 @@
     "matched": "{{matched}} of {{total}} items at store prices",
     "cheapest": "Cheapest",
     "selected": "Selected"
+  },
+  "calorieTarget": {
+    "modes": {
+      "maintain": "Maintain",
+      "recomp": "Recomp",
+      "cut": "Cut",
+      "highCut": "High cut",
+      "leanBulk": "Lean bulk",
+      "bulk": "Bulk",
+      "manual": "Custom"
+    },
+    "modeWithPercent": "{{mode}} {{percent}}%",
+    "adjustment": "{{amount}} kcal",
+    "openSettings": "Opens calorie settings",
+    "aiAdaptive": "AI adaptive",
+    "kcal": "{{value}} kcal",
+    "prefilled": "Filled in by MarkAI. Review it, then change the goal to apply it.",
+    "goalModeOn": "Goal mode on · {{mode}}",
+    "goalModeOff": "Goal mode off · Maintain",
+    "todayTarget": "Today's target {{target}} ({{adjustment}} from {{base}})",
+    "noChange": "Today’s target is this goal as it is.",
+    "floorTitle": "Safety floor holds the target",
+    "floorBody": "Goal mode would go below {{floor}}, so today stops there.",
+    "adaptiveBody": "Maintenance is estimated at {{base}} from your body and activity, and adapts as you track.",
+    "askMarkai": "Work it out with MarkAI",
+    "askMarkaiBody": "MarkAI calculates a goal from your details. You apply it yourself."
   }
 }

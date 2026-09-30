@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  adjustmentLabel,
+  CalorieModeChips,
+  isCalorieTargetActive,
+} from './CalorieTargetChips';
+import {
   Pressable,
   ScrollView,
   View,
@@ -463,9 +468,18 @@ export default function DiaryNutritionCard({
     // every child, and carrying one here stacked on top of it.
     <View className="bg-surface rounded-2xl px-4 pt-3 pb-4">
       <View className="flex-row items-center justify-between mb-3">
-        <DashboardCardTitle>
-          {t('diaryNutrition.title', { defaultValue: 'Nutrition' })}
-        </DashboardCardTitle>
+        <View className="flex-row items-center gap-2 flex-1 mr-3">
+          <DashboardCardTitle>
+            {t('diaryNutrition.title', { defaultValue: 'Nutrition' })}
+          </DashboardCardTitle>
+          <CalorieModeChips
+            info={summary.calorieTarget}
+            onPress={() => {
+              fireSelectionHaptic();
+              navigation.navigate('CalorieSettings');
+            }}
+          />
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={
@@ -547,6 +561,27 @@ export default function DiaryNutritionCard({
             />
           </View>
 
+          {/* What Goal Mode and the safety floor did to the goal, above the
+              figure it changed. */}
+          {!loading &&
+          summary.calorieTarget &&
+          isCalorieTargetActive(summary.calorieTarget) &&
+          summary.calorieTarget.adjustment !== 0 ? (
+            <View
+              pointerEvents="none"
+              className="absolute inset-x-0 items-center"
+              style={{ top: arcSize / 2 - 54 }}
+            >
+              <View className="rounded-full bg-background px-2 py-0.5">
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: calorieColor }}
+                >
+                  {adjustmentLabel(t, summary.calorieTarget)}
+                </Text>
+              </View>
+            </View>
+          ) : null}
           {/* In the opening the arcs leave, starting just above their centre. */}
           <Pressable
             accessibilityRole="button"

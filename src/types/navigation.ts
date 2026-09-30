@@ -57,6 +57,16 @@ export type RootStackParamList = {
         thread?: { id: string; mode: 'macros' | 'training' | 'free' };
         /** A timestamp, so two New chat taps in a row are two changes. */
         newChat?: number;
+        /**
+         * A new conversation that sends this prompt as soon as it can.
+         * `returnToSetup` hands a proposed goal back to the questionnaire
+         * that asked for it, instead of opening the goal.
+         */
+        preset?: {
+          prompt: string;
+          mode: 'macros' | 'training' | 'free';
+          returnToSetup?: boolean;
+        };
       }
     | undefined;
   /** Conversation history. Modal, like GoalEdit. */
@@ -380,7 +390,8 @@ export type RootStackParamList = {
    * One daily goal, set with steppers. A modal route rather than a sheet so
    * its header items are the system's, like every other modal in the app.
    */
-  GoalEdit: { goalKey: string };
+  /** `prefill`: a value proposed elsewhere (MarkAI), shown for review, not saved. */
+  GoalEdit: { goalKey: string; prefill?: number };
   /** Hydration for one day, counted in servings. Modal, like GoalEdit. */
   WaterEdit: { date: string };
   /** One check-in measurement for one day. Modal, like GoalEdit. */

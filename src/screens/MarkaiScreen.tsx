@@ -49,8 +49,12 @@ import {
   prepareMarkaiImage,
   type MarkaiMessage,
   type MarkaiMode,
+  type GoalProposal,
   type MarkaiReply,
 } from '../services/online/markai';
+import { offerSetupAnswer } from '../services/setupWizardSession';
+import { fireSelectionHaptic } from '../services/haptics';
+import { formatLocalizedNumber } from '../localization';
 import {
   saveMarkaiPhoto,
   withSavedMarkaiPhotos,
@@ -84,6 +88,13 @@ function MarkaiContent() {
   const [mode, setMode] = useState<Mode>('free');
   const [loading, setLoading] = useState(Boolean(accountId));
   const route = useRoute<RouteProp<RootStackParamList, 'MarkAI'>>();
+  // A prompt handed over by another screen (a goal to work out), sent in a
+  // fresh conversation once the chat is ready. Read before the saved
+  // conversation loads, so opening with one never reopens the last chat.
+  const pendingPreset = useRef(route.params?.preset ?? null);
+  // Opened by the questionnaire: a proposed goal goes back to it.
+  const returnToSetup = useRef(!!route.params?.preset?.returnToSetup);
+  const accent = useCSSVariable('--color-accent-primary') as string;
   // The message on its way, kept for a retry. A photo-only message has an
   // empty prompt, so this is an object rather than the prompt string.
   const [pending, setPending] = useState<{
@@ -167,9 +178,10 @@ function MarkaiContent() {
       const active: { id: string; mode: Mode } | null = saved
         ? JSON.parse(saved)
         : null;
-      const id =
-        active?.id ??
-        (await AsyncStorage.getItem('@qla/markai/' + accountId + '/macros'));
+      const id = pendingPreset.current
+        ? null
+        : (active?.id ??
+          (await AsyncStorage.getItem('@qla/markai/' + accountId + '/macros')));
       if (!alive) return;
       if (!id) {
         setConversation(randomUUID());
@@ -257,14 +269,45 @@ function MarkaiContent() {
   // clear it, so a re-render or a later visit does not replay it.
   const historyChoice = route.params;
   useEffect(() => {
-    if (!historyChoice?.thread && !historyChoice?.newChat) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the params are navigation's state, not this component's.
-    if (historyChoice.thread) void selectThread(historyChoice.thread);
+    if (
+      !historyChoice?.thread &&
+      !historyChoice?.newChat &&
+      !historyChoice?.preset
+    )
+      return;
+    if (historyChoice.preset) {
+      pendingPreset.current = historyChoice.preset;
+      returnToSetup.current = !!historyChoice.preset.returnToSetup;
+      // While the first load runs it opens a fresh conversation itself.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the params are navigation's state, not this component's.
+      if (loading) setMode(historyChoice.preset.mode);
+      else newChat(historyChoice.preset.mode);
+    } else if (historyChoice.thread) void selectThread(historyChoice.thread);
     else newChat();
-    navigation.setParams({ thread: undefined, newChat: undefined });
+    navigation.setParams({
+      thread: undefined,
+      newChat: undefined,
+      preset: undefined,
+    });
     // Only a new choice should run this, not the handlers being recreated.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyChoice]);
+  // A proposed goal is never applied here. From the questionnaire it goes
+  // back into the question for review; anywhere else it opens the goal,
+  // filled in, for the user to apply.
+  const applyGoal = (goal: GoalProposal) => {
+    Keyboard.dismiss();
+    fireSelectionHaptic();
+    if (returnToSetup.current) {
+      offerSetupAnswer(goal.key, String(Math.round(goal.value)));
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('GoalEdit', {
+      goalKey: goal.key,
+      prefill: Math.round(goal.value),
+    });
+  };
   const reviewFood = (reply: MarkaiReply) => {
     if (!reply.food) return;
     Keyboard.dismiss();
@@ -381,6 +424,16 @@ function MarkaiContent() {
       setBusy(false);
     }
   };
+  // The handed-over prompt goes out once there is a conversation to send
+  // it in and an account to send it from.
+  useEffect(() => {
+    const preset = pendingPreset.current;
+    if (!preset || loading || busy || !conversation || !session) return;
+    pendingPreset.current = null;
+    void send(preset.prompt, null);
+    // send is recreated each render; these are the conditions it waits on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation, loading, busy, session]);
   const empty = !messages.length && !pending && !loading;
   // Keeps a followed chat on its last line, whichever of the content and the
   // viewport was measured last.
@@ -507,7 +560,7 @@ function MarkaiContent() {
               {message.reply.food && typingId !== message.id && (
                 <View className="bg-surface rounded-2xl p-4 gap-3">
                   <View className="flex-row items-center gap-2">
-                    <Icon name="food" size={24} />
+                    <Icon name="food" size={24} color={accent} />
                     <Text className="text-text-primary text-lg font-semibold">
                       {message.reply.food.name}
                     </Text>
@@ -527,6 +580,42 @@ function MarkaiContent() {
                     onPress={() => reviewFood(message.reply)}
                   >
                     {t('markai.log', { defaultValue: 'Log food' })}
+                  </Button>
+                </View>
+              )}
+              {message.reply.goal && typingId !== message.id && (
+                <View className="bg-surface rounded-2xl p-4 gap-3">
+                  <View className="flex-row items-center gap-2">
+                    <Icon name="flame" size={24} color={accent} />
+                    <Text className="text-text-primary text-lg font-semibold">
+                      {t('markai.goalCard.calories', {
+                        defaultValue: 'Daily calorie goal',
+                      })}
+                    </Text>
+                  </View>
+                  <Text className="text-text-primary text-3xl font-bold">
+                    {t('markai.goalCard.value', {
+                      defaultValue: '{{value}} kcal',
+                      value: formatLocalizedNumber(
+                        Math.round(message.reply.goal.value)
+                      ),
+                    })}
+                  </Text>
+                  <Text className="text-text-secondary">
+                    {t('markai.goalCard.hint', {
+                      defaultValue:
+                        'Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.',
+                    })}
+                  </Text>
+                  <Button
+                    disabled={busy}
+                    onPress={() =>
+                      message.reply.goal && applyGoal(message.reply.goal)
+                    }
+                  >
+                    {t('markai.goalCard.apply', {
+                      defaultValue: 'Apply to my goal',
+                    })}
                   </Button>
                 </View>
               )}

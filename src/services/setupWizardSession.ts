@@ -32,6 +32,13 @@ export interface SetupField {
    */
   placeholder?: string;
   showWhen?: (answers: SetupAnswers) => boolean;
+  /**
+   * Hands the question to MarkAI: the wizard offers a button that opens a
+   * chat with `prompt(facts)`, the facts being the answers given so far as
+   * "Label: value" lines. A value MarkAI proposes comes back through
+   * `offerSetupAnswer` and fills the field for review.
+   */
+  assist?: { label: string; prompt: (facts: string[]) => string };
 }
 export interface SetupStep {
   id: string;
@@ -147,4 +154,19 @@ export function isSetupWizardOpen() {
 
 export function clearSetupWizardSession(session: SetupWizardSession | null) {
   if (activeSession === session) activeSession = null;
+}
+
+// An answer worked out elsewhere (MarkAI) for the open wizard, taken the
+// next time the wizard is focused. Module state for the same reason as the
+// session: route params cannot carry it back into a modal behind a chat.
+let offeredAnswers: SetupAnswers = {};
+
+export function offerSetupAnswer(id: string, value: string) {
+  offeredAnswers = { ...offeredAnswers, [id]: value };
+}
+
+export function takeOfferedSetupAnswers(): SetupAnswers {
+  const taken = offeredAnswers;
+  offeredAnswers = {};
+  return taken;
 }

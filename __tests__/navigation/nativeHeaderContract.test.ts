@@ -10,6 +10,8 @@ const NATIVE_TABS_ROUTE_EXCLUSIONS = {
     'Conversation history on the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   CoinPackages:
     'AI coin packages on the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
+  ShopComparison:
+    'Where to shop for a grocery list, on the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   Onboarding: 'First-run setup route shown before the tab host exists.',
   Macros:
     'Legacy alias kept so the old Tracker route still opens the MarkAI chat; the same screen above the tab host, like MarkAI itself.',

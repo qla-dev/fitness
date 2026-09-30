@@ -6,6 +6,7 @@ import {
 } from '../services/setupWizardSession';
 import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
 import type { Vendor } from '../services/online/prices';
+import { calorieGoalPrompt } from '../services/markaiGoalPrompt';
 
 /** A one-question step headed by the field's own label. */
 function questionStep(field: SetupField, hint: string): SetupStep {
@@ -290,10 +291,16 @@ function profileQuestions(t: TFunction): SetupStep[] {
         numeric: true,
         min: 1,
         max: 10000,
+        assist: {
+          label: t('setup.calculateWithMarkai', {
+            defaultValue: 'Calculate with MarkAI',
+          }),
+          prompt: (facts) => calorieGoalPrompt(t, facts),
+        },
       },
-      t('setup.caloriesHint', {
+      t('setup.caloriesHintMarkai', {
         defaultValue:
-          'The energy you want to eat each day. Not sure yet? Skip it and set it later in Profile.',
+          'The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile.',
       })
     ),
     questionStep(

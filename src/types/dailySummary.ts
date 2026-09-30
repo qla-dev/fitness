@@ -5,6 +5,7 @@ import type {
 } from '@workspace/shared';
 import type { FoodEntry } from './foodEntries';
 import type { DailyGoals } from './goals';
+import type { CalorieTargetInfo } from '../services/calorieTarget';
 
 export interface MacroSummary {
   consumed: number;
@@ -56,6 +57,11 @@ export interface DailySummary {
   supplementTotals: SupplementTotals;
   exerciseEntries: ExerciseSessionResponse[];
   calorieBalance: CalorieBalance;
+  /**
+   * What the Calorie settings did to the calorie goal: Goal Mode, Calorie
+   * Mode, safety floor. `calorieGoal` is already the resulting target.
+   */
+  calorieTarget?: CalorieTargetInfo | null;
   goals: DailyGoals;
   /** Pre-aggregated custom nutrient totals for the day (name → consumed value). */
   customNutrientTotals: Record<string, number>;

@@ -22,6 +22,7 @@ import {
   addSupplementCustomNutrients,
 } from '@workspace/shared';
 import type { WaterIntake } from '../types/measurements';
+import type { CalorieTargetInfo } from './calorieTarget';
 
 export interface DailySummaryRawData {
   goals: DailyGoals;
@@ -33,6 +34,7 @@ export interface DailySummaryRawData {
   /** Resting + active energy for the day, where the provider reported it. */
   totalCaloriesBurned?: number;
   calorieBalance?: CalorieBalance;
+  calorieTarget?: CalorieTargetInfo | null;
   supplementTotals?: SupplementTotals;
   adjustedGoals?: {
     calories: number;
@@ -57,6 +59,7 @@ export async function loadDailySummaryRawData(
     hourlyActivity: data.hourlyActivity,
     totalCaloriesBurned: data.totalCaloriesBurned,
     calorieBalance: data.calorieBalance,
+    calorieTarget: data.calorieTarget ?? null,
     supplementTotals: data.supplementTotals,
     adjustedGoals: data.adjustedGoals ?? null,
   };
@@ -75,6 +78,7 @@ export function buildDailySummary(
     hourlyActivity,
     totalCaloriesBurned,
     calorieBalance,
+    calorieTarget,
     supplementTotals,
     adjustedGoals,
   } = raw;
@@ -153,6 +157,7 @@ export function buildDailySummary(
     supplementTotals: supplements,
     exerciseEntries,
     calorieBalance: resolvedCalorieBalance,
+    calorieTarget: calorieTarget ?? null,
     goals,
     customNutrientTotals: addSupplementCustomNutrients(
       calculateCustomNutrientTotals(foodEntries),

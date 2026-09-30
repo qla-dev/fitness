@@ -290,3 +290,23 @@ test('meal logging scales recipe ingredients once and cascades deletes', async (
     (await request('/api/daily-summary?date=' + date)).foodEntries
   ).toEqual([]);
 });
+
+test('goal mode moves the day’s calorie target and says how', async () => {
+  const today = getTodayDate();
+  await request('/api/goals', 'PUT', { calories: 2000 });
+  const plain = await request(`/api/daily-summary?date=${today}`);
+  expect(plain.adjustedGoals).toBeNull();
+
+  await request('/api/user-preferences', 'PUT', {
+    goal_mode: 'cut',
+    calorie_goal_adjustment_mode: 'fixed',
+  });
+  const cut = await request(`/api/daily-summary?date=${today}`);
+  expect(cut.adjustedGoals).toMatchObject({ calories: 1700 });
+  expect(cut.calorieTarget).toMatchObject({
+    base: 2000,
+    target: 1700,
+    goalMode: 'cut',
+    percent: -15,
+  });
+});

@@ -1,4 +1,5 @@
 import { apiFetch } from './apiClient';
+import type { CalorieTargetInfo } from '../calorieTarget';
 import type { DailyGoals } from '../../types/goals';
 import type { FoodEntry } from '../../types/foodEntries';
 import type {
@@ -22,6 +23,8 @@ export interface DailySummaryApiResponse {
   /** Resting + active energy for the day, as the provider reported it. */
   totalCaloriesBurned?: number;
   calorieBalance?: CalorieBalance;
+  /** How the Calorie settings moved the day's calorie goal; device data only. */
+  calorieTarget?: CalorieTargetInfo | null;
   // Optional: a client can outrun the server it talks to, and supplement totals only exist
   // on servers new enough to send them.
   supplementTotals?: SupplementTotals;

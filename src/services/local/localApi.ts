@@ -23,6 +23,12 @@ import type { LocalRequest } from './request';
 import { goalsForDate, saveGoalsFromToday } from './goalHistory';
 import { getTodayDate } from '../../utils/dateUtils';
 import {
+  ageOn,
+  resolveCalorieTarget,
+  type CalorieTargetInfo,
+} from '../calorieTarget';
+import type { UserPreferences } from '../../types/preferences';
+import {
   importedWater,
   localHourlyActivity,
   localTotalCalories,
@@ -127,8 +133,22 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     );
   if (path === '/api/daily-summary') {
     const date = query.get('date') ?? '';
+    const goals = goalsForDate(db, date);
+    const calorieTarget = localCalorieTarget(db, date, goals);
     return {
-      goals: goalsForDate(db, date),
+      goals,
+      calorieTarget,
+      // Goal Mode, Calorie Mode and the safety floor move the day's calorie
+      // target; the macros keep their own goals.
+      adjustedGoals:
+        calorieTarget && calorieTarget.target !== goals.calories
+          ? {
+              calories: calorieTarget.target,
+              protein: Number(goals.protein) || 0,
+              carbs: Number(goals.carbs) || 0,
+              fat: Number(goals.fat) || 0,
+            }
+          : null,
       foodEntries: table(db, 'entries').filter(
         (row) => row.entry_date === date
       ),
@@ -441,4 +461,33 @@ export async function localApiFetch<T>(options: {
     (db) => route(db, request) as T,
     method === 'GET' ? undefined : { method, endpoint: options.endpoint, body }
   );
+}
+
+/**
+ * The day's calorie target from the stored goal, the Calorie settings and
+ * the latest body measurements up to that day.
+ */
+function localCalorieTarget(
+  db: LocalDatabase,
+  date: string,
+  goals: LocalRecord
+): CalorieTargetInfo | null {
+  const measurements = localMeasurements(db, { start: '1900-01-01', end: date })
+    .slice()
+    .sort((a, b) => String(b.entry_date).localeCompare(String(a.entry_date)));
+  const latest = (field: 'weight' | 'height') => {
+    const value = Number(
+      measurements.find((row) => row[field] != null)?.[field]
+    );
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+  const profile = table(db, 'profile')[0];
+  return resolveCalorieTarget({
+    preferences: table(db, 'preferences')[0] as UserPreferences | undefined,
+    baseGoal: Number(goals.calories) || 0,
+    weightKg: latest('weight'),
+    heightCm: latest('height'),
+    age: ageOn(profile?.date_of_birth, date),
+    gender: typeof profile?.gender === 'string' ? profile.gender : null,
+  });
 }

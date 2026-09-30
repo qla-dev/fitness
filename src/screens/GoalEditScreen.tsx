@@ -30,6 +30,10 @@ import { weightFromKg, weightToKg } from '../utils/unitConversions';
 import { getTodayDate } from '../utils/dateUtils';
 import { formatLocalizedNumber } from '../localization';
 import { fireSelectionHaptic } from '../services/haptics';
+import { useDailySummary } from '../hooks/useDailySummary';
+import { calorieGoalPrompt } from '../services/markaiGoalPrompt';
+import CalorieGoalContext from '../components/CalorieGoalContext';
+import { goalModeLabel } from '../components/CalorieTargetChips';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /**
@@ -45,7 +49,7 @@ export default function GoalEditScreen({
   navigation,
   route,
 }: RootStackScreenProps<'GoalEdit'>) {
-  const { goalKey } = route.params;
+  const { goalKey, prefill } = route.params;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { customNutrients } = useCustomNutrients();
@@ -67,6 +71,12 @@ export default function GoalEditScreen({
       ? macroColor
       : (glyph?.color ?? accentPrimary);
   const today = getTodayDate();
+  // What the Calorie settings do to this goal today, told under it.
+  const { summary } = useDailySummary({
+    date: today,
+    enabled: goalKey === 'calories',
+  });
+  const calorieTarget = summary?.calorieTarget ?? null;
   const goalsQuery = useQuery({
     queryKey: goalsQueryKey(today),
     queryFn: () => fetchDailyGoals(today),
@@ -103,7 +113,10 @@ export default function GoalEditScreen({
   // The stored value arrives with its query, usually after the first render.
   // Holding the edit as a nullable draft lets the number show what is on file
   // until the user changes it, without an effect copying one into the other.
-  const [draft, setDraft] = useState<string | null>(null);
+  // A value MarkAI worked out opens as the draft: shown, not saved.
+  const [draft, setDraft] = useState<string | null>(
+    prefill === undefined ? null : String(prefill)
+  );
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const saving = useRef(false);
@@ -207,6 +220,71 @@ export default function GoalEditScreen({
         onDecrement={() => step(-1)}
         onIncrement={() => step(1)}
       />
+      {goalKey === 'calories' ? (
+        <CalorieGoalContext
+          info={calorieTarget}
+          prefilled={prefill !== undefined}
+          onOpenSettings={() => navigation.navigate('CalorieSettings')}
+          onAskMarkai={() =>
+            navigation.push('MarkAI', {
+              preset: {
+                mode: 'free',
+                prompt: calorieGoalPrompt(t, [
+                  t('markai.goalFacts.currentGoal', {
+                    defaultValue: 'Current calorie goal: {{value}} kcal',
+                    value: formatLocalizedNumber(numeric || 0),
+                  }),
+                  ...(calorieTarget
+                    ? [
+                        t('markai.goalFacts.goalMode', {
+                          defaultValue: 'Goal mode: {{mode}}',
+                          mode: goalModeLabel(t, calorieTarget),
+                        }),
+                        t('markai.goalFacts.target', {
+                          defaultValue: "Today's target: {{value}} kcal",
+                          value: formatLocalizedNumber(calorieTarget.target),
+                        }),
+                        ...(calorieTarget.adaptive
+                          ? [
+                              t('markai.goalFacts.maintenance', {
+                                defaultValue:
+                                  'Estimated maintenance: {{value}} kcal',
+                                value: formatLocalizedNumber(
+                                  calorieTarget.base
+                                ),
+                              }),
+                            ]
+                          : []),
+                      ]
+                    : []),
+                  t('markai.goalFacts.activity', {
+                    defaultValue: 'Activity level: {{level}}',
+                    level:
+                      {
+                        none: t('calorieSettings.activity.none', {
+                          defaultValue: 'None (x1.0)',
+                        }),
+                        not_much: t('calorieSettings.activity.sedentary', {
+                          defaultValue: 'Sedentary (x1.2)',
+                        }),
+                        light: t('calorieSettings.activity.light', {
+                          defaultValue: 'Lightly Active (x1.375)',
+                        }),
+                        moderate: t('calorieSettings.activity.moderate', {
+                          defaultValue: 'Moderately Active (x1.55)',
+                        }),
+                        heavy: t('calorieSettings.activity.heavy', {
+                          defaultValue: 'Very Active (x1.725)',
+                        }),
+                      }[preferences?.activity_level ?? 'not_much'] ??
+                      preferences?.activity_level,
+                  }),
+                ]),
+              },
+            })
+          }
+        />
+      ) : null}
       {failed ? (
         <View className="mt-4">
           <Text

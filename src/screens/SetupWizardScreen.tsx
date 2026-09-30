@@ -10,6 +10,7 @@ import { useCSSVariable } from 'uniwind';
 import FooterCTA, { footerCtaKeyboardTrim } from '../components/ui/FooterCTA';
 import PillInput from '../components/ui/PillInput';
 import FlashOverlay from '../components/ui/FlashOverlay';
+import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
@@ -23,6 +24,7 @@ import {
   answerValues,
   getSetupWizardSession,
   isFirstRoundAnswered,
+  takeOfferedSetupAnswers,
   visibleFields,
   type SetupFlash,
   type SetupField,
@@ -163,6 +165,47 @@ export default function SetupWizardScreen({
           ...range,
         });
   };
+
+  // The answers so far, as the review lists them, for MarkAI to work from.
+  const describeAnswers = (except: string) =>
+    allSteps
+      .flatMap((candidate) => visibleFields(candidate, answers))
+      .filter((field) => field.id !== except)
+      .flatMap((field) => {
+        const values = answerValues(answers, field.id).filter((v) => v.trim());
+        if (!values.length) return [];
+        const unit = fieldUnit(field, answers);
+        const shown = values.map(
+          (v) =>
+            field.options?.find((o) => o.value === v)?.label ??
+            (unit ? `${v} ${unit}` : v)
+        );
+        return [`${field.label}: ${shown.join(', ')}`];
+      });
+  // Pushed, never navigated to: a chat already in the stack below this modal
+  // would be reached by popping the wizard.
+  const askMarkai = (field: SetupField) => {
+    if (!field.assist) return;
+    Keyboard.dismiss();
+    fireSelectionHaptic();
+    navigation.push('MarkAI', {
+      preset: {
+        prompt: field.assist.prompt(describeAnswers(field.id)),
+        mode: 'free',
+        returnToSetup: true,
+      },
+    });
+  };
+  // What MarkAI proposed comes back on return, into the field, for review.
+  useEffect(
+    () =>
+      navigation.addListener('focus', () => {
+        const offered = takeOfferedSetupAnswers();
+        if (Object.keys(offered).length)
+          setAnswers((current) => ({ ...current, ...offered }));
+      }),
+    [navigation]
+  );
 
   const close = () => {
     leaving.current = true;
@@ -460,6 +503,16 @@ export default function SetupWizardScreen({
                       editable={!busy}
                     />
                   )}
+                  {field.assist ? (
+                    <Button
+                      variant="secondary"
+                      className="mt-3"
+                      disabled={busy}
+                      onPress={() => askMarkai(field)}
+                    >
+                      {field.assist.label}
+                    </Button>
+                  ) : null}
                 </View>
               ))
             : allSteps
