@@ -5590,10 +5590,13 @@
       "obese": "Obesity",
       "caption": "From your height and weight. A few optional questions to go."
     },
-    "calculateWithMarkai": "Calculate with MarkAI",
-    "caloriesHintMarkai": "The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile.",
-    "calculateAllMacros": "Calculate all macros · {{coins}} coins",
-    "proteinHintMarkai": "Protein helps your muscles recover and keeps you fuller for longer. MarkAI can work it out from your answers."
+    "caloriesHintShort": "The energy you want to eat each day. You can also skip it and set it later in Profile.",
+    "proteinHintShort": "Protein helps your muscles recover and keeps you fuller for longer.",
+    "assistMarkaiLink": "Let MarkAI work it out",
+    "assistCalories": "Not sure? {{link}} from your answers, for 1 coin.",
+    "assistProtein": "Not sure? {{link}} from your answers, for 1 coin.",
+    "assistAllMacrosLink": "plan all your macros",
+    "assistAllMacros": "Or {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins."
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",

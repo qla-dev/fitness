@@ -33,13 +33,17 @@ export interface SetupField {
   placeholder?: string;
   showWhen?: (answers: SetupAnswers) => boolean;
   /**
-   * Hands the question to MarkAI: the wizard offers a button per assist
-   * that opens a chat with `prompt(facts)`, the facts being the answers given so far as
+   * Hands the question to MarkAI: the wizard writes each assist as a sentence
+   * under the input whose link opens a chat with `prompt(facts)`, the facts
+   * being the answers given so far as
    * "Label: value" lines. A value MarkAI proposes comes back through
    * `offerSetupAnswer` and fills the field for review.
    */
   assists?: SetupAssist[];
 }
+
+/** Stands in for an assist's link inside its translated sentence. */
+export const ASSIST_LINK = '\u0000';
 
 /**
  * One way MarkAI can answer a question. `task` marks a priced request: the
@@ -47,7 +51,12 @@ export interface SetupField {
  * answer, this question's included.
  */
 export interface SetupAssist {
-  label: string;
+  /**
+   * The whole sentence, translated as one, with `ASSIST_LINK` passed as its
+   * `{{link}}` where `link` is drawn as the tappable words.
+   */
+  sentence: string;
+  link: string;
   prompt: (facts: string[]) => string;
   task?: 'all_macros';
 }
@@ -58,8 +67,8 @@ export interface SetupStep {
   fields: SetupField[];
   /**
    * Part of the first round, answered before anything optional: no Skip,
-   * and Continue waits for an answer. Only while that round was not
-   * already complete when the wizard opened; see `firstRound`.
+   * and Continue waits for an answer, whether or not the round was already
+   * answered when the wizard opened; see `firstRound`.
    */
   required?: boolean;
 }
@@ -131,20 +140,6 @@ export interface SetupWizardSession {
     label: string;
     flash: (answers: SetupAnswers) => SetupFlash | null;
   };
-}
-
-/** True when every visible field of the required steps has an answer. */
-export function isFirstRoundAnswered(
-  steps: SetupStep[],
-  answers: SetupAnswers
-) {
-  return steps
-    .filter((step) => step.required)
-    .every((step) =>
-      visibleFields(step, answers).every((field) =>
-        answerValues(answers, field.id).some((value) => value.trim() !== '')
-      )
-    );
 }
 
 // Route params must stay serializable, so the opener parks its callbacks here

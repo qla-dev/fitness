@@ -119,9 +119,6 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
           className="flex-row items-center px-4"
           style={{ minHeight: 66, gap: 14 }}
         >
-          {/* The leading slot stays, empty, so the text lines up with the
-              rows above and the divider indent. */}
-          <View style={{ width: 62 }} />
           <View className="flex-1">
             <Text className="text-text-primary text-base font-semibold">
               {t('profile.clients', { defaultValue: 'My Clients' })}

@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import SetupWizardScreen from '../../src/screens/SetupWizardScreen';
 import { fireSelectionHaptic } from '../../src/services/haptics';
 import {
+  ASSIST_LINK,
   getSetupWizardSession,
   isSetupComplete,
   openSetupWizardSession,
@@ -244,7 +245,7 @@ describe('SetupWizardScreen', () => {
       expect(screen.getByText('Skip')).toBeTruthy();
     });
 
-    it('is a normal tour when it was answered before', () => {
+    it('stays unskippable and still flashes when it was answered before', async () => {
       openSetupWizardSession({
         steps: round,
         initial: { a: ['lose'], b: '30' },
@@ -264,7 +265,15 @@ describe('SetupWizardScreen', () => {
           route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
         />
       );
-      expect(screen.getByText('Skip')).toBeTruthy();
+      expect(screen.queryByText('Skip')).toBeNull();
+      await act(async () => {
+        fireEvent.press(screen.getByText('Continue (1)'));
+      });
+      expect(screen.queryByText('Skip')).toBeNull();
+      await act(async () => {
+        fireEvent.press(screen.getByText('Calculate my BMI'));
+      });
+      expect(screen.getByText('22.9')).toBeTruthy();
     });
   });
 
@@ -282,9 +291,14 @@ describe('SetupWizardScreen', () => {
             numeric: true,
             unit: 'kcal',
             assists: [
-              { label: 'Calculate with MarkAI', prompt: (f) => f.join('|') },
               {
-                label: 'Calculate all macros · 10 coins',
+                sentence: `Not sure? ${ASSIST_LINK} from your answers.`,
+                link: 'Calculate with MarkAI',
+                prompt: (f) => f.join('|'),
+              },
+              {
+                sentence: `Or ${ASSIST_LINK} for 10 coins.`,
+                link: 'Calculate all macros · 10 coins',
                 prompt: (f) => 'ALL ' + f.join('|'),
                 task: 'all_macros',
               },

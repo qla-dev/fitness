@@ -10,7 +10,6 @@ import { useCSSVariable } from 'uniwind';
 import FooterCTA, { footerCtaKeyboardTrim } from '../components/ui/FooterCTA';
 import PillInput from '../components/ui/PillInput';
 import FlashOverlay from '../components/ui/FlashOverlay';
-import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { formatLocalizedNumber } from '../localization';
@@ -22,8 +21,8 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   clearSetupWizardSession,
   answerValues,
+  ASSIST_LINK,
   getSetupWizardSession,
-  isFirstRoundAnswered,
   takeOfferedSetupAnswers,
   visibleFields,
   type SetupFlash,
@@ -100,15 +99,9 @@ export default function SetupWizardScreen({
   const leaving = useRef(false);
   const step = steps[index];
   const fields = step ? visibleFields(step, answers) : [];
-  // The first round is required only when it was not already answered on
-  // opening; someone who filled it in before tours it freely, without the
-  // flash at its end.
-  const [enforced] = useState(
-    () =>
-      !!session?.firstRound &&
-      !singleStep &&
-      !isFirstRoundAnswered(allSteps, initial)
-  );
+  // The first round is never skippable on the full tour, and its last answer
+  // always flashes the result, whether or not it was answered before.
+  const enforced = !!session?.firstRound && !singleStep;
   const mandatory = enforced && !!step?.required;
   const lastRequired = enforced
     ? steps.map((candidate) => !!candidate.required).lastIndexOf(true)
@@ -504,17 +497,32 @@ export default function SetupWizardScreen({
                       editable={!busy}
                     />
                   )}
-                  {field.assists?.map((assist) => (
-                    <Button
-                      key={assist.label}
-                      variant={assist.task ? 'outline' : 'secondary'}
-                      className="mt-3"
-                      disabled={busy}
-                      onPress={() => askMarkai(field, assist)}
-                    >
-                      {assist.label}
-                    </Button>
-                  ))}
+                  {/* One paragraph under the input, each assist a sentence
+                      whose link opens MarkAI: help offered, not two more
+                      buttons competing with Continue. */}
+                  {field.assists?.length ? (
+                    <Text className="text-text-secondary text-sm leading-5">
+                      {field.assists.map((assist, at) => {
+                        const [before, after = ''] =
+                          assist.sentence.split(ASSIST_LINK);
+                        return (
+                          <Text key={assist.link + at}>
+                            {at > 0 ? ' ' : ''}
+                            {before}
+                            <Text
+                              accessibilityRole="link"
+                              disabled={busy}
+                              onPress={() => askMarkai(field, assist)}
+                              className="text-accent-primary font-semibold"
+                            >
+                              {assist.link}
+                            </Text>
+                            {after}
+                          </Text>
+                        );
+                      })}
+                    </Text>
+                  ) : null}
                 </View>
               ))
             : allSteps

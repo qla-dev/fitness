@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import {
   answerValues,
+  ASSIST_LINK,
   type SetupAssist,
   type SetupField,
   type SetupStep,
@@ -43,13 +44,21 @@ function profileQuestions(t: TFunction): SetupStep[] {
   // Offered on both the calorie and the protein question: one priced
   // request that answers calories, protein, carbs and fat together.
   const allMacros: SetupAssist = {
-    label: t('setup.calculateAllMacros', {
-      defaultValue: 'Calculate all macros · {{coins}} coins',
+    sentence: t('setup.assistAllMacros', {
+      defaultValue:
+        'Or {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins.',
+      link: ASSIST_LINK,
       coins: MARKAI_TASK_COINS.all_macros,
+    }),
+    link: t('setup.assistAllMacrosLink', {
+      defaultValue: 'plan all your macros',
     }),
     prompt: (facts) => macroPlanPrompt(t, facts),
     task: 'all_macros',
   };
+  const markaiLink = t('setup.assistMarkaiLink', {
+    defaultValue: 'Let MarkAI work it out',
+  });
   return [
     {
       id: 'focus',
@@ -309,17 +318,20 @@ function profileQuestions(t: TFunction): SetupStep[] {
         max: 10000,
         assists: [
           {
-            label: t('setup.calculateWithMarkai', {
-              defaultValue: 'Calculate with MarkAI',
+            sentence: t('setup.assistCalories', {
+              defaultValue:
+                'Not sure? {{link}} from your answers, for 1 coin.',
+              link: ASSIST_LINK,
             }),
+            link: markaiLink,
             prompt: (facts) => calorieGoalPrompt(t, facts),
           },
           allMacros,
         ],
       },
-      t('setup.caloriesHintMarkai', {
+      t('setup.caloriesHintShort', {
         defaultValue:
-          'The energy you want to eat each day. Not sure? MarkAI can work it out from your answers, or skip it and set it later in Profile.',
+          'The energy you want to eat each day. You can also skip it and set it later in Profile.',
       })
     ),
     questionStep(
@@ -336,17 +348,20 @@ function profileQuestions(t: TFunction): SetupStep[] {
         max: 500,
         assists: [
           {
-            label: t('setup.calculateWithMarkai', {
-              defaultValue: 'Calculate with MarkAI',
+            sentence: t('setup.assistProtein', {
+              defaultValue:
+                'Not sure? {{link}} from your answers, for 1 coin.',
+              link: ASSIST_LINK,
             }),
+            link: markaiLink,
             prompt: (facts) => proteinGoalPrompt(t, facts),
           },
           allMacros,
         ],
       },
-      t('setup.proteinHintMarkai', {
+      t('setup.proteinHintShort', {
         defaultValue:
-          'Protein helps your muscles recover and keeps you fuller for longer. MarkAI can work it out from your answers.',
+          'Protein helps your muscles recover and keeps you fuller for longer.',
       })
     ),
   ];
