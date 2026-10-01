@@ -643,6 +643,7 @@ function MarkaiContent() {
               <AppleSignInButton
                 variant="signIn"
                 disabled={apple.busy}
+                busy={apple.busy}
                 onPress={() => void apple.signIn()}
               />
             ) : (

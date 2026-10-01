@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
@@ -24,10 +24,16 @@ const APPLE_BLACK = '#000000';
 export default function AppleSignInButton({
   onPress,
   disabled = false,
+  busy = false,
   variant = 'continue',
 }: {
   onPress: () => void;
   disabled?: boolean;
+  /**
+   * While Apple's sheet opens, a spinner takes the logo's place inside the
+   * button, so nothing is added around it and it never moves.
+   */
+  busy?: boolean;
   /** "Sign in with Apple" for returning users, "Continue with Apple" to create. */
   variant?: 'continue' | 'signIn';
 }) {
@@ -53,7 +59,15 @@ export default function AppleSignInButton({
       }}
     >
       <View className="flex-row items-center justify-center gap-1.5">
-        <Icon name="apple-logo" size={17} color="#FFFFFF" />
+        {busy ? (
+          <ActivityIndicator
+            size="small"
+            color="#FFFFFF"
+            style={{ width: 17, height: 17 }}
+          />
+        ) : (
+          <Icon name="apple-logo" size={17} color="#FFFFFF" />
+        )}
         <Text className="text-base font-semibold text-white">{label}</Text>
       </View>
     </Button>

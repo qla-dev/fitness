@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Animated, {
@@ -193,7 +193,13 @@ export default function OnlineAccountScreen({
           />
         </View>
         {available ? (
-          <AppleSignInButton disabled={busy} onPress={() => void signIn()} />
+          // The button shows its own spinner while Apple's sheet opens, so
+          // nothing appears under it and it stays where it was tapped.
+          <AppleSignInButton
+            disabled={busy}
+            busy={busy}
+            onPress={() => void signIn()}
+          />
         ) : (
           <Text className="text-text-secondary">
             {t('online.appleOnly', {
@@ -202,7 +208,6 @@ export default function OnlineAccountScreen({
             })}
           </Text>
         )}
-        {busy && <ActivityIndicator />}
         {error && (
           <Text accessibilityRole="alert" className="text-text-primary">
             {error}

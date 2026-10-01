@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   Text,
@@ -97,6 +96,7 @@ export default function OnlineSyncScreen({
               <AppleSignInButton
                 variant="signIn"
                 disabled={apple.busy}
+                busy={apple.busy}
                 onPress={() => void apple.signIn()}
               />
             ) : (
@@ -104,7 +104,6 @@ export default function OnlineSyncScreen({
                 {onlineAccountEntryLabel(t)}
               </Button>
             )}
-            {apple.busy && <ActivityIndicator />}
             {apple.error && (
               <Text accessibilityRole="alert" className="text-text-primary">
                 {apple.error}
