@@ -483,7 +483,7 @@ export class WatchWorkoutStartError extends Error {
  * the link changes, which is when this is worth asking again.
  */
 function refreshWatchAvailability() {
-  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
+  if (!isWatchLinkAvailable()) return;
   const installed = isWatchAppInstalled();
   const paired = isWatchPaired() || installed;
   const watchName = paired ? getWatchName() : null;
@@ -502,7 +502,6 @@ function refreshWatchAvailability() {
 
 /** True when the watch is answering right now, with no probe needed. */
 export const isWatchAwake = () =>
-  Platform.OS === 'ios' &&
   isWatchLinkAvailable() &&
   (isWatchReachable() || snapshot.watchStreaming);
 
@@ -512,7 +511,7 @@ export const isWatchAwake = () =>
  * is about to hand the session to the watch asks this first.
  */
 export async function checkWatchAwake(): Promise<boolean> {
-  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return false;
+  if (!isWatchLinkAvailable()) return false;
   if (isWatchAwake()) return true;
   try {
     return await probeWatch();
@@ -524,7 +523,7 @@ export async function checkWatchAwake(): Promise<boolean> {
 
 // Watched for the life of the process rather than per screen: the answer is a
 // property of the phone, and every surface that asks reads the same snapshot.
-if (Platform.OS === 'ios' && isWatchLinkAvailable()) {
+if (isWatchLinkAvailable()) {
   addWatchReachabilityListener(refreshWatchAvailability);
   refreshWatchAvailability();
 }
@@ -539,7 +538,6 @@ export async function startWatchHeartRate(
   sport: 'run' | 'ride',
   options?: { sportId?: string; startAt?: number }
 ) {
-  if (Platform.OS !== 'ios') return;
   if (!isWatchLinkAvailable()) throw new WatchWorkoutStartError();
   if (watchStartPromise) return watchStartPromise;
   if (watchSubscriptions.length > 0 && snapshot.watchStreaming) return;
@@ -620,7 +618,7 @@ export async function stopWatchHeartRate() {
         ? { heartRate: null, heartRateSource: null }
         : {}),
     });
-  if (Platform.OS !== 'ios' || !isWatchLinkAvailable()) return;
+  if (!isWatchLinkAvailable()) return;
   try {
     await stopWatchWorkout();
   } catch (error) {

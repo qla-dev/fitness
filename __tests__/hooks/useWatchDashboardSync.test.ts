@@ -1,22 +1,28 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { useWatchDashboardSync } from '../../src/hooks/useWatchDashboardSync';
-import { updateWatchDashboard } from '../../modules/watch-link';
+import {
+  isWatchLinkAvailable,
+  updateWatchDashboard,
+} from '../../modules/watch-link';
 import { emptyDailySummary } from '../../src/services/dailySummaryService';
 import { getTodayDate } from '../../src/utils/dateUtils';
 import { addLog } from '../../src/services/LogService';
 
 jest.mock('../../modules/watch-link', () => ({
   updateWatchDashboard: jest.fn().mockResolvedValue(undefined),
+  isWatchLinkAvailable: jest.fn(() => true),
 }));
 jest.mock('../../src/services/LogService', () => ({ addLog: jest.fn() }));
 
 const push = jest.mocked(updateWatchDashboard);
+const linkAvailable = jest.mocked(isWatchLinkAvailable);
 const originalOS = Platform.OS;
 
 beforeEach(() => {
   Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
   push.mockReset().mockResolvedValue(undefined);
+  linkAvailable.mockReturnValue(true);
 });
 
 afterAll(() => {
@@ -115,10 +121,28 @@ it('does not overwrite today on the watch when the user browses a past day', () 
   expect(push).toHaveBeenCalledTimes(1);
 });
 
-it('does not send loading data or call the Apple bridge on Android', () => {
+it('does not send loading data, and stays quiet with no watch to receive it', () => {
   renderHook(() =>
     useWatchDashboardSync(undefined, undefined, undefined, 'km')
   );
+  expect(push).not.toHaveBeenCalled();
+
+  // Was gated on iOS, from when the Apple Watch was the only watch. The Wear
+  // OS app reads this same snapshot, so what decides is whether this build can
+  // reach a watch at all — on a build that cannot, nothing is sent.
+  linkAvailable.mockReturnValue(false);
+  renderHook(() =>
+    useWatchDashboardSync(
+      emptyDailySummary(getTodayDate()),
+      undefined,
+      undefined,
+      'km'
+    )
+  );
+  expect(push).not.toHaveBeenCalled();
+});
+
+it('sends from Android too, because the Wear OS watch reads the same snapshot', () => {
   Object.defineProperty(Platform, 'OS', {
     value: 'android',
     configurable: true,
@@ -131,7 +155,7 @@ it('does not send loading data or call the Apple bridge on Android', () => {
       'km'
     )
   );
-  expect(push).not.toHaveBeenCalled();
+  expect(push).toHaveBeenCalled();
 });
 
 it('logs a bridge failure without interrupting the phone dashboard', async () => {
