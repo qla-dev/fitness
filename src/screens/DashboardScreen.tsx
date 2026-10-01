@@ -456,11 +456,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         {!isLocalDataMode() && fastingCardVisible && (
           <FastingCard navigation={navigation} />
         )}
-        {!isLocalDataMode() && cycleCardVisible && (
+        {cycleCardVisible && (
           <CycleCard navigation={navigation} />
         )}
 
-        {!isLocalDataMode() && medicationsCardVisible && (
+        {medicationsCardVisible && (
           <MedicationsCard navigation={navigation} />
         )}
 

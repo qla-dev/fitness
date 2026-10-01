@@ -382,24 +382,31 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   iconColor={catCalories}
                 />
               )}
-              {/* Cycle tracking is server-backed; the Dashboard hides its card
-                  in local mode and the settings entry follows. */}
-              {isConnected && !isLocalDataMode() && (
-                <SettingsRow
-                  icon="wellness"
-                  title={
-                    discreetMode
-                      ? t('settings.rows.wellness', {
-                          defaultValue: 'Wellness',
-                        })
-                      : t('settings.rows.cyclePregnancy', {
-                          defaultValue: 'Cycle & Pregnancy',
-                        })
-                  }
-                  onPress={() => navigation.navigate('CycleSettings')}
-                  iconColor={catPink}
-                />
-              )}
+              {/* Both are stored on the device and synced with the account,
+                  like the diary. */}
+              <SettingsRow
+                icon="wellness"
+                title={
+                  discreetMode
+                    ? t('settings.rows.wellness', {
+                        defaultValue: 'Wellness',
+                      })
+                    : t('settings.rows.cyclePregnancy', {
+                        defaultValue: 'Cycle & Pregnancy',
+                      })
+                }
+                onPress={() => navigation.navigate('CycleSettings')}
+                iconColor={catPink}
+              />
+              <SettingsRow
+                icon="medication"
+                title={t('screens.library.medications', {
+                  defaultValue: 'Medications',
+                })}
+                onPress={() => navigation.navigate('MedicationsList')}
+                iconColor={catPink}
+              />
+
               <SettingsRow
                 icon="workout-settings"
                 title={t('settings.rows.workout', { defaultValue: 'Workout' })}

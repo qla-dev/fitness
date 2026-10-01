@@ -31,6 +31,18 @@ export const SYNC_COLLECTIONS = [
   'markaiReceipts',
   'mealPlans',
   'mealPlanTemplates',
+  // Must match `fitness.collections` in the backend.
+  'medications',
+  'medicationSchedules',
+  'medicationEntries',
+  'cycleSettings',
+  'cycleLogs',
+  'cycles',
+  'cycleTests',
+  'symptomEntries',
+  'pregnancies',
+  'pregnancyChecklist',
+  'pregnancyPhotos',
 ];
 export type SyncRecord = {
   id: string;

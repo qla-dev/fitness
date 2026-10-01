@@ -153,6 +153,7 @@
     ],
     "testPathIgnorePatterns": [
       "/.kilo/",
+      "/.claude/",
       "__tests__/helpers/",
       "__tests__/hooks/queryTestUtils\\.ts$",
       "__tests__/screens/helpers/",
@@ -192,10 +193,12 @@
       "!**/expo-env.d.ts",
       "!**/.expo/**",
       "!**/devdocs/**",
-      "!**/.kilo/**"
+      "!**/.kilo/**",
+      "!**/.claude/**"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/.kilo/"
+      "<rootDir>/.kilo/",
+      "<rootDir>/.claude/"
     ]
   },
   "packageManager": "pnpm@10.33.4",

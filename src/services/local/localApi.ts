@@ -1,6 +1,9 @@
 import type { DailyGoals } from '../../types/goals';
 import { photoRepository } from './photoRepository';
 import { mealPlanRepository } from './mealPlanRepository';
+import { medicationRepository } from './medicationRepository';
+import { cycleRepository } from './cycleRepository';
+import { pregnancyRepository } from './pregnancyRepository';
 import { saveWatchMeasurement } from './watchMeasurementRepository';
 import {
   asRecord,
@@ -393,12 +396,17 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
   if (food) return food.value;
   const workout = workoutRepository(db, request);
   if (workout) return workout.value;
+  const medication = medicationRepository(db, request);
+  if (medication) return medication.value;
+  const cycle = cycleRepository(db, request);
+  if (cycle) return cycle.value;
+  const pregnancy = pregnancyRepository(db, request);
+  if (pregnancy) return pregnancy.value;
   // Optional server-backed surfaces return their empty state; unknown writes
   // always fail instead of pretending a save succeeded.
   if (method === 'GET') {
     if (
       [
-        '/api/v2/medications',
         '/api/custom-nutrients',
         '/api/identity/users/accessible-users',
         '/api/sleep',
@@ -408,11 +416,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
     )
       return [];
     if (
-      [
-        '/api/fasting/current',
-        '/api/v2/cycle/settings',
-        '/api/v2/pregnancy/current',
-      ].includes(path)
+      ['/api/fasting/current'].includes(path)
     )
       return null;
   }
@@ -436,7 +440,11 @@ export async function localApiFetch<T>(options: {
       JSON.stringify(
         path === '/api/health-data'
           ? { records: options.body }
-          : (options.body ?? {})
+          : // A list body (the cycle onboarding's past periods) arrives as
+            // `items`, since a request body here is always a record.
+            Array.isArray(options.body)
+            ? { items: options.body }
+            : (options.body ?? {})
       )
     )
   );

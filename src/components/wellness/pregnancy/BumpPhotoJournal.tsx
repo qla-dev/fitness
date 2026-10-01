@@ -15,8 +15,7 @@ import {
   usePregnancyPhotos,
   usePregnancyPhotoMutations,
 } from '../../../hooks/usePregnancyPhotos';
-import { useServerConfigs } from '../../../hooks/useServerConfigs';
-import { normalizeUrl } from '../../../services/api/apiClient';
+import { bumpPhotoUri } from '../../../services/api/pregnancyPhotosApi';
 import { getApiErrorMessage } from '../../../services/api/errors';
 import { formatDate } from '../../../utils/dateUtils';
 import ActionSheet, { type ActionSheetRef } from '../../ActionSheet';
@@ -39,7 +38,6 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
   const { photos, isLoading } = usePregnancyPhotos(pregnancyId);
   const { uploadAsync, isUploading, deleteAsync } =
     usePregnancyPhotoMutations();
-  const { activeConfig } = useServerConfigs();
   const [accentColor, dangerColor] = useCSSVariable([
     '--color-accent-primary',
     '--color-icon-danger',
@@ -49,9 +47,6 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
   const pickerLock = useRef(false);
   const [selectedPhoto, setSelectedPhoto] = useState<BumpPhoto | null>(null);
 
-  const baseUrl = activeConfig ? normalizeUrl(activeConfig.url) : null;
-  const photoUri = (filePath: string) =>
-    baseUrl ? `${baseUrl}/${filePath}` : undefined;
 
   const pickAndUpload = async (source: 'camera' | 'library') => {
     if (pickerLock.current) return;
@@ -174,7 +169,7 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
                 className="items-center"
               >
                 <Image
-                  source={{ uri: photoUri(photo.file_path) }}
+                  source={{ uri: bumpPhotoUri(photo) }}
                   className="w-24 h-24 rounded-xl bg-raised"
                   resizeMode="cover"
                 />

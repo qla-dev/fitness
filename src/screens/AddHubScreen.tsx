@@ -372,7 +372,7 @@ export default function AddHubScreen() {
     },
     // Server-dependent rows stay behind the same check the sheet used, so a
     // local build does not offer a row that cannot do anything.
-    ...(isLocalDataMode() || !cycleEnabled
+    ...(!cycleEnabled
       ? []
       : [
           {
