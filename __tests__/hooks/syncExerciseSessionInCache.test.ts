@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import { syncExerciseSessionInCache } from '../../src/hooks/syncExerciseSessionInCache';
 import {
   dailySummaryQueryKey,
@@ -26,7 +27,7 @@ const makePresetSession = (
   name,
   description: null,
   notes: null,
-  source: 'sparky',
+  source: LEGACY_IN_APP_WORKOUT_SOURCE,
   total_duration_minutes: 45,
   exercises: [],
   activity_details: [],

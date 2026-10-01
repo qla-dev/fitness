@@ -78,6 +78,7 @@ class MacroWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 
     companion object {
+        // Pre-rebrand name kept as shipped: renaming it would orphan installed widgets' data.
         const val PREFS_NAME = "SparkyMacroWidget"
         const val PREFS_KEY_SNAPSHOT = "macroSnapshot"
         const val ACTION_MIDNIGHT_REFRESH =

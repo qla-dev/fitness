@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -138,7 +139,7 @@ const localExercise: Exercise = {
   primary_muscles: ['chest'],
   secondary_muscles: [],
   calories_per_hour: 300,
-  source: 'sparky',
+  source: LEGACY_IN_APP_WORKOUT_SOURCE,
   images: [],
   tags: [],
 };

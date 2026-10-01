@@ -67,7 +67,7 @@ interface FixtureRegistry {
 }
 
 function createFixtureRoot(registry: FixtureRegistry): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sparky-muf-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qlafit-muf-'));
   fs.mkdirSync(path.join(root, 'src/localization'), { recursive: true });
   fs.writeFileSync(
     path.join(root, 'src/localization/localeRegistry.json'),
@@ -572,7 +572,7 @@ describe('malformed DE runtime translation blocks CI', () => {
     };
 
   it('DE with {{username}} instead of {{name}} is a placeholder mismatch', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sparky-malformed-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qlafit-malformed-'));
     const enPath = path.join(root, 'en.json');
     const dePath = path.join(root, 'de.json');
     fs.writeFileSync(enPath, JSON.stringify({ greeting: 'Hello {{name}}' }));
@@ -598,7 +598,7 @@ describe('malformed DE runtime translation blocks CI', () => {
   });
 
   it('DE missing key (greeting absent) passes with coverage missing, not error', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sparky-missing-key-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qlafit-missing-key-'));
     const enPath = path.join(root, 'en.json');
     const dePath = path.join(root, 'de.json');
     fs.writeFileSync(
@@ -733,7 +733,7 @@ describe('target 20% coverage does NOT fail validation', () => {
           };
         };
       };
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sparky-20pct-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qlafit-20pct-'));
     const enPath = path.join(root, 'en.json');
     const dePath = path.join(root, 'de.json');
     const enKeys: Record<string, string> = {};

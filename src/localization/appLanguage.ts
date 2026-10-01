@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, storageKey } from '../services/storageKeys';
 import { Platform } from 'react-native';
 
 import { AppLanguageNative } from '../services/appLanguageNative';
@@ -23,7 +24,7 @@ import { FALLBACK_LOCALE, normalizeRegisteredLocale } from './localeRegistry';
  * preferences model so it never resets other user preferences and never depends
  * on translated text.
  */
-const MIGRATION_STORAGE_KEY = '@SparkyFitness/app-language-migration';
+const MIGRATION_STORAGE_KEY = storageKey('app-language-migration');
 const MIGRATION_VERSION = 1;
 
 export function normalizePreference(value: unknown): LanguagePreference {
@@ -148,7 +149,7 @@ async function readNativePreference(): Promise<MappedNative> {
 
 async function readMigrationFinished(): Promise<boolean> {
   try {
-    const raw = await AsyncStorage.getItem(MIGRATION_STORAGE_KEY);
+    const raw = await getStorageItem(MIGRATION_STORAGE_KEY);
     if (!raw) return false;
     const parsed = JSON.parse(raw) as { version?: unknown };
     return parsed?.version === MIGRATION_VERSION;

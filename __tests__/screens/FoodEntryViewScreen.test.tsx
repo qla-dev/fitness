@@ -226,7 +226,7 @@ describe('FoodEntryViewScreen', () => {
     quantity: 1,
     unit: 'cup',
     food_name: 'Greek Yogurt',
-    brand_name: 'Sparky',
+    brand_name: 'Acme',
     entry_date: '2026-05-07',
     serving_size: 1,
     calories: 100,
@@ -387,7 +387,7 @@ describe('FoodEntryViewScreen', () => {
     const screen = renderScreen({
       adjustedValues: {
         name: 'Greek Yogurt',
-        brand: 'Sparky',
+        brand: 'Acme',
         servingSize: '1',
         servingUnit: 'oz',
         calories: '120',

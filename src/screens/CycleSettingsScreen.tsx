@@ -257,7 +257,7 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
       });
       const data = await getExport();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `sparky-womens-health-${timestamp}.json`;
+      const fileName = `qlafit-womens-health-${timestamp}.json`;
       const file = new File(Paths.cache, fileName);
 
       file.create();

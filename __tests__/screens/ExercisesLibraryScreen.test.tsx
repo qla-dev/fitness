@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { fireEvent, render, waitFor, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -94,7 +95,7 @@ function createExercise(
     primary_muscles: ['chest'],
     secondary_muscles: ['triceps'],
     calories_per_hour: 300,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     images: [],
     tags: [],
   };

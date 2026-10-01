@@ -1,4 +1,7 @@
-import type { ExerciseSessionResponse } from '@workspace/shared';
+import {
+  LEGACY_IN_APP_WORKOUT_SOURCE,
+  type ExerciseSessionResponse,
+} from '@workspace/shared';
 import {
   resolveActivityKind,
   type WritebackActivityKind,
@@ -50,12 +53,7 @@ const timeOnDay = (day: string, time: string): Date | null => {
   const match = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(time.trim());
   if (!match) return null;
   const start = localDayStart(day);
-  start.setHours(
-    Number(match[1]),
-    Number(match[2]),
-    Number(match[3] ?? 0),
-    0
-  );
+  start.setHours(Number(match[1]), Number(match[2]), Number(match[3] ?? 0), 0);
   return start;
 };
 
@@ -81,7 +79,11 @@ const positive = (value: unknown): number | undefined => {
  * session to 'manual' — so a session carrying none of them did not originate
  * here.
  */
-const OWN_SESSION_SOURCES = new Set(['manual', 'sparky', 'workout plan']);
+const OWN_SESSION_SOURCES = new Set([
+  'manual',
+  LEGACY_IN_APP_WORKOUT_SOURCE,
+  'workout plan',
+]);
 
 /**
  * Only sessions qla.fit owns. Anything with a provider source came IN from the
@@ -195,7 +197,9 @@ const sessionTitle = (session: ExerciseSessionResponse): string => {
   return 'Workout';
 };
 
-const sessionKind = (session: ExerciseSessionResponse): WritebackActivityKind =>
+const sessionKind = (
+  session: ExerciseSessionResponse
+): WritebackActivityKind =>
   session.type === 'preset'
     ? // A grouped workout is a lifting session unless its name says otherwise:
       // its exercises are the movements, not the sport.

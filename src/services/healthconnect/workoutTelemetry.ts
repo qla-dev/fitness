@@ -1,5 +1,6 @@
 import { readRecords, requestExerciseRoute } from 'react-native-health-connect';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, storageKey } from '../storageKeys';
 import { addLog } from '../LogService';
 import {
   downsampleGpsPoints,
@@ -35,7 +36,7 @@ import type {
  */
 
 /** AsyncStorage prefix for remembered per-session route consent decisions. */
-const ROUTE_CONSENT_PREFIX = '@SparkyFitness/routeConsent:';
+const ROUTE_CONSENT_PREFIX = storageKey('routeConsent:');
 
 /** Paging for the consent-prefetch session read. */
 const ROUTE_PREFETCH_PAGE_SIZE = 1000;
@@ -73,7 +74,7 @@ export const getRouteConsent = async (
   recordId: string
 ): Promise<RouteConsent | null> => {
   try {
-    const raw = await AsyncStorage.getItem(consentKey(recordId));
+    const raw = await getStorageItem(consentKey(recordId));
     if (!raw) return null;
     // Older stored values were the bare string 'granted'/'denied', not JSON —
     // JSON.parse throws on those, which falls through to the catch below and

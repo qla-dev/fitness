@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -143,7 +144,7 @@ const baseExercise: Exercise = {
   primary_muscles: ['chest'],
   secondary_muscles: ['triceps', 'shoulders'],
   calories_per_hour: 360,
-  source: 'sparky',
+  source: LEGACY_IN_APP_WORKOUT_SOURCE,
   images: [],
   tags: [],
 };
@@ -226,7 +227,7 @@ describe('ExerciseDetailScreen', () => {
 
     fireEvent.press(screen.getByText('Exercise details'));
     expect(screen.getByText('Strength')).toBeTruthy();
-    expect(screen.getByText('sparky')).toBeTruthy();
+    expect(screen.getByText(LEGACY_IN_APP_WORKOUT_SOURCE)).toBeTruthy();
   });
 
   it('offers no Start Workout or Log Exercise: exercises start through a program', () => {
@@ -256,7 +257,7 @@ describe('ExerciseDetailScreen', () => {
 
   it('shows Edit and Delete for non-custom exercises even when the user matches', () => {
     const screen = renderScreen({
-      source: 'sparky',
+      source: LEGACY_IN_APP_WORKOUT_SOURCE,
       userId: 'user-1',
       isCustom: true,
     });

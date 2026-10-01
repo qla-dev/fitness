@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import { sessionsToWorkouts } from '../../../src/services/shared/writebackExercise';
 
@@ -97,7 +98,7 @@ describe('sessionsToWorkouts', () => {
       DAY,
       [
         individual({ id: 'a', source: 'manual' }),
-        individual({ id: 'b', source: 'sparky' }),
+        individual({ id: 'b', source: LEGACY_IN_APP_WORKOUT_SOURCE }),
         individual({ id: 'c', source: 'Workout Plan' }), // case-insensitive
       ],
       LATER
@@ -129,7 +130,11 @@ describe('sessionsToWorkouts', () => {
       sessionsToWorkouts(
         DAY,
         [
-          individual({ id: 'ac', name: 'Active Calories', source: 'HealthKit' }),
+          individual({
+            id: 'ac',
+            name: 'Active Calories',
+            source: 'HealthKit',
+          }),
           individual({
             id: 'aet',
             name: 'Apple Exercise Time',
@@ -199,9 +204,20 @@ describe('sessionsToWorkouts', () => {
     // The runaway this guards: a window derived from  moved every sync, so
     // the content signature changed every sync and writeback deleted and
     // re-saved the workout under a fresh UUID each time.
-    const session = individual({ entry_time: null, created_at: new Date(2026, 5, 1, 9, 0, 0, 0).toISOString() });
-    const first = sessionsToWorkouts(DAY, [session], new Date(2026, 5, 1, 10, 0, 0, 0));
-    const later = sessionsToWorkouts(DAY, [session], new Date(2026, 5, 1, 23, 0, 0, 0));
+    const session = individual({
+      entry_time: null,
+      created_at: new Date(2026, 5, 1, 9, 0, 0, 0).toISOString(),
+    });
+    const first = sessionsToWorkouts(
+      DAY,
+      [session],
+      new Date(2026, 5, 1, 10, 0, 0, 0)
+    );
+    const later = sessionsToWorkouts(
+      DAY,
+      [session],
+      new Date(2026, 5, 1, 23, 0, 0, 0)
+    );
     expect(first[0].start).toEqual(later[0].start);
     expect(first[0].end).toEqual(later[0].end);
   });
@@ -211,7 +227,12 @@ describe('sessionsToWorkouts', () => {
     // puts the whole window in the past — a just-logged workout is writable now.
     const [workout] = sessionsToWorkouts(
       DAY,
-      [individual({ entry_time: null, created_at: new Date(2026, 5, 1, 9, 0, 0, 0).toISOString() })],
+      [
+        individual({
+          entry_time: null,
+          created_at: new Date(2026, 5, 1, 9, 0, 0, 0).toISOString(),
+        }),
+      ],
       LATER
     );
     expect(workout.end).toEqual(new Date(2026, 5, 1, 9, 0, 0, 0));

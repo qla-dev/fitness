@@ -8,9 +8,7 @@ import path from 'path';
  * dedicated API 33 helper classes so the class verifier on Android <=12 never
  * resolves them during module/object registration. A direct reference in a
  * class that is loaded unconditionally can raise NoClassDefFoundError /
- * VerifyError before any SDK_INT guard runs.
- *
- * See https://github.com/CodeWithCJ/SparkyFitness/issues/2253
+ * VerifyError before any SDK_INT guard runs (upstream issue #2253, pre-fork).
  */
 
 const LANGUAGE_ROOT = path.join(

@@ -11,7 +11,7 @@ import {
   saveHealthPreference,
 } from '../../../src/services/healthconnect/preferences';
 // Jest resolves './writeback' to the iOS no-op stub by default; require the .ts
-// explicitly to test the real Android implementation (see SparkyFitnessMobile CLAUDE.md).
+// explicitly to test the real Android implementation (see AGENTS.md).
 const {
   writebackPhase,
   runWriteback,
@@ -110,7 +110,7 @@ describe('writebackPhase', () => {
     expect(records[0].recordType).toBe('Nutrition');
     // clientRecordId is version-suffixed (fresh per run) but stable in shape.
     expect(records[0].metadata.clientRecordId).toMatch(
-      /^sparky-nutrition-fe1-\d+$/
+      /^qlafit-nutrition-fe1-\d+$/
     );
   });
 
@@ -128,22 +128,22 @@ describe('writebackPhase', () => {
       waterIntake: 0,
     });
     await writebackPhase(['2026-06-01']);
-    expect(mockInsert).not.toHaveBeenCalled(); // nothing originated in Sparky
+    expect(mockInsert).not.toHaveBeenCalled(); // nothing originated in qla.fit
   });
 
   it("deletes the previous run's records before inserting", async () => {
     prefs({
       writebackNutritionEnabled: true,
       'writebackNutritionIds:2026-06-01': [
-        'sparky-nutrition-fe1-1',
-        'sparky-nutrition-gone-1',
+        'qlafit-nutrition-fe1-1',
+        'qlafit-nutrition-gone-1',
       ],
     });
     await writebackPhase(['2026-06-01']);
     expect(mockDelete).toHaveBeenCalledWith(
       'Nutrition',
       [],
-      ['sparky-nutrition-fe1-1', 'sparky-nutrition-gone-1']
+      ['qlafit-nutrition-fe1-1', 'qlafit-nutrition-gone-1']
     );
     expect(mockInsert).toHaveBeenCalledTimes(1);
   });
@@ -151,7 +151,7 @@ describe('writebackPhase', () => {
   it('writes water and deletes the day record when water drops to 0', async () => {
     prefs({
       writebackHydrationEnabled: true,
-      'writebackHydrationIds:2026-06-01': ['sparky-water-2026-06-01-1'],
+      'writebackHydrationIds:2026-06-01': ['qlafit-water-2026-06-01-1'],
     });
     mockSummary.mockResolvedValue({ foodEntries: [], waterIntake: 0 });
     await writebackPhase(['2026-06-01']);
@@ -159,7 +159,7 @@ describe('writebackPhase', () => {
     expect(mockDelete).toHaveBeenCalledWith(
       'Hydration',
       [],
-      ['sparky-water-2026-06-01-1']
+      ['qlafit-water-2026-06-01-1']
     );
   });
 
@@ -384,9 +384,11 @@ describe('exercise writeback', () => {
       exerciseType: 56, // Health Connect EXERCISE_TYPE_RUNNING
       title: 'Morning Run',
     });
-    expect(new Date(record.startTime)).toEqual(new Date(2026, 5, 1, 7, 0, 0, 0));
+    expect(new Date(record.startTime)).toEqual(
+      new Date(2026, 5, 1, 7, 0, 0, 0)
+    );
     expect(new Date(record.endTime)).toEqual(new Date(2026, 5, 1, 7, 20, 0, 0));
-    expect(record.metadata.clientRecordId).toContain('sparky-exercise-ex1-');
+    expect(record.metadata.clientRecordId).toContain('qlafit-exercise-ex1-');
     expect(store['writebackExerciseSessionIds:2026-06-01']).toEqual([
       record.metadata.clientRecordId,
     ]);
@@ -447,11 +449,7 @@ describe('exercise writeback', () => {
       'writebackExerciseSessionIds:2026-06-01': ['old-id'],
     });
     await writebackPhase(['2026-06-01']);
-    expect(mockDelete).toHaveBeenCalledWith(
-      'ExerciseSession',
-      [],
-      ['old-id']
-    );
+    expect(mockDelete).toHaveBeenCalledWith('ExerciseSession', [], ['old-id']);
   });
 
   it('skips an unchanged day on the next run', async () => {

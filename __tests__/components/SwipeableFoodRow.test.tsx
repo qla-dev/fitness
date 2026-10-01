@@ -23,7 +23,7 @@ const createEntry = (overrides: Partial<FoodEntry> = {}): FoodEntry => ({
   unit: 'g',
   variant_id: 'variant-1',
   food_name: 'Greek Yogurt',
-  brand_name: 'Sparky',
+  brand_name: 'Acme',
   entry_date: '2026-05-06',
   serving_size: 100,
   serving_unit: 'g',

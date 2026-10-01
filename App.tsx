@@ -146,6 +146,7 @@ import StartUpProtocol from './src/components/StartUpProtocol';
 import { useNativeIOSTabsActive, useNativeIOSHeadersActive } from './src/services/nativeTabBarPreference';
 import { useWidgetLanguageRefresh } from './src/hooks/useWidgetLanguageRefresh';
 import { useIOSWidgetLanguageRefresh } from './src/hooks/useIOSWidgetLanguageRefresh';
+import { APP_URL } from './src/constants/appUrlScheme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -205,7 +206,7 @@ function AppContent() {
     handleLogWorkout,
     handleAddActivity,
     handleAddProgressPhotos,
-    handleAskSparky,
+    handleAskMarkAI,
     handleOpenCycle,
     handleSyncHealthData,
   } = useAddSheetActions({ syncMutation });
@@ -230,7 +231,7 @@ function AppContent() {
       addActivity: handleAddActivity,
       groceryList: handleOpenGroceryList,
       progressPhotos: handleAddProgressPhotos,
-      askSparky: handleAskSparky,
+      askMarkAI: handleAskMarkAI,
       openCycle: handleOpenCycle,
       syncHealthData: () => void handleSyncHealthData(),
     }),
@@ -250,7 +251,7 @@ function AppContent() {
       handleAddActivity,
       handleOpenGroceryList,
       handleAddProgressPhotos,
-      handleAskSparky,
+      handleAskMarkAI,
       handleOpenCycle,
       handleSyncHealthData,
     ]
@@ -330,7 +331,7 @@ function AppContent() {
   }, [isDarkMode, primary, bgPrimary, textPrimary, chromeBorder]);
 
   const linking = useMemo<LinkingOptions<RootStackParamList>>(() => ({
-    prefixes: ['sparkyfitnessmobile://'],
+    prefixes: [APP_URL],
     config: {
       initialRouteName: 'Tabs',
       screens: {
@@ -595,7 +596,7 @@ function AppContent() {
           <Stack.Screen
             name="Chat"
             component={SafeChat}
-            options={createStackScreenOptions(t('screens.sparky', { defaultValue: 'Sparky' }), { headerBackButtonDisplayMode: 'minimal' })}
+            options={createStackScreenOptions(t('screens.markai', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen
             name="MealAdd"

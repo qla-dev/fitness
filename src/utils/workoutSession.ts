@@ -13,6 +13,7 @@ import type {
 import {
   isCardioModality,
   isExerciseModality,
+  LEGACY_IN_APP_WORKOUT_SOURCE,
   resolveExerciseModality,
   setsDurationMinutes,
 } from '@workspace/shared';
@@ -126,7 +127,7 @@ export function getWorkoutIcon(session: ExerciseSessionResponse): IconName {
 
 const SOURCE_DISPLAY_NAMES: Record<string, string> = {
   manual: 'qla.fit',
-  sparky: 'qla.fit',
+  [LEGACY_IN_APP_WORKOUT_SOURCE]: 'qla.fit',
   'workout plan': 'qla.fit',
   healthkit: 'Apple Health',
   'health connect': 'Health Connect',

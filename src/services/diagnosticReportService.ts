@@ -199,7 +199,7 @@ export const shareDiagnosticReport = async (
 ): Promise<void> => {
   const report = await buildDiagnosticReport(hookData);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `sparky-diagnostic-${timestamp}.json`;
+  const fileName = `qlafit-diagnostic-${timestamp}.json`;
   const file = new File(Paths.cache, fileName);
 
   try {

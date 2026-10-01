@@ -25,7 +25,7 @@ jest.mock('@assistant-ui/react-native', () => ({
 const askPart = {
   type: 'tool-call' as const,
   toolCallId: 'ask-1',
-  toolName: 'sparky_ask_user',
+  toolName: 'markai_ask_user',
   args: {
     mode: 'choose' as const,
     question: 'Which serving?',

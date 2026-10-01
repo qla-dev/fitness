@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import type { PresetSessionResponse } from '@workspace/shared';
@@ -15,7 +16,7 @@ function makeSession(): PresetSessionResponse {
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 60,
     activity_details: [],
     exercises: [

@@ -104,7 +104,7 @@ export interface CycleCorrelations {
 
 /**
  * Real shape of GET /api/v2/pregnancy/overview (see
- * SparkyFitnessServer/services/pregnancyService.ts `getOverview`). When there
+ * upstream server services/pregnancyService.ts `getOverview`). When there
  * is no active pregnancy the server returns just `{ pregnancy: null }` — every
  * other field is absent, not just falsy, so treat them all as optional and
  * never assume a truthy `overview` implies `gestation` is present.

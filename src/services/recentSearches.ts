@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, storageKey } from './storageKeys';
 
 import { addLog } from './LogService';
 
-const STORAGE_KEY = '@SparkyFitness/recent-searches';
+const STORAGE_KEY = storageKey('recent-searches');
 
 /**
  * How many past queries are kept.
@@ -55,7 +56,7 @@ export function getRecentSearches(): readonly string[] {
 export async function loadRecentSearches(): Promise<string[]> {
   if (cache) return cache;
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await getStorageItem(STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     cache = Array.isArray(parsed)
       ? parsed.filter((item): item is string => typeof item === 'string')

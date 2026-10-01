@@ -36,6 +36,7 @@ import {
 } from '../utils/workoutSession';
 import { createConcurrencyLimiter } from '../utils/concurrency';
 import { addLog } from './LogService';
+import { APP_URL } from '../constants/appUrlScheme';
 import {
   buildWorkoutLiveActivityLabels,
   resolveWorkoutLiveActivityLocale,
@@ -57,7 +58,8 @@ import WorkoutLiveActivityFactory, {
  * flow — every operation is caught and logged.
  */
 
-const ACTIVE_WORKOUT_URL = 'sparkyfitnessmobile://active-workout';
+const ACTIVE_WORKOUT_URL = `${APP_URL}active-workout`;
+const RECORDING_URL = `${APP_URL}recording`;
 
 let initialized = false;
 let reconciled = false;
@@ -387,9 +389,7 @@ async function applyProps(
   if (activity == null) {
     activity = WorkoutLiveActivityFactory.start(
       finalProps,
-      props.recordingSport
-        ? 'sparkyfitnessmobile://recording'
-        : ACTIVE_WORKOUT_URL
+      props.recordingSport ? RECORDING_URL : ACTIVE_WORKOUT_URL
     );
     lastSentProps = finalProps;
     return;
@@ -506,9 +506,7 @@ async function reconcileInstances(): Promise<void> {
     const finalProps = withAppIcon(props);
     activity = WorkoutLiveActivityFactory.start(
       finalProps,
-      props.recordingSport
-        ? 'sparkyfitnessmobile://recording'
-        : ACTIVE_WORKOUT_URL
+      props.recordingSport ? RECORDING_URL : ACTIVE_WORKOUT_URL
     );
     lastSentProps = finalProps;
   }

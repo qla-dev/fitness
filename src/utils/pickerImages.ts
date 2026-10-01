@@ -1,6 +1,6 @@
 /**
  * Client-side model for the server's image ordering protocol, mirroring web's
- * `SparkyFitnessFrontend/src/utils/imagePickerItems.ts`.
+ * upstream web `src/utils/imagePickerItems.ts`.
  *
  * The server (`middleware/imageUpload.ts`) takes an `images` field holding the
  * desired final order: existing images appear as their stored path, and each

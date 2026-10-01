@@ -432,7 +432,7 @@ describe('ActiveWorkoutScreen workout-plan end-to-end save', () => {
         409,
         JSON.stringify({
           message:
-            'Nested exercise editing is only supported for manual, sparky, or workout plan sessions.',
+            'Nested exercise editing is only supported for manual or workout plan sessions.',
         })
       )
     );
@@ -460,7 +460,7 @@ describe('ActiveWorkoutScreen workout-plan end-to-end save', () => {
         'session source: Workout Plan',
         'status: 409',
         expect.stringContaining(
-          'Nested exercise editing is only supported for manual, sparky, or workout plan sessions.'
+          'Nested exercise editing is only supported for manual or workout plan sessions.'
         ),
       ]
     );

@@ -18,6 +18,7 @@ import {
 } from '../../src/services/api/authService';
 import { ServerConfig } from '../../src/services/storage';
 import { TimeoutError } from '../../src/utils/concurrency';
+import { APP_URL } from '../../src/constants/appUrlScheme';
 import * as WebBrowser from 'expo-web-browser';
 
 jest.mock('expo-web-browser', () => ({
@@ -754,7 +755,7 @@ describe('authService', () => {
       });
       mockOpenAuthSession.mockResolvedValueOnce({
         type: 'success',
-        url: 'sparkyfitnessmobile://oauth-callback?status=success',
+        url: `${APP_URL}oauth-callback?status=success`,
       } as never);
 
       await addPasskey('https://s.com', 'sess-tok', 'My Phone');
@@ -799,7 +800,7 @@ describe('authService', () => {
       });
       mockOpenAuthSession.mockResolvedValueOnce({
         type: 'success',
-        url: 'sparkyfitnessmobile://oauth-callback?status=success',
+        url: `${APP_URL}oauth-callback?status=success`,
       } as never);
     };
 

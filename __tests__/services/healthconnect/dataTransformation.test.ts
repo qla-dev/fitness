@@ -1874,7 +1874,7 @@ describe('transformHealthRecords', () => {
       expect(result[0].potassium).toBeUndefined();
     });
 
-    test('Nutrition converts each HC gram value to its Sparky column unit', () => {
+    test('Nutrition converts each HC gram value to its diary column unit', () => {
       const records = [
         {
           startTime: '2024-01-15T08:00:00Z',
@@ -1890,7 +1890,7 @@ describe('transformHealthRecords', () => {
           iron: { inGrams: 0.008 }, // g → mg: 8
           vitaminC: { inGrams: 0.06 }, // g → mg: 60
           vitaminA: { inGrams: 0.0009 }, // g → mcg: 900
-          // No dedicated Sparky column → dropped (no canonical unit to store it in):
+          // No dedicated diary column → dropped (no canonical unit to store it in):
           magnesium: { inGrams: 0.4 },
         },
       ];
@@ -2373,7 +2373,7 @@ describe('extractTimezoneMetadata', () => {
 });
 
 describe('own-app exclusion (writeback feedback-loop guard)', () => {
-  const OWN = 'com.sparky.app';
+  const OWN = 'fitness.qla.dev';
   afterEach(() => setOwnPackageName(null)); // don't leak into other tests
 
   test('Nutrition: records written by our own app are dropped, others pass', () => {
@@ -2443,7 +2443,7 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
 });
 
 describe('own-app exclusion for exercise sessions (writeback loop guard)', () => {
-  const OWN = 'com.sparky.app';
+  const OWN = 'fitness.qla.dev';
   afterEach(() => setOwnPackageName(null));
 
   const session = (dataOrigin: string, id: string) => ({

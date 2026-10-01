@@ -6,7 +6,7 @@ import type { ExternalFoodItem } from '../types/externalFoods';
 
 /**
  * Food and meal image selection, mirroring the web helpers in
- * `SparkyFitnessFrontend/src/utils/foodImages.ts` so the two platforms pick the
+ * upstream web `src/utils/foodImages.ts` so the two platforms pick the
  * same picture for the same row.
  *
  * These return stored *paths*, not loadable URIs. Turning a path into something

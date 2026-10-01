@@ -24,8 +24,10 @@ type MassUnit = 'grams' | 'milligrams' | 'micrograms';
 
 /** Prefix on every clientRecordId qla.fit writes, so the read path can recognise
  *  and skip its own records (see the read transformers' dataOrigin guard, which
- *  is the canonical exclusion; this prefix is purely a write-side namespace). */
-export const SPARKY_CLIENT_RECORD_PREFIX = 'sparky-';
+ *  is the canonical exclusion; this prefix is purely a write-side namespace).
+ *  Nothing matches on it: ids written under an older prefix are still tracked
+ *  and deleted by their full stored value. */
+export const CLIENT_RECORD_PREFIX = 'qlafit-';
 
 // clientRecordIds embed the write version (a timestamp) so every run produces
 // *fresh* ids. The orchestrator deletes the previous run's ids and inserts these,
@@ -39,13 +41,13 @@ export const SPARKY_CLIENT_RECORD_PREFIX = 'sparky-';
 export const nutritionClientRecordId = (
   entryId: string,
   version: number
-): string => `${SPARKY_CLIENT_RECORD_PREFIX}nutrition-${entryId}-${version}`;
+): string => `${CLIENT_RECORD_PREFIX}nutrition-${entryId}-${version}`;
 
 /** One water record per day, scoped to the write run by version. */
 export const waterClientRecordId = (
   entryDate: string,
   version: number
-): string => `${SPARKY_CLIENT_RECORD_PREFIX}water-${entryDate}-${version}`;
+): string => `${CLIENT_RECORD_PREFIX}water-${entryDate}-${version}`;
 
 // factor (from HC_NUTRIENT_COLUMNS) → the HC Mass unit qla.fit already stores that
 // column in, so we write the value verbatim with no conversion (and never drift
@@ -270,8 +272,7 @@ export const EXERCISE_TYPE_BY_KIND: Record<WritebackActivityKind, number> = {
 export const exerciseClientRecordId = (
   sessionId: string,
   version: number
-): string =>
-  `${SPARKY_CLIENT_RECORD_PREFIX}exercise-${sessionId}-${version}`;
+): string => `${CLIENT_RECORD_PREFIX}exercise-${sessionId}-${version}`;
 
 /**
  * Diary session descriptor → an ExerciseSessionRecord.

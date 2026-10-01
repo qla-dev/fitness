@@ -9,6 +9,7 @@ import { addLog } from '../LogService';
 import { normalizeUrl } from '../../utils/serverUrl';
 import { getErrorMessage } from '../../utils/errors';
 import { LoginError } from './authErrors';
+import { APP_URL, APP_URL_SCHEME } from '../../constants/appUrlScheme';
 import {
   CONNECTION_CHECK_TIMEOUT_MS,
   DEFAULT_API_TIMEOUT_MS,
@@ -512,8 +513,8 @@ export const fetchAuthSettings = async (
   return await response.json();
 };
 
-const SSO_STORAGE_PREFIX = 'sparky_sso';
-const SSO_CALLBACK_URL = 'sparkyfitnessmobile://oauth-callback';
+const SSO_STORAGE_PREFIX = 'qlafit_sso';
+const SSO_CALLBACK_URL = `${APP_URL}oauth-callback`;
 
 /**
  * Transient Better Auth client used ONLY for the SSO browser dance; the rest
@@ -529,12 +530,12 @@ const createSsoAuthClient = (
     plugins: [
       ssoClient(),
       expoClient({
-        scheme: 'sparkyfitnessmobile',
+        scheme: APP_URL_SCHEME,
         storagePrefix: SSO_STORAGE_PREFIX,
         // Must match the server's advanced.cookiePrefix so the client
-        // recognizes and stores the session cookie. Also include standard
-        // better-auth for passkey challenge cookies.
-        cookiePrefix: ['sparky', 'better-auth'],
+        // recognizes and stores the session cookie; Better Auth's default
+        // prefix also covers passkey challenge cookies.
+        cookiePrefix: ['better-auth'],
         storage: SecureStore,
       }),
     ],
@@ -929,7 +930,7 @@ export const deletePasskey = async (
         // Better Auth rejects state-changing requests with a missing/null Origin.
         // The app scheme is a trusted origin (see auth.ts trustedOrigins), so send
         // it explicitly — native fetch (unlike a browser) allows setting Origin.
-        Origin: 'sparkyfitnessmobile://',
+        Origin: APP_URL,
       },
       body: JSON.stringify({ id }),
     },

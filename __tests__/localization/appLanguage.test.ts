@@ -33,7 +33,7 @@ jest.mock('../../src/services/LogService', () => ({
 const mockNative = AppLanguageNative as jest.Mocked<typeof AppLanguageNative>;
 const mockAddLog = addLog as jest.MockedFunction<typeof addLog>;
 
-const MIGRATION_KEY = '@SparkyFitness/app-language-migration';
+const MIGRATION_KEY = '@qla/app-language-migration';
 
 async function markMigrationComplete(): Promise<void> {
   await AsyncStorage.setItem(MIGRATION_KEY, JSON.stringify({ version: 1 }));

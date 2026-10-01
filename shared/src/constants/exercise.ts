@@ -64,8 +64,20 @@ export function resolveExerciseModality(
     : deriveExerciseModality(category);
 }
 
+/**
+ * The source the app stamps on a workout it records itself (live or added).
+ * Legacy pre-rebrand value, still written: synced rows carry it, and older app
+ * versions on other devices only treat a session as editable and as their own
+ * (for health writeback) when it carries exactly this value.
+ */
+export const LEGACY_IN_APP_WORKOUT_SOURCE = "sparky";
+
 // Workout sources that support nested exercise editing after creation.
-const EDITABLE_SOURCES = new Set(["manual", "sparky", "workout plan"]);
+const EDITABLE_SOURCES = new Set([
+  "manual",
+  LEGACY_IN_APP_WORKOUT_SOURCE,
+  "workout plan",
+]);
 
 function normalizeSource(source: string | null | undefined): string | null {
   if (source == null) return null;
@@ -75,8 +87,8 @@ function normalizeSource(source: string | null | undefined): string | null {
 /**
  * Whether a workout source supports nested exercise editing.
  *
- * Returns true for `manual`, `sparky`, `workout plan`, and `null`/`undefined`
- * (legacy local records). Returns false for external sync sources (HealthKit,
+ * Returns true for `manual`, `LEGACY_IN_APP_WORKOUT_SOURCE`, `workout plan`, and
+ * `null`/`undefined` (legacy local records). Returns false for external sync sources (HealthKit,
  * Garmin, Strava, etc.).
  */
 export function canEditGroupedWorkout(

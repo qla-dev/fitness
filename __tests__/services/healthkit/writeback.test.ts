@@ -124,7 +124,7 @@ describe('writebackPhase', () => {
       waterIntake: 0,
     });
     await writebackPhase(['2026-06-01']);
-    expect(mockSaveCorrelation).not.toHaveBeenCalled(); // nothing originated in Sparky
+    expect(mockSaveCorrelation).not.toHaveBeenCalled(); // nothing originated in qla.fit
   });
 
   it('writes nutrition as a Food correlation and tracks UUIDs grouped by type', async () => {

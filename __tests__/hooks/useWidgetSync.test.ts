@@ -3,7 +3,7 @@ jest.mock('expo-constants', () => ({
   default: {
     expoConfig: {
       version: '1.0.0',
-      extra: { iosAppGroup: 'group.test.sparkyfitness' },
+      extra: { iosAppGroup: 'group.test.qlafit' },
     },
   },
 }));

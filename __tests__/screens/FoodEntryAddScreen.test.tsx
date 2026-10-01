@@ -317,7 +317,7 @@ describe('FoodEntryAddScreen', () => {
   const baseLocalItem = {
     id: 'food-1',
     name: 'Greek Yogurt',
-    brand: 'Sparky',
+    brand: 'Acme',
     servingSize: 1,
     servingUnit: 'cup',
     calories: 100,
@@ -1229,7 +1229,7 @@ describe('FoodEntryAddScreen', () => {
       date: '2026-04-23',
       adjustedValues: {
         name: 'Greek Yogurt',
-        brand: 'Sparky',
+        brand: 'Acme',
         servingSize: '1',
         servingUnit: 'oz',
         calories: '120',
@@ -1527,7 +1527,7 @@ describe('FoodEntryAddScreen', () => {
 
     const draftAdjustedValues = {
       name: 'Greek Yogurt',
-      brand: 'Sparky',
+      brand: 'Acme',
       servingSize: '30',
       servingUnit: 'mg',
       calories: '50',

@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { Alert } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -141,7 +142,7 @@ function makeSession(): PresetSessionResponse {
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 40,
     activity_details: [],
     exercises: [

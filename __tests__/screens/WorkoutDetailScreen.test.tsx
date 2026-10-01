@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -209,7 +210,7 @@ function buildSession(
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 45,
     exercises: [buildExercise()],
     activity_details: [],
@@ -309,11 +310,11 @@ describe('WorkoutDetailScreen', () => {
     );
   });
 
-  it('hides the rest chip on imported (non-Sparky) workouts', () => {
-    const sparky = renderScreen(buildSession());
-    fireEvent.press(sparky.getByLabelText('Expand Bench Press'));
-    expect(sparky.getByLabelText('Rest 1:30')).toBeTruthy();
-    sparky.unmount();
+  it('hides the rest chip on imported (non-qla.fit) workouts', () => {
+    const own = renderScreen(buildSession());
+    fireEvent.press(own.getByLabelText('Expand Bench Press'));
+    expect(own.getByLabelText('Rest 1:30')).toBeTruthy();
+    own.unmount();
 
     const imported = renderScreen(buildSession({ source: 'healthkit' }));
     fireEvent.press(imported.getByLabelText('Expand Bench Press'));
@@ -336,7 +337,7 @@ describe('WorkoutDetailScreen', () => {
       );
     });
 
-    it('stays available for imported (non-Sparky) workouts', () => {
+    it('stays available for imported (non-qla.fit) workouts', () => {
       const session = buildSession({ source: 'healthkit' });
       const screen = renderScreen(session);
 
@@ -358,7 +359,7 @@ describe('WorkoutDetailScreen', () => {
       fireEvent(screen.getByTestId('set-row'), 'longPress');
     };
 
-    it('presents Edit and Start-workout-here for a Sparky workout', () => {
+    it('presents Edit and Start-workout-here for a qla.fit workout', () => {
       const screen = renderScreen(buildSession());
       expandAndLongPressSet(screen);
 

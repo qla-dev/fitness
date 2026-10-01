@@ -5,7 +5,7 @@ import path from 'node:path';
  * Narrow regression guard against future implicit-locale presentation.
  *
  * We scan the source tree for locale-less date/number formatting calls that
- * would silently use the device/runtime locale instead of the active Sparky
+ * would silently use the device/runtime locale instead of the active app
  * application locale. Only the clearly-suspicious patterns are flagged:
  * toLocale{String,Date,Time} with an empty / undefined / [] locale argument.
  * Uses that pass an app-derived locale (e.g. .toLocaleDateString(locale, ...))

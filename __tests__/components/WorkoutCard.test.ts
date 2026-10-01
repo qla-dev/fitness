@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import { getWorkoutSummary } from '../../src/utils/workoutSession';
 import type { ExerciseSessionResponse } from '@workspace/shared';
 import i18n from '../../src/localization/i18n';
@@ -15,7 +16,7 @@ describe('getWorkoutSummary', () => {
       notes: null,
       distance: 5,
       avg_heart_rate: 150,
-      source: 'sparky',
+      source: LEGACY_IN_APP_WORKOUT_SOURCE,
       sets: [],
       exercise_snapshot: {
         id: 'snapshot-1',

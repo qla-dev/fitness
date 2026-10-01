@@ -90,7 +90,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   // don't change behavior; the writeback partial-auth test overrides per-type.
   authorizationStatusFor: jest.fn(() => 2),
   currentAppSource: jest.fn(() => ({
-    bundleIdentifier: 'com.sparkyfitness.mobile',
+    bundleIdentifier: 'fitness.qla.dev',
     name: 'qla.fit',
   })),
   AuthorizationStatus: {

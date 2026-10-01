@@ -37,22 +37,22 @@ export interface ToolDisplay {
 }
 
 const TOOL_DISPLAY: Record<string, ToolDisplay> = {
-  sparky_manage_food: {
+  markai_manage_food: {
     labelKey: 'chat.tools.food',
     defaultLabel: 'Food',
     icon: 'food',
   },
-  sparky_manage_exercise: {
+  markai_manage_exercise: {
     labelKey: 'chat.tools.exercise',
     defaultLabel: 'Exercise',
     icon: 'exercise',
   },
-  sparky_manage_checkin: {
+  markai_manage_checkin: {
     labelKey: 'chat.tools.checkin',
     defaultLabel: 'Check-in',
     icon: 'measurements',
   },
-  sparky_manage_goals: {
+  markai_manage_goals: {
     labelKey: 'chat.tools.goals',
     defaultLabel: 'Goals',
     icon: 'flame',
@@ -66,14 +66,14 @@ function humanize(name: string): string {
 }
 
 export function isLookupTool(toolName: string): boolean {
-  return /^sparky_get_/.test(toolName);
+  return /^markai_get_/.test(toolName);
 }
 
 export function getToolDisplay(toolName: string): ToolDisplay {
   const explicit = TOOL_DISPLAY[toolName];
   if (explicit) return explicit;
 
-  const lookup = toolName.match(/^sparky_get_(.+)$/);
+  const lookup = toolName.match(/^markai_get_(.+)$/);
   if (lookup) {
     return {
       labelKey: 'chat.tools.lookedUp',
@@ -83,7 +83,7 @@ export function getToolDisplay(toolName: string): ToolDisplay {
   }
 
   return {
-    defaultLabel: humanize(toolName.replace(/^sparky_/, '')),
+    defaultLabel: humanize(toolName.replace(/^markai_/, '')),
     icon: 'wrench',
   };
 }

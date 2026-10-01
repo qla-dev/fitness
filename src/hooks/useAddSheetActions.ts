@@ -336,7 +336,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('ProgressPhotos', { date });
   }, [getActiveDiaryDate, navigateFromSheet]);
 
-  const handleAskSparky = useCallback(() => {
+  const handleAskMarkAI = useCallback(() => {
     navigateFromSheet('Chat');
   }, [navigateFromSheet]);
 
@@ -372,7 +372,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     handleLogWorkout,
     handleAddActivity,
     handleAddProgressPhotos,
-    handleAskSparky,
+    handleAskMarkAI,
     handleOpenCycle,
     handleSyncHealthData,
   };

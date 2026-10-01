@@ -5,7 +5,7 @@
 const DEV_BUNDLE_IDENTIFIER =
   process.env.EXPO_DEV_BUNDLE_IDENTIFIER || 'fitness.qla.dev';
 
-// The shipped identity. This used to read com.SparkyApps.SparkyFitnessMobile,
+// The shipped identity. This used to read the upstream project's identifier,
 // left over from the fork: the credentials EAS actually provisions are
 // fitness.qla.dev.widget and fitness.qla.dev.ExpoWidgetsTarget (see
 // extra.eas.build.experimental.ios.appExtensions in app.json), so a production
@@ -17,7 +17,7 @@ const IOS_APP_GROUP_DEV =
   process.env.IOS_APP_GROUP_DEV || `group.${DEV_BUNDLE_IDENTIFIER}`;
 // Derived from the bundle identifier for the same reason the dev group is: the
 // app group EAS provisions for both widget targets is group.fitness.qla.dev, so
-// the old group.com.SparkyApps.SparkyFitnessMobile.shared value would have left
+// the upstream project's old app group value would have left
 // a production build's widgets unable to read the app's shared container.
 const IOS_APP_GROUP_PROD =
   process.env.IOS_APP_GROUP_PROD || `group.${PROD_BUNDLE_IDENTIFIER}`;

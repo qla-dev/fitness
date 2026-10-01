@@ -85,7 +85,7 @@ describe('OnboardingScreen', () => {
 
       expect(getByText('qla.fit')).toBeTruthy();
       expect(getByText('Your self-hosted fitness tracker')).toBeTruthy();
-      expect(getByPlaceholderText('https://your-sparky-app.com')).toBeTruthy();
+      expect(getByPlaceholderText('https://your-server.com')).toBeTruthy();
       expect(getByText('Next')).toBeTruthy();
       expect(getByText('Later')).toBeTruthy();
     });
@@ -97,7 +97,7 @@ describe('OnboardingScreen', () => {
       const { getByPlaceholderText, getByText } = renderScreen();
 
       fireEvent.changeText(
-        getByPlaceholderText('https://your-sparky-app.com'),
+        getByPlaceholderText('https://your-server.com'),
         'https://a-long-enough-server-url.example.com'
       );
 
@@ -133,7 +133,7 @@ describe('OnboardingScreen', () => {
       const { getByText, getByPlaceholderText } = renderScreen();
 
       fireEvent.changeText(
-        getByPlaceholderText('https://your-sparky-app.com'),
+        getByPlaceholderText('https://your-server.com'),
         'https://example.com'
       );
 
@@ -154,7 +154,7 @@ describe('OnboardingScreen', () => {
       const { getByText, getByPlaceholderText } = renderScreen();
 
       fireEvent.changeText(
-        getByPlaceholderText('https://your-sparky-app.com'),
+        getByPlaceholderText('https://your-server.com'),
         'https://example.com'
       );
 
@@ -186,7 +186,7 @@ describe('OnboardingScreen', () => {
       const { getByText, getByPlaceholderText } = renderScreen();
 
       fireEvent.changeText(
-        getByPlaceholderText('https://your-sparky-app.com'),
+        getByPlaceholderText('https://your-server.com'),
         'https://example.com'
       );
 
@@ -212,7 +212,7 @@ describe('OnboardingScreen', () => {
       mockFetch.mockResolvedValueOnce({ ok: true });
 
       fireEvent.changeText(
-        result.getByPlaceholderText('https://your-sparky-app.com'),
+        result.getByPlaceholderText('https://your-server.com'),
         'https://example.com'
       );
 
@@ -245,7 +245,7 @@ describe('OnboardingScreen', () => {
 
       // Should be back on page 1 with URL preserved
       expect(
-        result.getByPlaceholderText('https://your-sparky-app.com').props.value
+        result.getByPlaceholderText('https://your-server.com').props.value
       ).toBe('https://example.com');
     });
 

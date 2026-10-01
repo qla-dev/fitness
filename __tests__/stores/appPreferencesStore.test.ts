@@ -5,6 +5,7 @@ import {
   PREFERENCE_DEFAULTS,
   __resetAppPreferencesStoreForTests,
 } from '../../src/stores/appPreferencesStore';
+import { legacyStorageKey, storageKey } from '../../src/services/storageKeys';
 
 import { canUseLiquidGlass } from '../../src/utils/liquidGlass';
 
@@ -30,7 +31,7 @@ describe('appPreferencesStore', () => {
       expect(state.notificationsEnabled).toBe(true);
       expect(state.hydrationCardVisible).toBe(true);
       expect(state.fastingCardVisible).toBe(true);
-      expect(state.askSparkyVisible).toBe(true);
+      expect(state.askMarkAIVisible).toBe(true);
       expect(state.liquidGlassTabBarEnabled).toBe(false);
       expect(state.activeWorkoutMetricColumn).toBe('rpe');
       expect(state.diarySummaryVisible).toBe(false);
@@ -123,7 +124,7 @@ describe('appPreferencesStore', () => {
       delete withoutHealthTrends.healthTrendOrder;
       delete withoutHealthTrends.hiddenHealthTrends;
       await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
+        '@qla/app-preferences',
         JSON.stringify({
           state: { ...withoutHealthTrends, soundsEnabled: false },
           version: 1,
@@ -147,7 +148,7 @@ describe('appPreferencesStore', () => {
       >;
       delete withoutMetricColumn.activeWorkoutMetricColumn;
       await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
+        '@qla/app-preferences',
         JSON.stringify({
           state: { ...withoutMetricColumn, soundsEnabled: false },
           version: 1,
@@ -184,7 +185,7 @@ describe('appPreferencesStore', () => {
       expect(state.notificationsEnabled).toBe(true);
       expect(state.hydrationCardVisible).toBe(true);
       expect(state.fastingCardVisible).toBe(true);
-      expect(state.askSparkyVisible).toBe(true);
+      expect(state.askMarkAIVisible).toBe(true);
     });
 
     it('uses store defaults when no legacy keys and no combined key exist', async () => {
@@ -201,13 +202,62 @@ describe('appPreferencesStore', () => {
         state: { ...PREFERENCE_DEFAULTS, soundsEnabled: false },
         version: 1,
       });
-      await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
-        combinedValue
-      );
+      await AsyncStorage.setItem('@qla/app-preferences', combinedValue);
 
       // Legacy key has a different value — should be ignored.
       await AsyncStorage.setItem('@HealthConnect:soundsEnabled', 'true');
+
+      await useAppPreferencesStore.persist.rehydrate();
+
+      expect(useAppPreferencesStore.getState().soundsEnabled).toBe(false);
+    });
+  });
+
+  describe('pre-rebrand storage migration', () => {
+    const STORE_KEY = storageKey('app-preferences');
+    const LEGACY_STORE_KEY = legacyStorageKey(STORE_KEY)!;
+
+    it('moves the legacy key to the new one once and keeps every choice', async () => {
+      // Older installs persisted the assistant toggle under its old name.
+      const legacyState: Record<string, unknown> = {
+        ...PREFERENCE_DEFAULTS,
+        soundsEnabled: false,
+        askSparkyVisible: false,
+      };
+      delete legacyState.askMarkAIVisible;
+      await AsyncStorage.setItem(
+        LEGACY_STORE_KEY,
+        JSON.stringify({ state: legacyState, version: 2 })
+      );
+
+      await useAppPreferencesStore.persist.rehydrate();
+
+      const state = useAppPreferencesStore.getState();
+      expect(state.soundsEnabled).toBe(false);
+      expect(state.askMarkAIVisible).toBe(false);
+      expect(state).not.toHaveProperty('askSparkyVisible');
+      expect(await AsyncStorage.getItem(LEGACY_STORE_KEY)).toBeNull();
+      const migrated = JSON.parse((await AsyncStorage.getItem(STORE_KEY))!);
+      expect(migrated.version).toBe(3);
+      expect(migrated.state.askMarkAIVisible).toBe(false);
+      expect(migrated.state).not.toHaveProperty('askSparkyVisible');
+    });
+
+    it('prefers the new key over a leftover legacy one', async () => {
+      await AsyncStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({
+          state: { ...PREFERENCE_DEFAULTS, soundsEnabled: false },
+          version: 3,
+        })
+      );
+      await AsyncStorage.setItem(
+        LEGACY_STORE_KEY,
+        JSON.stringify({
+          state: { ...PREFERENCE_DEFAULTS, soundsEnabled: true },
+          version: 2,
+        })
+      );
 
       await useAppPreferencesStore.persist.rehydrate();
 
@@ -221,7 +271,7 @@ describe('appPreferencesStore', () => {
     it('switches Liquid Glass on once for existing users on supported devices', async () => {
       mockCanUseLiquidGlass.mockReturnValue(true);
       await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
+        '@qla/app-preferences',
         JSON.stringify({
           state: { ...PREFERENCE_DEFAULTS, liquidGlassTabBarEnabled: false },
           version: 1,
@@ -238,7 +288,7 @@ describe('appPreferencesStore', () => {
     it('keeps it off once turned off after the migration', async () => {
       mockCanUseLiquidGlass.mockReturnValue(true);
       await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
+        '@qla/app-preferences',
         JSON.stringify({
           state: { ...PREFERENCE_DEFAULTS, liquidGlassTabBarEnabled: false },
           version: 2,
@@ -254,7 +304,7 @@ describe('appPreferencesStore', () => {
 
     it('leaves it off on devices without Liquid Glass', async () => {
       await AsyncStorage.setItem(
-        '@SparkyFitness/app-preferences',
+        '@qla/app-preferences',
         JSON.stringify({ state: { ...PREFERENCE_DEFAULTS }, version: 1 })
       );
 

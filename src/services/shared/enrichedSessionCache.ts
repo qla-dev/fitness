@@ -1,4 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  getStorageItem,
+  legacyStorageKey,
+  removeStorageItem,
+  storageKey,
+} from '../storageKeys';
 import { getActiveServerConfigId } from '../storage';
 
 /**
@@ -18,14 +24,14 @@ import { getActiveServerConfigId } from '../storage';
  * takes the identity and change marker each platform can supply.
  */
 
-const STORAGE_KEY_PREFIX = '@SparkyFitness/enrichedSessions';
+const STORAGE_KEY_PREFIX = storageKey('enrichedSessions');
 
 /**
  * The unscoped key this cache first shipped with. Never read: its entries mean
  * "some server has this telemetry", which is exactly the ambiguity the scoping
  * below removes. It is deleted on first load so it does not linger.
  */
-const LEGACY_STORAGE_KEY = STORAGE_KEY_PREFIX;
+const LEGACY_STORAGE_KEY = legacyStorageKey(STORAGE_KEY_PREFIX);
 
 /**
  * Scope used when no server is configured or the lookup fails.
@@ -99,7 +105,7 @@ let legacyKeyCleared = false;
 
 const readScope = async (scope: string): Promise<string[]> => {
   try {
-    const raw = await AsyncStorage.getItem(storageKeyForScope(scope));
+    const raw = await getStorageItem(storageKeyForScope(scope));
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed)
       ? parsed.filter((k): k is string => typeof k === 'string')
@@ -125,7 +131,11 @@ const load = async (): Promise<string[]> => {
       legacyKeyCleared = true;
       // Best effort: nothing reads it any more, so a failure costs only the
       // orphaned entry.
-      await AsyncStorage.removeItem(LEGACY_STORAGE_KEY).catch(() => undefined);
+      if (LEGACY_STORAGE_KEY) {
+        await AsyncStorage.removeItem(LEGACY_STORAGE_KEY).catch(
+          () => undefined
+        );
+      }
     }
     return keys;
   })().finally(() => {
@@ -208,7 +218,7 @@ export const clearEnrichedSessions = async (): Promise<void> => {
   cacheIndex = new Set();
   cacheScope = scope;
   try {
-    await AsyncStorage.removeItem(storageKeyForScope(scope));
+    await removeStorageItem(storageKeyForScope(scope));
   } catch {
     // Best effort.
   }

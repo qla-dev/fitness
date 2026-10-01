@@ -67,7 +67,6 @@ export * from "./schemas/database/Session.zod.ts";
 export * from "./schemas/database/SleepEntries.zod.ts";
 export * from "./schemas/database/SleepEntryStages.zod.ts";
 export * from "./schemas/database/SleepNeedCalculations.zod.ts";
-export * from "./schemas/database/SparkyChatHistory.zod.ts";
 export * from "./schemas/database/SsoProvider.zod.ts";
 export * from "./schemas/database/TwoFactor.zod.ts";
 export * from "./schemas/database/UserCustomNutrients.zod.ts";

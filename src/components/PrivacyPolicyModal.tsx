@@ -6,8 +6,7 @@ import { addLog } from '../services/LogService';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 
-const PRIVACY_POLICY_URL =
-  'https://codewithcj.github.io/SparkyFitness/privacy_policy';
+const PRIVACY_POLICY_URL = 'https://fit.qla.dev/#privacy';
 
 interface PrivacyPolicyModalProps {
   visible: boolean;
