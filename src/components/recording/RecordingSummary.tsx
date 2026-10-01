@@ -89,6 +89,7 @@ export function recordingDetailStats(
         unit: label,
       }),
       color: METRIC_COLORS.speed,
+      metric: 'speed',
     },
     {
       label: t('recording.elevation', { defaultValue: 'Elevation gain' }),
@@ -100,6 +101,7 @@ export function recordingDetailStats(
           ? t('recording.feet', { defaultValue: 'ft' })
           : t('recording.meters', { defaultValue: 'm' }),
       color: METRIC_COLORS.elevation,
+      metric: 'elevation',
     },
   ];
   if (detail.avgHeartRate !== null && !hasAverageHeartRate)
@@ -110,6 +112,7 @@ export function recordingDetailStats(
       value: fmt(detail.avgHeartRate),
       unit: bpm,
       color: METRIC_COLORS.heartRate,
+      metric: 'heartRate',
     });
   if (detail.maxHeartRate !== null)
     stats.push({
@@ -119,6 +122,7 @@ export function recordingDetailStats(
       value: fmt(detail.maxHeartRate),
       unit: bpm,
       color: METRIC_COLORS.heartRate,
+      metric: 'heartRate',
     });
   if (detail.avgCadence !== null)
     stats.push({
@@ -126,6 +130,7 @@ export function recordingDetailStats(
       value: fmt(detail.avgCadence),
       unit: t('recording.rpm', { defaultValue: 'rpm' }),
       color: METRIC_COLORS.cadence,
+      metric: 'cadence',
     });
   return stats;
 }

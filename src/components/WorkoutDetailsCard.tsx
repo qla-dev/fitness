@@ -22,6 +22,8 @@ export interface DetailStat {
   value: string;
   unit?: string;
   color: string;
+  /** Which reading this is, for the icon a shared photo draws beside it. */
+  metric?: keyof typeof METRIC_COLORS;
   /** Spans the full width instead of sharing its row. */
   wide?: boolean;
 }

@@ -1004,7 +1004,7 @@ const styles = StyleSheet.create({
   },
   toolLabel: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 8,
     fontWeight: '600',
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowRadius: 4,

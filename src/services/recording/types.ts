@@ -1,3 +1,5 @@
+import type { PhotoMetricIcon } from '../../constants/photoMetricIcons';
+
 export type RecordingSport = 'run' | 'ride';
 
 /** What the session is aiming at. `open` is Quick Start: no target at all. */
@@ -140,7 +142,7 @@ export interface PhotoComposition {
     labelSize?: number;
     weight?: '300' | '400';
     iconAbove?: boolean;
-    icon?: 'speed' | 'calories' | 'heart';
+    icon?: PhotoMetricIcon;
   }[];
   route: { latitude: number; longitude: number; segment: number }[];
 }

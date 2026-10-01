@@ -116,13 +116,18 @@ export function photoEditorLayout(
 ) {
   const width = 1080;
   const height = Math.round(width / options.aspectRatio);
+  // Older saved photos carry readings without the stacked geometry, laid out
+  // on a 1080-wide canvas. They get the live grid, in points of a phone-width
+  // viewport scaled to that canvas, so their text is as large as any other.
+  const legacy = composition.width / 390;
   const sourceMetrics = composition.metrics.map((metric, index) =>
     options.layout === 'classic' && !metric.iconAbove
       ? {
           ...metric,
-          x: 24,
-          y: composition.top + [0, 82, 194, 298, 402][index],
-          size: [48, 40, 34, 34, 28][index],
+          x: 24 * legacy,
+          y: composition.top + [0, 82, 194, 298, 402][index] * legacy,
+          size: [48, 40, 34, 34, 28][index] * legacy,
+          labelSize: 12 * legacy,
           iconAbove: true,
         }
       : metric
@@ -147,18 +152,24 @@ export function photoEditorLayout(
         (item.label ? (item.labelSize ?? 12) * 1.2 : 0)
     )
   );
-  // Classic stacks its wordmark under the last reading, so reserve that row.
+  // Classic starts below the editor's close button, which sits over the top
+  // left of the photo (its bottom edge is about a fifth of the width down),
+  // and stacks its wordmark under the last reading, so reserve that row.
+  const classicTop = Math.round(width * 0.2);
+  const classicFirst = Math.min(...sourceMetrics.map((item) => item.y));
   const classicScale = Math.min(
     width / composition.width,
-    (height * 0.95 - brandGap - brandSize * 1.4) / classicBottom
+    (height * 0.95 - classicTop - brandGap - brandSize * 1.4) /
+      (classicBottom - classicFirst)
   );
+  const classicShift = Math.max(0, classicTop - classicFirst * classicScale);
   const metrics = sourceMetrics.map((metric, index) => {
     if (options.layout === 'classic') {
       const scale = classicScale;
       return {
         ...metric,
         x: inset,
-        y: metric.y * scale,
+        y: metric.y * scale + classicShift,
         size: metric.size * scale,
         labelSize: (metric.labelSize ?? 12) * scale,
         iconSize: 24 * scale,
@@ -215,10 +226,6 @@ export function photoEditorLayout(
       iconSize: rowSize * 0.5,
       unitSize: rowSize * 0.58,
       labelSize: rowSize * 0.25,
-      icon:
-        options.layout === 'compact' || options.layout === 'trail'
-          ? undefined
-          : metric.icon,
       x: inset + x * contentWidth,
       y: y * height,
       size: rowSize,
@@ -264,7 +271,7 @@ export function photoEditorLayout(
       align: options.textAlign ?? 'left',
       top:
         options.layout === 'classic'
-          ? classicBottom * classicScale + brandGap
+          ? classicBottom * classicScale + classicShift + brandGap
           : options.layout === 'trail'
             ? metricsBottom + brandGap
             : options.layout === 'poster'

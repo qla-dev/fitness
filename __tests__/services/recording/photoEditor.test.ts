@@ -26,16 +26,49 @@ it('keeps the live HUD sizing and stacked icons with full-width alignment boxes'
   );
   const scale = 1080 / 390;
   expect(metrics[0].y).toBe(60);
+  // The block starts below the editor's close button, keeping its spacing.
+  expect(result.metrics[0].y).toBe(216);
   result.metrics.forEach((metric, index) => {
     expect(metric.x).toBe(result.branding.inset);
     expect(metric.maxWidth).toBe(1080 - result.branding.inset * 2);
-    expect(metric.y).toBeCloseTo(metrics[index].y * scale);
+    expect(metric.y - result.metrics[0].y).toBeCloseTo(
+      (metrics[index].y - metrics[0].y) * scale
+    );
     expect(metric.size).toBeCloseTo(metrics[index].size * scale);
     expect(metric).toMatchObject({
       iconAbove: true,
       text: metrics[index].text,
     });
   });
+});
+
+it('draws every reading with its icon in every layout', () => {
+  const metrics = liveMetricLayout(
+    [
+      { text: '32:10', icon: 'duration' },
+      { text: '5.2', unit: 'km', icon: 'distance' },
+      { text: '320', unit: 'kcal', icon: 'calories' },
+    ],
+    0
+  );
+  for (const layout of [
+    'classic',
+    'summit',
+    'hero',
+    'poster',
+    'compact',
+    'trail',
+  ] as const) {
+    const result = photoEditorLayout(
+      { width: 390, height: 693, top: 0, route: [], metrics },
+      { ...defaultPhotoEditorOptions, layout }
+    );
+    expect(result.metrics.map((metric) => metric.icon)).toEqual([
+      'duration',
+      'distance',
+      'calories',
+    ]);
+  }
 });
 
 const composition: PhotoComposition = {

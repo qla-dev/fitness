@@ -24,6 +24,8 @@ import {
   resolveRecordingSource,
 } from '../utils/activityRecordingSource';
 import { RECORDING_DETAIL_TYPE } from '../services/recording/types';
+import { liveMetricLayout } from '../services/recording/liveMetricLayout';
+import type { PhotoMetricIcon } from '../constants/photoMetricIcons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,6 +76,19 @@ import type { WorkoutDraftSet } from '../types/drafts';
 import { activityTelemetry } from '../utils/activityTelemetry';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
+
+/** The icon a shared photo draws above each kind of reading. */
+const DETAIL_METRIC_ICONS: Record<keyof typeof METRIC_COLORS, PhotoMetricIcon> =
+  {
+    duration: 'duration',
+    calories: 'calories',
+    distance: 'distance',
+    pace: 'speed',
+    heartRate: 'heart',
+    speed: 'speed',
+    elevation: 'elevation',
+    cadence: 'cadence',
+  };
 
 type Props = RootStackScreenProps<'ActivityDetail'>;
 
@@ -634,26 +649,30 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   // marked wide because it has no natural partner between duration and total
   // energy, and a half-empty row reads as a missing number.
   const buildDetailStats = (): DetailStat[] => {
-    const colorFor = (editKey?: string): string => {
+    const metricFor = (editKey?: string): keyof typeof METRIC_COLORS => {
       switch (editKey) {
         case 'duration':
-          return METRIC_COLORS.duration;
+          return 'duration';
         case 'calories':
-          return METRIC_COLORS.calories;
+          return 'calories';
         case 'distance':
-          return METRIC_COLORS.distance;
+          return 'distance';
         case 'avgHeartRate':
-          return METRIC_COLORS.heartRate;
+          return 'heartRate';
         default:
-          return METRIC_COLORS.pace;
+          return 'pace';
       }
     };
-    const stats: DetailStat[] = buildStats().map((stat) => ({
-      label: stat.label,
-      value: stat.value,
-      unit: stat.editSuffix,
-      color: colorFor(stat.editKey),
-    }));
+    const stats: DetailStat[] = buildStats().map((stat) => {
+      const metric = metricFor(stat.editKey);
+      return {
+        label: stat.label,
+        value: stat.value,
+        unit: stat.editSuffix,
+        color: METRIC_COLORS[metric],
+        metric,
+      };
+    });
     return recordingDetail
       ? [
           ...stats,
@@ -908,18 +927,22 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               workoutName={name}
               details={session.activity_details}
               sessionId={session.type + ':' + session.id}
+              // The same phone-width geometry as a photo taken while
+              // recording, so every layout sizes these readings alike.
               composition={{
-                width: 1080,
-                height: 1920,
+                width: 390,
+                height: 693,
                 top: 0,
-                metrics: buildDetailStats()
-                  .slice(0, 5)
-                  .map((stat, index) => ({
-                    text: [stat.value, stat.unit].filter(Boolean).join(' '),
-                    x: 238,
-                    y: 125 + index * 192,
-                    size: index === 0 ? 124 : 92,
-                  })),
+                metrics: liveMetricLayout(
+                  buildDetailStats()
+                    .slice(0, 5)
+                    .map((stat) => ({
+                      text: stat.value,
+                      unit: stat.unit,
+                      icon: stat.metric && DETAIL_METRIC_ICONS[stat.metric],
+                    })),
+                  0
+                ),
                 route: importedTelemetry.gps.map((point) => ({
                   latitude: point.lat,
                   longitude: point.lon,
