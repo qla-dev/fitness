@@ -37,7 +37,10 @@ import Button from '../components/ui/Button';
 import FooterCTA from '../components/ui/FooterCTA';
 import AppleSignInButton from '../components/AppleSignInButton';
 import { useAppleSignIn } from '../hooks/useAppleSignIn';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import {
   onlineRequest,
   OnlineError,
@@ -84,6 +87,7 @@ function MarkaiContent() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const nativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const session = useOnlineAccount((s) => s.session);
   const accountId = session?.user.id;
   const [mode, setMode] = useState<Mode>('free');
@@ -477,15 +481,18 @@ function MarkaiContent() {
     >
       {header}
       {empty ? (
-        // Nothing to scroll: a plain view, centred and lifted slightly above
-        // the middle, instead of a scroll view that rubber-bands over nothing.
+        // Nothing to scroll: a plain view, centred between the header and the
+        // composer, instead of a scroll view that rubber-bands over nothing.
+        // The native header floats over this view, so its height is reserved
+        // at the top as the composer's is at the bottom; leave either out and
+        // the gaps above and below stop matching.
         <View
           style={{
             flex: 1,
             paddingHorizontal: 20,
             justifyContent: 'center',
+            paddingTop: nativeHeader ? headerOffset : 0,
             paddingBottom: session ? barHeight + insets.bottom : 0,
-            transform: [{ translateY: -36 }],
           }}
         >
           <MarkaiEmptyState

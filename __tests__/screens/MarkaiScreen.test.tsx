@@ -41,6 +41,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,
+  useNativeHeaderOffset: () => 0,
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: () => false,

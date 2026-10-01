@@ -140,25 +140,23 @@ export default function MarkaiEmptyState({
   return (
     <View className="items-center gap-6">
       <MarkaiMark />
-      {/* Two to a row at least: a column of one chip per line left most of
-          the screen empty. Longer labels wrap onto a second line. */}
-      <View className="flex-row flex-wrap justify-between self-stretch gap-y-3">
+      {/* Chips as wide as their labels, wrapping and centred: the text is
+          small enough that they sit at least two to a row, without a fixed
+          width that leaves short labels in an empty box. */}
+      <View className="flex-row flex-wrap justify-center self-stretch gap-2">
         {choices.map((choice) => (
           <Pressable
             key={choice.label}
             disabled={disabled}
             accessibilityRole="button"
             onPress={() => onSelect(choice.prompt, choice.mode)}
-            className="bg-surface rounded-2xl px-3 py-3 flex-row items-center gap-2"
-            style={({ pressed }) => ({
-              width: '48.5%',
-              opacity: pressed ? 0.7 : 1,
-            })}
+            className="bg-surface rounded-full px-3 py-2 flex-row items-center gap-1.5"
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
-            <Icon name={choice.icon} size={18} color={accent} />
+            <Icon name={choice.icon} size={14} color={accent} />
             <Text
-              className="text-text-primary text-sm font-medium flex-1"
-              numberOfLines={2}
+              className="text-text-primary text-xs font-medium"
+              numberOfLines={1}
             >
               {choice.label}
             </Text>
