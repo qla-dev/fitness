@@ -20,10 +20,9 @@ import type { RootStackScreenProps } from '../types/navigation';
 
 type AboutScreenProps = RootStackScreenProps<'About'>;
 
-const PROJECT_URL = 'https://github.com/CodeWithCJ/SparkyFitness';
-const PRIVACY_POLICY_URL =
-  'https://codewithcj.github.io/SparkyFitness/privacy_policy';
-const DOCUMENTATION_URL = 'https://codewithcj.github.io/SparkyFitness/';
+const PROJECT_URL = 'https://github.com/qla-dev/fitness';
+const PRIVACY_POLICY_URL = 'https://fit.qla.dev/#privacy';
+const DOCUMENTATION_URL = 'https://fit.qla.dev/';
 
 const AboutScreen: React.FC<AboutScreenProps> = () => {
   const { t } = useTranslation();

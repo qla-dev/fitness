@@ -18,7 +18,7 @@ jest.mock('../../../src/components/Icon', () => {
 const baseFoodPart = {
   type: 'tool-call' as const,
   toolCallId: 'call-1',
-  toolName: 'sparky_manage_food',
+  toolName: 'markai_manage_food',
   args: {},
   argsText: '{"name":"eggs"}',
 };
@@ -101,7 +101,7 @@ describe('ToolCallCard', () => {
     const lookupPart = {
       type: 'tool-call' as const,
       toolCallId: 'call-2',
-      toolName: 'sparky_get_food_diary',
+      toolName: 'markai_get_food_diary',
       args: {},
       argsText: '{}',
       result: '# Diary\n\n{ "calories": 1850 }',

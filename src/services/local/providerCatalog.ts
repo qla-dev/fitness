@@ -49,7 +49,7 @@ const FEDB_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 // Open Food Facts asks API clients to identify themselves.
 const USER_AGENT = `qla.fit/${
   Constants.expoConfig?.version ?? '0.0.0'
-} (https://github.com/CodeWithCJ/SparkyFitness)`;
+} (https://fit.qla.dev)`;
 
 /** Seeded into the local database so the provider pickers have something to offer. */
 export const LOCAL_PROVIDER_SEEDS = [

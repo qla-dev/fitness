@@ -593,7 +593,7 @@ export const seedRichWorkout = async (): Promise<SeedResult> => {
     // Connect has no dedup of its own, same as HealthKit.
     const version = Date.now();
     const clientRecordId = (suffix: string) => ({
-      clientRecordId: `sparkyfitness-seed-rich-walk-${suffix}`,
+      clientRecordId: `qlafit-seed-rich-walk-${suffix}`,
       clientRecordVersion: version,
     });
 
@@ -750,7 +750,7 @@ export const seedRichStrengthWorkout = async (): Promise<SeedResult> => {
     // new one.
     const version = Date.now();
     const clientRecordId = (suffix: string) => ({
-      clientRecordId: `sparkyfitness-seed-rich-strength-${suffix}`,
+      clientRecordId: `qlafit-seed-rich-strength-${suffix}`,
       clientRecordVersion: version,
     });
 

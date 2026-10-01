@@ -132,7 +132,7 @@ describe('FoodDetailScreen', () => {
   const baseItem = {
     id: 'food-1',
     name: 'Greek Yogurt',
-    brand: 'Sparky',
+    brand: 'Acme',
     userId: 'user-1',
     sharedWithPublic: false,
     servingSize: 1,
@@ -314,7 +314,7 @@ describe('FoodDetailScreen', () => {
         variantId: 'variant-2',
         initialValues: expect.objectContaining({
           name: 'Greek Yogurt',
-          brand: 'Sparky',
+          brand: 'Acme',
           servingSize: '2',
           servingUnit: 'cup',
           calories: '200',

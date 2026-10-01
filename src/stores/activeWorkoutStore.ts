@@ -1,6 +1,10 @@
 import i18n, { formatLocalizedNumber } from '../localization/i18n';
 import type { TFunction } from 'i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  migratingStorage,
+  removeStorageItem,
+  storageKey,
+} from '../services/storageKeys';
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -46,7 +50,8 @@ import {
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { addLog } from '../services/LogService';
 
-const STORAGE_KEY = '@SparkyFitness/active-workout';
+// `migratingStorage` moves an older install's pre-rebrand key on first read.
+const STORAGE_KEY = storageKey('active-workout');
 
 /** Monotonic counter used to reject stale async schedule resolutions. */
 let restInstanceCounter = 0;
@@ -1964,7 +1969,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>()(
     {
       name: STORAGE_KEY,
       version: 5,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => migratingStorage),
       partialize: (state) => ({
         sessionId: state.sessionId,
         session: state.session,
@@ -2109,5 +2114,5 @@ export function __resetActiveWorkoutStoreForTests(): void {
   notificationActionsSubscription?.remove();
   notificationActionsSubscription = null;
   useActiveWorkoutStore.setState({ ...initialData });
-  void AsyncStorage.removeItem(STORAGE_KEY);
+  void removeStorageItem(STORAGE_KEY);
 }

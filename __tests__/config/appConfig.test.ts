@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { APP_URL } from '../../src/constants/appUrlScheme';
 
 describe('Expo native language configuration', () => {
   it('retains the native locale configuration and localized metadata settings', () => {
@@ -73,7 +74,7 @@ describe('brand assets', () => {
   });
 
   it('renders the mark through AppLogo rather than a per-screen require', () => {
-    // The retired SparkyFitness artwork survived the rebrand on two screens
+    // The retired pre-rebrand artwork survived the rebrand on two screens
     // because each held its own require. One component owns the mark now.
     for (const screen of [
       'src/screens/AboutScreen.tsx',
@@ -97,5 +98,27 @@ describe('brand assets', () => {
       expect(fs.existsSync(path.resolve(__dirname, '../..', asset))).toBe(
         false
       );
+  });
+});
+
+describe('deep-link scheme', () => {
+  const read = (relative: string) =>
+    fs.readFileSync(path.resolve(__dirname, '../..', relative), 'utf8');
+
+  it('matches the shipped app.json scheme everywhere links are built', () => {
+    const appJson = JSON.parse(read('app.json')) as {
+      expo: { scheme: string };
+    };
+    // Installed widgets and Live Activities hold links in this scheme, so the
+    // JS constant, app.json and the native widget sources must agree.
+    expect(APP_URL).toBe(`${appJson.expo.scheme}://`);
+    for (const native of [
+      'targets/widget/widgets.swift',
+      'targets/widget/macroWidget.swift',
+      'targets/android-widget/kotlin/com/qlafit/widget/CalorieWidget.kt.tmpl',
+      'targets/android-widget/kotlin/com/qlafit/widget/MacroWidget.kt.tmpl',
+    ]) {
+      expect(read(native)).toContain(`"${APP_URL}`);
+    }
   });
 });

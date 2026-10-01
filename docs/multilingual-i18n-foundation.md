@@ -40,9 +40,8 @@ widget locale bridge.
 
 These are four separate Weblate components, synced both ways by
 `.github/workflows/sync-translations.yml` alongside the web catalog: the English
-source of each is pushed to `mobile/…` in
-[SparkyFitnessTranslations](https://github.com/CodeWithCJ/SparkyFitnessTranslations),
-and every other language is pulled back. Translators edit the real native files,
+source of each is pushed to `mobile/…` in the translations repository, and
+every other language is pulled back. Translators edit the real native files,
 so no format conversion sits between Weblate and the app. EN is the canonical
 source and fallback. Only EN requires complete, non-empty source coverage. A key a
 target does not define is a coverage diagnostic and resolves to EN or the default

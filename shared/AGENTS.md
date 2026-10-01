@@ -2,13 +2,13 @@
 
 *Last updated: 2026-07-08*
 
-`@workspace/shared` is a source-first TypeScript workspace library package for schemas, constants, and timezone/day helpers consumed by SparkyFitnessServer, SparkyFitnessFrontend, and SparkyFitnessMobile.
+`@workspace/shared` is a source-first TypeScript workspace library package for schemas, constants, and timezone/day helpers consumed by the qla.fit mobile app (the package root). It was inherited from the upstream project, where a server and web frontend consumed it too; those are no longer part of this workspace.
 
 ## Scope
 
 - This package defines contracts and shared logic, not an app.
-- Validate changes from consuming packages (server, frontend, mobile), not in isolation.
-- Every schema change here potentially touches three packages.
+- Validate changes from the consuming mobile app, not in isolation.
+- The `../backend` Laravel app mirrors record collections separately; keep collection shapes aligned with it when a synced schema changes.
 
 ## Structure
 
@@ -26,10 +26,10 @@
 
 ## Cross-Package Contract Rules
 
-- Changes to `src/schemas/api/` usually affect server routes and both frontend/mobile API clients.
-- Changes to `src/schemas/database/` require a matching migration in the server (`SparkyFitnessServer/db/migrations/`), RLS policies, and the schema backup.
+- Changes to `src/schemas/api/` affect the mobile API clients and the local `localApi.ts` router.
+- Changes to `src/schemas/database/` describe row shapes existing installs already hold, on device and in the sync backend; keep older rows readable.
 - Timezone/day-string helpers prevent bugs; prefer them over `toISOString().split('T')[0]`.
-- Test any shared change from the consumer packages (`pnpm run validate` in SparkyFitnessServer, SparkyFitnessFrontend, and SparkyFitnessMobile after modifying shared).
+- Test any shared change from the mobile app (`pnpm run validate` at the package root) after modifying shared.
 
 ## Working Rules
 

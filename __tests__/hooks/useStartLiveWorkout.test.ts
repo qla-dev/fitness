@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -77,7 +78,7 @@ function makeSession(): PresetSessionResponse {
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 0,
     activity_details: [],
     exercises: [
@@ -158,7 +159,7 @@ describe('useStartLiveWorkout', () => {
     expect(mockCreateWorkout).toHaveBeenCalledWith({
       name: 'Push Day',
       entry_date: getTodayDate(),
-      source: 'sparky',
+      source: LEGACY_IN_APP_WORKOUT_SOURCE,
       exercises: EXERCISES,
     });
     expect(mockInvalidate).toHaveBeenCalledWith(queryClient, getTodayDate());

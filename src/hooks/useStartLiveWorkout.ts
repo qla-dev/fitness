@@ -6,7 +6,10 @@ import Toast from 'react-native-toast-message';
 import { useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { PresetSessionExerciseRequest } from '@workspace/shared';
+import {
+  LEGACY_IN_APP_WORKOUT_SOURCE,
+  type PresetSessionExerciseRequest,
+} from '@workspace/shared';
 import { useCreateWorkout } from './useExerciseMutations';
 import { flushActiveWorkoutBeforeClear } from './useActiveWorkoutAutosave';
 import { serverConnectionQueryKey } from './queryKeys';
@@ -145,7 +148,7 @@ export function useStartLiveWorkout(navigation: StartLiveWorkoutNavigation): {
         const session = await createSession({
           name: name ?? defaultWorkoutName(entryDate),
           entry_date: entryDate,
-          source: 'sparky',
+          source: LEGACY_IN_APP_WORKOUT_SOURCE,
           exercises: stripPlannedSetValues(exercises),
           // Tags the created session to the preset (recentSessions stats
           // scoping, server-side) without changing how it's built — the

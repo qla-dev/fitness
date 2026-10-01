@@ -225,14 +225,14 @@ export default function AddHubScreen() {
     title: searching
       ? t('addHub.searchTitle', { defaultValue: 'Log food for today' })
       : t('addHub.title', { defaultValue: 'Food dashboard' }),
-    // Sparky on the left, still a placeholder; the profile on the right, where
+    // MarkAI on the left, still a placeholder; the profile on the right, where
     // every other tab header keeps it.
     left: {
       kind: 'icon',
       sfSymbol: 'sparkles',
       ionicon: 'sparkles',
-      accessibilityLabel: t('addSheet.askSparky', {
-        defaultValue: 'Ask Sparky',
+      accessibilityLabel: t('addSheet.askMarkAI', {
+        defaultValue: 'Ask MarkAI',
       }),
       onPress: () => {},
     },
@@ -386,10 +386,10 @@ export default function AddHubScreen() {
       ? []
       : [
           {
-            key: 'sparky',
-            label: t('addSheet.askSparky', { defaultValue: 'Ask Sparky' }),
+            key: 'markai',
+            label: t('addSheet.askMarkAI', { defaultValue: 'Ask MarkAI' }),
             icon: 'sparkles' as IconName,
-            onPress: actions.askSparky,
+            onPress: actions.askMarkAI,
           },
           {
             key: 'sync',

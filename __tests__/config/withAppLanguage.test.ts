@@ -5,7 +5,7 @@ import {
 } from '../../plugins/withAppLanguage';
 
 function mainApplicationFixture(): string {
-  return `package org.SparkyApps.SparkyFitnessMobile1.dev
+  return `package fitness.qla.dev
 
 import android.app.Application
 import android.content.res.Configuration

@@ -10,7 +10,7 @@ import { AI_TIMEOUT_MS } from '../../utils/concurrency';
 /**
  * Request an AI-estimated cross-category unit conversion (e.g. cup → g) for
  * a food. Mirrors the web client wrapper — same shared zod schemas validate
- * both ends. See SparkyFitnessServer/services/aiUnitConversionService.ts.
+ * both ends. See upstream server services/aiUnitConversionService.ts.
  */
 export async function requestAiUnitConversion(
   payload: AiUnitConversionRequest

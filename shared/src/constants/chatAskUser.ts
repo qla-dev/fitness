@@ -1,5 +1,5 @@
 /**
- * The chat-only `sparky_ask_user` tool: how Sparky offers tappable quick-reply
+ * The chat-only `markai_ask_user` tool: how MarkAI offers tappable quick-reply
  * chips instead of making the user retype an answer.
  *
  * Shared source of truth so the server (which publishes the tool schema) and
@@ -13,7 +13,7 @@
  * services/chatService.ts) — so the model cannot reliably perform the fix it
  * would be offering. Get the value right before writing to the diary.
  */
-export const ASK_USER_TOOL_NAME = 'sparky_ask_user';
+export const ASK_USER_TOOL_NAME = 'markai_ask_user';
 
 /**
  * - `choose`: a lookup returned several genuinely different candidates, so the

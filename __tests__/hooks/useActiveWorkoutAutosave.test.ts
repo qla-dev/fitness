@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import { act, renderHook } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import type { PresetSessionResponse } from '@workspace/shared';
@@ -65,7 +66,7 @@ function makeSession(): PresetSessionResponse {
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 60,
     activity_details: [],
     exercises: [
@@ -405,7 +406,7 @@ describe('useActiveWorkoutAutosave', () => {
         'ERROR',
         [
           'sessionId: session-1',
-          'session source: sparky',
+          `session source: ${LEGACY_IN_APP_WORKOUT_SOURCE}`,
           'status: unknown',
           'server response: network down',
         ]
@@ -447,7 +448,7 @@ describe('useActiveWorkoutAutosave', () => {
       renderAutosave();
       const body = JSON.stringify({
         message:
-          'Nested exercise editing is only supported for manual, sparky, or workout plan sessions.',
+          'Nested exercise editing is only supported for manual or workout plan sessions.',
       });
       mockUpdateWorkout.mockRejectedValue(
         new ApiError('Request failed', 409, body)
@@ -462,7 +463,7 @@ describe('useActiveWorkoutAutosave', () => {
         'ERROR',
         [
           'sessionId: session-1',
-          'session source: sparky',
+          `session source: ${LEGACY_IN_APP_WORKOUT_SOURCE}`,
           'status: 409',
           `server response: ${body}`,
         ]

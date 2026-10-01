@@ -26,7 +26,7 @@ export interface AddActions {
   addActivity: () => void;
   groceryList: () => void;
   progressPhotos: () => void;
-  askSparky: () => void;
+  askMarkAI: () => void;
   openCycle: () => void;
   syncHealthData: () => void;
 }

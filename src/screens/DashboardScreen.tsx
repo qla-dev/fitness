@@ -263,7 +263,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     (s) => s.fastingCardVisible
   );
   const cycleCardVisible = useAppPreferencesStore((s) => s.cycleCardVisible);
-  const askSparkyVisible = useAppPreferencesStore((s) => s.askSparkyVisible);
+  const askMarkAIVisible = useAppPreferencesStore((s) => s.askMarkAIVisible);
   const medicationsCardVisible = useAppPreferencesStore(
     (s) => s.medicationsCardVisible
   );
@@ -413,20 +413,20 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           onOpenGoal={openGoal}
         />
 
-        {/* Tap-to-open launcher for the Sparky chat. Styled like an input to
+        {/* Tap-to-open launcher for the MarkAI chat. Styled like an input to
             invite, but it pushes the full chat screen rather than capturing text
             here — the screen's scroll + date-fling gestures make a live input
             here more trouble than it is worth. The composer autofocuses on
             arrival so the affordance is honored immediately. Visibility is a
             local app setting toggled from Activities Settings. */}
-        {!isLocalDataMode() && askSparkyVisible && (
+        {!isLocalDataMode() && askMarkAIVisible && (
           <Pressable
             onPress={() => navigation.navigate('Chat')}
             className="flex-row items-center bg-surface rounded-2xl px-4 py-3 mb-3"
           >
             <Icon name="sparkles" size={18} color={accentColor} />
             <Text className="text-text-muted text-base ml-3">
-              {t('dashboard.askSparky', { defaultValue: 'Ask Sparky…' })}
+              {t('dashboard.askMarkAI', { defaultValue: 'Ask MarkAI…' })}
             </Text>
           </Pressable>
         )}

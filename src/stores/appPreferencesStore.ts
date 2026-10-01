@@ -8,9 +8,19 @@ import {
 import type { LanguagePreference } from '../localization';
 import type { OwnershipFilter } from '../utils/shareStatus';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
+import {
+  getStorageItem,
+  removeStorageItem,
+  storageKey,
+} from '../services/storageKeys';
 
-const STORE_KEY = '@SparkyFitness/app-preferences';
-const STORE_VERSION = 2;
+// Older installs stored this under the pre-rebrand namespace; `getStorageItem`
+// moves it on first read.
+const STORE_KEY = storageKey('app-preferences');
+const STORE_VERSION = 3;
+
+// Pre-rebrand name of the `askMarkAIVisible` field, still in older persisted state.
+const LEGACY_ASK_ASSISTANT_FIELD = 'askSparkyVisible';
 
 /**
  * Legacy per-key AsyncStorage entries that existed before this store was
@@ -23,7 +33,7 @@ const LEGACY_KEYS = {
   notificationsEnabled: '@HealthConnect:notificationsEnabled',
   hydrationCardVisible: '@HealthConnect:hydrationCardVisible',
   fastingCardVisible: '@HealthConnect:fastingCardVisible',
-  askSparkyVisible: '@HealthConnect:askSparkyVisible',
+  askMarkAIVisible: `@HealthConnect:${LEGACY_ASK_ASSISTANT_FIELD}`,
   liquidGlassTabBarEnabled: '@HealthConnect:liquidGlassTabBarEnabled',
 } as const;
 
@@ -44,7 +54,7 @@ export const PREFERENCE_DEFAULTS = {
   hydrationCardVisible: true,
   fastingCardVisible: true,
   cycleCardVisible: true,
-  askSparkyVisible: true,
+  askMarkAIVisible: true,
   medicationsCardVisible: true,
   progressPhotosCardVisible: true,
   medicationRemindersEnabled: true,
@@ -79,7 +89,7 @@ export type AppPreferencesData = {
   hydrationCardVisible: boolean;
   fastingCardVisible: boolean;
   cycleCardVisible: boolean;
-  askSparkyVisible: boolean;
+  askMarkAIVisible: boolean;
   medicationsCardVisible: boolean;
   progressPhotosCardVisible: boolean;
   medicationRemindersEnabled: boolean;
@@ -114,7 +124,7 @@ export interface AppPreferencesState extends AppPreferencesData {
   setHydrationCardVisible: (value: boolean) => void;
   setFastingCardVisible: (value: boolean) => void;
   setCycleCardVisible: (value: boolean) => void;
-  setAskSparkyVisible: (value: boolean) => void;
+  setAskMarkAIVisible: (value: boolean) => void;
   setMedicationsCardVisible: (value: boolean) => void;
   setProgressPhotosCardVisible: (value: boolean) => void;
   setMedicationRemindersEnabled: (value: boolean) => void;
@@ -151,7 +161,7 @@ export interface AppPreferencesState extends AppPreferencesData {
  */
 const legacyAwareStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    const stored = await AsyncStorage.getItem(name);
+    const stored = await getStorageItem(name);
     if (stored !== null) return stored;
 
     // No combined key yet — check whether any legacy per-key values exist.
@@ -177,7 +187,7 @@ const legacyAwareStorage = {
   },
   setItem: (name: string, value: string): Promise<void> =>
     AsyncStorage.setItem(name, value),
-  removeItem: (name: string): Promise<void> => AsyncStorage.removeItem(name),
+  removeItem: removeStorageItem,
 };
 
 export const useAppPreferencesStore = create<AppPreferencesState>()(
@@ -198,7 +208,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
       setHydrationCardVisible: (value) => set({ hydrationCardVisible: value }),
       setFastingCardVisible: (value) => set({ fastingCardVisible: value }),
       setCycleCardVisible: (value) => set({ cycleCardVisible: value }),
-      setAskSparkyVisible: (value) => set({ askSparkyVisible: value }),
+      setAskMarkAIVisible: (value) => set({ askMarkAIVisible: value }),
       setMedicationsCardVisible: (value) =>
         set({ medicationsCardVisible: value }),
       setProgressPhotosCardVisible: (value) =>
@@ -252,7 +262,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         hydrationCardVisible: state.hydrationCardVisible,
         fastingCardVisible: state.fastingCardVisible,
         cycleCardVisible: state.cycleCardVisible,
-        askSparkyVisible: state.askSparkyVisible,
+        askMarkAIVisible: state.askMarkAIVisible,
         medicationsCardVisible: state.medicationsCardVisible,
         progressPhotosCardVisible: state.progressPhotosCardVisible,
         medicationRemindersEnabled: state.medicationRemindersEnabled,
@@ -300,6 +310,16 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         if (version < 2 && canUseLiquidGlass()) {
           migrated = { ...migrated, liquidGlassTabBarEnabled: true };
         }
+        // v2 → v3: the chat assistant was renamed, and its dashboard toggle with
+        // it. Carry the user's choice over to the new field name.
+        if (version < 3 && LEGACY_ASK_ASSISTANT_FIELD in migrated) {
+          const { [LEGACY_ASK_ASSISTANT_FIELD]: legacyValue, ...rest } =
+            migrated as Partial<AppPreferencesData> & Record<string, unknown>;
+          migrated =
+            typeof legacyValue === 'boolean'
+              ? { ...rest, askMarkAIVisible: legacyValue }
+              : rest;
+        }
         return migrated as AppPreferencesState;
       },
     }
@@ -322,5 +342,5 @@ export function getDefaultRestSec(): number {
  */
 export function __resetAppPreferencesStoreForTests(): void {
   useAppPreferencesStore.setState({ ...PREFERENCE_DEFAULTS });
-  void AsyncStorage.removeItem(STORE_KEY);
+  void removeStorageItem(STORE_KEY);
 }

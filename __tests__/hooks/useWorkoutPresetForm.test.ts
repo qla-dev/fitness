@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import { renderHook, act } from '@testing-library/react-native';
 import {
   presetFormReducer,
@@ -588,7 +589,7 @@ describe('presetFormReducer', () => {
         name: 'Push Day',
         description: 'felt strong',
         notes: 'session note',
-        source: 'sparky',
+        source: LEGACY_IN_APP_WORKOUT_SOURCE,
         total_duration_minutes: 45,
         activity_details: [],
         exercises: [
@@ -1017,7 +1018,7 @@ describe('useWorkoutPresetForm', () => {
       name: 'Push Day',
       description: null,
       notes: null,
-      source: 'sparky',
+      source: LEGACY_IN_APP_WORKOUT_SOURCE,
       total_duration_minutes: 45,
       activity_details: [],
       exercises: [

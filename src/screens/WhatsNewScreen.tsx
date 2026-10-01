@@ -640,14 +640,14 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
       : []),
     {
       eyebrow: t('whatsNewPage.features.chat.eyebrow', {
-        defaultValue: 'ASK SPARKY',
+        defaultValue: 'ASK MARKAI',
       }),
       headline: t('whatsNewPage.features.chat.headline', {
         defaultValue: 'Chat with your AI coach',
       }),
       body: t('whatsNewPage.features.chat.body', {
         defaultValue:
-          'Ask Sparky to log meals, plan what to eat, and answer questions about your day through chat.',
+          'Ask MarkAI to log meals, plan what to eat, and answer questions about your day through chat.',
       }),
       hero: <ChatMockup />,
       cta: {

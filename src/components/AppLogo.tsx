@@ -5,7 +5,7 @@ import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
  * The app's mark, set the one way it is allowed to be set — the counterpart to
  * {@link AppWordmark}, which owns the name. Every surface that shows the logo
  * renders this rather than reaching for an asset directly, so the mark cannot
- * drift the way the retired SparkyFitness artwork did: it outlived the rebrand
+ * drift the way the retired pre-rebrand artwork did: it outlived the rebrand
  * on About and Onboarding purely because those screens each held their own
  * `require`.
  *

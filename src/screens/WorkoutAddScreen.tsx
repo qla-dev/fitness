@@ -55,6 +55,7 @@ import type {
   CreatePresetSessionRequest,
   UpdatePresetSessionRequest,
 } from '@workspace/shared';
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 
 type Props = RootStackScreenProps<'WorkoutAdd'>;
 
@@ -323,7 +324,7 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
               const payload: CreatePresetSessionRequest = {
                 name: submission.name,
                 entry_date: submission.entryDate,
-                source: 'sparky',
+                source: LEGACY_IN_APP_WORKOUT_SOURCE,
                 exercises: submission.payloadExercises,
               };
               await createSession(payload);

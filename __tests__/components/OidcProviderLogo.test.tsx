@@ -11,7 +11,7 @@ jest.mock('../../src/components/Icon', () => {
   };
 });
 
-const SERVER_URL = 'https://sparky.example.com';
+const SERVER_URL = 'https://server.example.com';
 
 describe('OidcProviderLogo', () => {
   it('renders the globe fallback when no logo is configured', () => {

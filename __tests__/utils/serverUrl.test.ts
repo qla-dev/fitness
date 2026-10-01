@@ -111,7 +111,7 @@ describe('isPrivateOrLocalHost', () => {
   });
 
   test('public domains are not private', () => {
-    expect(isPrivateOrLocalHost('https://sparky.example.com')).toBe(false);
+    expect(isPrivateOrLocalHost('https://server.example.com')).toBe(false);
     expect(isPrivateOrLocalHost('http://example.com')).toBe(false);
   });
 });
@@ -129,7 +129,7 @@ describe('getInsecureUrlError', () => {
   });
 
   test('https always passes, including IP hosts and messy formatting', () => {
-    expect(getInsecureUrlError('https://sparky.example.com')).toBeNull();
+    expect(getInsecureUrlError('https://server.example.com')).toBeNull();
     expect(getInsecureUrlError('https://192.168.1.10:3010')).toBeNull();
     expect(getInsecureUrlError('  HTTPS://Example.com/  ')).toBeNull();
   });
@@ -143,7 +143,7 @@ describe('getInsecureUrlError', () => {
 
   test('plain http to a public host is rejected even in dev', () => {
     globalWithDev.__DEV__ = true;
-    expect(getInsecureUrlError('http://sparky.example.com')).toBeTruthy();
+    expect(getInsecureUrlError('http://server.example.com')).toBeTruthy();
     expect(getInsecureUrlError('http://8.8.8.8')).toBeTruthy();
   });
 

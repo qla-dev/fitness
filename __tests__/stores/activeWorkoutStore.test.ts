@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { PresetSessionResponse } from '@workspace/shared';
 import {
@@ -77,7 +78,7 @@ function makeSession(
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 60,
     activity_details: [],
     exercises: [
@@ -3506,7 +3507,7 @@ describe('activeWorkoutStore', () => {
       };
       mockHaptic.mockClear();
       await AsyncStorage.setItem(
-        '@SparkyFitness/active-workout',
+        '@qla/active-workout',
         JSON.stringify(persisted)
       );
       await useActiveWorkoutStore.persist.rehydrate();
@@ -3538,7 +3539,7 @@ describe('activeWorkoutStore', () => {
         version: 5,
       };
       await AsyncStorage.setItem(
-        '@SparkyFitness/active-workout',
+        '@qla/active-workout',
         JSON.stringify(persisted)
       );
       await useActiveWorkoutStore.persist.rehydrate();
@@ -3586,7 +3587,7 @@ describe('activeWorkoutStore', () => {
         async (version) => {
           jest.useRealTimers();
           await AsyncStorage.setItem(
-            '@SparkyFitness/active-workout',
+            '@qla/active-workout',
             JSON.stringify(buildLegacyPayload(version))
           );
           await useActiveWorkoutStore.persist.rehydrate();
@@ -3610,7 +3611,7 @@ describe('activeWorkoutStore', () => {
           version: 5,
         };
         await AsyncStorage.setItem(
-          '@SparkyFitness/active-workout',
+          '@qla/active-workout',
           JSON.stringify(persisted)
         );
         await useActiveWorkoutStore.persist.rehydrate();
@@ -3639,7 +3640,7 @@ describe('activeWorkoutStore', () => {
           version: 5,
         };
         await AsyncStorage.setItem(
-          '@SparkyFitness/active-workout',
+          '@qla/active-workout',
           JSON.stringify(persisted)
         );
         await useActiveWorkoutStore.persist.rehydrate();
@@ -3672,7 +3673,7 @@ describe('activeWorkoutStore', () => {
         version: 5,
       };
       await AsyncStorage.setItem(
-        '@SparkyFitness/active-workout',
+        '@qla/active-workout',
         JSON.stringify(persisted)
       );
       await useActiveWorkoutStore.persist.rehydrate();
@@ -3897,7 +3898,7 @@ describe('activeWorkoutStore', () => {
         version: 5,
       };
       await AsyncStorage.setItem(
-        '@SparkyFitness/active-workout',
+        '@qla/active-workout',
         JSON.stringify(persisted)
       );
       await useActiveWorkoutStore.persist.rehydrate();

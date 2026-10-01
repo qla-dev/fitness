@@ -372,7 +372,7 @@ export const buildHealthDiagnosticReport =
 export const shareHealthDiagnosticReport = async (): Promise<void> => {
   const report = await buildHealthDiagnosticReport();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `sparky-health-diagnostic-android-${timestamp}.json`;
+  const fileName = `qlafit-health-diagnostic-android-${timestamp}.json`;
   const file = new File(Paths.cache, fileName);
 
   try {

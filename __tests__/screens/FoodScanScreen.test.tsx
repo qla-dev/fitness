@@ -71,7 +71,7 @@ describe('FoodScanScreen', () => {
     food: {
       id: 'food-1',
       name: 'Greek Yogurt',
-      brand: 'Sparky',
+      brand: 'Acme',
       default_variant: {
         id: 'variant-1',
         serving_size: 170,

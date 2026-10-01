@@ -14,7 +14,7 @@ const nativeValidator = path.join(
 );
 
 function fixtureRoot(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sparky-locales-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qlafit-locales-'));
   const registry = {
     sourceLocale: 'en',
     fallbackLocale: 'en',

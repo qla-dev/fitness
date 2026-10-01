@@ -2,7 +2,7 @@ import type { useChatRuntime } from '@assistant-ui/react-ai-sdk';
 import { apiFetch } from './apiClient';
 
 /**
- * Server-side Sparky chat persistence. The streaming endpoint auto-saves each
+ * Server-side MarkAI chat persistence. The streaming endpoint auto-saves each
  * completed exchange on `onFinish`, so the client only needs to read the
  * history back (to seed the runtime on open) and clear it.
  */
@@ -30,11 +30,11 @@ type InitialMessages = NonNullable<
  * Fetches the user's recent chat history (server returns the ~50 most recent
  * messages in chronological order). The GET handler ignores the web's
  * `autoClearHistory` query param, so no params are needed here.
- * GET /api/chat/sparky-chat-history
+ * GET /api/chat/history
  */
 export const loadChatHistory = (): Promise<ChatHistoryEntry[]> =>
   apiFetch<ChatHistoryEntry[]>({
-    endpoint: '/api/chat/sparky-chat-history',
+    endpoint: '/api/chat/history',
     serviceName: 'Chat API',
     operation: 'load chat history',
   });

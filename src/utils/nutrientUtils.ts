@@ -3,7 +3,7 @@
  *
  * Floored at zero so an entry with over-reported fiber (fiber > carbs) does
  * not surface as a negative carb count. Mirrors the web implementation in
- * `SparkyFitnessFrontend/src/utils/nutrientUtils.ts` so behavior matches
+ * upstream web `src/utils/nutrientUtils.ts` so behavior matches
  * across clients honoring the same `show_net_carbs` user preference.
  */
 export const getNetCarbsValue = (

@@ -1,3 +1,4 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import {
   workoutFormReducer,
   getWorkoutDraftSubmission,
@@ -855,7 +856,7 @@ describe('workoutFormReducer', () => {
       name: 'Push Day',
       description: null,
       notes: null,
-      source: 'sparky',
+      source: LEGACY_IN_APP_WORKOUT_SOURCE,
       total_duration_minutes: 60,
       activity_details: [],
       exercises: [

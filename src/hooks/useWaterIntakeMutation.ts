@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, storageKey } from '../services/storageKeys';
 import Toast from 'react-native-toast-message';
 import {
   fetchWaterContainers,
@@ -11,7 +12,7 @@ import { getServingVolume } from '../utils/unitConversions';
 import type { DailySummaryRawData } from './useDailySummary';
 import { dailySummaryQueryKey, waterContainersQueryKey } from './queryKeys';
 
-const SELECTED_CONTAINER_KEY = '@SparkyFitness/selected-water-container';
+const SELECTED_CONTAINER_KEY = storageKey('selected-water-container');
 
 interface UseWaterIntakeMutationOptions {
   date: string;
@@ -29,7 +30,7 @@ export function useWaterIntakeMutation({
   );
 
   useEffect(() => {
-    AsyncStorage.getItem(SELECTED_CONTAINER_KEY).then((val) => {
+    getStorageItem(SELECTED_CONTAINER_KEY).then((val) => {
       if (val != null) {
         const id = Number(val);
         if (!isNaN(id)) setSelectedContainerId(id);

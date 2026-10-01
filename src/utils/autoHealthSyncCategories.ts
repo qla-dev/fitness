@@ -4,12 +4,12 @@
  * Polar, Withings, Google Health/Health Connect, ...).
  *
  * Derivation (do not edit by hand without checking the server):
- *   - `SparkyFitnessServer/services/healthDataHandlers.ts`
+ *   - upstream server `services/healthDataHandlers.ts`
  *     DEFAULT_UNITS_BY_HEALTH_TYPE keys (includes aggregated `_min`/`_max`/`_avg`
  *     variants) plus the hard-coded 'Stress' handler category;
- *   - `SparkyFitnessServer/services/garmin/garminHealthProcessor.ts`
+ *   - upstream server `services/garmin/garminHealthProcessor.ts`
  *     ('Raw Stress Data' — the Garmin mood/raw-JSON category);
- *   - `SparkyFitnessServer/integrations/{oura,fitbit,polar,withings,googlehealth}`
+ *   - upstream server `integrations/{oura,fitbit,polar,withings,googlehealth}`
  *     hard-coded `categoryName` values.
  *
  * Matching semantics mirror server ingestion exactly: the server resolves a

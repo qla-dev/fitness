@@ -92,7 +92,7 @@ describe('foodEntryToNutritionRecord', () => {
   it('stamps a version-suffixed, prefixed clientRecordId + version', () => {
     const record = foodEntryToNutritionRecord(baseEntry, 4242)!;
     const metadata = field(record, 'metadata');
-    expect(metadata.clientRecordId).toBe('sparky-nutrition-fe1-4242');
+    expect(metadata.clientRecordId).toBe('qlafit-nutrition-fe1-4242');
     expect(metadata.clientRecordVersion).toBe(4242);
     expect(metadata.recordingMethod).toBe(3); // MANUAL_ENTRY
   });
@@ -122,7 +122,7 @@ describe('waterMlToHydrationRecord', () => {
       unit: 'milliliters',
     });
     expect(field(record, 'metadata').clientRecordId).toBe(
-      'sparky-water-2026-06-01-99'
+      'qlafit-water-2026-06-01-99'
     );
     expect(field(record, 'metadata').clientRecordVersion).toBe(99);
     expect(new Date(field(record, 'endTime')).getTime()).toBeGreaterThan(
@@ -133,9 +133,9 @@ describe('waterMlToHydrationRecord', () => {
 
 describe('clientRecordId helpers', () => {
   it('are prefixed and version-suffixed (fresh per write run)', () => {
-    expect(nutritionClientRecordId('abc', 7)).toBe('sparky-nutrition-abc-7');
+    expect(nutritionClientRecordId('abc', 7)).toBe('qlafit-nutrition-abc-7');
     expect(waterClientRecordId('2026-06-14', 7)).toBe(
-      'sparky-water-2026-06-14-7'
+      'qlafit-water-2026-06-14-7'
     );
   });
 });

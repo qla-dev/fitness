@@ -1,5 +1,6 @@
 import { Alert, Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, storageKey } from './storageKeys';
 import * as Notifications from 'expo-notifications';
 import Toast from 'react-native-toast-message';
 import { addLog } from './LogService';
@@ -15,7 +16,7 @@ import {
 const CHANNEL_ID = 'workout-timer';
 const FASTING_CHANNEL_ID = 'fasting';
 export const MEDICATION_REMINDER_CHANNEL_ID = 'medication-reminders';
-const EXACT_ALARM_PROMPT_KEY = '@SparkyFitness/exactAlarmPromptShown';
+const EXACT_ALARM_PROMPT_KEY = storageKey('exactAlarmPromptShown');
 
 function notificationCopy(key: string, defaultValue: string): string {
   // i18n-audit-ignore-next-line dynamic-i18n-key -- all call sites use literal notification catalog keys.
@@ -293,7 +294,7 @@ export async function maybePromptForExactAlarmPermission(): Promise<void> {
   try {
     if (!(await hasNotificationPermission())) return;
     if (await ExactAlarmBridge.canScheduleExactAlarms()) return;
-    if ((await AsyncStorage.getItem(EXACT_ALARM_PROMPT_KEY)) === 'true') return;
+    if ((await getStorageItem(EXACT_ALARM_PROMPT_KEY)) === 'true') return;
     await AsyncStorage.setItem(EXACT_ALARM_PROMPT_KEY, 'true');
     Alert.alert(
       notificationCopy('notifications.exactAlarm.title', 'On-time alerts'),

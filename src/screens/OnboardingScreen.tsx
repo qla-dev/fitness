@@ -638,7 +638,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 { lineHeight: 20 },
                 !isServerUrlFocused && !!serverUrl && { color: 'transparent' },
               ]}
-              placeholder="https://your-sparky-app.com"
+              placeholder="https://your-server.com"
               placeholderTextColor={textMuted}
               value={serverUrl}
               onChangeText={(text) => {

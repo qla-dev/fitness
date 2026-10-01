@@ -65,6 +65,7 @@ import type {
   ExerciseSnapshotResponse,
 } from '@workspace/shared';
 import {
+  LEGACY_IN_APP_WORKOUT_SOURCE,
   presetSessionExerciseRequestSchema,
   canEditGroupedWorkout,
   workoutPresetExerciseRequestSchema,
@@ -142,7 +143,7 @@ const makePreset = (overrides?: Partial<PresetSession>): PresetSession => ({
   name: 'Push Day',
   description: null,
   notes: null,
-  source: 'sparky',
+  source: LEGACY_IN_APP_WORKOUT_SOURCE,
   total_duration_minutes: 60,
   exercises: [],
   activity_details: [],
@@ -308,8 +309,8 @@ describe('workoutSession', () => {
       expect(getSourceLabel('manual')).toBe('qla.fit');
     });
 
-    it('returns qla.fit for "sparky" source', () => {
-      expect(getSourceLabel('sparky')).toBe('qla.fit');
+    it('returns qla.fit for the legacy in-app source', () => {
+      expect(getSourceLabel(LEGACY_IN_APP_WORKOUT_SOURCE)).toBe('qla.fit');
     });
 
     it('returns qla.fit for "Workout Plan" source', () => {
@@ -344,7 +345,7 @@ describe('workoutSession', () => {
   describe('canEditGroupedWorkout', () => {
     it.each([
       ['manual', true],
-      ['sparky', true],
+      [LEGACY_IN_APP_WORKOUT_SOURCE, true],
       ['Workout Plan', true],
       ['WORKOUT PLAN', true],
       ['  Workout Plan  ', true],

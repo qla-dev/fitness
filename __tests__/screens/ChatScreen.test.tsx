@@ -206,7 +206,7 @@ function renderScreen() {
 
 const SERVER_CONFIG = {
   id: 'srv-1',
-  url: 'https://sparky.example',
+  url: 'https://server.example',
   proxyHeaders: [],
 } as any;
 const ACTIVE_SETTING = { id: 'svc-1', service_type: 'openai' } as any;
@@ -261,7 +261,7 @@ describe('ChatScreen thread', () => {
     const { findByText, getByText } = renderScreen();
     expect(
       await findByText(
-        'Ask Sparky anything about your nutrition, exercise, or goals.'
+        'Ask MarkAI anything about your nutrition, exercise, or goals.'
       )
     ).toBeTruthy();
     expect(getByText('Log two eggs and a banana for breakfast')).toBeTruthy();
@@ -313,12 +313,12 @@ describe('ChatScreen thread', () => {
 
   it('keeps typed composer text local while forwarding it to assistant-ui', async () => {
     const { findByPlaceholderText, getByPlaceholderText } = renderScreen();
-    await findByPlaceholderText('Message Sparky…');
+    await findByPlaceholderText('Message MarkAI…');
 
-    fireEvent.changeText(getByPlaceholderText('Message Sparky…'), 'hello');
+    fireEvent.changeText(getByPlaceholderText('Message MarkAI…'), 'hello');
 
     expect((global as any).__mockComposerSetText).toHaveBeenCalledWith('hello');
-    expect(getByPlaceholderText('Message Sparky…').props.value).toBe('hello');
+    expect(getByPlaceholderText('Message MarkAI…').props.value).toBe('hello');
   });
 
   it('does not flicker to a stale value when backspacing to an earlier text before echoes catch up', async () => {
@@ -333,7 +333,7 @@ describe('ChatScreen thread', () => {
     );
     const { findByPlaceholderText, getByPlaceholderText, rerender } =
       render(makeTree());
-    const input = await findByPlaceholderText('Message Sparky…');
+    const input = await findByPlaceholderText('Message MarkAI…');
 
     // Type "a" -> "ab" -> "abc", then backspace to "ab". Echoes are deferred, so
     // the queue accumulates ["a", "ab", "abc", "ab"] with a duplicate "ab".
@@ -347,7 +347,7 @@ describe('ChatScreen thread', () => {
         (c: string[]) => c[0]
       )
     ).toEqual(['a', 'ab', 'abc', 'ab']);
-    expect(getByPlaceholderText('Message Sparky…').props.value).toBe('ab');
+    expect(getByPlaceholderText('Message MarkAI…').props.value).toBe('ab');
 
     // Now let the deferred echoes arrive in order, one render at a time. The
     // input must stay "ab" throughout — never flickering to the stale "abc".
@@ -355,12 +355,12 @@ describe('ChatScreen thread', () => {
     for (const echo of ['a', 'ab', 'abc', 'ab']) {
       (global as any).__mockComposerText = echo;
       rerender(makeTree());
-      observed.push(getByPlaceholderText('Message Sparky…').props.value);
+      observed.push(getByPlaceholderText('Message MarkAI…').props.value);
     }
 
     expect(observed).toEqual(['ab', 'ab', 'ab', 'ab']);
     expect(observed).not.toContain('abc');
-    expect(getByPlaceholderText('Message Sparky…').props.value).toBe('ab');
+    expect(getByPlaceholderText('Message MarkAI…').props.value).toBe('ab');
   });
 
   it('scrolls the message list to the bottom after the thread mounts', async () => {
@@ -396,7 +396,7 @@ describe('ChatScreen thread', () => {
 
   it('defers composer focus to the push transitionEnd instead of autoFocus', async () => {
     const { findByPlaceholderText } = renderScreen();
-    const input = await findByPlaceholderText('Message Sparky…');
+    const input = await findByPlaceholderText('Message MarkAI…');
 
     // Focusing mid-transition presents the keyboard over the still-sliding
     // screen, which flashes a dark-grey keyboard until the screen settles. So
@@ -572,7 +572,7 @@ describe('ChatScreen history seeding', () => {
     expect(queryByTestId('composer-send')).toBeNull();
     expect(
       queryByText(
-        'Ask Sparky anything about your nutrition, exercise, or goals.'
+        'Ask MarkAI anything about your nutrition, exercise, or goals.'
       )
     ).toBeNull();
   });

@@ -1,4 +1,6 @@
+import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { APP_URL } from '../../src/constants/appUrlScheme';
 import type {
   ExerciseSnapshotResponse,
   PresetSessionResponse,
@@ -122,7 +124,7 @@ const mockAddUserInteractionListener =
   >;
 
 const FIXED_NOW = 1_700_000_000_000;
-const ACTIVE_WORKOUT_URL = 'sparkyfitnessmobile://active-workout';
+const ACTIVE_WORKOUT_URL = `${APP_URL}active-workout`;
 
 const createdInstances: MockInstance[] = [];
 
@@ -159,7 +161,7 @@ function makeSession(
     name: 'Push Day',
     description: null,
     notes: null,
-    source: 'sparky',
+    source: LEGACY_IN_APP_WORKOUT_SOURCE,
     total_duration_minutes: 60,
     activity_details: [],
     exercises: [
@@ -278,7 +280,7 @@ describe('workoutLiveActivity', () => {
           phase: 'active',
           startedAt: FIXED_NOW,
         }),
-        'sparkyfitnessmobile://recording'
+        `${APP_URL}recording`
       );
       const instance = createdInstances[0];
       fireInteraction('recording-resume');

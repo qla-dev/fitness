@@ -617,7 +617,7 @@ describe('useWaterIntakeMutation', () => {
       });
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        '@SparkyFitness/selected-water-container',
+        '@qla/selected-water-container',
         '3'
       );
       await waitFor(() => expect(result.current.activeContainer?.id).toBe(3));

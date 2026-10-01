@@ -78,6 +78,7 @@ class CalorieWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 
     companion object {
+        // Pre-rebrand name kept as shipped: renaming it would orphan installed widgets' data.
         const val PREFS_NAME = "SparkyCalorieWidget"
         const val PREFS_KEY_SNAPSHOT = "calorieSnapshot"
         const val ACTION_MIDNIGHT_REFRESH =

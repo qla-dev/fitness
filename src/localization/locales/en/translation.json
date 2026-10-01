@@ -416,7 +416,7 @@
     "pastSets": "Past sets & reps",
     "wellness": "Wellness",
     "progressPhotos": "Progress Photos",
-    "askSparky": "Ask Sparky",
+    "askMarkAI": "Ask MarkAI",
     "syncHealth": "Sync Health Data",
     "logPregnancyEntry": "Log Pregnancy Entry",
     "logCycle": "Log Cycle",
@@ -442,7 +442,7 @@
     "newPreset": "New Program",
     "scanFood": "Scan Food",
     "photoFood": "Photo Food",
-    "sparky": "Sparky",
+    "markai": "MarkAI",
     "editMeal": "Edit Meal",
     "createMeal": "Create Meal",
     "foodEntry": "Food Entry",
@@ -717,7 +717,7 @@
     "loadingSummary": "Loading summary...",
     "loadFailed": "Failed to load summary",
     "checkConnection": "Please check your connection and try again.",
-    "askSparky": "Ask Sparky…",
+    "askMarkAI": "Ask MarkAI…",
     "nutrients": "Nutrients",
     "food": "Food",
     "tapToAddFood": "Tap to add food",
@@ -965,8 +965,8 @@
     "noCustomNutrients": "No custom nutrients",
     "customNutrientsDescription": "Custom nutrients are created in the qla.fit web app. Once you add some, they will appear here so you can choose which show on your Activities tab.",
     "title": "Activities Settings",
-    "askSparky": "Ask Sparky",
-    "askSparkySubtitle": "Show the Ask Sparky chat launcher on the Activities tab",
+    "askMarkAI": "Ask MarkAI",
+    "askMarkAISubtitle": "Show the Ask MarkAI chat launcher on the Activities tab",
     "hydration": "Hydration",
     "hydrationSubtitle": "Show the hydration card on the Activities tab",
     "fasting": "Fasting",
@@ -2748,9 +2748,9 @@
         "cta": "Open settings"
       },
       "chat": {
-        "eyebrow": "ASK SPARKY",
+        "eyebrow": "ASK MARKAI",
         "headline": "Chat with your AI coach",
-        "body": "Ask Sparky to log meals, plan what to eat, and answer questions about your day through chat.",
+        "body": "Ask MarkAI to log meals, plan what to eat, and answer questions about your day through chat.",
         "cta": "Start chatting"
       },
       "widget": {
@@ -3718,14 +3718,14 @@
     "removeFailed": "Could not remove photo"
   },
   "chat": {
-    "title": "Sparky",
+    "title": "MarkAI",
     "error": "Chat error",
     "errorRetry": "Something went wrong. Tap retry to try again.",
     "retry": "Retry",
-    "placeholder": "Message Sparky…",
-    "emptyPrompt": "Ask Sparky anything about your nutrition, exercise, or goals.",
+    "placeholder": "Message MarkAI…",
+    "emptyPrompt": "Ask MarkAI anything about your nutrition, exercise, or goals.",
     "clearTitle": "Clear chat",
-    "clearMessage": "This permanently deletes your Sparky chat history. This cannot be undone.",
+    "clearMessage": "This permanently deletes your MarkAI chat history. This cannot be undone.",
     "clearFailed": "Could not clear chat",
     "clearAccessibility": "Clear chat",
     "noServer": "No active server config. Set one up in Settings first.",
@@ -3745,7 +3745,7 @@
       "goals": "Goals",
       "lookedUp": "Looked up {{name}}"
     },
-    "typing": "Sparky is typing"
+    "typing": "MarkAI is typing"
   },
   "foodImagePicker": {
     "photos": "Photos",

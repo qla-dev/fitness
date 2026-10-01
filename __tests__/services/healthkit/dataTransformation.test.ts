@@ -4,6 +4,7 @@ import {
   setOwnBundleId,
   mapDietarySample,
 } from '../../../src/services/healthkit/dataTransformation';
+import { WORKOUT_WRITEBACK_VERSION_KEY_LEGACY } from '../../../src/services/healthkit/writebackMappers';
 
 import type {
   TransformOutput,
@@ -1004,12 +1005,12 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
   afterEach(() => setOwnBundleId(null));
 
   test('skips dietary nutrient samples this app wrote, keeps external ones', () => {
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const records = [
       {
         startTime: '2024-01-15T08:00:00Z',
         value: 12,
-        sourceBundleId: 'com.sparky.app',
+        sourceBundleId: 'fitness.qla.dev',
       }, // ours
       {
         startTime: '2024-01-15T12:00:00Z',
@@ -1027,12 +1028,12 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
   });
 
   test('applies the guard to every dietary read type', () => {
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const own = [
       {
         startTime: '2024-01-15T08:00:00Z',
         value: 5,
-        sourceBundleId: 'com.sparky.app',
+        sourceBundleId: 'fitness.qla.dev',
       },
     ];
     for (const recordType of [
@@ -1050,12 +1051,12 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
   });
 
   test('skips own Hydration samples but keeps external ones', () => {
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const records = [
       {
         startTime: '2024-01-15T08:00:00Z',
         volume: { inLiters: 0.5 },
-        sourceBundleId: 'com.sparky.app',
+        sourceBundleId: 'fitness.qla.dev',
       },
       {
         startTime: '2024-01-15T12:00:00Z',
@@ -1077,7 +1078,7 @@ describe('own-app exclusion (writeback feedback-loop guard)', () => {
       {
         startTime: '2024-01-15T08:00:00Z',
         value: 12,
-        sourceBundleId: 'com.sparky.app',
+        sourceBundleId: 'fitness.qla.dev',
       },
     ];
     const result = transformHealthRecords(records, {
@@ -1207,7 +1208,7 @@ describe('mapDietarySample (dietary reverse mapper)', () => {
     ).toBeNull();
   });
 
-  test('returns null for identifiers Sparky does not store (trans fat, water)', () => {
+  test('returns null for identifiers the app does not store (trans fat, water)', () => {
     expect(
       mapDietarySample({
         quantityType: 'HKQuantityTypeIdentifierDietaryFatTrans',
@@ -1305,9 +1306,9 @@ describe('Nutrition correlation transformer', () => {
   });
 
   test('skips correlations this app wrote (own-record guard)', () => {
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const result = transformHealthRecords(
-      [normalizedCorrelation({ sourceBundleId: 'com.sparky.app' })],
+      [normalizedCorrelation({ sourceBundleId: 'fitness.qla.dev' })],
       NUTRITION_CONFIG
     );
     expect(result).toHaveLength(0);
@@ -1387,10 +1388,7 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
     type: 'exercise_session',
   };
 
-  const workout = (
-    uuid: string,
-    extra: Record<string, unknown> = {}
-  ) => ({
+  const workout = (uuid: string, extra: Record<string, unknown> = {}) => ({
     startTime: '2024-01-15T08:00:00Z',
     endTime: '2024-01-15T08:30:00Z',
     activityType: 37, // running
@@ -1398,7 +1396,7 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
     totalEnergyBurned: 300,
     totalDistance: 5000,
     uuid,
-    sourceBundleId: 'com.sparky.app',
+    sourceBundleId: 'fitness.qla.dev',
     ...extra,
   });
 
@@ -1422,7 +1420,11 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
     // Workouts written under the old key are still in people's HealthKit
     // stores; forgetting them would re-import every one of them.
     const result = transformHealthRecords(
-      [workout('ours', { metadata: { SparkyWritebackVersion: 1 } })],
+      [
+        workout('ours', {
+          metadata: { [WORKOUT_WRITEBACK_VERSION_KEY_LEGACY]: 1 },
+        }),
+      ],
       WORKOUT_CONFIG
     );
     expect(result).toHaveLength(0);
@@ -1433,7 +1435,7 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
     // app's recordings under the PHONE's bundle id, so the old bundle-id test
     // called them ours and dropped them. A session started on the watch exists
     // nowhere else — the import is its only way into the diary.
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const result = transformHealthRecords(
       [workout('watch', { metadata: { QlaFitWatchOrigin: 'watch' } })],
       WORKOUT_CONFIG
@@ -1444,7 +1446,7 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
   test('skips a watch workout the phone started and is already saving', () => {
     // Phone-started sessions are recorded and saved by the phone itself, so
     // the watch's copy of the same effort would be a duplicate.
-    setOwnBundleId('com.sparky.app');
+    setOwnBundleId('fitness.qla.dev');
     const result = transformHealthRecords(
       [workout('phone-led', { metadata: { QlaFitWatchOrigin: 'phone' } })],
       WORKOUT_CONFIG
@@ -1489,7 +1491,8 @@ describe('already-logged exclusion for workouts (writeback loop guard)', () => {
       [workout('plain', { activityType: 11 })],
       WORKOUT_CONFIG
     );
-    expect((result[0] as TransformOutput & { title: string }).title)
-      .toBe('Cross Training');
+    expect((result[0] as TransformOutput & { title: string }).title).toBe(
+      'Cross Training'
+    );
   });
 });

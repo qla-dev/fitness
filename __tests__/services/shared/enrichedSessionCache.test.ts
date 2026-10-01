@@ -8,13 +8,18 @@ import {
   sessionTelemetryKey,
 } from '../../../src/services/shared/enrichedSessionCache';
 import { getActiveServerConfigId } from '../../../src/services/storage';
+import {
+  legacyStorageKey,
+  storageKey,
+} from '../../../src/services/storageKeys';
 
 jest.mock('../../../src/services/storage', () => ({
   getActiveServerConfigId: jest.fn(),
 }));
 
 const mockActiveConfig = getActiveServerConfigId as jest.Mock;
-const keyFor = (scope: string) => `@SparkyFitness/enrichedSessions:${scope}`;
+const keyFor = (scope: string) => storageKey(`enrichedSessions:${scope}`);
+const LEGACY_UNSCOPED_KEY = legacyStorageKey(storageKey('enrichedSessions'))!;
 
 describe('enrichedSessionCache', () => {
   beforeEach(async () => {
@@ -61,16 +66,14 @@ describe('enrichedSessionCache', () => {
 
     it('never reads the unscoped key this cache first shipped with', async () => {
       await AsyncStorage.setItem(
-        '@SparkyFitness/enrichedSessions',
+        LEGACY_UNSCOPED_KEY,
         JSON.stringify(['legacy:m'])
       );
 
       // A legacy entry means "some server has it", which is exactly the
       // ambiguity scoping removes — re-collecting is the safe direction.
       expect(await hasEnrichedSession('legacy:m')).toBe(false);
-      expect(
-        await AsyncStorage.getItem('@SparkyFitness/enrichedSessions')
-      ).toBeNull();
+      expect(await AsyncStorage.getItem(LEGACY_UNSCOPED_KEY)).toBeNull();
     });
 
     it('falls back to an unscoped bucket when no server is configured', async () => {
