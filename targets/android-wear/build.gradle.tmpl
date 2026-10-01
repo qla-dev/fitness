@@ -1,0 +1,59 @@
+// Generated into android/wear by plugins/withWearApp.ts. `android/` is build
+// output, so this lives in targets/ and is copied on every prebuild.
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+android {
+    namespace 'fitness.qla.dev.wear'
+    compileSdk Integer.parseInt(findProperty('android.compileSdkVersion') ?: '36')
+
+    defaultConfig {
+        // Must equal the phone app's id: that pairing is what lets Wear OS
+        // offer the watch app alongside the phone install, and what the Data
+        // Layer uses to route messages between the two.
+        applicationId 'fitness.qla.dev'
+        // Wear OS 3 and up. The phone goes lower, but no shipping watch does.
+        minSdk 30
+        targetSdk Integer.parseInt(findProperty('android.targetSdkVersion') ?: '36')
+        versionCode Integer.parseInt(findProperty('qlaWearVersionCode') ?: '1')
+        versionName findProperty('qlaWearVersionName') ?: '1.0'
+    }
+
+    buildFeatures {
+        compose true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Signed with the same config as the phone app so a release watch
+            // build is installable beside it; see plugins/withAndroidSigning.
+            signingConfig signingConfigs.debug
+        }
+    }
+}
+
+dependencies {
+    implementation platform("androidx.compose:compose-bom:$QLA_COMPOSE_BOM")
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation "androidx.wear.compose:compose-material3:$QLA_WEAR_COMPOSE"
+    implementation "androidx.wear.compose:compose-foundation:$QLA_WEAR_COMPOSE"
+    implementation "androidx.activity:activity-compose:$QLA_ACTIVITY_COMPOSE"
+    implementation "com.google.android.gms:play-services-wearable:$QLA_PLAY_WEARABLE"
+    implementation "androidx.health:health-services-client:$QLA_HEALTH_SERVICES"
+    // Health Services returns Guava futures; this is what lets them be awaited
+    // from the same coroutines the rest of the watch app is written in.
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-guava:$QLA_COROUTINES_PLAY"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$QLA_COROUTINES_PLAY"
+}
