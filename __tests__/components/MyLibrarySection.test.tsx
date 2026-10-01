@@ -8,27 +8,23 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ data: 2 }),
 }));
-jest.mock('../../src/hooks', () => ({
-  useMeals: () => ({ meals: [] }),
-  useMedications: () => ({ data: [] }),
-}));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => false,
-}));
 
 describe('MyLibrarySection', () => {
   beforeEach(() => mockNavigate.mockClear());
 
-  it.each([
-    ['My Food', 'FoodsLibrary'],
-    ['My Meals', 'MealsLibrary'],
-    ['My Logs', 'MyLogs'],
-    ['My Programs', 'WorkoutPresetsLibrary'],
-    ['Meal plans', 'WeeklyPlans'],
-    ['Medications', 'MedicationsList'],
-  ])('opens the saved %s list', (label, destination) => {
+  it('opens the saved programs list', () => {
     const screen = render(<MyLibrarySection enabled />);
-    fireEvent.press(screen.getByText(label));
-    expect(mockNavigate).toHaveBeenCalledWith(destination);
+    expect(screen.getByText('2 items')).toBeTruthy();
+    fireEvent.press(screen.getByText('My Programs'));
+    expect(mockNavigate).toHaveBeenCalledWith('WorkoutPresetsLibrary');
   });
+
+  // Food, meals, logs and meal plans live behind the food tab.
+  it.each(['My Food', 'My Meals', 'My Logs', 'Meal plans', 'Medications'])(
+    'leaves %s to its own tab',
+    (label) => {
+      const screen = render(<MyLibrarySection enabled />);
+      expect(screen.queryByText(label)).toBeNull();
+    }
+  );
 });

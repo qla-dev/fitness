@@ -4,41 +4,21 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 
-import { useMeals, useMedications } from '../hooks';
-import { fetchFoodsPage } from '../services/api/foodsApi';
 import { fetchWorkoutPresetsPage } from '../services/api/workoutPresetsApi';
-import { isLocalDataMode } from '../services/dataMode';
 import { formatLocalizedNumber } from '../localization';
 import type { RootStackParamList } from '../types/navigation';
-import CreateTile from './CreateTile';
 import SettingsRow, { SettingsRowGroup } from './SettingsRow';
 
 /**
- * The saved-items block on the Profile screen: the four things the user
- * collects as a tile grid, then the schedule-shaped lists that do not fit a
- * tile underneath. Every entry opens the user's own list — creating a new food,
- * meal, exercise or program is the "+" in the logging screens' headers, so
- * nothing here is a create action.
+ * The saved-items block on the Profile screen. Food, meals, logs and meal
+ * plans live behind the food tab, so only the user's training programs stay
+ * here. The row opens the user's own list — creating a program is the "+" in
+ * the logging screens' headers, so nothing here is a create action.
  */
 export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const localMode = isLocalDataMode();
-
-  const { meals } = useMeals({ enabled });
-  const { data: medications } = useMedications({ enabled });
-  // The ['foods', ...] prefix keeps this count inside the existing
-  // `foodsQueryKey` invalidations in useSaveFood / useDeleteFood.
-  const { data: foodsCount } = useQuery({
-    queryKey: ['foods', 'count'] as const,
-    queryFn: () =>
-      fetchFoodsPage({ page: 1, itemsPerPage: 1 }).then(
-        (r) => r.pagination.totalCount
-      ),
-    enabled,
-    staleTime: 1000 * 60 * 5,
-  });
   const { data: presetsCount } = useQuery({
     queryKey: ['workoutPresets', 'count'] as const,
     queryFn: () =>
@@ -49,7 +29,7 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
     staleTime: 1000 * 60 * 5,
   });
 
-  // A tile that has not resolved its count yet shows no subtitle rather than a
+  // A row that has not resolved its count yet shows no subtitle rather than a
   // placeholder, so the label never shifts when the number lands.
   const countLabel = (count: number | undefined) =>
     count === undefined
@@ -70,64 +50,15 @@ export default function MyLibrarySection({ enabled }: { enabled: boolean }) {
         </Text>
       </View>
 
-      <View className="flex-row flex-wrap justify-between">
-        <CreateTile
-          icon="food"
-          title={t('profile.library.myFood', { defaultValue: 'My Food' })}
-          subtitle={countLabel(foodsCount)}
-          onPress={() => navigation.navigate('FoodsLibrary')}
-          className="w-[48%] mb-3"
-        />
-        <CreateTile
-          icon="meal"
-          title={t('profile.library.myMeals', { defaultValue: 'My Meals' })}
-          subtitle={countLabel(meals.length)}
-          onPress={() => navigation.navigate('MealsLibrary')}
-          className="w-[48%] mb-3"
-        />
-        <CreateTile
-          icon="history"
-          title={t('profile.library.myLogs', { defaultValue: 'My Logs' })}
-          subtitle={t('screens.library.recentlyLogged', {
-            defaultValue: 'Recently Logged',
-          })}
-          onPress={() => navigation.navigate('MyLogs')}
-          className="w-[48%] mb-3"
-        />
-        <CreateTile
+      <SettingsRowGroup>
+        <SettingsRow
           icon="exercise-weights"
           title={t('profile.library.workout', {
             defaultValue: 'My Programs',
           })}
           subtitle={countLabel(presetsCount)}
           onPress={() => navigation.navigate('WorkoutPresetsLibrary')}
-          className="w-[48%] mb-3"
         />
-      </View>
-
-      <SettingsRowGroup>
-        {/* On the device in every data mode, so it is no longer server-only;
-            the food and kitchen preferences live inside it now. */}
-        <SettingsRow
-          icon="calendar"
-          title={t('screens.library.mealPlans', {
-            defaultValue: 'Meal plans',
-          })}
-          subtitle={t('screens.library.weeklyPlansSubtitle', {
-            defaultValue: 'Weekly plans from your food & kitchen preferences',
-          })}
-          onPress={() => navigation.navigate('WeeklyPlans')}
-        />
-        {!localMode && (
-          <SettingsRow
-            icon="medication"
-            title={t('screens.library.medications', {
-              defaultValue: 'Medications',
-            })}
-            subtitle={countLabel(medications?.length)}
-            onPress={() => navigation.navigate('MedicationsList')}
-          />
-        )}
       </SettingsRowGroup>
     </View>
   );
