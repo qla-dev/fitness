@@ -6233,6 +6233,10 @@
     }
   },
   "weeklyPlans": {
+    "addManual": "Build a meal plan yourself",
+    "manualPlans": "Built by you",
+    "manualSummary_one": "Built by you · {{count}} item",
+    "manualSummary_other": "Built by you · {{count}} items",
     "noCoins": "Not enough AI coins for a meal plan.",
     "failed": "MarkAI could not plan this week. Your coins were refunded.",
     "confirmTitle": "Plan a week with MarkAI?",

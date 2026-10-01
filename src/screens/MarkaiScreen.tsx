@@ -109,6 +109,17 @@ function MarkaiContent() {
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [barHeight, setBarHeight] = useState(110);
+  // The composer at rest, before a photo or more lines grow it. The empty
+  // state is centred above this, so attaching a photo does not lift it.
+  const [restingBarHeight, setRestingBarHeight] = useState<number | null>(
+    null
+  );
+  const measureBar = useCallback((height: number) => {
+    setBarHeight(height);
+    setRestingBarHeight((resting) =>
+      resting === null ? height : Math.min(resting, height)
+    );
+  }, []);
   const apple = useAppleSignIn();
   const coinColor = useCSSVariable('--color-macro-fat') as string;
   const optionsSheet = useRef<CustomModalRef>(null);
@@ -155,19 +166,33 @@ function MarkaiContent() {
     variant: 'transparent',
     title: t('markai.title', { defaultValue: 'MarkAI' }),
     left: { kind: 'back' },
-    right: {
-      kind: 'icon',
-      // Square, so iOS 26 draws the glass item as a circle like the back
-      // button; the two side-by-side bubbles were wider than tall and
-      // stretched it into a capsule.
-      sfSymbol: 'clock.arrow.circlepath',
-      ionicon: 'time-outline',
-      accessibilityLabel: t('markai.history', {
-        defaultValue: 'Conversation history',
-      }),
-      onPress: () => openHistory(),
-      disabled: busy || loading || !session,
-    },
+    // Each its own glass circle (`separated`): square symbols, so iOS 26
+    // draws them round like the back button rather than one wide capsule.
+    right: [
+      {
+        kind: 'icon',
+        // Straight into a fresh conversation, without the history screen.
+        sfSymbol: 'square.and.pencil',
+        ionicon: 'create-outline',
+        accessibilityLabel: t('markai.newChat', { defaultValue: 'New chat' }),
+        onPress: () => newChat(),
+        // An empty chat is already a new one.
+        disabled:
+          busy || loading || !session || (!messages.length && !pending),
+        separated: true,
+      },
+      {
+        kind: 'icon',
+        sfSymbol: 'clock.arrow.circlepath',
+        ionicon: 'time-outline',
+        accessibilityLabel: t('markai.history', {
+          defaultValue: 'Conversation history',
+        }),
+        onPress: () => openHistory(),
+        disabled: busy || loading || !session,
+        separated: true,
+      },
+    ],
   });
   const labels: Record<Mode, string> = {
     macros: t('markai.macros', { defaultValue: 'Calculate macros' }),
@@ -492,7 +517,9 @@ function MarkaiContent() {
             paddingHorizontal: 20,
             justifyContent: 'center',
             paddingTop: nativeHeader ? headerOffset : 0,
-            paddingBottom: session ? barHeight + insets.bottom : 0,
+            paddingBottom: session
+              ? (restingBarHeight ?? barHeight) + insets.bottom
+              : 0,
           }}
         >
           <MarkaiEmptyState
@@ -674,7 +701,7 @@ function MarkaiContent() {
           modeLabel={labels[mode]}
           busy={busy}
           disabled={loading || !conversation || Boolean(pending && !busy)}
-          onHeight={setBarHeight}
+          onHeight={measureBar}
         />
       ) : null}
       <CustomModal
