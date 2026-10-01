@@ -899,10 +899,6 @@
   "about": {
     "title": "Informacje",
     "version": "Wersja {{version}} ({{build}})",
-    "descriptionTitle": "O tej aplikacji",
-    "description": "qla.fit to aplikacja open source do śledzenia odżywiania, ćwiczeń i danych zdrowotnych, która synchronizuje dane z własnym serwerem. Aplikacja mobilna pozwala rejestrować posiłki, treningi i pomiary w dowolnym miejscu.",
-    "github": "Projekt w serwisie GitHub",
-    "documentation": "Dokumentacja",
     "privacyPolicy": "Polityka prywatności",
     "openExternalLink": "Otwiera stronę w przeglądarce"
   },

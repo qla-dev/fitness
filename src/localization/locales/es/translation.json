@@ -246,10 +246,6 @@
   "about": {
     "title": "Acerca de",
     "version": "Versión {{version}} ({{build}})",
-    "descriptionTitle": "Acerca de esta app",
-    "description": "qla.fit es un rastreador de nutrición, ejercicio y datos de salud de código abierto que se sincroniza con tu propio servidor. Esta app es el complemento móvil para registrar comidas, entrenamientos y medidas sobre la marcha.",
-    "github": "Proyecto en GitHub",
-    "documentation": "Documentación",
     "privacyPolicy": "Política de privacidad",
     "openExternalLink": "Se abre en tu navegador"
   },
