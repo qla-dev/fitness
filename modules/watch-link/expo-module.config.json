@@ -1,6 +1,16 @@
 {
-  "platforms": ["apple"],
+  "platforms": [
+    "apple",
+    "android"
+  ],
   "apple": {
-    "modules": ["QlaFitWatchLinkModule"]
+    "modules": [
+      "QlaFitWatchLinkModule"
+    ]
+  },
+  "android": {
+    "modules": [
+      "fitness.qla.dev.watchlink.QlaFitWatchLinkModule"
+    ]
   }
 }

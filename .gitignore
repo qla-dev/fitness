@@ -81,3 +81,6 @@ plans/
 /vendor
 /installations
 /.bundle
+# Gradle output from the local native modules. `android/` is already ignored
+# wholesale, but a module that carries its own Gradle project builds in place.
+modules/*/android/build/

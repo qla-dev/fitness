@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
-import { Platform, processColor } from 'react-native';
+import { processColor } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import { MACRO_RINGS, resolveMacroRing } from '../constants/macroRings';
 import { goalStep, goalMaximum } from '../constants/profileGoals';
-import { updateWatchDashboard } from '../../modules/watch-link';
+import {
+  isWatchLinkAvailable,
+  updateWatchDashboard,
+} from '../../modules/watch-link';
 import type { DailySummary } from '../types/dailySummary';
 import { getTodayDate } from '../utils/dateUtils';
 import { addLog } from '../services/LogService';
@@ -31,7 +34,10 @@ export function useWatchDashboardSync(
   ) as string[];
   const palette = JSON.stringify(colors);
   useEffect(() => {
-    if (Platform.OS !== 'ios' || !summary || summary.date !== getTodayDate())
+    // Was gated on iOS, from when the Apple Watch was the only watch. The
+    // Wear OS app reads the same snapshot, so the question is whether this
+    // build can reach a watch at all, not which phone it is running on.
+    if (!isWatchLinkAvailable() || !summary || summary.date !== getTodayDate())
       return;
     const resolvedColors = JSON.parse(palette) as string[];
     void updateWatchDashboard({
