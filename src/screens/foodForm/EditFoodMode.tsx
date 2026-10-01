@@ -49,6 +49,8 @@ import { localizeFoodUnit } from '../../utils/foodUnitLocalization';
 import { parseDecimalInput } from '../../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
   SAVING_LABEL,
@@ -115,6 +117,7 @@ export function EditFoodMode({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pickerImages, setPickerImages] = useState<PickerImage[]>(() =>
@@ -616,6 +619,7 @@ export function EditFoodMode({
   const submitRequestRef = useRef<(() => void) | null>(null);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('foodForm.editTitle', { defaultValue: 'Edit Food' }),
     left: {
       kind: 'dismiss',
@@ -653,6 +657,9 @@ export function EditFoodMode({
         noteImages={savedNoteImages}
         isSubmitting={isSubmitting}
         hideSubmitButton={usesNativeHeader}
+        contentTopInset={
+          usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : undefined
+        }
         headerChildren={
           <View className="mb-4">
             <FoodImagePicker

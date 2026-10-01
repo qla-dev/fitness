@@ -53,7 +53,11 @@ import {
 import { isAutoHealthSyncCustomCategoryName } from '../utils/autoHealthSyncCategories';
 import type { RootStackScreenProps } from '../types/navigation';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
 import {
   useCustomCategories,
@@ -204,6 +208,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
   );
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const calendarSheetRef = useRef<CalendarSheetRef>(null);
 
   const [accentPrimary, textSecondary] = useCSSVariable([
@@ -1109,6 +1114,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('screens.measurements', { defaultValue: 'Measurements' }),
     left: {
       kind: 'dismiss',
@@ -1209,7 +1215,12 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
 
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="px-4 py-4"
+        contentContainerClassName="px-4 pb-4"
+        // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
+        // so the content starts below the transparent bar by hand.
+        contentContainerStyle={{
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
+        }}
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"
       >

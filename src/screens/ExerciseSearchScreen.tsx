@@ -50,7 +50,12 @@ import ShareStatusBadge from '../components/ShareStatusBadge';
 import { suggestedExercisesQueryKey } from '../hooks/queryKeys';
 import { useExternalExerciseSearch } from '../hooks/useExternalExerciseSearch';
 import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   importExercise,
   isImportableExerciseSource,
@@ -78,6 +83,8 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
   const { t } = useTranslation();
 
   const insets = useSafeAreaInsets();
+  const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const queryClient = useQueryClient();
   const [accentColor, textMuted, textSecondary, borderSubtle] = useCSSVariable([
     '--color-accent-primary',
@@ -873,6 +880,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
   );
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('exerciseSearch.title', { defaultValue: 'Exercises' }),
     left: {
       kind: 'dismiss',
@@ -935,8 +943,14 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
     >
       {header}
 
-      {/* Segmented control */}
-      <View className="px-4 mt-2">
+      {/* Segmented control, below the transparent bar, which reserves no
+          space of its own. */}
+      <View
+        className="px-4"
+        style={{
+          marginTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 8,
+        }}
+      >
         <SegmentedControl
           segments={tabs}
           activeKey={activeTab}

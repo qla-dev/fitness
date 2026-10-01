@@ -113,6 +113,12 @@ export interface FoodFormProps {
   noteImages?: readonly string[];
   headerChildren?: React.ReactNode;
   children?: React.ReactNode;
+  /**
+   * Space above the first field. A screen under a transparent native bar
+   * passes the bar's height plus the content gap; otherwise the form keeps
+   * its own 16pt.
+   */
+  contentTopInset?: number;
   /** Initial custom nutrient values (key = nutrient name, value = amount). */
   customNutrients?: Record<string, string | number> | null;
   /** Called whenever the user changes a custom nutrient value. */
@@ -144,6 +150,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
   noteImages,
   headerChildren,
   children,
+  contentTopInset = 16,
   customNutrients: customNutrientsProp,
   onCustomNutrientsChange,
 }) => {
@@ -925,7 +932,8 @@ const FoodForm: React.FC<FoodFormProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerClassName="px-4 pt-4 pb-20 gap-4"
+        contentContainerClassName="px-4 pb-20 gap-4"
+        contentContainerStyle={{ paddingTop: contentTopInset }}
         keyboardShouldPersistTaps="handled"
       >
         {headerChildren}

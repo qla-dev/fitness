@@ -48,7 +48,11 @@ import {
   toFiniteNumber,
 } from '../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 
 type MealAddScreenProps = RootStackScreenProps<'MealAdd'>;
 
@@ -141,6 +145,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
   const editMealId = isEditMode ? route.params.mealId : undefined;
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const [accentColor, textMuted, proteinColor, carbsColor, fatColor] =
     useCSSVariable([
       '--color-accent-primary',
@@ -578,7 +583,14 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerClassName="px-4 pt-4 pb-8 gap-4"
+        contentContainerClassName="px-4 pb-8 gap-4"
+        // The transparent bar reserves no space, so the content starts below
+        // it by hand, as in ActivityAddScreen.
+        contentContainerStyle={{
+          paddingTop: usesNativeHeader
+            ? headerOffset + HEADER_CONTENT_GAP
+            : 16,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="bg-surface rounded-xl p-4 gap-4">

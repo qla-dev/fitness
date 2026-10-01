@@ -59,7 +59,12 @@ import {
   useToggleFavorite,
 } from '../hooks';
 import type { FoodItem } from '../types/foods';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
+import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { getNetCarbsValue } from '../utils/nutrientUtils';
 import {
   useCreateFoodVariant,
@@ -1021,6 +1026,8 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   const scaled = (value: number) => value * servings;
 
   const insets = useSafeAreaInsets();
+  const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const [accentColor, textPrimary, borderSubtle] = useCSSVariable([
     '--color-accent-primary',
     '--color-text-primary',
@@ -1635,6 +1642,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   // reads as a button; edit/save stay neutral. The sticky footer "Add Food"/
   // "Add Meal" button remains this screen's main accent action.
   const header = useScreenHeader({
+    variant: 'transparent',
     nativeTitle: '',
     left: {
       kind: 'dismiss',
@@ -1727,7 +1735,12 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerClassName="px-4 pt-4 pb-4 gap-4"
+        contentContainerClassName="px-4 pb-4 gap-4"
+        // The transparent bar reserves no space, so the content starts
+        // below it by hand.
+        contentContainerStyle={{
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
+        }}
       >
         <FoodNutritionHeader
           name={adjustedValues?.name || activeItem.name}

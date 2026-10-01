@@ -37,6 +37,8 @@ import { localizeFoodUnit } from '../../utils/foodUnitLocalization';
 import { parseDecimalInput } from '../../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
   SAVING_LABEL,
@@ -80,6 +82,7 @@ export function AdjustNutritionMode({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createVariant } = useCreateFoodVariant();
@@ -590,6 +593,7 @@ export function AdjustNutritionMode({
   const submitRequestRef = useRef<(() => void) | null>(null);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('foodFormPersistence.adjustNutritionTitle', {
       defaultValue: 'Adjust Nutrition',
     }),
@@ -625,6 +629,9 @@ export function AdjustNutritionMode({
         submitLabel={SAVE_LABEL}
         isSubmitting={isSubmitting}
         hideSubmitButton={usesNativeHeader}
+        contentTopInset={
+          usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : undefined
+        }
         showAutoScaleNutrition
         initialAutoScaleNutritionEnabled={initialAutoScaleNutritionEnabled}
         unitSelector={

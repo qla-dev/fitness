@@ -3,6 +3,8 @@ import { View, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
   SAVING_LABEL,
@@ -32,6 +34,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const { mode } = useCycleMode();
   const { discreetMode } = useDiscreetMode();
   const calendarRef = useRef<CalendarSheetRef>(null);
@@ -51,6 +54,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
   }, [discreetMode, mode]);
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: headerTitle,
     nativeTitle: headerTitle,
     left: { kind: 'dismiss', onPress: () => navigation.goBack() },
@@ -79,7 +83,9 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
-          paddingTop: 12,
+          // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
+          // so the content starts below the transparent bar by hand.
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 12,
           paddingBottom: insets.bottom + 40,
         }}
         bottomOffset={80}

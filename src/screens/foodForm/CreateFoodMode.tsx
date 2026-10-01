@@ -48,7 +48,11 @@ import {
   parseDecimalInput,
 } from '../../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
-import { useScreenHeader } from '../../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../../hooks/useScreenHeader';
 import { BarcodeField, BARCODE_REGEX } from './BarcodeField';
 import {
   buildVariantFromFormData,
@@ -80,6 +84,7 @@ export function CreateFoodMode({
     : 'en-US';
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const [textPrimary, textSecondary] = useCSSVariable([
     '--color-text-primary',
     '--color-text-secondary',
@@ -513,6 +518,7 @@ export function CreateFoodMode({
     : t('createFood.actions.addFood', { defaultValue: 'Add Food' });
 
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('createFood.title', { defaultValue: 'New Food' }),
     left: {
       kind: 'dismiss',
@@ -551,6 +557,9 @@ export function CreateFoodMode({
         noteImages={savedNoteImages}
         submitLabel={primaryLabel}
         hideSubmitButton={usesNativeHeader}
+        contentTopInset={
+          usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : undefined
+        }
         headerChildren={
           <View className="mb-4">
             <FoodImagePicker
