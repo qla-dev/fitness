@@ -10,7 +10,10 @@ import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
 import type { Vendor } from '../services/online/prices';
 import {
   calorieGoalPrompt,
+  calorieGoalLabel,
+  macroPlanLabel,
   macroPlanPrompt,
+  proteinGoalLabel,
   proteinGoalPrompt,
 } from '../services/markaiGoalPrompt';
 import { MARKAI_TASK_COINS } from '../services/online/markai';
@@ -41,8 +44,8 @@ export function profileSteps(t: TFunction): SetupStep[] {
 }
 
 function profileQuestions(t: TFunction): SetupStep[] {
-  // Offered on both the calorie and the protein question: one priced
-  // request that answers calories, protein, carbs and fat together.
+  // Offered on every macro question: one priced request that answers
+  // calories, protein, carbs and fat together, filling all four questions.
   const allMacros: SetupAssist = {
     sentence: t('setup.assistAllMacros', {
       defaultValue:
@@ -54,7 +57,19 @@ function profileQuestions(t: TFunction): SetupStep[] {
       defaultValue: 'plan all your macros',
     }),
     prompt: (facts) => macroPlanPrompt(t, facts),
+    label: macroPlanLabel(t),
     task: 'all_macros',
+  };
+  // Carbs and fat have no single-goal assist, so the plan is the only offer
+  // there and opens the paragraph rather than following another one.
+  const allMacrosOnly: SetupAssist = {
+    ...allMacros,
+    sentence: t('setup.assistAllMacrosOnly', {
+      defaultValue:
+        'Not sure? {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins.',
+      link: ASSIST_LINK,
+      coins: MARKAI_TASK_COINS.all_macros,
+    }),
   };
   const markaiLink = t('setup.assistMarkaiLink', {
     defaultValue: 'Let MarkAI work it out',
@@ -319,12 +334,12 @@ function profileQuestions(t: TFunction): SetupStep[] {
         assists: [
           {
             sentence: t('setup.assistCalories', {
-              defaultValue:
-                'Not sure? {{link}} from your answers, for 1 coin.',
+              defaultValue: 'Not sure? {{link}} from your answers, for 1 coin.',
               link: ASSIST_LINK,
             }),
             link: markaiLink,
             prompt: (facts) => calorieGoalPrompt(t, facts),
+            label: calorieGoalLabel(t),
           },
           allMacros,
         ],
@@ -349,12 +364,12 @@ function profileQuestions(t: TFunction): SetupStep[] {
         assists: [
           {
             sentence: t('setup.assistProtein', {
-              defaultValue:
-                'Not sure? {{link}} from your answers, for 1 coin.',
+              defaultValue: 'Not sure? {{link}} from your answers, for 1 coin.',
               link: ASSIST_LINK,
             }),
             link: markaiLink,
             prompt: (facts) => proteinGoalPrompt(t, facts),
+            label: proteinGoalLabel(t),
           },
           allMacros,
         ],
@@ -362,6 +377,44 @@ function profileQuestions(t: TFunction): SetupStep[] {
       t('setup.proteinHintShort', {
         defaultValue:
           'Protein helps your muscles recover and keeps you fuller for longer.',
+      })
+    ),
+    questionStep(
+      {
+        id: 'carbs',
+        placeholder: t('setup.placeholders.carbs', {
+          defaultValue: 'Enter a daily carbs goal',
+        }),
+        label: t('setup.carbs', { defaultValue: 'Daily carbs goal' }),
+        icon: 'leaf',
+        unit: 'g',
+        suggestion: 250,
+        numeric: true,
+        max: 1000,
+        assists: [allMacrosOnly],
+      },
+      t('setup.carbsHintShort', {
+        defaultValue:
+          'Carbs are your main fuel for training and everyday energy.',
+      })
+    ),
+    questionStep(
+      {
+        id: 'fat',
+        placeholder: t('setup.placeholders.fat', {
+          defaultValue: 'Enter a daily fat goal',
+        }),
+        label: t('setup.fat', { defaultValue: 'Daily fat goal' }),
+        icon: 'hydration',
+        unit: 'g',
+        suggestion: 70,
+        numeric: true,
+        max: 500,
+        assists: [allMacrosOnly],
+      },
+      t('setup.fatHintShort', {
+        defaultValue:
+          'Fat supports your hormones and helps your body use vitamins.',
       })
     ),
   ];

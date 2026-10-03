@@ -5568,6 +5568,8 @@
     "sleep": "Sleep goal",
     "calories": "Daily calorie goal",
     "protein": "Daily protein goal",
+    "carbs": "Daily carbs goal",
+    "fat": "Daily fat goal",
     "unitYears": "years old",
     "unitDays": "days",
     "unitSteps": "steps",
@@ -5595,7 +5597,9 @@
       "water": "Enter a daily water goal",
       "sleep": "Enter hours of sleep a night",
       "calories": "Enter a daily calorie goal",
-      "protein": "Enter a daily protein goal"
+      "protein": "Enter a daily protein goal",
+      "carbs": "Enter a daily carbs goal",
+      "fat": "Enter a daily fat goal"
     },
     "focusHintBmi": "Start with what matters to you. This first round of questions works out your BMI; everything after it is optional.",
     "calculateBmi": "Calculate my BMI",
@@ -5609,11 +5613,14 @@
     },
     "caloriesHintShort": "The energy you want to eat each day. You can also skip it and set it later in Profile.",
     "proteinHintShort": "Protein helps your muscles recover and keeps you fuller for longer.",
+    "carbsHintShort": "Carbs are your main fuel for training and everyday energy.",
+    "fatHintShort": "Fat supports your hormones and helps your body use vitamins.",
     "assistMarkaiLink": "Let MarkAI work it out",
     "assistCalories": "Not sure? {{link}} from your answers, for 1 coin.",
     "assistProtein": "Not sure? {{link}} from your answers, for 1 coin.",
     "assistAllMacrosLink": "plan all your macros",
-    "assistAllMacros": "Or {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins."
+    "assistAllMacros": "Or {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins.",
+    "assistAllMacrosOnly": "Not sure? {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins."
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",
@@ -5781,8 +5788,6 @@
     "burned": "Burned",
     "kcalLeft": "kcal left",
     "kcalLeftOfGoal": "kcal left of {{goal}}",
-    "kcalOver": "{{amount}} over",
-    "percentOfGoal": "{{percent}}% of goal",
     "amountLeft": "{{amount}} left",
     "addGoal": "Add Goal",
     "editGoalFor": "Change your {{nutrient}} goal"
@@ -6214,7 +6219,7 @@
     "newChat": "New chat",
     "noHistory": "Your conversations will appear here.",
     "retry": "Not sent. Tap to retry.",
-    "logPrompt": "Help me log my meal: ",
+    "logPrompt": "Help me log my meal",
     "trainingPrompt": "Help me plan my next workout",
     "lessPrompts": "Fewer ideas",
     "morePrompts": "More ideas",
@@ -6226,6 +6231,11 @@
     "removePhoto": "Remove photo",
     "photo": "Photo",
     "photoFailed": "Could not attach that photo. Please try another one.",
+    "goalLabel": {
+      "calories": "Work out my ideal calorie intake",
+      "protein": "Work out my ideal protein intake",
+      "macros": "Work out all my macros"
+    },
     "goalPrompt": {
       "calories": "Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply.",
       "protein": "Work out my daily protein goal in grams from my details below. Show the calculation, then propose one daily protein goal I can apply.",

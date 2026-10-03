@@ -11,6 +11,7 @@ beforeEach(async () => {
   mockSignedIn = true;
   await AsyncStorage.clear();
   mockNavigate.mockClear();
+  mockRoute.params = undefined;
   jest.mocked(onlineRequest).mockReset();
 });
 
@@ -28,6 +29,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockNavigate = jest.fn();
+const mockRoute: { params: unknown } = { params: undefined };
 jest.mock('react-native-keyboard-controller', () => ({
   KeyboardChatScrollView: require('react-native').ScrollView,
 }));
@@ -37,7 +39,7 @@ jest.mock('@react-navigation/native', () => ({
     setParams: jest.fn(),
     addListener: () => () => {},
   }),
-  useRoute: () => ({ params: undefined }),
+  useRoute: () => mockRoute,
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,
@@ -172,16 +174,45 @@ it('uses the same chat for the legacy Tracker route and shows prompt choices wit
   const screen = render(<MarkaiScreen />);
   await waitFor(() => expect(screen.getByText('Log food')).toBeTruthy());
   expect(screen.queryByText("Hi, I'm MarkAI.")).toBeNull();
-  fireEvent.press(screen.getByText('Log food'));
-  expect(screen.getByLabelText('Message MarkAI').props.value).toBe(
-    'Help me log my meal: '
-  );
   expect(screen.queryByText('More ideas')).toBeNull();
+  // A choice is sent at once, in its own mode, not left in the composer.
+  jest.mocked(onlineRequest).mockResolvedValueOnce(reply);
   fireEvent.press(screen.getByText('Explain my daily metrics'));
-  expect(screen.getByLabelText('Message MarkAI').props.value).toBe(
-    'Explain my daily metrics'
+  await waitFor(() =>
+    expect(onlineRequest).toHaveBeenCalledWith(
+      '/markai/messages',
+      expect.objectContaining({
+        prompt: 'Explain my daily metrics',
+        mode: 'free',
+      })
+    )
   );
-  expect(onlineRequest).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Message MarkAI').props.value).toBe('');
+});
+
+it('shows the short label of a prompt the app wrote, and sends the full prompt', async () => {
+  mockRoute.params = {
+    preset: {
+      prompt: 'Work out my daily calorie goal.\n\n- Age: 30',
+      label: 'Work out my ideal calorie intake',
+      mode: 'free',
+    },
+  };
+  jest.mocked(onlineRequest).mockResolvedValueOnce(reply);
+  const screen = render(<MarkaiScreen />);
+  await waitFor(() =>
+    expect(onlineRequest).toHaveBeenCalledWith(
+      '/markai/messages',
+      expect.objectContaining({
+        prompt: 'Work out my daily calorie goal.\n\n- Age: 30',
+        label: 'Work out my ideal calorie intake',
+      })
+    )
+  );
+  await waitFor(() =>
+    expect(screen.getByText('Work out my ideal calorie intake')).toBeTruthy()
+  );
+  expect(screen.queryByText(/Age: 30/)).toBeNull();
 });
 
 it('shows an optimistic message and thinking, retains failures, and retries the same request once', async () => {

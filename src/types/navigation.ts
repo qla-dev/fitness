@@ -64,6 +64,8 @@ export type RootStackParamList = {
          */
         preset?: {
           prompt: string;
+          /** Shown in the chat in place of the prompt. */
+          label?: string;
           mode: 'macros' | 'training' | 'free';
           returnToSetup?: boolean;
           /** A priced request, such as the ten-coin macro plan. */

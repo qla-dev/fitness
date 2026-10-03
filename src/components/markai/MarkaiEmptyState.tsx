@@ -104,7 +104,7 @@ export default function MarkaiEmptyState({
   const choices = [
     {
       label: t('markai.log', { defaultValue: 'Log food' }),
-      prompt: t('markai.logPrompt', { defaultValue: 'Help me log my meal: ' }),
+      prompt: t('markai.logPrompt', { defaultValue: 'Help me log my meal' }),
       mode: 'macros' as const,
       icon: 'food' as const,
     },

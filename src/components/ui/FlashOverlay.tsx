@@ -16,6 +16,8 @@ import { fireSuccessHaptic } from '../../services/haptics';
 
 const IN_MS = 260;
 const OUT_MS = 220;
+/** How far above the true centre the body sits. */
+const OPTICAL_LIFT = 40;
 
 /**
  * A full-screen flash for a result worth a moment — a number just worked
@@ -120,6 +122,11 @@ export default function FlashOverlay({
       <Animated.View className="flex-1 bg-background" style={backdrop}>
         <Pressable
           className="flex-1 items-center justify-center px-8"
+          // Lifted off the geometric centre: the halo pulls the eye upward
+          // while the value and its lines weigh the block down, so a truly
+          // centred block reads as sitting low. This puts the value, the
+          // thing to look at, near the middle of the screen.
+          style={{ paddingBottom: OPTICAL_LIFT * 2 }}
           onPress={end}
           accessibilityRole="button"
           accessibilityLabel={[eyebrow, value, title, caption]

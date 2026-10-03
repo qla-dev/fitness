@@ -52,6 +52,8 @@ export type MarkaiReply = {
 export type MarkaiMessage = {
   id: string;
   prompt: string;
+  /** Shown instead of a prompt the app wrote for the user. */
+  label?: string | null;
   reply: MarkaiReply;
   /** The server keeps only this flag; the photo itself is never stored there. */
   has_image?: boolean;

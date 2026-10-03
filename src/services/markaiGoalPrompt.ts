@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 
 /**
  * The message that asks MarkAI to work out a daily calorie goal, from the
- * facts the asking screen knows ("Age: 30 years old"). Written in the app's
+ * facts the asking screen knows ('Age: 30 years old'). Written in the app's
  * language, as the user would type it; MarkAI answers with its calculation
  * and a goal the user can apply.
  */
@@ -41,6 +41,24 @@ export function macroPlanPrompt(t: TFunction, facts: string[]): string {
     facts
   );
 }
+
+/**
+ * What the chat shows in place of the prompts above. The user did not write
+ * those, and reading their own details back to them as a wall of text is
+ * noise; the facts still reach the model.
+ */
+export const calorieGoalLabel = (t: TFunction): string =>
+  t('markai.goalLabel.calories', {
+    defaultValue: 'Work out my ideal calorie intake',
+  });
+
+export const proteinGoalLabel = (t: TFunction): string =>
+  t('markai.goalLabel.protein', {
+    defaultValue: 'Work out my ideal protein intake',
+  });
+
+export const macroPlanLabel = (t: TFunction): string =>
+  t('markai.goalLabel.macros', { defaultValue: 'Work out all my macros' });
 
 const withFacts = (ask: string, facts: string[]) =>
   facts.length

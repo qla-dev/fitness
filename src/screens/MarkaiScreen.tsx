@@ -104,6 +104,7 @@ function MarkaiContent() {
   // empty prompt, so this is an object rather than the prompt string.
   const [pending, setPending] = useState<{
     prompt: string;
+    label?: string;
     image: Attachment | null;
   } | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
@@ -111,9 +112,7 @@ function MarkaiContent() {
   const [barHeight, setBarHeight] = useState(110);
   // The composer at rest, before a photo or more lines grow it. The empty
   // state is centred above this, so attaching a photo does not lift it.
-  const [restingBarHeight, setRestingBarHeight] = useState<number | null>(
-    null
-  );
+  const [restingBarHeight, setRestingBarHeight] = useState<number | null>(null);
   const measureBar = useCallback((height: number) => {
     setBarHeight(height);
     setRestingBarHeight((resting) =>
@@ -161,6 +160,7 @@ function MarkaiContent() {
     conversation: string;
     id: string;
     task?: MarkaiTask;
+    label?: string;
   } | null>(null);
   const header = useScreenHeader({
     variant: 'transparent',
@@ -177,8 +177,7 @@ function MarkaiContent() {
         accessibilityLabel: t('markai.newChat', { defaultValue: 'New chat' }),
         onPress: () => newChat(),
         // An empty chat is already a new one.
-        disabled:
-          busy || loading || !session || (!messages.length && !pending),
+        disabled: busy || loading || !session || (!messages.length && !pending),
         separated: true,
       },
       {
@@ -383,7 +382,16 @@ function MarkaiContent() {
       setAttaching(false);
     }
   };
-  const send = async (value = text, image = attachment, task?: MarkaiTask) => {
+  const send = async (
+    value = text,
+    image = attachment,
+    task?: MarkaiTask,
+    // What the chat shows when the app wrote the prompt for the user.
+    label?: string,
+    // A suggestion sets the mode and sends in one tap, before the state
+    // update has landed.
+    sendMode: Mode = mode
+  ) => {
     if (
       lock.current ||
       loading ||
@@ -396,7 +404,7 @@ function MarkaiContent() {
     setBusy(true);
     setError(null);
     const prompt = value.trim();
-    setPending({ prompt, image });
+    setPending({ prompt, label, image });
     setText('');
     setAttachment(null);
     atBottom.current = true;
@@ -405,17 +413,18 @@ function MarkaiContent() {
       !pendingRequest.current ||
       pendingRequest.current.prompt !== prompt ||
       pendingRequest.current.image !== (image?.data ?? null) ||
-      pendingRequest.current.mode !== mode ||
+      pendingRequest.current.mode !== sendMode ||
       pendingRequest.current.conversation !== conversation ||
       pendingRequest.current.task !== task
     ) {
       pendingRequest.current = {
         prompt,
         image: image?.data ?? null,
-        mode,
+        mode: sendMode,
         conversation,
         id: randomUUID(),
         task,
+        label,
       };
     }
     let delivered = false;
@@ -427,8 +436,9 @@ function MarkaiContent() {
       }>('/markai/messages', {
         id: pendingRequest.current.id,
         conversation_id: conversation,
-        mode,
+        mode: sendMode,
         ...(prompt ? { prompt } : null),
+        ...(label ? { label } : null),
         ...(image ? { image: image.data } : null),
         ...(task ? { task } : null),
       });
@@ -440,6 +450,7 @@ function MarkaiContent() {
         {
           id: response.id,
           prompt,
+          label,
           reply: response.reply,
           has_image: !!image,
           imageUri: image ? saveMarkaiPhoto(response.id, image.uri) : undefined,
@@ -453,12 +464,12 @@ function MarkaiContent() {
       });
       await AsyncStorage.setItem(
         '@qla/markai/' + accountId + '/active',
-        JSON.stringify({ id: conversation, mode })
+        JSON.stringify({ id: conversation, mode: sendMode })
       );
     } catch (e: unknown) {
       if (e instanceof OnlineError && e.status === 503)
         pendingRequest.current = null;
-      if (!delivered) setPending({ prompt, image });
+      if (!delivered) setPending({ prompt, label, image });
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       lock.current = false;
@@ -471,7 +482,7 @@ function MarkaiContent() {
     const preset = pendingPreset.current;
     if (!preset || loading || busy || !conversation || !session) return;
     pendingPreset.current = null;
-    void send(preset.prompt, null, preset.task);
+    void send(preset.prompt, null, preset.task, preset.label);
     // send is recreated each render; these are the conditions it waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation, loading, busy, session]);
@@ -526,7 +537,7 @@ function MarkaiContent() {
             disabled={busy || loading || !session}
             onSelect={(prompt, nextMode) => {
               setMode(nextMode);
-              setText(prompt);
+              void send(prompt, null, undefined, undefined, nextMode);
             }}
           />
           {error ? (
@@ -581,7 +592,7 @@ function MarkaiContent() {
           {messages.map((message) => (
             <View key={message.id} style={{ gap: 14 }}>
               <MarkaiUserMessage
-                text={message.prompt}
+                text={message.label || message.prompt}
                 imageUri={message.imageUri}
                 hasImage={message.has_image}
               />
@@ -642,7 +653,7 @@ function MarkaiContent() {
           ))}
           {pending ? (
             <MarkaiUserMessage
-              text={pending.prompt}
+              text={pending.label || pending.prompt}
               imageUri={pending.image?.uri}
               pending={busy}
               failed={!busy}
@@ -650,7 +661,9 @@ function MarkaiContent() {
                 void send(
                   pending.prompt,
                   pending.image,
-                  pendingRequest.current?.task
+                  pendingRequest.current?.task,
+                  pending.label,
+                  pendingRequest.current?.mode
                 )
               }
             />

@@ -31,7 +31,10 @@ import { getTodayDate } from '../utils/dateUtils';
 import { formatLocalizedNumber } from '../localization';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useDailySummary } from '../hooks/useDailySummary';
-import { calorieGoalPrompt } from '../services/markaiGoalPrompt';
+import {
+  calorieGoalLabel,
+  calorieGoalPrompt,
+} from '../services/markaiGoalPrompt';
 import CalorieGoalContext from '../components/CalorieGoalContext';
 import { goalModeLabel } from '../components/CalorieTargetChips';
 import type { RootStackScreenProps } from '../types/navigation';
@@ -229,6 +232,7 @@ export default function GoalEditScreen({
             navigation.push('MarkAI', {
               preset: {
                 mode: 'free',
+                label: calorieGoalLabel(t),
                 prompt: calorieGoalPrompt(t, [
                   t('markai.goalFacts.currentGoal', {
                     defaultValue: 'Current calorie goal: {{value}} kcal',

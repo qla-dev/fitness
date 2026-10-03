@@ -58,6 +58,8 @@ export interface SetupAssist {
   sentence: string;
   link: string;
   prompt: (facts: string[]) => string;
+  /** What the chat shows for that prompt; see `calorieGoalLabel`. */
+  label: string;
   task?: 'all_macros';
 }
 export interface SetupStep {

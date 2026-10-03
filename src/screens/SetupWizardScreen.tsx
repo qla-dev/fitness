@@ -184,6 +184,7 @@ export default function SetupWizardScreen({
     navigation.push('MarkAI', {
       preset: {
         prompt: assist.prompt(describeAnswers(assist.task ? '' : field.id)),
+        label: assist.label,
         mode: 'free',
         returnToSetup: true,
         task: assist.task,
@@ -570,6 +571,7 @@ export default function SetupWizardScreen({
         </KeyboardAwareScrollView>
         <FooterCTA
           absolute
+          glass
           loading={busy}
           disabled={!valid}
           onHeightChange={setFooterHeight}
