@@ -27,6 +27,28 @@ export function proteinGoalPrompt(t: TFunction, facts: string[]): string {
   );
 }
 
+/** The same, for a daily carbs goal in grams. */
+export function carbsGoalPrompt(t: TFunction, facts: string[]): string {
+  return withFacts(
+    t('markai.goalPrompt.carbs', {
+      defaultValue:
+        'Work out my daily carbs goal in grams from my details below. Show the calculation, then propose one daily carbs goal I can apply.',
+    }),
+    facts
+  );
+}
+
+/** The same, for a daily fat goal in grams. */
+export function fatGoalPrompt(t: TFunction, facts: string[]): string {
+  return withFacts(
+    t('markai.goalPrompt.fat', {
+      defaultValue:
+        'Work out my daily fat goal in grams from my details below. Show the calculation, then propose one daily fat goal I can apply.',
+    }),
+    facts
+  );
+}
+
 /**
  * The paid macro plan: calories first, then protein, carbs and fat from
  * them. A calorie goal already among the facts is worked from, not replaced
@@ -56,6 +78,14 @@ export const proteinGoalLabel = (t: TFunction): string =>
   t('markai.goalLabel.protein', {
     defaultValue: 'Work out my ideal protein intake',
   });
+
+export const carbsGoalLabel = (t: TFunction): string =>
+  t('markai.goalLabel.carbs', {
+    defaultValue: 'Work out my ideal carbs intake',
+  });
+
+export const fatGoalLabel = (t: TFunction): string =>
+  t('markai.goalLabel.fat', { defaultValue: 'Work out my ideal fat intake' });
 
 export const macroPlanLabel = (t: TFunction): string =>
   t('markai.goalLabel.macros', { defaultValue: 'Work out all my macros' });

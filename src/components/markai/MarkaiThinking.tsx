@@ -13,6 +13,47 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
+import Icon, { type IconName } from '../Icon';
+
+const ICON_SIZE = 18;
+
+/**
+ * The skill's mark at the head of the line, lit by the same travelling band
+ * as the letters: a lit copy over a muted one, shown as the band passes the
+ * start of the line.
+ */
+function SkillIcon({
+  name,
+  sweep,
+  muted,
+  foreground,
+}: {
+  name: IconName;
+  sweep: SharedValue<number>;
+  muted: string;
+  foreground: string;
+}) {
+  const lit = useAnimatedStyle(() => ({
+    opacity: Math.max(0, 1 - Math.abs(sweep.value) / 0.3),
+  }));
+  return (
+    <View
+      style={{
+        width: ICON_SIZE,
+        height: 27,
+        marginRight: 6,
+        justifyContent: 'center',
+      }}
+    >
+      <Icon name={name} size={ICON_SIZE} color={muted} />
+      <Animated.View
+        style={[{ position: 'absolute', top: (27 - ICON_SIZE) / 2 }, lit]}
+      >
+        <Icon name={name} size={ICON_SIZE} color={foreground} />
+      </Animated.View>
+    </View>
+  );
+}
 
 // Doctor/Lena's opening, skill, and rotating wait phases, using the installed
 // Reanimated renderer for a travelling highlight without extra native modules.
@@ -48,7 +89,18 @@ function Letter({
   );
 }
 
-export default function MarkaiThinking({ skill }: { skill: string }) {
+export default function MarkaiThinking({
+  skill,
+  icon,
+}: {
+  skill: string;
+  /**
+   * The skill's mark, on the line for the whole wait — the brain for a free
+   * chat, a calculator for a goal, and so on — rather than only while the
+   * skill is named, as in ABC doctor's, whose look this follows.
+   */
+  icon: IconName;
+}) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState(0);
   const [muted, foreground] = useCSSVariable([
@@ -98,6 +150,12 @@ export default function MarkaiThinking({ skill }: { skill: string }) {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
+        <SkillIcon
+          name={icon}
+          sweep={sweep}
+          muted={muted}
+          foreground={foreground}
+        />
         {Array.from(label).map((letter, index) => (
           <Letter
             key={index}

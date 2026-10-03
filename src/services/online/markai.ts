@@ -28,8 +28,8 @@ export type MarkaiThread = {
  * applied by itself: applying pre-fills the goal for review.
  */
 export type GoalProposal =
-  /** kcal a day, or protein in grams a day. */
-  | { key: 'calories' | 'protein'; value: number }
+  /** kcal a day, or protein, carbs or fat in grams a day. */
+  | { key: 'calories' | 'protein' | 'carbs' | 'fat'; value: number }
   /** The paid macro plan: all four at once. */
   | {
       key: 'macros';
@@ -145,4 +145,20 @@ export async function logMarkaiFood(
     },
     { method: 'POST', endpoint: '/markai/log-food', body: { proposalId } }
   );
+}
+
+/**
+ * A reply as plain text. MarkAI is told not to write markdown, but replies
+ * from before that, and a model that slips, still arrive with it — shown as
+ * written, that is literal asterisks around every heading. Only the markers
+ * go: emphasis pairs, backticks, heading hashes and list stars. A lone
+ * asterisk between figures is multiplication and stays.
+ */
+export function plainReplyText(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/`+/g, '')
+    .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
+    .replace(/^([ \t]*)[*-][ \t]+/gm, '$1• ');
 }

@@ -7,9 +7,9 @@ import { formatLocalizedNumber } from '../../localization';
 import type { GoalProposal } from '../../services/online/markai';
 
 /**
- * A goal MarkAI worked out, under its reply: one goal (calories, protein)
- * or the whole macro plan. Applying never saves; it fills the goal in for
- * the user to review.
+ * A goal MarkAI worked out, under its reply: one goal (calories, protein,
+ * carbs, fat) or the whole macro plan. Applying is the user's call: from the
+ * questionnaire it applies there, elsewhere it opens the goal filled in.
  */
 export default function MarkaiGoalCard({
   goal,
@@ -39,7 +39,13 @@ export default function MarkaiGoalCard({
       ? t('markai.goalCard.macros', { defaultValue: 'Daily macro goals' })
       : goal.key === 'protein'
         ? t('markai.goalCard.protein', { defaultValue: 'Daily protein goal' })
-        : t('markai.goalCard.calories', { defaultValue: 'Daily calorie goal' });
+        : goal.key === 'carbs'
+          ? t('markai.goalCard.carbs', { defaultValue: 'Daily carbs goal' })
+          : goal.key === 'fat'
+            ? t('markai.goalCard.fat', { defaultValue: 'Daily fat goal' })
+            : t('markai.goalCard.calories', {
+                defaultValue: 'Daily calorie goal',
+              });
 
   return (
     <View className="bg-surface rounded-2xl p-4 gap-3">
@@ -83,13 +89,13 @@ export default function MarkaiGoalCard({
         </View>
       ) : (
         <Text className="text-text-primary text-3xl font-bold">
-          {goal.key === 'protein' ? grams(goal.value) : kcal(goal.value)}
+          {goal.key === 'calories' ? kcal(goal.value) : grams(goal.value)}
         </Text>
       )}
       <Text className="text-text-secondary">
         {t('markai.goalCard.hint', {
           defaultValue:
-            'Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.',
+            'Worked out by MarkAI from your details. Check it fits you before you apply it.',
         })}
       </Text>
       <Button disabled={disabled} onPress={onApply}>

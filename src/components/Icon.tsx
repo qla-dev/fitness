@@ -173,6 +173,11 @@ const ICON_MAP = {
 
   // AI features
   sparkles: { sf: 'sparkles', ion: 'sparkles' },
+  // MarkAI skills, shown on its thinking line. Ionicons has no brain; a
+  // bulb reads as the same idea.
+  brain: { sf: 'brain.head.profile', ion: 'bulb-outline' },
+  calculator: { sf: 'function', ion: 'calculator-outline' },
+  'chart-pie': { sf: 'chart.pie', ion: 'pie-chart-outline' },
   'ai-coin': { sf: 'circle.hexagongrid.circle.fill', ion: 'disc' },
 
   // Biometrics/Security

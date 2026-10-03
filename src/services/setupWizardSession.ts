@@ -1,5 +1,6 @@
 import type { SetupAnswers } from './personalSetup';
 import type { IconName } from '../components/Icon';
+import type { FlashMeter, FlashStat } from '../components/ui/FlashOverlay';
 
 export type SetupOption = { value: string; label: string; icon?: IconName };
 
@@ -77,11 +78,15 @@ export interface SetupStep {
 
 /** What the full-screen flash shows once the first round is answered. */
 export interface SetupFlash {
+  /** The badge's icon; a scale by default, for the BMI. */
+  icon?: IconName;
   eyebrow: string;
   value: string;
   title?: string;
   caption?: string;
   tint?: string;
+  meter?: FlashMeter;
+  stats?: FlashStat[];
 }
 
 /**
@@ -142,6 +147,16 @@ export interface SetupWizardSession {
     label: string;
     flash: (answers: SetupAnswers) => SetupFlash | null;
   };
+  /**
+   * Answers handed back from elsewhere (MarkAI), applied rather than left in
+   * their question: the wizard saves them and flashes `flash`. A whole
+   * macro plan `finish`es the tour — saved as done and closed, instead of
+   * going on through questions it already answered; a single goal moves on
+   * to the next question. Null leaves the answers in place for review.
+   */
+  applyOffered?: (
+    offered: SetupAnswers
+  ) => { flash: SetupFlash; finish: boolean } | null;
 }
 
 // Route params must stay serializable, so the opener parks its callbacks here

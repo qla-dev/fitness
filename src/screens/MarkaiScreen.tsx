@@ -22,7 +22,7 @@ import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
 import MarkaiGoalCard from '../components/markai/MarkaiGoalCard';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
-import Icon from '../components/Icon';
+import Icon, { type IconName } from '../components/Icon';
 import MarkaiEmptyState from '../components/markai/MarkaiEmptyState';
 import MarkaiThinking from '../components/markai/MarkaiThinking';
 import MarkaiUserMessage from '../components/markai/MarkaiUserMessage';
@@ -50,6 +50,7 @@ import {
 } from '../services/online/account';
 import {
   markaiFoodToFoodInfo,
+  plainReplyText,
   prepareMarkaiImage,
   type MarkaiMessage,
   type MarkaiMode,
@@ -68,6 +69,13 @@ import { pickImageFromCamera, pickImagesFromLibrary } from '../utils/pickImage';
 import type { RootStackParamList } from '../types/navigation';
 
 type Mode = MarkaiMode;
+
+/** Each chat mode's mark on the thinking line. */
+const MODE_ICONS: Record<Mode, IconName> = {
+  free: 'brain',
+  macros: 'food',
+  training: 'exercise-weights',
+};
 type Attachment = { uri: string; data: string };
 export default function MarkaiScreen() {
   const accountId = useOnlineAccount((s) => s.session?.user.id);
@@ -106,6 +114,9 @@ function MarkaiContent() {
     prompt: string;
     label?: string;
     image: Attachment | null;
+    /** What the thinking line shows the wait as working on. */
+    task?: MarkaiTask;
+    mode: Mode;
   } | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [attaching, setAttaching] = useState(false);
@@ -404,7 +415,7 @@ function MarkaiContent() {
     setBusy(true);
     setError(null);
     const prompt = value.trim();
-    setPending({ prompt, label, image });
+    setPending({ prompt, label, image, task, mode: sendMode });
     setText('');
     setAttachment(null);
     atBottom.current = true;
@@ -469,7 +480,8 @@ function MarkaiContent() {
     } catch (e: unknown) {
       if (e instanceof OnlineError && e.status === 503)
         pendingRequest.current = null;
-      if (!delivered) setPending({ prompt, label, image });
+      if (!delivered)
+        setPending({ prompt, label, image, task, mode: sendMode });
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       lock.current = false;
@@ -486,6 +498,23 @@ function MarkaiContent() {
     // send is recreated each render; these are the conditions it waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation, loading, busy, session]);
+  // The skill the wait is working in: a priced plan and a goal the app
+  // asked for have their own, ahead of the chat's mode.
+  const thinking = (): { skill: string; icon: IconName } => {
+    const request = pending;
+    if (request?.task === 'all_macros')
+      return {
+        skill: t('markai.skill.macroPlan', { defaultValue: 'Macro planner' }),
+        icon: 'chart-pie',
+      };
+    if (request?.label)
+      return {
+        skill: t('markai.skill.goal', { defaultValue: 'Goal calculator' }),
+        icon: 'calculator',
+      };
+    const sending = request?.mode ?? mode;
+    return { skill: labels[sending], icon: MODE_ICONS[sending] };
+  };
   const empty = !messages.length && !pending && !loading;
   // Keeps a followed chat on its last line, whichever of the content and the
   // viewport was measured last.
@@ -598,7 +627,7 @@ function MarkaiContent() {
               />
               {typingId === message.id ? (
                 <MarkaiTypewriterText
-                  text={message.reply.text}
+                  text={plainReplyText(message.reply.text)}
                   style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
                   onComplete={() =>
                     setTypingId((id) => (id === message.id ? null : id))
@@ -610,7 +639,7 @@ function MarkaiContent() {
                   className="text-text-primary"
                   style={{ alignSelf: 'stretch', fontSize: 18, lineHeight: 27 }}
                 >
-                  {message.reply.text}
+                  {plainReplyText(message.reply.text)}
                 </Text>
               )}
               {/* The food card follows the reply once it is typed out. */}
@@ -668,7 +697,7 @@ function MarkaiContent() {
               }
             />
           ) : null}
-          {pending && busy ? <MarkaiThinking skill={labels[mode]} /> : null}
+          {pending && busy ? <MarkaiThinking {...thinking()} /> : null}
           {error ? (
             <Text accessibilityRole="alert" className="text-text-primary">
               {error}

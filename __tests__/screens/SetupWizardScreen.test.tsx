@@ -30,6 +30,32 @@ jest.mock('react-native-safe-area-context', () => ({
   }),
 }));
 
+// The real overlay ends on an animation callback the reanimated mock never
+// calls; this one shows the same text and ends when tapped.
+jest.mock('../../src/components/ui/FlashOverlay', () => {
+  const { Pressable, Text } = require('react-native');
+  return ({
+    visible,
+    eyebrow,
+    value,
+    title,
+    onDone,
+  }: {
+    visible: boolean;
+    eyebrow?: string;
+    value: string;
+    title?: string;
+    onDone: () => void;
+  }) =>
+    visible ? (
+      <Pressable accessibilityLabel="flash" onPress={onDone}>
+        {[eyebrow, value, title].filter(Boolean).map((line) => (
+          <Text key={line}>{line}</Text>
+        ))}
+      </Pressable>
+    ) : null;
+});
+
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: () => false,
   useNativeIOSTabsActive: () => false,
@@ -357,6 +383,166 @@ describe('SetupWizardScreen', () => {
       offerSetupAnswer('protein', '150');
       act(() => focus());
       expect(screen.getByDisplayValue('2200')).toBeTruthy();
+    });
+
+    it('finishes the tour on a whole plan: saves it as done, flashes it, and closes', async () => {
+      let focus = () => {};
+      let transitionEnd = () => {};
+      const navigation = {
+        goBack: jest.fn(),
+        setOptions: jest.fn(),
+        push: jest.fn(),
+        addListener: jest.fn((event: string, listener: () => void) => {
+          if (event === 'focus') focus = listener;
+          if (event === 'transitionEnd') transitionEnd = listener;
+          return jest.fn();
+        }),
+      };
+      const onSave = jest.fn().mockResolvedValue(undefined);
+      const onClose = jest.fn();
+      const applyOffered = jest.fn((offered: Record<string, unknown>) =>
+        offered.fat
+          ? {
+              flash: {
+                eyebrow: 'Your daily goals',
+                value: '2,400',
+                title: 'kcal a day',
+              },
+              finish: true,
+            }
+          : null
+      );
+      openSetupWizardSession({
+        steps: goalSteps,
+        initial: { b: '30', __step: '1' },
+        onSave,
+        onClose,
+        applyOffered,
+      });
+      render(
+        <SetupWizardScreen
+          navigation={navigation as never}
+          route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
+        />
+      );
+
+      offerSetupAnswer('calories', '2400');
+      offerSetupAnswer('protein', '150');
+      offerSetupAnswer('carbs', '260');
+      offerSetupAnswer('fat', '80');
+      await act(async () => focus());
+      // MarkAI has finished sliding away.
+      await act(async () => transitionEnd());
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          b: '30',
+          calories: '2400',
+          protein: '150',
+          carbs: '260',
+          fat: '80',
+          __step: '',
+        }),
+        true
+      );
+      expect(screen.getByText('Your daily goals')).toBeTruthy();
+      expect(onClose).not.toHaveBeenCalled();
+      // A tap ends the flash early; the tour closes behind it.
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('flash'));
+      });
+      expect(onClose).toHaveBeenCalled();
+      expect(navigation.goBack).toHaveBeenCalled();
+    });
+
+    it('applies a single goal: saves it, flashes it, and goes on to the next question', async () => {
+      let focus = () => {};
+      let transitionEnd = () => {};
+      const navigation = {
+        goBack: jest.fn(),
+        setOptions: jest.fn(),
+        addListener: jest.fn((event: string, listener: () => void) => {
+          if (event === 'focus') focus = listener;
+          if (event === 'transitionEnd') transitionEnd = listener;
+          return jest.fn();
+        }),
+      };
+      const onSave = jest.fn().mockResolvedValue(undefined);
+      const onClose = jest.fn();
+      openSetupWizardSession({
+        steps: [...goalSteps, steps[0]],
+        initial: { b: '30', __step: '1' },
+        onSave,
+        onClose,
+        applyOffered: () => ({
+          flash: {
+            eyebrow: 'Daily calorie goal',
+            value: '2,351',
+            title: 'kcal a day',
+          },
+          finish: false,
+        }),
+      });
+      render(
+        <SetupWizardScreen
+          navigation={navigation as never}
+          route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
+        />
+      );
+
+      offerSetupAnswer('calories', '2351');
+      await act(async () => focus());
+      // MarkAI has finished sliding away.
+      await act(async () => transitionEnd());
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ calories: '2351', __step: '2' }),
+        false
+      );
+      expect(screen.getByText('2,351')).toBeTruthy();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('flash'));
+      });
+      // On to the next question, the tour still open.
+      expect(screen.getByText('First heading')).toBeTruthy();
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('leaves a single goal in its question for review', async () => {
+      let focus = () => {};
+      let transitionEnd = () => {};
+      const applyOffered = jest.fn(() => null);
+      const onSave = jest.fn().mockResolvedValue(undefined);
+      openSetupWizardSession({
+        steps: goalSteps,
+        initial: { b: '30', __step: '1' },
+        onSave,
+        onClose: jest.fn(),
+        applyOffered,
+      });
+      render(
+        <SetupWizardScreen
+          navigation={
+            {
+              goBack: jest.fn(),
+              setOptions: jest.fn(),
+              addListener: jest.fn((event: string, listener: () => void) => {
+                if (event === 'focus') focus = listener;
+                if (event === 'transitionEnd') transitionEnd = listener;
+                if (event === 'transitionEnd') transitionEnd = listener;
+                return jest.fn();
+              }),
+            } as never
+          }
+          route={{ key: 'SetupWizard', name: 'SetupWizard' } as never}
+        />
+      );
+      offerSetupAnswer('calories', '2200');
+      await act(async () => focus());
+      // MarkAI has finished sliding away.
+      await act(async () => transitionEnd());
+      expect(screen.getByDisplayValue('2200')).toBeTruthy();
+      expect(onSave).not.toHaveBeenCalled();
     });
   });
 });

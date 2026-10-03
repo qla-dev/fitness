@@ -5611,6 +5611,17 @@
       "obese": "Obesity",
       "caption": "From your height and weight. A few optional questions to go."
     },
+    "macroFlash": {
+      "eyebrow": "Your daily goals",
+      "title": "kcal a day",
+      "grams": "{{value}} g",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "caption": "Saved as your goals. You can change any of them in Profile.",
+      "gramsADay": "g a day",
+      "singleCaption": "Applied. You can change it any time in Profile."
+    },
     "caloriesHintShort": "The energy you want to eat each day. You can also skip it and set it later in Profile.",
     "proteinHintShort": "Protein helps your muscles recover and keeps you fuller for longer.",
     "carbsHintShort": "Carbs are your main fuel for training and everyday energy.",
@@ -5620,7 +5631,8 @@
     "assistProtein": "Not sure? {{link}} from your answers, for 1 coin.",
     "assistAllMacrosLink": "plan all your macros",
     "assistAllMacros": "Or {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins.",
-    "assistAllMacrosOnly": "Not sure? {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins."
+    "assistCarbs": "Not sure? {{link}} from your answers, for 1 coin.",
+    "assistFat": "Not sure? {{link}} from your answers, for 1 coin."
   },
   "groceries": {
     "discardTitle": "Discard unsaved changes?",
@@ -6234,22 +6246,28 @@
     "goalLabel": {
       "calories": "Work out my ideal calorie intake",
       "protein": "Work out my ideal protein intake",
-      "macros": "Work out all my macros"
+      "macros": "Work out all my macros",
+      "carbs": "Work out my ideal carbs intake",
+      "fat": "Work out my ideal fat intake"
     },
     "goalPrompt": {
       "calories": "Work out my daily calorie goal from my details below. Show the calculation, then propose one daily calorie goal I can apply.",
       "protein": "Work out my daily protein goal in grams from my details below. Show the calculation, then propose one daily protein goal I can apply.",
-      "macros": "Calculate all my daily macros from my details below: calories, protein, carbs and fat. If I already gave a calorie goal, work from it. Show the calculation step by step."
+      "macros": "Calculate all my daily macros from my details below: calories, protein, carbs and fat. If I already gave a calorie goal, work from it. Show the calculation step by step.",
+      "carbs": "Work out my daily carbs goal in grams from my details below. Show the calculation, then propose one daily carbs goal I can apply.",
+      "fat": "Work out my daily fat goal in grams from my details below. Show the calculation, then propose one daily fat goal I can apply."
     },
     "goalCard": {
       "calories": "Daily calorie goal",
       "value": "{{value}} kcal",
-      "hint": "Worked out by MarkAI. Applying fills it in for you to review; nothing changes until you save it.",
+      "hint": "Worked out by MarkAI from your details. Check it fits you before you apply it.",
       "apply": "Apply to my goal",
       "grams": "{{value}} g",
       "macros": "Daily macro goals",
       "protein": "Daily protein goal",
-      "applyAll": "Apply to my goals"
+      "applyAll": "Apply to my goals",
+      "carbs": "Daily carbs goal",
+      "fat": "Daily fat goal"
     },
     "goalFacts": {
       "currentGoal": "Current calorie goal: {{value}} kcal",
@@ -6257,6 +6275,10 @@
       "target": "Today's target: {{value}} kcal",
       "maintenance": "Estimated maintenance: {{value}} kcal",
       "activity": "Activity level: {{level}}"
+    },
+    "skill": {
+      "macroPlan": "Macro planner",
+      "goal": "Goal calculator"
     }
   },
   "weeklyPlans": {

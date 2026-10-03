@@ -13,6 +13,7 @@ import { localApiFetch } from '../services/local/localApi';
 import { isLocalDataMode } from '../services/dataMode';
 import { getTodayDate } from '../utils/dateUtils';
 import { bmi, bmiCategory } from '../utils/bmi';
+
 import { formatLocalizedNumber } from '../localization';
 import type { SetupAnswers } from '../services/personalSetup';
 import {
@@ -22,6 +23,13 @@ import {
   type SetupFlash,
   type SetupWizardSession,
 } from '../services/setupWizardSession';
+
+/** The stretch of BMI the result scale draws, from very low to very high. */
+const BMI_SCALE_MIN = 15;
+
+/** The goals MarkAI can work out from the tour, alone or as one plan. */
+const MACRO_KEYS = ['calories', 'protein', 'carbs', 'fat'] as const;
+const BMI_SCALE_SPAN = 25;
 
 /**
  * The personal setup ("goals") wizard: its saved answers merged with what the
@@ -33,11 +41,17 @@ export function useProfileSetup(enabled: boolean) {
   const setup = usePersonalSetup(enabled);
   const client = useQueryClient();
   const saveSetup = setup.save;
-  const [green, amber, danger] = useCSSVariable([
-    '--color-cat-green',
-    '--color-icon-warning',
-    '--color-icon-danger',
-  ]) as string[];
+  const [green, amber, danger, blue, calorieColor, protein, carbs, fat] =
+    useCSSVariable([
+      '--color-cat-green',
+      '--color-icon-warning',
+      '--color-icon-danger',
+      '--color-accent-primary',
+      '--color-calories',
+      '--color-macro-protein',
+      '--color-macro-carbs',
+      '--color-macro-fat',
+    ]) as string[];
   const source = useQuery({
     queryKey: ['profileSetupSource'],
     enabled: enabled && !!setup.state,
@@ -195,7 +209,103 @@ export function useProfileSetup(enabled: boolean) {
           'From your height and weight. A few optional questions to go.',
       }),
       tint: band === 'healthy' ? green : band === 'obese' ? danger : amber,
+      meter: {
+        position: (value - BMI_SCALE_MIN) / BMI_SCALE_SPAN,
+        segments: [
+          { weight: 18.5 - BMI_SCALE_MIN, color: blue },
+          { weight: 25 - 18.5, color: green },
+          { weight: 30 - 25, color: amber },
+          { weight: BMI_SCALE_MIN + BMI_SCALE_SPAN - 30, color: danger },
+        ],
+        ticks: [18.5, 25, 30].map((at) => ({
+          at: (at - BMI_SCALE_MIN) / BMI_SCALE_SPAN,
+          label: formatLocalizedNumber(at),
+        })),
+      },
     };
+  };
+
+  // MarkAI's whole macro plan, applied from the tour: the last thing the tour
+  // asks, so it ends it. A single goal (calories alone) is not a plan.
+  const macroPlanFlash = (offered: SetupAnswers): SetupFlash | null => {
+    const grams = (key: string) => Number(String(offered[key] ?? ''));
+    if (!MACRO_KEYS.every((key) => grams(key) > 0)) return null;
+    const g = (key: string) =>
+      t('setup.macroFlash.grams', {
+        defaultValue: '{{value}} g',
+        value: formatLocalizedNumber(grams(key)),
+      });
+    return {
+      icon: 'flame',
+      eyebrow: t('setup.macroFlash.eyebrow', {
+        defaultValue: 'Your daily goals',
+      }),
+      value: formatLocalizedNumber(grams('calories')),
+      title: t('setup.macroFlash.title', { defaultValue: 'kcal a day' }),
+      tint: calorieColor,
+      stats: [
+        {
+          key: 'protein',
+          icon: 'fish',
+          color: protein,
+          value: g('protein'),
+          label: t('setup.macroFlash.protein', { defaultValue: 'Protein' }),
+        },
+        {
+          key: 'carbs',
+          icon: 'leaf',
+          color: carbs,
+          value: g('carbs'),
+          label: t('setup.macroFlash.carbs', { defaultValue: 'Carbs' }),
+        },
+        {
+          key: 'fat',
+          icon: 'hydration',
+          color: fat,
+          value: g('fat'),
+          label: t('setup.macroFlash.fat', { defaultValue: 'Fat' }),
+        },
+      ],
+      caption: t('setup.macroFlash.caption', {
+        defaultValue:
+          'Saved as your goals. You can change any of them in Profile.',
+      }),
+    };
+  };
+
+  // One goal MarkAI worked out, applied from its question: shown in that
+  // goal's own colour, and the tour goes on to the next question.
+  const singleGoalFlash = (offered: SetupAnswers): SetupFlash | null => {
+    const keys = MACRO_KEYS.filter((key) => Number(offered[key]) > 0);
+    if (keys.length !== 1) return null;
+    const key = keys[0];
+    const look = {
+      calories: { icon: 'flame', color: calorieColor },
+      protein: { icon: 'fish', color: protein },
+      carbs: { icon: 'leaf', color: carbs },
+      fat: { icon: 'hydration', color: fat },
+    } as const;
+    return {
+      icon: look[key].icon,
+      tint: look[key].color,
+      eyebrow:
+        profileSteps(t).find((step) => step.id === key)?.fields[0]?.label ??
+        key,
+      value: formatLocalizedNumber(Number(offered[key])),
+      title:
+        key === 'calories'
+          ? t('setup.macroFlash.title', { defaultValue: 'kcal a day' })
+          : t('setup.macroFlash.gramsADay', { defaultValue: 'g a day' }),
+      caption: t('setup.macroFlash.singleCaption', {
+        defaultValue: 'Applied. You can change it any time in Profile.',
+      }),
+    };
+  };
+  const applyOffered: SetupWizardSession['applyOffered'] = (offered) => {
+    const plan = macroPlanFlash(offered);
+    if (plan) return { flash: plan, finish: true };
+    const single = singleGoalFlash(offered);
+    return single ? { flash: single, finish: false } : null;
   };
 
   /**
@@ -222,6 +332,7 @@ export function useProfileSetup(enabled: boolean) {
             }),
             flash: bmiFlash,
           },
+      applyOffered: singleStep ? undefined : applyOffered,
     });
     navigate();
     return true;

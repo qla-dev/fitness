@@ -11,6 +11,10 @@ import type { Vendor } from '../services/online/prices';
 import {
   calorieGoalPrompt,
   calorieGoalLabel,
+  carbsGoalLabel,
+  carbsGoalPrompt,
+  fatGoalLabel,
+  fatGoalPrompt,
   macroPlanLabel,
   macroPlanPrompt,
   proteinGoalLabel,
@@ -59,17 +63,6 @@ function profileQuestions(t: TFunction): SetupStep[] {
     prompt: (facts) => macroPlanPrompt(t, facts),
     label: macroPlanLabel(t),
     task: 'all_macros',
-  };
-  // Carbs and fat have no single-goal assist, so the plan is the only offer
-  // there and opens the paragraph rather than following another one.
-  const allMacrosOnly: SetupAssist = {
-    ...allMacros,
-    sentence: t('setup.assistAllMacrosOnly', {
-      defaultValue:
-        'Not sure? {{link}}: calories, protein, carbs and fat in one go, for {{coins}} coins.',
-      link: ASSIST_LINK,
-      coins: MARKAI_TASK_COINS.all_macros,
-    }),
   };
   const markaiLink = t('setup.assistMarkaiLink', {
     defaultValue: 'Let MarkAI work it out',
@@ -391,7 +384,18 @@ function profileQuestions(t: TFunction): SetupStep[] {
         suggestion: 250,
         numeric: true,
         max: 1000,
-        assists: [allMacrosOnly],
+        assists: [
+          {
+            sentence: t('setup.assistCarbs', {
+              defaultValue: 'Not sure? {{link}} from your answers, for 1 coin.',
+              link: ASSIST_LINK,
+            }),
+            link: markaiLink,
+            prompt: (facts) => carbsGoalPrompt(t, facts),
+            label: carbsGoalLabel(t),
+          },
+          allMacros,
+        ],
       },
       t('setup.carbsHintShort', {
         defaultValue:
@@ -410,7 +414,18 @@ function profileQuestions(t: TFunction): SetupStep[] {
         suggestion: 70,
         numeric: true,
         max: 500,
-        assists: [allMacrosOnly],
+        assists: [
+          {
+            sentence: t('setup.assistFat', {
+              defaultValue: 'Not sure? {{link}} from your answers, for 1 coin.',
+              link: ASSIST_LINK,
+            }),
+            link: markaiLink,
+            prompt: (facts) => fatGoalPrompt(t, facts),
+            label: fatGoalLabel(t),
+          },
+          allMacros,
+        ],
       },
       t('setup.fatHintShort', {
         defaultValue:

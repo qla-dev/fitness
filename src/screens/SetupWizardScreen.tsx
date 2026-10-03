@@ -107,6 +107,8 @@ export default function SetupWizardScreen({
     ? steps.map((candidate) => !!candidate.required).lastIndexOf(true)
     : -1;
   const [flash, setFlash] = useState<SetupFlash | null>(null);
+  // Set when the flash is the end of the tour, not a stop along it.
+  const closeAfterFlash = useRef(false);
   const valid =
     !step ||
     (isStepValid(step, answers) &&
@@ -191,16 +193,6 @@ export default function SetupWizardScreen({
       },
     });
   };
-  // What MarkAI proposed comes back on return, into the field, for review.
-  useEffect(
-    () =>
-      navigation.addListener('focus', () => {
-        const offered = takeOfferedSetupAnswers();
-        if (Object.keys(offered).length)
-          setAnswers((current) => ({ ...current, ...offered }));
-      }),
-    [navigation]
-  );
 
   const close = () => {
     leaving.current = true;
@@ -243,6 +235,48 @@ export default function SetupWizardScreen({
       lock.current = false;
     }
   };
+
+  // What MarkAI proposed comes back on return. Applied, it is saved and
+  // flashed: a whole plan then closes the tour, a single goal moves on to the
+  // next question. Not applied, it waits in its field for review.
+  const takeOffered = () => {
+    const offered = takeOfferedSetupAnswers();
+    if (!Object.keys(offered).length) return;
+    const next = { ...answers, ...offered };
+    setAnswers(next);
+    const applied = singleStep ? null : session?.applyOffered?.(offered);
+    if (!applied) return;
+    Keyboard.dismiss();
+    void Promise.all([
+      persist(next, applied.finish, false),
+      transitionDone(),
+    ]).then(([saved]) => {
+      if (!saved) return;
+      closeAfterFlash.current = applied.finish;
+      setFlash(applied.flash);
+    });
+  };
+  // Focus arrives while MarkAI is still sliding away, and iOS drops a modal
+  // presented mid-transition without a word: the flash never showed. It
+  // waits for the transition to end, or for long enough that it has.
+  const transitionDone = () =>
+    new Promise<void>((resolve) => {
+      const timer = setTimeout(done, 650);
+      const unsubscribe = navigation.addListener('transitionEnd', done);
+      function done() {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve();
+      }
+    });
+  const takeOfferedRef = useRef(takeOffered);
+  useEffect(() => {
+    takeOfferedRef.current = takeOffered;
+  });
+  useEffect(
+    () => navigation.addListener('focus', () => takeOfferedRef.current()),
+    [navigation]
+  );
 
   const later = () => {
     // Keep already-saved steps, but do not save an invalid draft on dismissal.
@@ -513,6 +547,10 @@ export default function SetupWizardScreen({
                             <Text
                               accessibilityRole="link"
                               disabled={busy}
+                              // iOS greys out the whole run of text while a
+                              // nested link is held; the screen change is
+                              // feedback enough.
+                              suppressHighlighting
                               onPress={() => askMarkai(field, assist)}
                               className="text-accent-primary font-semibold"
                             >
@@ -605,13 +643,18 @@ export default function SetupWizardScreen({
         />
         <FlashOverlay
           visible={!!flash}
-          icon="scale"
+          icon={flash?.icon ?? 'scale'}
           eyebrow={flash?.eyebrow}
           value={flash?.value ?? ''}
           title={flash?.title}
           caption={flash?.caption}
           tint={flash?.tint}
-          onDone={() => setFlash(null)}
+          meter={flash?.meter}
+          stats={flash?.stats}
+          onDone={() => {
+            setFlash(null);
+            if (closeAfterFlash.current) close();
+          }}
         />
       </View>
     </KeyboardProvider>

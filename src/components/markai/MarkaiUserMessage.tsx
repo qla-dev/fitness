@@ -33,7 +33,6 @@ export default function MarkaiUserMessage({
         borderRadius: 18,
         paddingHorizontal: 13,
         paddingVertical: 9,
-        opacity: pending ? 0.65 : 1,
       }}
     >
       {imageUri ? (

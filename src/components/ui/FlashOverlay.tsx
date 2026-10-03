@@ -3,10 +3,12 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  FadeInDown,
   runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
@@ -18,14 +20,40 @@ const IN_MS = 260;
 const OUT_MS = 220;
 /** How far above the true centre the body sits. */
 const OPTICAL_LIFT = 40;
+const BADGE = 112;
+/** Each block of the body lands this long after the one above it. */
+const STAGGER_MS = 90;
+const MARKER = 18;
+
+/**
+ * Where a value falls on a banded scale: a BMI against its categories.
+ * Segments are drawn in proportion to `weight`; `position` is 0–1 along the
+ * whole bar, and the marker slides there as the flash comes in.
+ */
+export interface FlashMeter {
+  position: number;
+  segments: { weight: number; color: string }[];
+  /** Boundary labels, `at` on the same 0–1 scale as `position`. */
+  ticks?: { at: number; label: string }[];
+}
+
+/** One figure in the tile row under the value. */
+export interface FlashStat {
+  key: string;
+  label: string;
+  value: string;
+  color: string;
+  icon: IconName;
+}
 
 /**
  * A full-screen flash for a result worth a moment — a number just worked
  * out, a step just finished — over everything, the native header included,
  * which is why it is its own transparent Modal rather than a view in the
- * screen. The body is the watch-connection visual: an icon inside a halo
- * that keeps pulsing outwards. It fades in on the theme's background, holds
- * for `duration`, fades out and calls `onDone`; a tap ends it early.
+ * screen. An icon in a tinted badge with halos pulsing out of it, then the
+ * value, and optionally where it falls on a scale or what it breaks down
+ * into. It fades in on the theme's background, holds for `duration`, fades
+ * out and calls `onDone`; a tap ends it early.
  */
 export default function FlashOverlay({
   visible,
@@ -35,6 +63,8 @@ export default function FlashOverlay({
   title,
   caption,
   tint,
+  meter,
+  stats,
   duration = 2600,
   onDone,
 }: {
@@ -46,8 +76,10 @@ export default function FlashOverlay({
   value: string;
   title?: string;
   caption?: string;
-  /** The halo and icon colour; the accent by default. */
+  /** The badge, halo and title colour; the accent by default. */
   tint?: string;
+  meter?: FlashMeter;
+  stats?: FlashStat[];
   duration?: number;
   onDone: () => void;
 }) {
@@ -56,6 +88,7 @@ export default function FlashOverlay({
   const reducedMotion = useReducedMotion();
   const shown = useSharedValue(0);
   const pulse = useSharedValue(0);
+  const marker = useSharedValue(0);
   // Kept mounted through the fade-out, after `visible` has gone false.
   const [mounted, setMounted] = useState(visible);
   if (visible && !mounted) setMounted(true);
@@ -81,6 +114,7 @@ export default function FlashOverlay({
     endRef.current = end;
   });
 
+  const target = meter ? Math.min(1, Math.max(0, meter.position)) : 0;
   useEffect(() => {
     if (!visible) return;
     ending.current = false;
@@ -91,24 +125,50 @@ export default function FlashOverlay({
     pulse.set(
       reducedMotion
         ? 0
-        : withRepeat(withTiming(1, { duration: 1400 }), -1, false)
+        : withRepeat(withTiming(1, { duration: 1800 }), -1, false)
+    );
+    marker.set(0);
+    marker.set(
+      reducedMotion
+        ? target
+        : withDelay(
+            IN_MS + STAGGER_MS * 3,
+            withTiming(target, {
+              duration: 700,
+              easing: Easing.out(Easing.cubic),
+            })
+          )
     );
     const timer = setTimeout(() => endRef.current(), duration);
     return () => {
       clearTimeout(timer);
       cancelAnimation(pulse);
     };
-  }, [visible, duration, reducedMotion, shown, pulse]);
+  }, [visible, duration, reducedMotion, shown, pulse, marker, target]);
 
   const backdrop = useAnimatedStyle(() => ({ opacity: shown.value }));
   const body = useAnimatedStyle(() => ({
     opacity: shown.value,
-    transform: [{ scale: 0.92 + shown.value * 0.08 }],
+    transform: [{ scale: 0.94 + shown.value * 0.06 }],
   }));
-  const halo = useAnimatedStyle(() => ({
-    opacity: 0.35 * (1 - pulse.value),
-    transform: [{ scale: 1 + pulse.value * 0.65 }],
+  // Two halos half a beat apart, so one is always on its way out.
+  const haloAt = (phase: number) => {
+    'worklet';
+    return {
+      opacity: 0.4 * (1 - phase),
+      transform: [{ scale: 1 + phase * 0.55 }],
+    };
+  };
+  const halo = useAnimatedStyle(() => haloAt(pulse.value));
+  const haloLate = useAnimatedStyle(() => haloAt((pulse.value + 0.5) % 1));
+  const markerStyle = useAnimatedStyle(() => ({
+    left: `${marker.value * 100}%`,
   }));
+
+  // Each block after the badge lands a beat after the one above it.
+  let step = 0;
+  const enter = () =>
+    FadeInDown.delay(IN_MS / 2 + STAGGER_MS * step++).duration(320);
 
   if (!mounted) return null;
   return (
@@ -129,59 +189,196 @@ export default function FlashOverlay({
           style={{ paddingBottom: OPTICAL_LIFT * 2 }}
           onPress={end}
           accessibilityRole="button"
-          accessibilityLabel={[eyebrow, value, title, caption]
+          accessibilityLabel={[
+            eyebrow,
+            value,
+            title,
+            ...(stats ?? []).map((stat) => `${stat.label} ${stat.value}`),
+            caption,
+          ]
             .filter(Boolean)
             .join(', ')}
         >
-          <Animated.View className="items-center" style={body}>
+          <Animated.View className="items-center w-full" style={body}>
             <View
               style={{
-                width: 132,
-                height: 132,
+                width: BADGE * 1.6,
+                height: BADGE * 1.6,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 28,
+                marginBottom: 8,
               }}
             >
-              <Animated.View
-                style={[
-                  {
+              {[halo, haloLate].map((style, at) => (
+                <Animated.View
+                  key={at}
+                  style={[
+                    {
+                      position: 'absolute',
+                      width: BADGE,
+                      height: BADGE,
+                      borderRadius: BADGE / 2,
+                      borderWidth: 2,
+                      borderColor: color,
+                    },
+                    style,
+                  ]}
+                />
+              ))}
+              <View
+                style={{
+                  width: BADGE,
+                  height: BADGE,
+                  borderRadius: BADGE / 2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* The tint at low strength, as its own layer: the colour
+                    comes from a theme variable, so it cannot be given an
+                    alpha by string. */}
+                <View
+                  style={{
                     position: 'absolute',
-                    width: 112,
-                    height: 112,
-                    borderRadius: 56,
-                    borderWidth: 2,
-                    borderColor: color,
-                  },
-                  halo,
-                ]}
-              />
-              <Icon name={icon} size={64} color={color} />
+                    inset: 0,
+                    backgroundColor: color,
+                    opacity: 0.14,
+                  }}
+                />
+                <Icon name={icon} size={52} color={color} />
+              </View>
             </View>
             {eyebrow ? (
-              <Text className="text-text-secondary text-base font-semibold uppercase mb-2">
-                {eyebrow}
-              </Text>
-            ) : null}
-            <Text
-              accessibilityLiveRegion="polite"
-              className="text-text-primary font-bold"
-              style={{ fontSize: 64, fontVariant: ['tabular-nums'] }}
-            >
-              {value}
-            </Text>
-            {title ? (
-              <Text
-                className="text-2xl font-bold mt-1 text-center"
-                style={{ color }}
+              <Animated.View
+                entering={enter()}
+                className="rounded-full px-3 py-1 mb-3 overflow-hidden"
               >
-                {title}
+                <View
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: color,
+                    opacity: 0.12,
+                  }}
+                />
+                <Text
+                  className="text-xs font-bold uppercase"
+                  style={{ color, letterSpacing: 1.5 }}
+                >
+                  {eyebrow}
+                </Text>
+              </Animated.View>
+            ) : null}
+            <Animated.View entering={enter()} className="items-center">
+              <Text
+                accessibilityLiveRegion="polite"
+                className="text-text-primary font-bold"
+                style={{
+                  fontSize: 72,
+                  lineHeight: 80,
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {value}
               </Text>
+              {title ? (
+                <Text
+                  className="text-2xl font-bold text-center"
+                  style={{ color }}
+                >
+                  {title}
+                </Text>
+              ) : null}
+            </Animated.View>
+            {meter ? (
+              <Animated.View
+                entering={enter()}
+                className="w-full mt-7"
+                style={{ maxWidth: 300 }}
+              >
+                <View className="flex-row" style={{ height: 10, gap: 3 }}>
+                  {meter.segments.map((segment, at) => (
+                    <View
+                      key={at}
+                      className="rounded-full"
+                      style={{
+                        flex: segment.weight,
+                        backgroundColor: segment.color,
+                      }}
+                    />
+                  ))}
+                </View>
+                <Animated.View
+                  className="absolute bg-background"
+                  style={[
+                    {
+                      top: 5 - MARKER / 2,
+                      width: MARKER,
+                      height: MARKER,
+                      borderRadius: MARKER / 2,
+                      marginLeft: -MARKER / 2,
+                      borderWidth: 4,
+                      borderColor: color,
+                    },
+                    markerStyle,
+                  ]}
+                />
+                <View style={{ height: 22 }}>
+                  {meter.ticks?.map((tick) => (
+                    <Text
+                      key={tick.label}
+                      className="absolute text-text-muted text-xs"
+                      style={{
+                        top: 8,
+                        left: `${tick.at * 100}%`,
+                        width: 40,
+                        marginLeft: -20,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {tick.label}
+                    </Text>
+                  ))}
+                </View>
+              </Animated.View>
+            ) : null}
+            {stats?.length ? (
+              <Animated.View
+                entering={enter()}
+                className="flex-row w-full mt-7"
+                style={{ gap: 10, maxWidth: 340 }}
+              >
+                {stats.map((stat) => (
+                  <View
+                    key={stat.key}
+                    className="flex-1 items-center rounded-2xl bg-surface py-3"
+                  >
+                    <Icon name={stat.icon} size={20} color={stat.color} />
+                    <Text
+                      className="text-text-primary text-lg font-bold mt-1"
+                      style={{ fontVariant: ['tabular-nums'] }}
+                      numberOfLines={1}
+                    >
+                      {stat.value}
+                    </Text>
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{ color: stat.color }}
+                      numberOfLines={1}
+                    >
+                      {stat.label}
+                    </Text>
+                  </View>
+                ))}
+              </Animated.View>
             ) : null}
             {caption ? (
-              <Text className="text-text-secondary text-base text-center mt-4">
-                {caption}
-              </Text>
+              <Animated.View entering={enter()} className="mt-6">
+                <Text className="text-text-secondary text-base text-center">
+                  {caption}
+                </Text>
+              </Animated.View>
             ) : null}
           </Animated.View>
         </Pressable>
