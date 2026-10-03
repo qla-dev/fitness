@@ -66,29 +66,45 @@ const toEntry = (row: Row): LogEntry => {
   };
 };
 
+/** Rows per INSERT; a flush is at most 20, so only an old-log import splits. */
+const INSERT_CHUNK = 200;
+
 /**
  * Appends entries given newest first (the order the buffer holds them) and
  * trims the table to `keep` rows. Row ids grow with insertion, so reading by
  * id descending returns newest first, as the old array did.
+ *
+ * One INSERT for the lot, not a BEGIN/INSERT…/COMMIT transaction: a reload
+ * between those steps left the old connection holding the write lock with
+ * no COMMIT ever coming, and every write after it failed with "database is
+ * locked" until the app was killed. A single statement is atomic by itself
+ * — a flush still lands whole or not at all — and finishes natively, so
+ * nothing is left open whatever the JS does next. The trim is its own
+ * statement for the same reason; running late, it only keeps a few extra
+ * rows for a moment.
  */
 export async function insertLogs(entries: LogEntry[], keep: number) {
   if (entries.length === 0) return;
   const db = await logDatabase();
-  await db.withTransactionAsync(async () => {
-    for (const entry of [...entries].reverse()) {
-      await db.runAsync(
-        'INSERT INTO logs (timestamp, status, message, details) VALUES (?, ?, ?, ?)',
+  const oldestFirst = [...entries].reverse();
+  for (let at = 0; at < oldestFirst.length; at += INSERT_CHUNK) {
+    const chunk = oldestFirst.slice(at, at + INSERT_CHUNK);
+    await db.runAsync(
+      `INSERT INTO logs (timestamp, status, message, details) VALUES ${chunk
+        .map(() => '(?, ?, ?, ?)')
+        .join(', ')}`,
+      ...chunk.flatMap((entry) => [
         entry.timestamp,
         entry.status,
         entry.message,
-        JSON.stringify(entry.details)
-      );
-    }
-    await db.runAsync(
-      'DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY id DESC LIMIT ?)',
-      keep
+        JSON.stringify(entry.details),
+      ])
     );
-  });
+  }
+  await db.runAsync(
+    'DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY id DESC LIMIT ?)',
+    keep
+  );
 }
 
 const placeholders = (count: number) => Array(count).fill('?').join(', ');
