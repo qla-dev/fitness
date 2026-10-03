@@ -28,7 +28,8 @@ function database(): Promise<SQLiteDatabase> {
   if (!opening) {
     opening = (async () => {
       const db = await openDatabaseAsync('fitness-local.db');
-      await db.execAsync(`PRAGMA journal_mode = WAL;
+      await db.execAsync(`PRAGMA busy_timeout = 3000;
+        PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS local_tables (name TEXT PRIMARY KEY, data TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS local_meta (key TEXT PRIMARY KEY, data TEXT NOT NULL);`);
       return db;

@@ -215,7 +215,9 @@ const flushBuffer = async (): Promise<void> => {
         // Restore entries to buffer for retry
         writeBuffer = [...entriesToFlush, ...writeBuffer];
       } else {
-        console.error(
+        // A warning, not an error: losing a few log lines is not worth the
+        // red screen a console.error raises in development.
+        console.warn(
           '[LogService] Dropping buffered entries after repeated flush failures',
           error
         );

@@ -7,7 +7,8 @@ async function database() {
     opening = (async () => {
       const { openDatabaseAsync } = await import('expo-sqlite');
       const db = await openDatabaseAsync('fitness-recordings.db');
-      await db.execAsync(`PRAGMA journal_mode = WAL;
+      await db.execAsync(`PRAGMA busy_timeout = 3000;
+        PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS recording_state (id INTEGER PRIMARY KEY CHECK(id = 1), data TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS recording_samples (id INTEGER PRIMARY KEY, recording_id TEXT NOT NULL, kind TEXT NOT NULL, timestamp REAL NOT NULL, data TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS recording_samples_session ON recording_samples(recording_id, kind, timestamp);

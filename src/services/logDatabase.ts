@@ -13,6 +13,10 @@ import type { LogEntry, LogStatus } from './LogService';
  * A file of its own rather than a table in the recordings database: logging
  * runs from everywhere, including while a recording checkpoints, and must not
  * queue behind or lock that database.
+ *
+ * A busy timeout, because this is not always the only connection: a reload
+ * opens a new one while the old one may still be mid-write, and without it
+ * the new one's write failed on the spot with "database is locked".
  */
 let opening: Promise<SQLiteDatabase> | undefined;
 
@@ -20,7 +24,8 @@ export function logDatabase(): Promise<SQLiteDatabase> {
   if (!opening) {
     opening = (async () => {
       const db = await openDatabaseAsync('app-logs.db');
-      await db.execAsync(`PRAGMA journal_mode = WAL;
+      await db.execAsync(`PRAGMA busy_timeout = 3000;
+        PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           timestamp TEXT NOT NULL,
