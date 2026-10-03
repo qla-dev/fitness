@@ -14,6 +14,7 @@
 "home.pageHint" = "Swipe right for nutrition, left for activities";
 "nutrition.left" = "left";
 "nutrition.goal" = "Goal";
+"nutrition.over" = "over";
 "home.water" = "Water";
 "measurement.weight" = "Weight";
 "measurement.add" = "Add entry";

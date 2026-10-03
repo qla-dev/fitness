@@ -145,117 +145,6 @@ function CalorieFlank({
   );
 }
 
-const METER_HEIGHT = 8;
-
-/**
- * The day's calories as one straight line: eaten against the goal.
- *
- * The first row of the card, for the plain reading the arcs below take a
- * moment to decode. Past the goal the bar stays full and the figure on the
- * right turns into how far over it went.
- */
-function CalorieMeter({
-  eaten,
-  goal,
-  color,
-  trackColor,
-  loading,
-}: {
-  eaten: number;
-  goal: number;
-  color: string;
-  trackColor: string;
-  loading?: boolean;
-}) {
-  const { t } = useTranslation();
-  const reducedMotion = useReducedMotion();
-  const isFocused = useIsFocusedWhenNavigable();
-  const hasGoal = goal > 0;
-  const target = loading || !hasGoal ? 0 : Math.min(1, eaten / goal);
-  const progress = useSharedValue(0);
-
-  // Replays from empty on every visit, like the rings beside it.
-  useEffect(() => {
-    if (!isFocused) return;
-    progress.value = 0;
-    progress.value = withTiming(target, {
-      duration: reducedMotion ? 0 : 500,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isFocused, target, reducedMotion, progress]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${progress.value * 100}%`,
-  }));
-  const over = hasGoal && eaten > goal;
-
-  return (
-    <View className="mb-4">
-      <View className="flex-row items-baseline justify-between mb-2">
-        {loading ? (
-          <ValueSkeleton width={96} height={20} />
-        ) : (
-          <Text className="text-lg font-bold text-text-primary">
-            {round(eaten)}
-            {hasGoal && (
-              <Text className="text-lg font-semibold text-text-muted">
-                {/* i18n-audit-ignore-next-line hardcoded-ui-text -- slash and spacing are numeric presentation punctuation. */}
-                {t('nutrition.goalSeparator', {
-                  defaultValue: ' / {{value}}',
-                  value: round(goal),
-                })}
-              </Text>
-            )}
-            <Text className="text-sm font-normal text-text-muted">
-              {' '}
-              {t('nutrition.caloriesShort', { defaultValue: 'kcal' })}
-            </Text>
-          </Text>
-        )}
-        {!loading && hasGoal && (
-          <Text className="text-sm font-semibold" style={{ color }}>
-            {over
-              ? t('diaryNutrition.kcalOver', {
-                  defaultValue: '{{amount}} over',
-                  amount: round(eaten - goal),
-                })
-              : t('diaryNutrition.percentOfGoal', {
-                  defaultValue: '{{percent}}% of goal',
-                  percent: round((eaten / goal) * 100),
-                })}
-          </Text>
-        )}
-      </View>
-      <View
-        testID="diary-calorie-meter"
-        accessibilityRole="progressbar"
-        accessibilityValue={{
-          min: 0,
-          max: Math.round(goal),
-          now: Math.round(eaten),
-        }}
-        className="overflow-hidden"
-        style={{
-          height: METER_HEIGHT,
-          borderRadius: METER_HEIGHT / 2,
-          backgroundColor: trackColor,
-        }}
-      >
-        <Animated.View
-          style={[
-            {
-              height: METER_HEIGHT,
-              borderRadius: METER_HEIGHT / 2,
-              backgroundColor: color,
-            },
-            fillStyle,
-          ]}
-        />
-      </View>
-    </View>
-  );
-}
-
 /**
  * One nutrient as a ring: what has been eaten inside it, what is left under it.
  *
@@ -504,14 +393,6 @@ export default function DiaryNutritionCard({
           </Animated.View>
         </Pressable>
       </View>
-
-      <CalorieMeter
-        eaten={eaten}
-        goal={goal}
-        color={calorieColor}
-        trackColor={trackColor}
-        loading={loading}
-      />
 
       {/* Eaten and burned share one pair of nested arcs, the way the rings
           on Activities nest: two readings of the same day, concentric, so the

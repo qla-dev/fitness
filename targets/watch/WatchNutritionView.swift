@@ -14,6 +14,7 @@ struct WatchNutritionView: View {
             Text(watchText("home.empty", "Open the phone dashboard to sync your daily activity."))
               .font(.footnote).foregroundStyle(.secondary)
           } else {
+            calorieMeter
             // Two rings per row keeps the phone's ring/icon/value style legible on the wrist.
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
               ForEach(nutrients.indices, id: \.self) { index in
@@ -34,6 +35,40 @@ struct WatchNutritionView: View {
         }
       }
     }
+  }
+
+  /// The day's calories as one straight line, eaten against the goal, above
+  /// the rings. Past the goal the bar stays full and the right-hand figure
+  /// becomes how far over it went.
+  private var calorieMeter: some View {
+    let eaten = manager.dashboard["calories"] as? Double ?? 0
+    let goal = manager.dashboard["calorieGoal"] as? Double ?? 0
+    let color = Color.blue
+    return VStack(alignment: .leading, spacing: 6) {
+      HStack(alignment: .firstTextBaseline) {
+        (Text(watchNumber(eaten)).font(.system(size: 15, weight: .bold, design: .rounded))
+          + Text(goal > 0 ? " / " + watchNumber(goal) : "")
+            .font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundColor(.secondary)
+          + Text(" " + watchText("unit.kcal", "kcal")).font(.system(size: 10)).foregroundColor(.secondary))
+          .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+        Spacer(minLength: 4)
+        if goal > 0 {
+          Text(eaten > goal
+            ? watchNumber(eaten - goal) + " " + watchText("nutrition.over", "over")
+            : watchNumber(eaten / goal * 100) + "%")
+            .font(.system(size: 11, weight: .semibold)).foregroundStyle(color).lineLimit(1)
+        }
+      }
+      GeometryReader { proxy in
+        ZStack(alignment: .leading) {
+          Capsule().fill(color.opacity(0.18))
+          Capsule().fill(color)
+            .frame(width: proxy.size.width * (goal > 0 ? min(max(eaten / goal, 0), 1) : 0))
+        }
+      }.frame(height: 6)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(goal > 0 ? watchNumber(eaten / goal * 100) + "%" : "")
   }
 
   private func nutrientRing(_ nutrient: [String: Any]) -> some View {
