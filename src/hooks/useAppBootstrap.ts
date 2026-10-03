@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import * as SplashScreen from 'expo-splash-screen';
 import {
   loadOnlineAccount,
   useOnlineAccount,
@@ -10,6 +9,7 @@ import { getActiveServerConfig } from '../services/storage';
 import { addLog } from '../services/LogService';
 import { isLocalDataMode } from '../services/dataMode';
 import { localApiFetch } from '../services/local/localApi';
+import { revealFirstScreen, SPLASH_FALLBACK_MS } from '../services/startupGate';
 
 export type BootstrapRoute = 'Tabs' | 'Onboarding' | 'OnlineAccount';
 
@@ -25,6 +25,7 @@ export function useAppBootstrap(): AppBootstrapResult {
 
   useEffect(() => {
     let cancelled = false;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
 
     const determine = async (): Promise<void> => {
       // Language initialization and route selection are independent failure
@@ -66,15 +67,11 @@ export function useAppBootstrap(): AppBootstrapResult {
         setInitialRoute('Onboarding');
       }
 
-      // Splash hiding is the last step and never rejects `determine`: a failure
-      // is logged and must not change the route.
+      // The splash comes down when the first screen has drawn (the
+      // navigator's onReady), not here: the route is only chosen, nothing is
+      // on screen yet. This is the backstop if that never reports.
       if (cancelled) return;
-      try {
-        await SplashScreen.hideAsync();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        addLog(`[App] Failed to hide splash screen: ${message}`, 'ERROR');
-      }
+      fallback = setTimeout(revealFirstScreen, SPLASH_FALLBACK_MS);
     };
 
     // determine() handles every expected failure internally, so the floating
@@ -83,6 +80,7 @@ export function useAppBootstrap(): AppBootstrapResult {
 
     return () => {
       cancelled = true;
+      clearTimeout(fallback);
     };
   }, []);
 

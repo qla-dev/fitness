@@ -22,6 +22,12 @@ import {
   recordAutoSyncTime,
 } from '../../src/services/autoSyncCoordinator';
 
+// The first screen counts as shown, so deferred startup work runs at once.
+jest.mock('../../src/services/startupGate', () => ({
+  afterFirstScreen: () => Promise.resolve(),
+  revealFirstScreen: jest.fn(),
+  SPLASH_FALLBACK_MS: 50,
+}));
 jest.mock('../../src/services/storage', () => ({
   loadTimeRange: jest.fn(),
   loadDailySyncRange: jest.fn(),

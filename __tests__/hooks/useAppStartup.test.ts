@@ -21,6 +21,12 @@ import i18n, { initializeI18n } from '../../src/localization/i18n';
 import { addLog } from '../../src/services/LogService';
 import { initMedicationNotificationActions } from '../../src/services/medicationNotificationHandler';
 
+// The first screen counts as shown, so deferred startup work runs at once.
+jest.mock('../../src/services/startupGate', () => ({
+  afterFirstScreen: () => Promise.resolve(),
+  revealFirstScreen: jest.fn(),
+  SPLASH_FALLBACK_MS: 50,
+}));
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn().mockResolvedValue(undefined),

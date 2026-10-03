@@ -147,6 +147,7 @@ import { useNativeIOSTabsActive, useNativeIOSHeadersActive } from './src/service
 import { useWidgetLanguageRefresh } from './src/hooks/useWidgetLanguageRefresh';
 import { useIOSWidgetLanguageRefresh } from './src/hooks/useIOSWidgetLanguageRefresh';
 import { APP_URL } from './src/constants/appUrlScheme';
+import { revealFirstScreen } from './src/services/startupGate';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -361,6 +362,9 @@ function AppContent() {
       theme={navigationTheme}
       initialState={initialRoute === 'OnlineAccount' ? { index: 1, routes: [{ name: 'Tabs' }, { name: 'OnlineAccount' }] } : undefined}
       linking={linkingEnabled ? linking : undefined}
+      // The first screen has mounted; the next frame is it on screen, and
+      // the splash goes straight to it rather than to an empty window.
+      onReady={() => requestAnimationFrame(revealFirstScreen)}
       onStateChange={(state) => {
         // Enable deep-link handling once the user has left Onboarding.
         // Without this, widget URLs are ignored for the rest of the session

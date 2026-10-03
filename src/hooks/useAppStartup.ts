@@ -17,6 +17,7 @@ import { tryClaimAutoSync } from '../services/autoSyncCoordinator';
 import { initializeTheme } from '../services/themeService';
 import { addLog, initLogService } from '../services/LogService';
 import { warmLocalDatabase } from '../services/local/database';
+import { afterFirstScreen } from '../services/startupGate';
 import { isLocalDataMode } from '../services/dataMode';
 import {
   initNotifications,
@@ -99,10 +100,13 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     });
 
     // Initialize log service (warms cache, prunes old logs, registers AppState listener)
-    initLogService().catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`[App] Failed to initialize log service: ${message}`, 'ERROR');
-    });
+    // Pruning old logs is housekeeping; it waits for the first screen.
+    afterFirstScreen()
+      .then(initLogService)
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        addLog(`[App] Failed to initialize log service: ${message}`, 'ERROR');
+      });
 
     // Load the on-device database in the background. On the first launch after
     // the SQLite update this is also when an AsyncStorage copy moves over; it
@@ -170,18 +174,24 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
       }
     };
 
-    initializeSyncServices().catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(`[App] Failed to initialize sync services: ${message}`, 'ERROR');
-    });
+    // Sync setup, observers and the pending refresh below all start syncs or
+    // refetches; none of them is needed to draw the first screen.
+    afterFirstScreen()
+      .then(initializeSyncServices)
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        addLog(`[App] Failed to initialize sync services: ${message}`, 'ERROR');
+      });
 
-    flushPendingHealthSyncCacheRefresh().catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      addLog(
-        `[App] Failed to flush pending health sync refresh: ${message}`,
-        'ERROR'
-      );
-    });
+    afterFirstScreen()
+      .then(flushPendingHealthSyncCacheRefresh)
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        addLog(
+          `[App] Failed to flush pending health sync refresh: ${message}`,
+          'ERROR'
+        );
+      });
 
     return () => {
       cancelled = true;

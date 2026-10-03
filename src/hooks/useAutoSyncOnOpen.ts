@@ -21,6 +21,7 @@ import {
   recordAutoSyncTime,
 } from '../services/autoSyncCoordinator';
 import { addLog } from '../services/LogService';
+import { afterFirstScreen } from '../services/startupGate';
 
 const AUTO_SYNC_WATCHDOG_MS = 90_000;
 
@@ -136,6 +137,8 @@ export function useAutoSyncOnOpen({
     }
 
     const triggerColdStartSync = async () => {
+      // A catch-up sync is never what the first screen waits on.
+      await afterFirstScreen();
       // Open the yield window and take the claim BEFORE the preference reads.
       // Those reads are async, and on iOS a HealthKit observer firing in that
       // gap would take the claim first, leaving this path to return silently

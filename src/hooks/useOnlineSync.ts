@@ -12,6 +12,7 @@ import {
 import { configureOnlineBackgroundSync } from '../services/online/background';
 import { queryClient } from './queryClient';
 import { addLog } from '../services/LogService';
+import { afterFirstScreen } from '../services/startupGate';
 
 export function useOnlineSync() {
   const accountId = useOnlineAccount((s) => s.session?.user.id);
@@ -33,12 +34,17 @@ export function useOnlineSync() {
         ])
     );
     if (!enabled || !accountId) return;
+    let active = true;
     const run = () => {
       const last = useSyncState.getState().lastSynced;
       if (last && Date.now() - Date.parse(last) < interval * 60000) return;
       void syncOnline().catch(() => undefined);
     };
-    run();
+    // Behind the first screen: after a long break this sync is always due,
+    // and running it during the first render held the app on a blank screen.
+    void afterFirstScreen().then(() => {
+      if (active) run();
+    });
     const timer = setInterval(() => {
       if (AppState.currentState === 'active') run();
     }, interval * 60000);
@@ -51,6 +57,7 @@ export function useOnlineSync() {
       }
     });
     return () => {
+      active = false;
       clearInterval(timer);
       subscription.remove();
     };

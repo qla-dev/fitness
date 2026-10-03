@@ -37,6 +37,16 @@ jest.mock('expo-splash-screen', () => ({
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// The splash itself is the gate's job (startupGate.test.ts); here only when
+// the bootstrap asks for it. The fallback is long unless a test shortens it.
+let mockSplashFallbackMs = 60_000;
+jest.mock('../../src/services/startupGate', () => ({
+  revealFirstScreen: jest.fn(),
+  get SPLASH_FALLBACK_MS() {
+    return mockSplashFallbackMs;
+  },
+}));
+
 jest.mock('../../src/services/LogService', () => ({
   addLog: jest.fn(() => Promise.resolve()),
 }));
@@ -45,6 +55,7 @@ import { initializeAppLanguage } from '../../src/localization';
 import { getActiveServerConfig } from '../../src/services/storage';
 import { addLog } from '../../src/services/LogService';
 import * as SplashScreen from 'expo-splash-screen';
+import { revealFirstScreen } from '../../src/services/startupGate';
 
 const mockInitializeAppLanguage = initializeAppLanguage as jest.MockedFunction<
   typeof initializeAppLanguage
@@ -91,6 +102,7 @@ describe('useAppBootstrap', () => {
     mockInitializeAppLanguage.mockResolvedValue('en');
     mockGetActiveServerConfig.mockResolvedValue(null);
     mockSplashScreen.hideAsync.mockResolvedValue(undefined);
+    mockSplashFallbackMs = 60_000;
   });
 
   it('prompts on every signed-out startup even after a previous dismissal', async () => {
@@ -109,15 +121,13 @@ describe('useAppBootstrap', () => {
 
   it('skips the startup sign-in sheet for a restored account', async () => {
     jest.mocked(isLocalDataMode).mockReturnValue(true);
-    jest
-      .mocked(useOnlineAccount.getState)
-      .mockReturnValue({
-        ready: true,
-        session: {
-          token: 'test',
-          user: { id: '1', name: 'Member', ai_coins: 100 },
-        },
-      });
+    jest.mocked(useOnlineAccount.getState).mockReturnValue({
+      ready: true,
+      session: {
+        token: 'test',
+        user: { id: '1', name: 'Member', ai_coins: 100 },
+      },
+    });
     const { result } = renderHook(() => useAppBootstrap());
     await waitFor(() => expect(result.current.initialRoute).toBe('Tabs'));
   });
@@ -218,20 +228,32 @@ describe('useAppBootstrap', () => {
 
     renderHook(() => useAppBootstrap());
 
+    expect(revealFirstScreen).not.toHaveBeenCalled();
     expect(mockSplashScreen.hideAsync).not.toHaveBeenCalled();
   });
 
-  it('hides splash screen after bootstrap completes', async () => {
-    mockGetActiveServerConfig.mockResolvedValue(null);
+  it('leaves the splash up when the route is chosen, for the first screen to take down', async () => {
+    const { result } = renderHook(() => useAppBootstrap());
 
+    await waitFor(() => {
+      expect(result.current.initialRoute).toBe('Onboarding');
+    });
+    // Nothing is on screen yet: hiding now uncovered an empty window.
+    expect(revealFirstScreen).not.toHaveBeenCalled();
+    expect(mockSplashScreen.hideAsync).not.toHaveBeenCalled();
+  });
+
+  it('takes the splash down from the fallback if the first screen never reports', async () => {
+    mockSplashFallbackMs = 0;
     renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(mockSplashScreen.hideAsync).toHaveBeenCalledTimes(1);
+      expect(revealFirstScreen).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('hides splash screen even when initialization is rejected', async () => {
+  it('still schedules the fallback when initialization is rejected', async () => {
+    mockSplashFallbackMs = 0;
     mockInitializeAppLanguage.mockRejectedValue(
       new Error('language init failed')
     );
@@ -239,26 +261,8 @@ describe('useAppBootstrap', () => {
     renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(mockSplashScreen.hideAsync).toHaveBeenCalledTimes(1);
+      expect(revealFirstScreen).toHaveBeenCalledTimes(1);
     });
-  });
-
-  it('logs and keeps the route when hiding the splash fails', async () => {
-    mockGetActiveServerConfig.mockResolvedValue(null);
-    mockSplashScreen.hideAsync.mockRejectedValue(new Error('splash failed'));
-
-    const { result } = renderHook(() => useAppBootstrap());
-
-    await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
-    });
-    await waitFor(() => {
-      expect(mockAddLog).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to hide splash screen'),
-        'ERROR'
-      );
-    });
-    expect(result.current.initialRoute).toBe('Onboarding');
   });
 
   it('does not trigger a second language initialization on re-render', async () => {
