@@ -99,6 +99,15 @@ const RouteMap: React.FC<RouteMapProps> = ({
     bearing: 0,
     zoom: 17,
   });
+  // Where the camera looks once the user has moved it, so a tilt keeps their
+  // view instead of snapping back to their position.
+  const lookAt = useRef<{ latitude: number; longitude: number } | null>(null);
+  // The runner sits low on screen while followed, so more of the way ahead
+  // shows; the same offset wherever the camera is set to follow them.
+  const followPoint = (point: { latitude: number; longitude: number }) => ({
+    latitude: point.latitude - (360 / 2 ** 17) * 0.12,
+    longitude: point.longitude,
+  });
   const [initialCamera, setInitialCamera] = useState({
     coordinates: center,
     tilt: navigationMode ? 60 : 0,
@@ -115,13 +124,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
   // follow immediately; do not overwrite the user's pan, zoom or 3D choice.
   useEffect(() => {
     if (!navigationMode || !following || !center) return;
-    const camera = {
-      coordinates: {
-        latitude: center.latitude - (360 / 2 ** 17) * 0.12,
-        longitude: center.longitude,
-      },
-      ...orientation.current,
-    };
+    const camera = { coordinates: followPoint(center), ...orientation.current };
     if (Platform.OS === 'ios') appleMap.current?.setCameraPosition(camera);
     else if (Platform.OS === 'android')
       void googleMap.current?.setCameraPosition({ ...camera, duration: 800 });
@@ -153,7 +156,23 @@ const RouteMap: React.FC<RouteMapProps> = ({
             const tilt = is3D ? 0 : 60;
             orientation.current.tilt = tilt;
             setIs3D(!is3D);
-            const camera = { ...orientation.current, coordinates: center };
+            const target =
+              following || !lookAt.current
+                ? center && followPoint(center)
+                : lookAt.current;
+            // TEMP: diagnosing the 2D/3D toggle on device.
+            console.log('[RouteMap] 3D toggle', {
+              to: tilt,
+              following,
+              center,
+              lookAt: lookAt.current,
+              target,
+              hasMapRef: !!(Platform.OS === 'ios' ? appleMap : googleMap)
+                .current,
+            });
+            if (!target) return;
+            const camera = { ...orientation.current, coordinates: target };
+            console.log('[RouteMap] setCameraPosition', camera);
             if (Platform.OS === 'ios')
               appleMap.current?.setCameraPosition(camera);
             else void googleMap.current?.setCameraPosition(camera);
@@ -233,64 +252,80 @@ const RouteMap: React.FC<RouteMapProps> = ({
   const selectPoint = (event: {
     coordinates: { latitude?: number; longitude?: number };
   }) => {
-    const { latitude, longitude } = event.coordinates;
+    const { latitude, longitude } = event.coordinates ?? {};
     if (latitude !== undefined && longitude !== undefined)
       onSelectPoint?.({ latitude, longitude });
   };
 
   if (Platform.OS === 'ios') {
     return (
-      <View
-        style={StyleSheet.absoluteFill}
-        onStartShouldSetResponderCapture={() => {
-          setFollowing(false);
-          return false;
-        }}
-      >
-        <AppleMaps.View
-          key={navigationMode && center ? 'located' : 'preview'}
-          ref={appleMap}
+      <View style={StyleSheet.absoluteFill}>
+        {/* A touch on the map is the user taking over, so follow stops. Only
+            on the map: the controls sit outside this, or tapping 3D read as
+            a pan and quietly stopped following the runner. */}
+        <View
           style={StyleSheet.absoluteFill}
-          cameraPosition={cameraPosition}
-          onCameraMove={(event) => {
-            if (!mapReady) setMapReady(true);
-            if (!following)
-              orientation.current = {
+          onStartShouldSetResponderCapture={() => {
+            setFollowing(false);
+            return false;
+          }}
+        >
+          <AppleMaps.View
+            key={navigationMode && center ? 'located' : 'preview'}
+            ref={appleMap}
+            style={StyleSheet.absoluteFill}
+            cameraPosition={cameraPosition}
+            onCameraMove={(event) => {
+              // TEMP: what the native map reports back after a move.
+              console.log('[RouteMap] cameraMove', {
                 tilt: event.tilt,
                 bearing: event.bearing,
                 zoom: event.zoom,
-              };
-          }}
-          polylines={polylines}
-          markers={markers}
-          onMapClick={selectPoint}
-          properties={{
-            isMyLocationEnabled: showsUserLocation,
-            elevation: navigationMode
-              ? AppleMaps.MapStyleElevation?.REALISTIC
-              : undefined,
-          }}
-          uiSettings={{
-            myLocationButtonEnabled: !navigationMode && showsUserLocation,
-            compassEnabled: !navigationMode,
-            scaleBarEnabled: false,
-            togglePitchEnabled: !navigationMode,
-          }}
-          colorScheme={
-            appearance === 'dark' || scheme === 'dark'
-              ? AppleMaps.MapColorScheme.DARK
-              : undefined
-          }
-        />
-        {appearance === 'dark' && (
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(0,0,0,0.4)' },
-            ]}
+                following,
+              });
+              if (!mapReady) setMapReady(true);
+              if (!following) {
+                orientation.current = {
+                  tilt: event.tilt,
+                  bearing: event.bearing,
+                  zoom: event.zoom,
+                };
+                const { latitude, longitude } = event.coordinates ?? {};
+                if (latitude !== undefined && longitude !== undefined)
+                  lookAt.current = { latitude, longitude };
+              }
+            }}
+            polylines={polylines}
+            markers={markers}
+            onMapClick={selectPoint}
+            properties={{
+              isMyLocationEnabled: showsUserLocation,
+              elevation: navigationMode
+                ? AppleMaps.MapStyleElevation?.REALISTIC
+                : undefined,
+            }}
+            uiSettings={{
+              myLocationButtonEnabled: !navigationMode && showsUserLocation,
+              compassEnabled: !navigationMode,
+              scaleBarEnabled: false,
+              togglePitchEnabled: !navigationMode,
+            }}
+            colorScheme={
+              appearance === 'dark' || scheme === 'dark'
+                ? AppleMaps.MapColorScheme.DARK
+                : undefined
+            }
           />
-        )}
+          {appearance === 'dark' && (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(0,0,0,0.4)' },
+              ]}
+            />
+          )}
+        </View>
         {controls}
       </View>
     );
@@ -317,52 +352,68 @@ const RouteMap: React.FC<RouteMapProps> = ({
 
   if (Platform.OS === 'android') {
     return (
-      <View
-        style={StyleSheet.absoluteFill}
-        onStartShouldSetResponderCapture={() => {
-          setFollowing(false);
-          return false;
-        }}
-      >
-        <GoogleMaps.View
-          key={navigationMode && center ? 'located' : 'preview'}
-          ref={googleMap}
+      <View style={StyleSheet.absoluteFill}>
+        {/* A touch on the map is the user taking over, so follow stops. Only
+            on the map: the controls sit outside this, or tapping 3D read as
+            a pan and quietly stopped following the runner. */}
+        <View
           style={StyleSheet.absoluteFill}
-          cameraPosition={cameraPosition}
-          onCameraMove={(event) => {
-            if (!mapReady) setMapReady(true);
-            if (!following)
-              orientation.current = {
+          onStartShouldSetResponderCapture={() => {
+            setFollowing(false);
+            return false;
+          }}
+        >
+          <GoogleMaps.View
+            key={navigationMode && center ? 'located' : 'preview'}
+            ref={googleMap}
+            style={StyleSheet.absoluteFill}
+            cameraPosition={cameraPosition}
+            onCameraMove={(event) => {
+              // TEMP: what the native map reports back after a move.
+              console.log('[RouteMap] cameraMove', {
                 tilt: event.tilt,
                 bearing: event.bearing,
                 zoom: event.zoom,
-              };
-          }}
-          polylines={polylines}
-          markers={markers}
-          onMapClick={selectPoint}
-          properties={{ isMyLocationEnabled: showsUserLocation }}
-          uiSettings={{
-            myLocationButtonEnabled: !navigationMode && showsUserLocation,
-            compassEnabled: !navigationMode,
-            scaleBarEnabled: false,
-            tiltGesturesEnabled: true,
-          }}
-          colorScheme={
-            appearance === 'dark' || scheme === 'dark'
-              ? GoogleMaps.MapColorScheme.DARK
-              : undefined
-          }
-        />
-        {appearance === 'dark' && (
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(0,0,0,0.4)' },
-            ]}
+                following,
+              });
+              if (!mapReady) setMapReady(true);
+              if (!following) {
+                orientation.current = {
+                  tilt: event.tilt,
+                  bearing: event.bearing,
+                  zoom: event.zoom,
+                };
+                const { latitude, longitude } = event.coordinates ?? {};
+                if (latitude !== undefined && longitude !== undefined)
+                  lookAt.current = { latitude, longitude };
+              }
+            }}
+            polylines={polylines}
+            markers={markers}
+            onMapClick={selectPoint}
+            properties={{ isMyLocationEnabled: showsUserLocation }}
+            uiSettings={{
+              myLocationButtonEnabled: !navigationMode && showsUserLocation,
+              compassEnabled: !navigationMode,
+              scaleBarEnabled: false,
+              tiltGesturesEnabled: true,
+            }}
+            colorScheme={
+              appearance === 'dark' || scheme === 'dark'
+                ? GoogleMaps.MapColorScheme.DARK
+                : undefined
+            }
           />
-        )}
+          {appearance === 'dark' && (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(0,0,0,0.4)' },
+              ]}
+            />
+          )}
+        </View>
         {controls}
       </View>
     );

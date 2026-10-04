@@ -644,6 +644,7 @@ export default function SetupWizardScreen({
         <FlashOverlay
           visible={!!flash}
           icon={flash?.icon ?? 'scale'}
+          glyph={flash?.glyph}
           eyebrow={flash?.eyebrow}
           value={flash?.value ?? ''}
           title={flash?.title}

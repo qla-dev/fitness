@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { useIsFocused } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useKeepAwake } from 'expo-keep-awake';
+import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteMap from '../RouteMap';
 import WorkoutHudBar from '../WorkoutHudBar';
@@ -102,6 +103,28 @@ export default function RunRideRecorder({
     getRecordingSnapshot
   );
   const sensors = useSyncExternalStore(subscribeSensors, getSensorSnapshot);
+  // Where the phone last was, until the first live fix arrives: the map
+  // needs a centre from the first frame, or it opens flat and its 2D/3D
+  // button has nowhere to aim.
+  const [lastKnown, setLastKnown] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  useEffect(() => {
+    let active = true;
+    Location.getLastKnownPositionAsync()
+      .then((fix) => {
+        if (active && fix)
+          setLastKnown({
+            latitude: fix.coords.latitude,
+            longitude: fix.coords.longitude,
+          });
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
   const sport: RecordingSport = initialSport ?? 'run';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -424,7 +447,9 @@ export default function RunRideRecorder({
         <RouteMap
           key={session?.id ?? 'preview'}
           center={
+            snapshot.position ??
             snapshot.points[snapshot.points.length - 1] ??
+            lastKnown ??
             session?.goal?.route?.coordinates[0]
           }
           segments={routeSegments(snapshot.points)}

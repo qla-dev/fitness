@@ -32,6 +32,11 @@ const mockNavigate = jest.fn();
 const mockRoute: { params: unknown } = { params: undefined };
 jest.mock('react-native-keyboard-controller', () => ({
   KeyboardChatScrollView: require('react-native').ScrollView,
+  // Keyboard down: the empty state is centred over the resting composer.
+  useReanimatedKeyboardAnimation: () => ({
+    height: { value: 0 },
+    progress: { value: 0 },
+  }),
 }));
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({

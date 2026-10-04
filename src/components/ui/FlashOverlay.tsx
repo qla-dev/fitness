@@ -15,6 +15,7 @@ import Animated, {
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../Icon';
 import { fireSuccessHaptic } from '../../services/haptics';
+import type { MacroGlyph } from '../../constants/macroRings';
 
 const IN_MS = 260;
 const OUT_MS = 220;
@@ -44,6 +45,27 @@ export interface FlashStat {
   value: string;
   color: string;
   icon: IconName;
+  /** The nutrient's own mark from the Tracker, drawn in place of `icon`. */
+  glyph?: MacroGlyph;
+}
+
+/** A custom nutrient glyph where there is one, the icon set otherwise. */
+function Mark({
+  icon,
+  glyph: Glyph,
+  size,
+  color,
+}: {
+  icon: IconName;
+  glyph?: MacroGlyph;
+  size: number;
+  color: string;
+}) {
+  return Glyph ? (
+    <Glyph size={size} color={color} accentColor={color} />
+  ) : (
+    <Icon name={icon} size={size} color={color} />
+  );
 }
 
 /**
@@ -58,6 +80,7 @@ export interface FlashStat {
 export default function FlashOverlay({
   visible,
   icon,
+  glyph,
   eyebrow,
   value,
   title,
@@ -70,6 +93,8 @@ export default function FlashOverlay({
 }: {
   visible: boolean;
   icon: IconName;
+  /** A nutrient's own Tracker glyph, used for the badge in place of `icon`. */
+  glyph?: MacroGlyph;
   /** The small line above the value: what was worked out. */
   eyebrow?: string;
   /** The result itself, set large. */
@@ -246,7 +271,7 @@ export default function FlashOverlay({
                     opacity: 0.14,
                   }}
                 />
-                <Icon name={icon} size={52} color={color} />
+                <Mark icon={icon} glyph={glyph} size={52} color={color} />
               </View>
             </View>
             {eyebrow ? (
@@ -354,7 +379,12 @@ export default function FlashOverlay({
                     key={stat.key}
                     className="flex-1 items-center rounded-2xl bg-surface py-3"
                   >
-                    <Icon name={stat.icon} size={20} color={stat.color} />
+                    <Mark
+                      icon={stat.icon}
+                      glyph={stat.glyph}
+                      size={22}
+                      color={stat.color}
+                    />
                     <Text
                       className="text-text-primary text-lg font-bold mt-1"
                       style={{ fontVariant: ['tabular-nums'] }}

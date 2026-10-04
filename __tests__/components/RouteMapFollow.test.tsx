@@ -105,3 +105,31 @@ it('follows position above centre, releases on map interaction, and resumes on r
     })
   );
 });
+
+it('keeps following the runner after the 3D button is tapped', () => {
+  Platform.OS = 'ios';
+  const first = { latitude: 43, longitude: 18 };
+  const second = { latitude: 43.001, longitude: 18.001 };
+  const screen = render(
+    <RouteMap center={first} navigationMode showsUserLocation />
+  );
+  // The tap reaches the button, not the map's pan catcher.
+  fireEvent(
+    screen.getByLabelText('Toggle 3D map'),
+    'startShouldSetResponderCapture'
+  );
+  fireEvent.press(screen.getByLabelText('Toggle 3D map'));
+  expect(mockSetCamera).toHaveBeenLastCalledWith(
+    expect.objectContaining({ tilt: 0 })
+  );
+  mockSetCamera.mockClear();
+  screen.rerender(
+    <RouteMap center={second} navigationMode showsUserLocation />
+  );
+  expect(mockSetCamera).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      tilt: 0,
+      coordinates: expect.objectContaining({ longitude: 18.001 }),
+    })
+  );
+});

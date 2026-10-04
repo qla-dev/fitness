@@ -17,7 +17,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardChatScrollView,
+  useReanimatedKeyboardAnimation,
+} from 'react-native-keyboard-controller';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
 import MarkaiGoalCard from '../components/markai/MarkaiGoalCard';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
@@ -516,6 +520,16 @@ function MarkaiContent() {
     return { skill: labels[sending], icon: MODE_ICONS[sending] };
   };
   const empty = !messages.length && !pending && !loading;
+  // The empty state is centred over the space the composer leaves, which
+  // the keyboard shrinks: it rides up with it, so the suggestions stay above
+  // the composer instead of under it.
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
+  const restingComposer = restingBarHeight ?? barHeight;
+  const emptyLift = useAnimatedStyle(() => ({
+    paddingBottom: session
+      ? restingComposer + Math.max(insets.bottom, -keyboardHeight.value)
+      : 0,
+  }));
   // Keeps a followed chat on its last line, whichever of the content and the
   // viewport was measured last.
   const pinToEnd = () => {
@@ -551,16 +565,16 @@ function MarkaiContent() {
         // The native header floats over this view, so its height is reserved
         // at the top as the composer's is at the bottom; leave either out and
         // the gaps above and below stop matching.
-        <View
-          style={{
-            flex: 1,
-            paddingHorizontal: 20,
-            justifyContent: 'center',
-            paddingTop: nativeHeader ? headerOffset : 0,
-            paddingBottom: session
-              ? (restingBarHeight ?? barHeight) + insets.bottom
-              : 0,
-          }}
+        <Reanimated.View
+          style={[
+            {
+              flex: 1,
+              paddingHorizontal: 20,
+              justifyContent: 'center',
+              paddingTop: nativeHeader ? headerOffset : 0,
+            },
+            emptyLift,
+          ]}
         >
           <MarkaiEmptyState
             disabled={busy || loading || !session}
@@ -577,7 +591,7 @@ function MarkaiContent() {
               {error}
             </Text>
           ) : null}
-        </View>
+        </Reanimated.View>
       ) : (
         <KeyboardChatScrollView
           ref={scrollRef}
@@ -602,6 +616,15 @@ function MarkaiContent() {
           scrollEventThrottle={16}
           onScrollBeginDrag={() => {
             dragging.current = true;
+          }}
+          // A drag released without a fling never starts momentum, so it
+          // ends here or not at all. Left on, the chat's own scroll to a new
+          // message was read as the user's, caught short of the end, and the
+          // reply stopped being followed while it typed out under the
+          // composer.
+          onScrollEndDrag={({ nativeEvent: e }) => {
+            if (!e.velocity || Math.abs(e.velocity.y) < 0.01)
+              dragging.current = false;
           }}
           onMomentumScrollEnd={() => {
             dragging.current = false;

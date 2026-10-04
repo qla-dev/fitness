@@ -169,6 +169,8 @@ jest.mock('expo-location', () => ({
   hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
   startLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
   stopLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  // No cached fix by default; the run map then waits for a live one.
+  getLastKnownPositionAsync: jest.fn(() => Promise.resolve(null)),
 }));
 
 // Mock expo-crypto for the same reason: its native shim is not loadable under

@@ -13,6 +13,7 @@ import { localApiFetch } from '../services/local/localApi';
 import { isLocalDataMode } from '../services/dataMode';
 import { getTodayDate } from '../utils/dateUtils';
 import { bmi, bmiCategory } from '../utils/bmi';
+import { MACRO_RINGS } from '../constants/macroRings';
 
 import { formatLocalizedNumber } from '../localization';
 import type { SetupAnswers } from '../services/personalSetup';
@@ -26,6 +27,10 @@ import {
 
 /** The stretch of BMI the result scale draws, from very low to very high. */
 const BMI_SCALE_MIN = 15;
+
+/** A nutrient's mark as the Tracker draws it, so a flash matches its ring. */
+const macroGlyph = (key: string) =>
+  MACRO_RINGS.find((spec) => spec.key === key)?.Glyph;
 
 /** The goals MarkAI can work out from the tour, alone or as one plan. */
 const MACRO_KEYS = ['calories', 'protein', 'carbs', 'fat'] as const;
@@ -247,6 +252,7 @@ export function useProfileSetup(enabled: boolean) {
         {
           key: 'protein',
           icon: 'fish',
+          glyph: macroGlyph('protein'),
           color: protein,
           value: g('protein'),
           label: t('setup.macroFlash.protein', { defaultValue: 'Protein' }),
@@ -254,6 +260,7 @@ export function useProfileSetup(enabled: boolean) {
         {
           key: 'carbs',
           icon: 'leaf',
+          glyph: macroGlyph('carbs'),
           color: carbs,
           value: g('carbs'),
           label: t('setup.macroFlash.carbs', { defaultValue: 'Carbs' }),
@@ -261,6 +268,7 @@ export function useProfileSetup(enabled: boolean) {
         {
           key: 'fat',
           icon: 'hydration',
+          glyph: macroGlyph('fat'),
           color: fat,
           value: g('fat'),
           label: t('setup.macroFlash.fat', { defaultValue: 'Fat' }),
@@ -287,6 +295,8 @@ export function useProfileSetup(enabled: boolean) {
     } as const;
     return {
       icon: look[key].icon,
+      // Calories has no glyph of its own; the Tracker uses the flame too.
+      glyph: macroGlyph(key),
       tint: look[key].color,
       eyebrow:
         profileSteps(t).find((step) => step.id === key)?.fields[0]?.label ??

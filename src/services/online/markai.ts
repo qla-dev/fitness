@@ -155,10 +155,16 @@ export async function logMarkaiFood(
  * asterisk between figures is multiplication and stays.
  */
 export function plainReplyText(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/__(.+?)__/g, '$1')
-    .replace(/`+/g, '')
-    .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
-    .replace(/^([ \t]*)[*-][ \t]+/gm, '$1• ');
+  return (
+    text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/__(.+?)__/g, '$1')
+      .replace(/`+/g, '')
+      .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
+      .replace(/^([ \t]*)[*-][ \t]+/gm, '$1• ')
+      // Numbered steps run together on one line ("…kcal. 2. Your…") each
+      // start a line of their own. Only after a sentence ends, so a decimal
+      // such as 2073.75 is never split.
+      .replace(/([.!?:])[ \t]+(?=\d{1,2}\.[ \t])/g, '$1\n')
+  );
 }

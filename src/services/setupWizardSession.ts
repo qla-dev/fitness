@@ -1,6 +1,7 @@
 import type { SetupAnswers } from './personalSetup';
 import type { IconName } from '../components/Icon';
 import type { FlashMeter, FlashStat } from '../components/ui/FlashOverlay';
+import type { MacroGlyph } from '../constants/macroRings';
 
 export type SetupOption = { value: string; label: string; icon?: IconName };
 
@@ -80,6 +81,8 @@ export interface SetupStep {
 export interface SetupFlash {
   /** The badge's icon; a scale by default, for the BMI. */
   icon?: IconName;
+  /** A nutrient's own Tracker glyph, drawn in place of `icon`. */
+  glyph?: MacroGlyph;
   eyebrow: string;
   value: string;
   title?: string;

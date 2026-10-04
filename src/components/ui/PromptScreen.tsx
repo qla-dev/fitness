@@ -82,6 +82,13 @@ export default function PromptScreen({
       disabled: dismissDisabled,
       onPress: () => navigation.goBack(),
     },
+    // iOS 26 draws its scroll-edge effect along the top of a screen's scroll
+    // view. The questionnaire's starts at the top of the sheet, so the effect
+    // sits under the bar where nothing shows. Here the title sits above any
+    // scrolling control — conversation history, a store list — so the effect
+    // lands mid-sheet and smears the rows passing under the title. These
+    // sheets clip that edge cleanly instead.
+    nativeOptions: { scrollEdgeEffects: { top: 'hidden' } },
   });
 
   return (

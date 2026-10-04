@@ -60,12 +60,20 @@ const STALE_SESSION_MS = 6 * 60 * 60 * 1000;
 interface Snapshot {
   session: RecordingSession | null;
   points: RecordedPoint[];
+  /**
+   * The latest raw fix, for the map to follow. The GPS filter keeps a
+   * standing runner's jitter out of `points`, so a run that has not moved
+   * yet has none — and a map centred on them had nothing to centre on: no
+   * 3D camera at the start, and a 2D/3D button with nowhere to aim.
+   */
+  position: { latitude: number; longitude: number } | null;
   error: boolean;
   ready: boolean;
 }
 let snapshot: Snapshot = {
   session: null,
   points: [],
+  position: null,
   error: false,
   ready: false,
 };
@@ -278,7 +286,19 @@ export async function ingestLocations(locations: Location.LocationObject[]) {
   return serialize(async () => {
     await hydrate();
     const initial = snapshot.session;
-    if (!initial || initial.phase !== 'recording') return;
+    if (!initial) return;
+    const latest = locations.reduce<Location.LocationObject | undefined>(
+      (newest, location) =>
+        !newest || location.timestamp > newest.timestamp ? location : newest,
+      undefined
+    );
+    const position = latest
+      ? { latitude: latest.coords.latitude, longitude: latest.coords.longitude }
+      : snapshot.position;
+    if (initial.phase !== 'recording') {
+      if (latest) publish({ position });
+      return;
+    }
     filter ??= new RecordingGpsFilter(initial.sport);
     let s = { ...initial };
     const points: RecordedPoint[] = [];
@@ -325,12 +345,16 @@ export async function ingestLocations(locations: Location.LocationObject[]) {
             : null,
       });
     }
-    if (!points.length) return;
+    if (!points.length) {
+      if (latest) publish({ position });
+      return;
+    }
     try {
       await checkpointRecording(s, points);
       publish({
         session: s,
         points: reducedPath([...snapshot.points, ...points]),
+        position,
         error: false,
       });
     } catch (error) {
@@ -521,7 +545,7 @@ export async function stopAllRecording() {
     await stopAllLocationTasks();
     const existing = snapshot.session;
     if (existing) await clearRecording(existing.id);
-    publish({ session: null, points: [], error: false });
+    publish({ session: null, points: [], position: null, error: false });
     filter = undefined;
     wheelAt = 0;
     await stopWatchHeartRate().catch(() => undefined);
