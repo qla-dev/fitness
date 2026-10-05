@@ -45,9 +45,17 @@ object WearHealth {
     private val _metrics = MutableStateFlow(WearLiveMetrics())
     val metrics: StateFlow<WearLiveMetrics> = _metrics
 
-    /** Null until asked, so the UI can tell "no" from "not yet asked". */
-    private val _supported = MutableStateFlow<Boolean?>(null)
-    val supported: StateFlow<Boolean?> = _supported
+    /**
+     * Which exercises this watch can actually record.
+     *
+     * Null until asked, so the UI can tell "no" from "not yet asked". A set
+     * rather than one flag because the catalogue is now eighteen sports and
+     * support is per type — a watch that records a run may have no rowing
+     * machine profile, and offering one it will refuse is worse than hiding
+     * it.
+     */
+    private val _supportedTypes = MutableStateFlow<Set<ExerciseType>?>(null)
+    val supportedTypes: StateFlow<Set<ExerciseType>?> = _supportedTypes
 
     /**
      * What Health Services checks before it will open a session. Both are
@@ -66,17 +74,26 @@ object WearHealth {
         client ?: HealthServices.getClient(context).exerciseClient.also { client = it }
 
     /**
-     * Whether this watch can record the sport at all.
+     * Which sports this watch can record.
      *
      * Asked once and remembered: the answer is a property of the hardware, and
-     * every surface that offers a session reads the same flag.
+     * every surface that offers a session reads the same set.
      */
-    suspend fun refreshSupport(context: Context, sport: WearSport) {
-        _supported.value = runCatching {
-            val capabilities = client(context).getCapabilitiesAsync().await()
-            capabilities.supportedExerciseTypes.contains(sport.exerciseType)
-        }.getOrDefault(false)
+    suspend fun refreshSupport(context: Context) {
+        _supportedTypes.value = runCatching {
+            client(context).getCapabilitiesAsync().await().supportedExerciseTypes
+        }.getOrDefault(emptySet())
     }
+
+    /**
+     * Whether a given sport can be recorded here.
+     *
+     * Unknown reads as "yes" so a watch that has not answered yet still
+     * offers its list: the start itself is guarded, and a screen of disabled
+     * buttons during the first second looks broken.
+     */
+    fun supports(sport: WearSport): Boolean =
+        _supportedTypes.value?.contains(sport.exerciseType) ?: true
 
     suspend fun start(context: Context, sport: WearSport): Boolean {
         if (_phase.value == WearSessionPhase.Running) return true
@@ -154,7 +171,7 @@ object WearHealth {
         override fun onRegistered() = Unit
 
         override fun onRegistrationFailed(throwable: Throwable) {
-            _supported.value = false
+            _supportedTypes.value = emptySet()
         }
 
         override fun onAvailabilityChanged(
@@ -173,10 +190,3 @@ object WearHealth {
         DataType.CALORIES_TOTAL,
     )
 }
-
-/** The Health Services type behind each sport the app offers. */
-val WearSport.exerciseType: ExerciseType
-    get() = when (this) {
-        WearSport.Run -> ExerciseType.RUNNING
-        WearSport.Ride -> ExerciseType.BIKING
-    }

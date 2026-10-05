@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,8 +33,10 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -40,84 +44,187 @@ import kotlin.math.roundToInt
  * same things — `targets/watch/` is the specification, so a person with one
  * watch on each wrist sees one app.
  *
- * Every screen that cannot answer says so rather than showing zeroes: a watch
- * that reads "0 kcal" when it simply has not heard from the phone is lying
- * about the day.
+ * A screen that has not heard from the phone shows its own shape with the
+ * figures left blank, rather than a sentence where the day should be. The
+ * rings, the rows and their icons are known before any data arrives, so
+ * drawing them immediately and filling them in when the snapshot lands is
+ * both quicker to read and honest about what is missing — an em dash is
+ * visibly "not yet", where a zero would be a lie about the day.
  */
+
+/** The ring colours, matching the three the phone and the Apple Watch use. */
+private val MoveColor = Color(0xFFFF375F)
+private val ExerciseColor = Color(0xFF3BD15F)
+private val StepsColor = Color(0xFF4FD0E0)
+
+/** One row of the dashboard, known before any data arrives. */
+private data class DashboardSlot(
+    val label: String,
+    val glyph: Char,
+    val color: Color,
+)
+
+private val DASHBOARD_SLOTS = listOf(
+    DashboardSlot("Move", WearIcon.Flame, MoveColor),
+    DashboardSlot("Exercise", WearIcon.Time, ExerciseColor),
+    DashboardSlot("Steps", WearIcon.Footsteps, StepsColor),
+    DashboardSlot("Distance", WearIcon.Navigate, StepsColor),
+    DashboardSlot("Calories", WearIcon.Restaurant, MoveColor),
+    DashboardSlot("Water", WearIcon.WaterFilled, StepsColor),
+)
 
 @Composable
 fun WearDashboardScreen(listState: ScalingLazyListState) {
     val metrics by WearState.dashboard.collectAsState()
     val updatedAt by WearState.updatedAt.collectAsState()
-
-    if (metrics.isEmpty()) {
-        EmptyScreen("Open the phone dashboard to sync your daily activity.")
-        return
-    }
+    val synced = metrics.isNotEmpty()
+    val byLabel = metrics.associateBy { it.label }
 
     ScreenColumn(listState) {
         item { ScreenTitle("Today") }
-        if (isStale(updatedAt)) {
+        item {
+            ActivityRings(
+                move = byLabel["Move"]?.fraction ?: 0f,
+                exercise = byLabel["Exercise"]?.fraction ?: 0f,
+                steps = byLabel["Steps"]?.fraction ?: 0f,
+            )
+        }
+        if (!synced) {
+            item { Caption("Waiting for your phone. Open qla.fit to fill this in.") }
+        } else if (isStale(updatedAt)) {
             item { Caption("Showing the last synced day. Open the phone dashboard to update.") }
         }
-        items(metrics) { metric -> MetricRow(metric) }
+        items(DASHBOARD_SLOTS, key = { it.label }) { slot ->
+            MetricRow(slot, byLabel[slot.label])
+        }
+    }
+}
+
+/**
+ * The three rings, drawn whether or not there is anything in them.
+ *
+ * Concentric and in the phone's order — Move outermost, then Exercise, then
+ * Steps — so the glance is the same one the phone's card trains.
+ */
+@Composable
+private fun ActivityRings(move: Float, exercise: Float, steps: Float) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(modifier = Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+            Ring(move, MoveColor, 84.dp)
+            Ring(exercise, ExerciseColor, 62.dp)
+            Ring(steps, StepsColor, 40.dp)
+        }
     }
 }
 
 @Composable
-private fun MetricRow(metric: WearMetric) {
+private fun Ring(fraction: Float, color: Color, size: androidx.compose.ui.unit.Dp) {
+    CircularProgressIndicator(
+        progress = { fraction },
+        modifier = Modifier.size(size),
+        colors = ProgressIndicatorDefaults.colors(
+            indicatorColor = color,
+            // The unfilled part stays visible so an empty ring still reads as
+            // a ring rather than as a missing element.
+            trackColor = color.copy(alpha = 0.22f),
+        ),
+        strokeWidth = 6.dp,
+    )
+}
+
+@Composable
+private fun MetricRow(slot: DashboardSlot, metric: WearMetric?) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        metric.fraction?.let { fraction ->
-            Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(progress = { fraction })
-            }
-            Spacer(modifier = Modifier.size(8.dp))
-        }
+        QlaIcon(slot.glyph, tint = slot.color, size = 16.dp)
+        Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(text = metric.label, style = MaterialTheme.typography.labelSmall)
             Text(
-                text = buildString {
-                    append(format(metric.value))
-                    metric.goal?.let { append(" / ").append(format(it)) }
-                    if (metric.unit.isNotEmpty()) append(' ').append(metric.unit)
-                },
+                text = slot.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = metric?.let { value ->
+                    buildString {
+                        append(format(value.value))
+                        value.goal?.let { append(" / ").append(format(it)) }
+                        if (value.unit.isNotEmpty()) append(' ').append(value.unit)
+                    }
+                } ?: PLACEHOLDER,
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (metric == null) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
             )
         }
     }
 }
 
+/** The macros the phone tracks, so the screen has its shape before any data. */
+private val NUTRIENT_PLACEHOLDERS = listOf("Calories", "Protein", "Carbs", "Fat")
+
 @Composable
 fun WearNutritionScreen(listState: ScalingLazyListState) {
     val nutrients by WearState.nutrients.collectAsState()
 
-    if (nutrients.isEmpty()) {
-        EmptyScreen("Open the phone dashboard to sync your daily activity.")
-        return
-    }
-
     ScreenColumn(listState) {
         item { ScreenTitle("Nutrition") }
-        items(nutrients) { nutrient ->
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(text = nutrient.label, style = MaterialTheme.typography.labelSmall)
-                Text(
+        if (nutrients.isEmpty()) {
+            item { Caption("Waiting for your phone. Open qla.fit to fill this in.") }
+            items(NUTRIENT_PLACEHOLDERS, key = { it }) { label ->
+                NutrientRow(label = label, value = PLACEHOLDER)
+            }
+        } else {
+            items(nutrients, key = { it.key }) { nutrient ->
+                NutrientRow(
+                    label = nutrient.label,
                     // "left" rather than "eaten": on a wrist the useful number
                     // is what is still allowed, which is what the phone card
                     // shows too. With no goal there is nothing to subtract
                     // from, so the total stands on its own.
-                    text = if (nutrient.goal > 0) {
+                    value = if (nutrient.goal > 0) {
                         val left = (nutrient.goal - nutrient.consumed).coerceAtLeast(0.0)
                         "${format(left)} ${nutrient.unit} left"
                     } else {
                         "${format(nutrient.consumed)} ${nutrient.unit}"
                     },
-                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NutrientRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        QlaIcon(WearIcon.Restaurant, tint = MoveColor, size = 16.dp)
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (value == PLACEHOLDER) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            )
         }
     }
 }
@@ -128,15 +235,33 @@ fun WearMeasurementScreen(kind: MeasurementKind, listState: ScalingLazyListState
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val writeState by WearRequests.state.collectAsState()
-    var amount by remember { mutableStateOf(kind.initial) }
+    val knownWeight by WearState.weight.collectAsState()
+    val weightUnit by WearState.weightUnit.collectAsState()
+
+    // Opens on what the phone last recorded, so the first press is an
+    // adjustment rather than a climb from a number nobody chose. Falls back to
+    // the catalogue default only when the phone has never said.
+    val unit = if (kind == MeasurementKind.Weight) weightUnit else kind.unit
+    var amount by remember(knownWeight) {
+        mutableStateOf(
+            if (kind == MeasurementKind.Weight) knownWeight ?: kind.initial
+            else kind.initial
+        )
+    }
 
     LaunchedEffect(kind) { WearRequests.clear() }
 
     ScreenColumn(listState) {
-        item { ScreenTitle(kind.title) }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                QlaIcon(kind.glyph, tint = kind.color, size = 16.dp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = kind.title, style = MaterialTheme.typography.titleMedium)
+            }
+        }
         item {
             Text(
-                text = "${format(amount)} ${kind.unit}",
+                text = "${format(amount)} $unit",
                 style = MaterialTheme.typography.displaySmall,
             )
         }
@@ -160,18 +285,20 @@ fun WearMeasurementScreen(kind: MeasurementKind, listState: ScalingLazyListState
                 enabled = writeState != WearWriteState.Saving,
                 onClick = {
                     scope.launch {
-                        WearRequests.saveMeasurement(context, kind.key, amount, kind.unit)
+                        WearRequests.saveMeasurement(context, kind.key, amount, unit)
                     }
                 },
-            ) {
-                Text(
-                    when (writeState) {
-                        WearWriteState.Saving -> "Saving…"
-                        WearWriteState.Saved -> "Saved"
-                        else -> "Add entry"
-                    }
-                )
-            }
+                icon = { QlaIcon(WearIcon.Scale, size = 16.dp) },
+                label = {
+                    Text(
+                        when (writeState) {
+                            WearWriteState.Saving -> "Saving…"
+                            WearWriteState.Saved -> "Saved"
+                            else -> "Add entry"
+                        }
+                    )
+                },
+            )
         }
         item {
             Caption(
@@ -195,9 +322,11 @@ enum class MeasurementKind(
     val initial: Double,
     val step: Double,
     val minimum: Double,
+    val glyph: Char,
+    val color: Color,
 ) {
-    Weight("weight", "Weight", "kg", 75.0, 0.1, 20.0),
-    Water("water", "Water", "ml", 250.0, 50.0, 50.0),
+    Weight("weight", "Weight", "kg", 75.0, 0.1, 20.0, WearIcon.Scale, ExerciseColor),
+    Water("water", "Water", "ml", 250.0, 50.0, 50.0, WearIcon.WaterFilled, StepsColor),
 }
 
 @Composable
@@ -216,7 +345,7 @@ private fun ScreenColumn(
 }
 
 @Composable
-private fun ScreenTitle(text: String) {
+internal fun ScreenTitle(text: String) {
     Column {
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = text, style = MaterialTheme.typography.titleMedium)
@@ -229,32 +358,28 @@ private fun Caption(text: String) {
         text = text,
         style = MaterialTheme.typography.labelSmall,
         textAlign = TextAlign.Center,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(vertical = 6.dp),
     )
 }
 
-@Composable
-private fun EmptyScreen(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
+/** What a figure reads as before the phone has said anything. */
+private const val PLACEHOLDER = "—"
 
 /** A snapshot from before today is worth showing, but only if it says so. */
 private fun isStale(updatedAt: Long): Boolean =
     updatedAt > 0 && System.currentTimeMillis() - updatedAt > 6 * 60 * 60 * 1000
 
-/** Whole numbers stay whole; anything else keeps one decimal. */
+/**
+ * Whole numbers stay whole; anything else keeps one decimal.
+ *
+ * Formatted against [Locale.US] rather than the watch's, because these are
+ * figures beside hand-written units like "kcal" and "km" — a decimal comma in
+ * that company reads as a thousands separator.
+ */
 internal fun format(value: Double): String =
     if (value % 1.0 == 0.0) value.roundToInt().toString()
-    else String.format("%.1f", value)
+    else String.format(Locale.US, "%.1f", value)
 
 /**
  * Room for the bezel and the clock.

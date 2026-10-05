@@ -30,10 +30,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Page {
-    Weight, Water, Nutrition, Dashboard, Sports, Programs
-}
-
 /**
  * Where a page's list sits when you arrive on it.
  *
@@ -41,8 +37,19 @@ private enum class Page {
  * row left the top third of a round screen empty and pushed the action off the
  * bottom. Centring the third row fits a short screen — heading, reading,
  * controls, action — in one view without scrolling.
+ *
+ * The dashboard is the exception, and takes its own: its second row is the
+ * ring cluster, and centring the row after it pushed the rings up under the
+ * clock, where the watch face clipped their top arc.
  */
-private const val START_INDEX = 2
+private enum class Page(val startIndex: Int) {
+    Weight(2),
+    Water(2),
+    Nutrition(2),
+    Dashboard(1),
+    Sports(2),
+    Programs(2),
+}
 
 @Composable
 private fun WearApp() {
@@ -71,7 +78,7 @@ private fun WearApp() {
     // screen survives the swipe and you land back halfway down a list you left
     // days ago. Owning them here is what lets arriving on a page put it back to
     // the top.
-    val listStates = pages.map { rememberScalingLazyListState(START_INDEX) }
+    val listStates = pages.map { rememberScalingLazyListState(it.startIndex) }
 
     LaunchedEffect(Unit) {
         WearState.setPhoneReachable(WearLink.isPhoneReachable(context))
@@ -80,7 +87,8 @@ private fun WearApp() {
     // `settledPage` rather than `currentPage`: resetting mid-swipe would drag
     // the list under the finger while the page is still moving.
     LaunchedEffect(pagerState.settledPage) {
-        listStates[pagerState.settledPage].scrollToItem(START_INDEX)
+        val settled = pagerState.settledPage
+        listStates[settled].scrollToItem(pages[settled].startIndex)
     }
 
     AppScaffold {

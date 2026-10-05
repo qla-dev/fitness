@@ -1,13 +1,15 @@
 package fitness.qla.dev.wear
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,34 +21,30 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.launch
 
 /**
- * The sports a session can be started as.
+ * Everything a session can be started as.
  *
- * The same two the phone recorder knows, named the same way: the watch asks
- * the phone to open the session rather than opening one itself, so a run
- * started here is the same row in the diary as one started there.
+ * The phone's whole catalogue rather than the two GPS sports it used to show:
+ * `WORKOUT_SPORTS` has eighteen, grouped by what the effort is going to be
+ * like, and a watch that offered two of them read as a different product from
+ * the phone in the same pocket. Grouped and ordered exactly as the phone
+ * orders them, with the phone's own icons.
  */
-enum class WearSport(val id: String, val label: String) {
-    Run("run", "Running"),
-    Ride("ride", "Cycling"),
-}
-
 @Composable
 fun WearSportsScreen(listState: ScalingLazyListState, onStarted: (WearSport) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val reachable by WearState.phoneReachable.collectAsState()
-    val canRecordHere by WearHealth.supported.collectAsState()
+    val supportedTypes by WearHealth.supportedTypes.collectAsState()
 
-    LaunchedEffect(Unit) { WearHealth.refreshSupport(context, WearSport.Run) }
+    LaunchedEffect(Unit) { WearHealth.refreshSupport(context) }
 
     // Health Services refuses a session without these, and refuses it quietly
     // — the exercise simply never starts. Asked here, before a sport is
@@ -60,43 +58,65 @@ fun WearSportsScreen(listState: ScalingLazyListState, onStarted: (WearSport) -> 
         state = listState,
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         contentPadding = roundContentPadding(),
     ) {
-        item { Text(text = "Start", style = MaterialTheme.typography.titleMedium) }
-        items(WearSport.entries) { sport ->
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                // Startable whenever either half can carry the session: the
-                // phone when it is in reach, this watch when it is not.
-                enabled = reachable || canRecordHere == true,
-                onClick = {
-                    scope.launch {
-                        if (reachable) {
-                            WearWorkout.requestFromPhone(context, sport)
-                        } else if (WearHealth.start(context, sport)) {
-                            onStarted(sport)
-                        }
-                    }
+        item { ScreenTitle("Start") }
+        item {
+            Text(
+                // Says which of the two is about to happen, because they are
+                // not the same session: one is traced by the phone's GPS, the
+                // other is the wrist's own sensors.
+                text = if (reachable) {
+                    "Recorded on your watch, sent to your phone."
+                } else {
+                    "No phone nearby. This watch will record it."
                 },
-            ) { Text(sport.label) }
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        if (!reachable) {
-            item {
-                Text(
-                    // Says which of the two is about to happen, because they
-                    // are not the same session: one is traced by the phone's
-                    // GPS, the other is the wrist's own sensors.
-                    text = if (canRecordHere == true) {
-                        "No phone nearby. This watch will record it."
-                    } else {
-                        "Connect your phone to start a session."
+
+        WearSportGroup.entries.forEach { group ->
+            val sports = WearSportCatalogue.inGroup(group)
+                .filter { supportedTypes == null || WearHealth.supports(it) }
+            if (sports.isEmpty()) return@forEach
+            item(key = "group-${group.name}") { GroupHeading(group.title) }
+            items(sports, key = { it.id }) { sport ->
+                FilledTonalButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        scope.launch {
+                            // Started here in every case. The watch owns the
+                            // sensors, so this is the half that can actually
+                            // begin; the phone is told separately and adopts
+                            // the totals as they arrive.
+                            if (WearHealth.start(context, sport)) {
+                                onStarted(sport)
+                                if (reachable) {
+                                    WearWorkout.requestFromPhone(context, sport)
+                                }
+                            }
+                        }
                     },
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
+                    icon = { QlaIcon(sport.glyph) },
+                    label = { Text(sport.label) },
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun GroupHeading(title: String) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -116,11 +136,15 @@ fun WearProgramsScreen(listState: ScalingLazyListState) {
             modifier = Modifier.fillMaxSize().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = "Open qla.fit on your phone to sync your programs.",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                QlaIcon(WearIcon.Barbell, size = 28.dp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Open qla.fit on your phone to sync your programs.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
         return
     }
@@ -132,13 +156,14 @@ fun WearProgramsScreen(listState: ScalingLazyListState) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = roundContentPadding(),
     ) {
-        item { Text(text = "Programs", style = MaterialTheme.typography.titleMedium) }
-        items(programs) { program ->
+        item { ScreenTitle("Programs") }
+        items(programs, key = { it.id }) { program ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text(text = program.name, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = "${program.exercises.size} exercises",
                     style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

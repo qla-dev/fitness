@@ -44,6 +44,26 @@ const substitute = (contents: string): string =>
     contents
   );
 
+/**
+ * Copied byte for byte rather than read as text.
+ *
+ * The tree carries the Ionicons font the watch draws its icons with, and a
+ * font read as utf8 and written back is silently destroyed — every byte that
+ * is not valid utf8 becomes U+FFFD, so the file still appears and still has a
+ * plausible size. Extensions are listed rather than sniffed because the only
+ * thing that decides this is whether `$TOKEN` substitution makes sense in the
+ * file, and it never does for these.
+ */
+const BINARY_EXTENSIONS = new Set([
+  '.ttf',
+  '.otf',
+  '.png',
+  '.webp',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+]);
+
 async function copyTree(src: string, dest: string): Promise<void> {
   const entries = await fs.promises.readdir(src, { withFileTypes: true });
   await fs.promises.mkdir(dest, { recursive: true });
@@ -53,11 +73,16 @@ async function copyTree(src: string, dest: string): Promise<void> {
       await copyTree(from, path.join(dest, entry.name));
       continue;
     }
-    const raw = await fs.promises.readFile(from, 'utf8');
     const name = entry.name.endsWith(TEMPLATE_SUFFIX)
       ? entry.name.slice(0, -TEMPLATE_SUFFIX.length)
       : entry.name;
-    await fs.promises.writeFile(path.join(dest, name), substitute(raw), 'utf8');
+    const to = path.join(dest, name);
+    if (BINARY_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      await fs.promises.copyFile(from, to);
+      continue;
+    }
+    const raw = await fs.promises.readFile(from, 'utf8');
+    await fs.promises.writeFile(to, substitute(raw), 'utf8');
   }
 }
 

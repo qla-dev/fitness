@@ -21,6 +21,7 @@ import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -60,14 +61,17 @@ fun WearActiveScreen(sport: WearSport, onFinished: () -> Unit) {
             style = MaterialTheme.typography.displayMedium,
         )
         Reading(
-            value = metrics.heartRate?.toString() ?: "–",
+            glyph = WearIcon.Fitness,
+            value = metrics.heartRate?.toString() ?: "—",
             unit = "BPM",
         )
         Reading(
+            glyph = WearIcon.Navigate,
             value = format(metrics.distanceMeters / 1000.0),
             unit = "KM",
         )
         Reading(
+            glyph = WearIcon.Flame,
             value = format(metrics.calories),
             unit = "KCAL",
         )
@@ -106,8 +110,13 @@ fun WearActiveScreen(sport: WearSport, onFinished: () -> Unit) {
 }
 
 @Composable
-private fun Reading(value: String, unit: String) {
+private fun Reading(glyph: Char, value: String, unit: String) {
     Row(verticalAlignment = Alignment.Bottom) {
+        QlaIcon(
+            glyph,
+            size = 14.dp,
+            modifier = Modifier.padding(end = 4.dp, bottom = 2.dp),
+        )
         Text(text = value, style = MaterialTheme.typography.titleMedium)
         Text(
             text = " $unit",
@@ -123,6 +132,7 @@ private fun elapsed(millis: Long): String {
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return if (hours > 0) String.format("%d:%02d:%02d", hours, minutes, seconds)
-    else String.format("%02d:%02d", minutes, seconds)
+    return if (hours > 0)
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    else String.format(Locale.US, "%02d:%02d", minutes, seconds)
 }
