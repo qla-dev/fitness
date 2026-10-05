@@ -33,12 +33,41 @@ android {
         jvmTarget = '17'
     }
 
+    signingConfigs {
+        release {
+            // The Data Layer routes by package name AND signing certificate.
+            // A watch APK signed with a different key than the phone's is a
+            // different app as far as Play Services is concerned, and it drops
+            // every message between them — the watch logs
+            // "Failed to deliver message to AppKey[fitness.qla.dev, <sha1>]"
+            // and nothing above it ever hears why. That is what happened while
+            // this read `signingConfigs.debug`: the phone shipped under the
+            // upload key and the watch under the default debug keystore, so a
+            // paired, connected watch still synced nothing.
+            //
+            // Read from the same `qlaSigningProperties` file the phone app
+            // uses (plugins/withAndroidSigning.ts), so the pair cannot drift.
+            def qlaProps = new Properties()
+            def qlaPath = project.findProperty('qlaSigningProperties') ?: System.getenv('QLA_SIGNING_PROPERTIES')
+            if (qlaPath && file(qlaPath).exists()) {
+                file(qlaPath).withInputStream { qlaProps.load(it) }
+            }
+            if (qlaProps['storeFile']) {
+                storeFile file(qlaProps['storeFile'])
+                storePassword qlaProps['storePassword']
+                keyAlias qlaProps['keyAlias']
+                keyPassword qlaProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            // Signed with the same config as the phone app so a release watch
-            // build is installable beside it; see plugins/withAndroidSigning.
-            signingConfig signingConfigs.debug
+            // Falls back to debug when there is no signing file, matching the
+            // phone: both halves then carry the same debug certificate and the
+            // link still works for a local build.
+            signingConfig signingConfigs.release.storeFile != null ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

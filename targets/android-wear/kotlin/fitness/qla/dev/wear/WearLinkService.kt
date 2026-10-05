@@ -26,7 +26,12 @@ class WearLinkService : WearableListenerService() {
 
             WearLink.PATH_GOAL_RESULT -> WearRequests.onGoalResult(WearLink.bodyText(event))
 
-            else -> Log.d(TAG, "Unhandled path ${event.path}")
+            // Everything else is state the screens read, and `onMessage` below
+            // is what takes it. Logged as "carried" rather than "unhandled",
+            // because the dashboard and programs arrive here and the old
+            // wording said they were being dropped — which is a lie to read
+            // mid-debugging, and cost real time once already.
+            else -> Log.d(TAG, "Carried to state: ${event.path}")
         }
         WearState.onMessage(event.path, WearLink.bodyText(event))
     }
