@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import PromptScreen from '../components/ui/PromptScreen';
@@ -128,23 +128,17 @@ export default function ShopComparisonScreen({
       }
       topAligned
     >
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <ShopComparison
-          quotes={quotes}
-          loading={comparison.isLoading}
-          error={comparison.isError}
-          onRetry={() => void comparison.refetch()}
-          itemCount={itemCount}
-          planTotal={listTotal(applyVendor(list, null))}
-          currency={currency}
-          selected={selected}
-          onSelect={(next) => setPicked(next?.code ?? null)}
-        />
-      </ScrollView>
+      <ShopComparison
+        quotes={quotes}
+        loading={comparison.isLoading}
+        error={comparison.isError}
+        onRetry={() => void comparison.refetch()}
+        itemCount={itemCount}
+        planTotal={listTotal(applyVendor(list, null))}
+        currency={currency}
+        selected={selected}
+        onSelect={(next) => setPicked(next?.code ?? null)}
+      />
     </PromptScreen>
   );
 }

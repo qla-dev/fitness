@@ -14,7 +14,8 @@ import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
 import SafeImage from './SafeImage';
-import { useProgramThumbnails } from '../hooks';
+import ValueSkeleton from './ValueSkeleton';
+import { useProgramThumbnailState } from '../hooks';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import {
   EXERCISE_PROGRAMS,
@@ -135,12 +136,12 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
   // Covers are resolved for the whole catalogue rather than per shelf: the
   // shelves overlap and the chips re-filter in place, so a per-view list
   // would refetch the same programs as the user browses.
-  const covers = useProgramThumbnails(EXERCISE_PROGRAMS);
+  const { covers, pending } = useProgramThumbnailState(EXERCISE_PROGRAMS);
   const { getImageSource } = useExerciseImageSource();
 
   /**
-   * A program's cover, or its icon while the lookup is out (or if nothing
-   * in it has artwork). Same shape either way so the row never reflows.
+   * A program's cover, a skeleton while the lookup is out, or its icon if
+   * nothing in it has artwork. Same shape each way so the row never reflows.
    */
   const renderCover = (
     program: ExerciseProgram,
@@ -148,6 +149,9 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
     iconSize: number,
     fallbackBackground: string
   ) => {
+    if (pending.has(program.id)) {
+      return <ValueSkeleton width={size} height={size} radius={16} />;
+    }
     const cover = covers[program.id];
     const source = cover ? getImageSource(cover) : null;
     const placeholder = (
@@ -380,90 +384,129 @@ const ProgramStore: React.FC<ProgramStoreProps> = ({
             contentContainerStyle={{ paddingHorizontal: GUTTER }}
             className="mb-7"
           >
-            {featured.map((program, index) => (
-              <TouchableOpacity
-                key={program.id}
-                accessibilityRole="button"
-                activeOpacity={0.85}
-                onPress={() => {
-                  fireSelectionHaptic();
-                  onSelectProgram(program);
-                }}
-                className="rounded-2xl overflow-hidden"
-                style={{
-                  width: pageWidth,
-                  marginRight: index < featured.length - 1 ? GUTTER / 2 : 0,
-                  backgroundColor: accents[program.accentVar],
-                }}
-              >
-                {/* The cover sits behind the copy, with the accent still
+            {featured.map((program, index) => {
+              // Until its cover is known the card is a skeleton: painting the
+              // accent first and the photo over it a moment later reads as a
+              // flash, the same flash Home avoids for its numbers.
+              const loading = pending.has(program.id);
+              return (
+                <TouchableOpacity
+                  key={program.id}
+                  accessibilityRole="button"
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    fireSelectionHaptic();
+                    onSelectProgram(program);
+                  }}
+                  className="rounded-2xl overflow-hidden"
+                  style={{
+                    width: pageWidth,
+                    marginRight: index < featured.length - 1 ? GUTTER / 2 : 0,
+                    backgroundColor: loading
+                      ? undefined
+                      : accents[program.accentVar],
+                  }}
+                >
+                  {/* The cover sits behind the copy, with the accent still
                     painted underneath so a program with no artwork keeps
                     exactly the card it had. The scrim is what keeps white
                     text legible over an arbitrary photo. */}
-                {featuredCover(program)}
-                <View
-                  style={{ padding: FEATURED_CARD_PADDING, minHeight: 176 }}
-                >
-                  <Text className="text-white text-2xl font-bold">
-                    {program.name}
-                  </Text>
-                  <Text className="text-white text-base mt-1 opacity-90">
-                    {program.tagline}
-                  </Text>
-                  {/* Pinned to the bottom rather than flowing under the
+                  {loading ? (
+                    <View
+                      pointerEvents="none"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <ValueSkeleton width="100%" height={176} radius={0} />
+                    </View>
+                  ) : (
+                    featuredCover(program)
+                  )}
+                  <View
+                    style={{ padding: FEATURED_CARD_PADDING, minHeight: 176 }}
+                  >
+                    {loading ? (
+                      <View className="gap-2">
+                        <ValueSkeleton width="62%" height={28} />
+                        <ValueSkeleton width="80%" height={20} />
+                      </View>
+                    ) : (
+                      <>
+                        <Text className="text-white text-2xl font-bold">
+                          {program.name}
+                        </Text>
+                        <Text className="text-white text-base mt-1 opacity-90">
+                          {program.tagline}
+                        </Text>
+                      </>
+                    )}
+                    {/* Pinned to the bottom rather than flowing under the
                       tagline, so every card's Start row sits on the same line
                       however long its copy runs. Inset by the card's own
                       padding, so the gap below it matches the gap to its left. */}
-                  <View
-                    className="flex-row items-center"
-                    style={{
-                      position: 'absolute',
-                      left: FEATURED_CARD_PADDING,
-                      right: FEATURED_CARD_PADDING,
-                      bottom: FEATURED_CARD_PADDING,
-                    }}
-                  >
-                    {/* Over artwork, so the glass is forced dark rather than
-                        left to follow the theme — a light pill on a bright
-                        photo loses its edge entirely. */}
-                    <LiquidGlassSurface
-                      isInteractive
-                      colorScheme="dark"
+                    <View
+                      className="flex-row items-center"
                       style={{
-                        height: START_HEIGHT,
-                        borderRadius: START_HEIGHT / 2,
-                        overflow: 'hidden',
+                        position: 'absolute',
+                        left: FEATURED_CARD_PADDING,
+                        right: FEATURED_CARD_PADDING,
+                        bottom: FEATURED_CARD_PADDING,
                       }}
                     >
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityLabel={t('programs.startProgram', {
-                          defaultValue: 'Start {{name}}',
-                          name: program.name,
-                        })}
-                        onPress={() => pressStart(program)}
-                        className="h-full px-4 items-center justify-center"
+                      {/* Over artwork, so the glass is forced dark rather than
+                        left to follow the theme — a light pill on a bright
+                        photo loses its edge entirely. */}
+                      <LiquidGlassSurface
+                        isInteractive
+                        colorScheme="dark"
+                        style={{
+                          height: START_HEIGHT,
+                          borderRadius: START_HEIGHT / 2,
+                          overflow: 'hidden',
+                        }}
                       >
-                        <Text className="text-white text-sm font-bold">
-                          {startLabel(program)}
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={t('programs.startProgram', {
+                            defaultValue: 'Start {{name}}',
+                            name: program.name,
+                          })}
+                          onPress={() => pressStart(program)}
+                          className="h-full px-4 items-center justify-center"
+                        >
+                          <Text className="text-white text-sm font-bold">
+                            {startLabel(program)}
+                          </Text>
+                        </TouchableOpacity>
+                      </LiquidGlassSurface>
+                      {loading ? (
+                        <View className="ml-3">
+                          <ValueSkeleton width={120} height={14} />
+                        </View>
+                      ) : (
+                        <Text className="text-white text-xs ml-3 opacity-90">
+                          {t('programs.featuredMeta', {
+                            count: countProgramExercises(program),
+                            defaultValue:
+                              '{{weeks}} weeks · {{count}} exercises',
+                            defaultValue_one:
+                              '{{weeks}} weeks · {{count}} exercise',
+                            defaultValue_other:
+                              '{{weeks}} weeks · {{count}} exercises',
+                            weeks: program.weeks,
+                          })}
                         </Text>
-                      </TouchableOpacity>
-                    </LiquidGlassSurface>
-                    <Text className="text-white text-xs ml-3 opacity-90">
-                      {t('programs.featuredMeta', {
-                        count: countProgramExercises(program),
-                        defaultValue: '{{weeks}} weeks · {{count}} exercises',
-                        defaultValue_one:
-                          '{{weeks}} weeks · {{count}} exercise',
-                        defaultValue_other:
-                          '{{weeks}} weeks · {{count}} exercises',
-                        weeks: program.weeks,
-                      })}
-                    </Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {PROGRAM_SHELVES.map((shelf) =>

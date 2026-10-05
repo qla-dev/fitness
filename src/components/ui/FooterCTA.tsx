@@ -1,6 +1,7 @@
 import { useContext, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { ScrollEdgeEffect } from '@bsky.app/expo-scroll-edge-effect';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import Button from './Button';
@@ -60,6 +61,7 @@ export default function FooterCTA({
   disabled,
   loading,
   absolute = false,
+  edgeEffect = false,
   sticky = true,
   glass = false,
   tint,
@@ -83,6 +85,13 @@ export default function FooterCTA({
    * underneath it. A flex column that already ends with this leaves it off.
    */
   absolute?: boolean;
+  /**
+   * With glass, drops the footer's fill and lets iOS 26 draw its scroll edge
+   * effect under the action instead, the way the chat's composer sits over
+   * its messages. Needs a `ScrollEdgeEffectProvider` holding the scroll view
+   * that runs underneath; without glass the filled bar stays.
+   */
+  edgeEffect?: boolean;
   /**
    * Whether the footer rides the keyboard itself. False inside a bottom sheet:
    * the sheet already lifts for the keyboard, and a sticky view lifting again
@@ -110,6 +119,7 @@ export default function FooterCTA({
   const accent = useCSSVariable('--color-accent-primary') as string;
   const fill = tint ?? accent;
   const usesGlass = glass && canUseLiquidGlass();
+  const usesEdgeEffect = edgeEffect && usesGlass;
 
   const press = () => {
     fireSelectionHaptic();
@@ -152,7 +162,7 @@ export default function FooterCTA({
     <View
       // The glass capsule separates itself from the content by its own
       // material, so the rule above it is one line too many.
-      className={`px-5 pt-3 bg-background ${usesGlass || customAction ? '' : 'border-t border-border'}`}
+      className={`px-5 pt-3 ${usesEdgeEffect ? '' : 'bg-background'} ${usesGlass || customAction ? '' : 'border-t border-border'}`}
       style={{ paddingBottom: footerCtaRestingPadding(bottomInset) }}
       onLayout={
         onHeightChange
@@ -167,7 +177,15 @@ export default function FooterCTA({
     </View>
   );
 
-  if (!sticky) return bar;
+  const edged = usesEdgeEffect ? (
+    <ScrollEdgeEffect edge="bottom" effect="soft">
+      {bar}
+    </ScrollEdgeEffect>
+  ) : (
+    bar
+  );
+
+  if (!sticky) return edged;
 
   return (
     <KeyboardStickyView
@@ -178,7 +196,7 @@ export default function FooterCTA({
           : undefined
       }
     >
-      {bar}
+      {edged}
     </KeyboardStickyView>
   );
 }

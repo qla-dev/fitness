@@ -22,6 +22,7 @@ jest.mock('../../src/hooks', () => ({
   // The store shelves resolve program covers through the API; this suite is
   // about the library list, so every program keeps its icon.
   useProgramThumbnails: jest.fn(() => ({})),
+  useProgramThumbnailState: jest.fn(() => ({ covers: {}, pending: new Set() })),
 }));
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({

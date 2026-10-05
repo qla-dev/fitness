@@ -13,18 +13,22 @@ import { useCSSVariable } from 'uniwind';
 export default function ValueSkeleton({
   width = 64,
   height = 20,
+  radius,
 }: {
   width?: DimensionValue;
   height?: number;
+  /** A block rather than a line of text, e.g. an image's place. */
+  radius?: number;
 }) {
   const textMuted = useCSSVariable('--color-text-muted') as string;
   return (
     <View
       testID="value-skeleton"
-      className="rounded-full"
+      className={radius === undefined ? 'rounded-full' : undefined}
       style={{
         width,
         height,
+        ...(radius === undefined ? null : { borderRadius: radius }),
         backgroundColor: textMuted,
         opacity: 0.16,
       }}

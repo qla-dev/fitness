@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import PromptScreen from '../components/ui/PromptScreen';
 import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
+import ValueSkeleton from '../components/ValueSkeleton';
 import { onlineRequest } from '../services/online/account';
 import type { MarkaiMode, MarkaiThread } from '../services/online/markai';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -58,7 +53,6 @@ export default function MarkaiHistoryScreen({
       onFooterPress={() => navigation.popTo('MarkAI', { newChat: Date.now() })}
       topAligned
     >
-      {loading ? <ActivityIndicator /> : null}
       {error ? (
         <View className="gap-3">
           <Text accessibilityRole="alert" className="text-text-primary">
@@ -69,12 +63,34 @@ export default function MarkaiHistoryScreen({
           </Button>
         </View>
       ) : null}
-      <ScrollView
-        className="flex-1"
-        style={{ marginHorizontal: -8 }}
-        contentContainerStyle={{ gap: 4, paddingBottom: 12 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={{ marginHorizontal: -8, gap: 4 }}>
+        {/* Rows in the thread row's own shape, so the list fills in place
+            rather than a spinner giving way to it. */}
+        {loading && !threads.length
+          ? [0, 1, 2, 3, 4].map((index) => (
+              <View
+                key={index}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 11,
+                  paddingHorizontal: 8,
+                  paddingVertical: 11,
+                }}
+              >
+                <ValueSkeleton width={34} height={34} radius={12} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <ValueSkeleton
+                    width={`${70 - index * 8}%` as const}
+                    height={16}
+                  />
+                  <ValueSkeleton width={96} height={13} />
+                </View>
+              </View>
+            ))
+          : null}
         {!loading && !error && !threads.length ? (
           <Text className="text-text-secondary px-2">
             {t('markai.noHistory', {
@@ -131,7 +147,7 @@ export default function MarkaiHistoryScreen({
             </View>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
     </PromptScreen>
   );
 }

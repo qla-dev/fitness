@@ -1,7 +1,11 @@
-import React, { type ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import React, { useState, type ReactNode } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
 
 import FooterCTA from './FooterCTA';
 import {
@@ -27,21 +31,18 @@ import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference
  * the lower half to the keyboard; without one it is centred in the room
  * between the title and the action.
  */
-export default function PromptScreen({
-  headerTitle,
-  title,
-  description,
-  footnote,
-  footerLabel,
-  onFooterPress,
-  footerDisabled,
-  footerLoading,
-  footerTint,
-  dismissDisabled = false,
-  hasTextInput = false,
-  topAligned = false,
-  children,
-}: {
+export default function PromptScreen(props: PromptScreenProps) {
+  // The provider ties a top-aligned page's scroll view to the footer, so iOS
+  // 26 draws its scroll edge effect under the action the way the chat does
+  // under its composer.
+  return (
+    <ScrollEdgeEffectProvider>
+      <PromptScreenContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+type PromptScreenProps = {
   /**
    * What kind of thing is being set, in the navigator's own bar — "Goals" over
    * Protein. The heading below says which one.
@@ -64,15 +65,40 @@ export default function PromptScreen({
   hasTextInput?: boolean;
   /**
    * Starts the content under the explanation instead of centring it, for a
-   * control that is a list (conversation history) and fills the room.
+   * control that is a list (conversation history) and fills the room. The
+   * whole page then scrolls as one, title included, the way the questionnaire
+   * does — children must not bring a scroll view of their own.
    */
   topAligned?: boolean;
   children: React.ReactNode;
-}) {
+};
+
+function PromptScreenContent({
+  headerTitle,
+  title,
+  description,
+  footnote,
+  footerLabel,
+  onFooterPress,
+  footerDisabled,
+  footerLoading,
+  footerTint,
+  dismissDisabled = false,
+  hasTextInput = false,
+  topAligned = false,
+  children,
+}: PromptScreenProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
+  const [footerHeight, setFooterHeight] = useState(0);
+  const edgeEffectRef = useScrollEdgeEffectRef();
+  // How far the page scrolls before the heading has gone under the bar, at
+  // which point its title moves into the bar — the questionnaire-style page
+  // has no large title for iOS to hand off, so the hook animates it in.
+  const [headingBottom, setHeadingBottom] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   const header = useScreenHeader({
     variant: 'transparent',
@@ -83,13 +109,49 @@ export default function PromptScreen({
       onPress: () => navigation.goBack(),
     },
     // iOS 26 draws its scroll-edge effect along the top of a screen's scroll
-    // view. The questionnaire's starts at the top of the sheet, so the effect
-    // sits under the bar where nothing shows. Here the title sits above any
-    // scrolling control — conversation history, a store list — so the effect
-    // lands mid-sheet and smears the rows passing under the title. These
-    // sheets clip that edge cleanly instead.
-    nativeOptions: { scrollEdgeEffects: { top: 'hidden' } },
+    // view. A top-aligned page scrolls from the top of the sheet like the
+    // questionnaire, so the effect sits under the bar where it belongs. A
+    // centred one may still hold a scroller below the title, where the effect
+    // would land mid-sheet and smear it, so there the edge is clipped.
+    //
+    // The scrolled title goes in as a plain native `title`, not `nativeTitle`:
+    // on the transparent variant that prop renders the title as a React view
+    // to animate it, and a JS title view in place of the native one leaves
+    // iOS drawing a much weaker edge effect behind it (see AddHubScreen).
+    nativeOptions: topAligned
+      ? { title: scrolled ? title : '' }
+      : { scrollEdgeEffects: { top: 'hidden' } },
   });
+
+  const heading = (
+    <View
+      className="px-5"
+      onLayout={
+        topAligned
+          ? (event) =>
+              setHeadingBottom(
+                event.nativeEvent.layout.y + event.nativeEvent.layout.height
+              )
+          : undefined
+      }
+      style={
+        topAligned
+          ? undefined
+          : {
+              paddingTop: usesNativeHeader
+                ? headerOffset + HEADER_CONTENT_GAP
+                : 8,
+            }
+      }
+    >
+      <Text className="text-text-primary text-3xl font-bold">{title}</Text>
+      {description ? (
+        <Text className="text-text-secondary text-base mt-2">
+          {description}
+        </Text>
+      ) : null}
+    </View>
+  );
 
   return (
     <View
@@ -97,34 +159,66 @@ export default function PromptScreen({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      {/* The transparent bar floats over the content, and there is no scroll
-          view here to take the inset automatically, so the first line clears
-          it by the bar's measured height — otherwise the title starts under
-          the close button. */}
-      <View
-        className="px-5"
-        style={{
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 8,
-        }}
-      >
-        <Text className="text-text-primary text-3xl font-bold">{title}</Text>
-        {description ? (
-          <Text className="text-text-secondary text-base mt-2">
-            {description}
-          </Text>
-        ) : null}
-      </View>
-
-      <View
-        className={`flex-1 px-5 ${hasTextInput || topAligned ? 'pt-6' : 'justify-center'}`}
-      >
-        {children}
-      </View>
-
-      {footnote ? (
-        <Text className="text-text-muted text-xs px-5 pb-3">{footnote}</Text>
-      ) : null}
+      {topAligned ? (
+        // One scroll view from the top of the sheet with the glass footer
+        // floating over the end of the list. The inset under the native bar
+        // is the automatic one, as on the Tracker: iOS sizes its edge effect
+        // from that inset, so a bar height added as padding left the blur a
+        // thin band at the sheet's top that had faded by the title row.
+        <ScrollView
+          ref={edgeEffectRef}
+          className="flex-1"
+          contentInsetAdjustmentBehavior={
+            usesNativeHeader ? 'automatic' : 'never'
+          }
+          automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            // The heading's bottom in content coordinates, against the bar's
+            // bottom edge in the same space. With the automatic inset the
+            // resting offset is -headerOffset, so the bar's edge sits at 0.
+            const next =
+              headingBottom > 0 &&
+              event.nativeEvent.contentOffset.y + headerOffset >= headingBottom;
+            if (next !== scrolled) setScrolled(next);
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingTop: usesNativeHeader ? HEADER_CONTENT_GAP : 8,
+            paddingBottom: footerHeight + 12,
+          }}
+        >
+          {heading}
+          <View className="flex-1 px-5 pt-6">{children}</View>
+          {footnote ? (
+            <Text className="text-text-muted text-xs px-5 pt-3">
+              {footnote}
+            </Text>
+          ) : null}
+        </ScrollView>
+      ) : (
+        <>
+          {/* No scroll view to take the inset here, so the heading pads
+              itself clear of the transparent bar. */}
+          {heading}
+          <View
+            className={`flex-1 px-5 ${hasTextInput ? 'pt-6' : 'justify-center'}`}
+          >
+            {children}
+          </View>
+          {footnote ? (
+            <Text className="text-text-muted text-xs px-5 pb-3">
+              {footnote}
+            </Text>
+          ) : null}
+        </>
+      )}
       <FooterCTA
+        absolute={topAligned}
+        edgeEffect={topAligned}
+        onHeightChange={topAligned ? setFooterHeight : undefined}
         glass
         label={footerLabel}
         onPress={onFooterPress}

@@ -449,7 +449,9 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       );
     }
 
-    if (isLoading || isConnectionLoading) {
+    // The store's programs are bundled, so the tab root never waits on the
+    // exercise library: its covers carry their own skeletons instead.
+    if (!isTabRoot && (isLoading || isConnectionLoading)) {
       return (
         <StatusView
           loading
@@ -460,7 +462,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
       );
     }
 
-    if (isError) {
+    if (!isTabRoot && isError) {
       return (
         <StatusView
           icon="alert-circle"

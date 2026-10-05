@@ -57,6 +57,18 @@ export function useProgramThumbnails(
   programs: readonly ExerciseProgram[],
   options: { enabled?: boolean } = {}
 ): Record<string, string> {
+  return useProgramThumbnailState(programs, options).covers;
+}
+
+/**
+ * The covers plus the ids whose lookup is still out, so a shelf can hold a
+ * skeleton in the cover's place instead of flashing the icon and then the
+ * photo. Same queries as `useProgramThumbnails`, which is this minus `pending`.
+ */
+export function useProgramThumbnailState(
+  programs: readonly ExerciseProgram[],
+  options: { enabled?: boolean } = {}
+): { covers: Record<string, string>; pending: ReadonlySet<string> } {
   const enabled = options.enabled ?? true;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -94,13 +106,17 @@ export function useProgramThumbnails(
     })),
     combine: (results) => {
       const covers: Record<string, string> = {};
+      const pending = new Set<string>();
       results.forEach((result, index) => {
         const program = programs[index];
-        if (program && typeof result.data === 'string' && result.data) {
+        if (!program) return;
+        if (typeof result.data === 'string' && result.data) {
           covers[program.id] = result.data;
+        } else if (result.isPending && result.fetchStatus !== 'idle') {
+          pending.add(program.id);
         }
       });
-      return covers;
+      return { covers, pending };
     },
   });
 }
