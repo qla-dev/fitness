@@ -142,6 +142,8 @@ export interface PhotoComposition {
     labelSize?: number;
     weight?: '300' | '400';
     iconAbove?: boolean;
+    /** The large first reading; its icon and label show only in grids. */
+    lead?: boolean;
     icon?: PhotoMetricIcon;
   }[];
   route: { latitude: number; longitude: number; segment: number }[];

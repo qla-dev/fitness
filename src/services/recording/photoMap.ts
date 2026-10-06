@@ -1,6 +1,8 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import {
   ClipOp,
+  FilterMode,
+  MipmapMode,
   BlendMode,
   TileMode,
   Skia,
@@ -55,6 +57,29 @@ export function photoMapGeometry(points: Point[], box: Box) {
   };
 }
 
+// Luminance with a 1.4× contrast stretch around mid-grey.
+const CONTRAST = 1.4;
+const OFFSET = 0.5 * (1 - CONTRAST);
+const MONOCHROME_ROW = [0.213, 0.715, 0.072].map((w) => w * CONTRAST);
+const MONOCHROME_MAP = [
+  ...MONOCHROME_ROW,
+  0,
+  OFFSET,
+  ...MONOCHROME_ROW,
+  0,
+  OFFSET,
+  ...MONOCHROME_ROW,
+  0,
+  OFFSET,
+  0,
+  0,
+  0,
+  1,
+  0,
+];
+
+const TILE_SIZE = 256;
+
 const pendingTiles = new Map<string, Promise<string>>();
 async function tileUri(z: number, x: number, y: number): Promise<string> {
   const key = `${z}-${x}-${y}`;
@@ -103,14 +128,12 @@ export async function drawPhotoMap(
   position: 'top' | 'bottom' = 'bottom'
 ) {
   // Keep the preview to a small, bounded set of tiles even for a full-height layout.
+  // Pick the zoom whose 256px tiles are drawn at most twice their size. The
+  // old choice stretched each tile to half the map (2-4x), so labels came out
+  // huge and blocky; a few more tiles keep the cartography sharp.
   const zoom = Math.max(
     0,
-    Math.min(
-      18,
-      Math.floor(
-        Math.log2((geometry.scale / Math.max(box.width, box.height)) * 2)
-      )
-    )
+    Math.min(18, Math.ceil(Math.log2(geometry.scale / (TILE_SIZE * 2))))
   );
   const count = 2 ** zoom;
   const left = box.x - box.width / 2,
@@ -131,6 +154,9 @@ export async function drawPhotoMap(
   );
   const paint = Skia.Paint();
   paint.setAlphaf(0.38);
+  // OSM's colour cartography fights both the photo and the route colour;
+  // drawn as high-contrast monochrome it reads as a quiet backdrop.
+  paint.setColorFilter(Skia.ColorFilter.MakeMatrix(MONOCHROME_MAP));
   canvas.save();
   canvas.clipRect(
     Skia.XYWHRect(left, top, box.width, box.height),
@@ -148,7 +174,8 @@ export async function drawPhotoMap(
         if (!image) throw new Error('Map image unavailable');
         try {
           const position = geometry.transform(x / count, y / count);
-          canvas.drawImageRect(
+          // Smooth sampling: the default nearest-neighbour showed pixel steps.
+          canvas.drawImageRectOptions(
             image,
             Skia.XYWHRect(0, 0, image.width(), image.height()),
             Skia.XYWHRect(
@@ -157,6 +184,8 @@ export async function drawPhotoMap(
               geometry.scale / count,
               geometry.scale / count
             ),
+            FilterMode.Linear,
+            MipmapMode.Linear,
             paint
           );
         } finally {

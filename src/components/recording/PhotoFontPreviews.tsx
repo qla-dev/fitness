@@ -1,14 +1,53 @@
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFonts } from 'expo-font';
+import {
+  Canvas,
+  Skia,
+  Text as SkiaText,
+  type SkTypeface,
+} from '@shopify/react-native-skia';
 import type { PhotoFont } from '../../services/recording/photoEditor';
+import { photoTypeface } from '../../services/recording/photoFonts';
 
-// Native menus only render the system face, so samples live in this tray.
-const families: Record<Exclude<PhotoFont, 'system'>, string> = {
-  anton: 'PhotoAnton',
-  bebas: 'PhotoBebasNeue',
-  rajdhani: 'PhotoRajdhani',
-  oswald: 'PhotoOswald',
-};
+const SAMPLE = 'Aa';
+const SAMPLE_SIZE = 30;
+const SAMPLE_BOX = 70;
+
+/**
+ * Drawn with the exact typeface the export uses. Registering the files as
+ * React Native fonts instead left every sample in the system face whenever
+ * one of them (the variable Oswald) failed, since they loaded as one batch.
+ */
+function FontSample({ font }: { font: PhotoFont }) {
+  const [typeface, setTypeface] = useState<SkTypeface | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    photoTypeface(font)
+      .then((loaded) => {
+        if (!cancelled) setTypeface(loaded);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [font]);
+  if (font === 'system' || !typeface)
+    return <Text style={styles.sampleText}>{SAMPLE}</Text>;
+  const skiaFont = Skia.Font(typeface, SAMPLE_SIZE);
+  const width = skiaFont.measureText(SAMPLE).width;
+  const metrics = skiaFont.getMetrics();
+  return (
+    <Canvas style={styles.sampleCanvas}>
+      <SkiaText
+        text={SAMPLE}
+        font={skiaFont}
+        color="white"
+        x={(SAMPLE_BOX - width) / 2}
+        y={SAMPLE_BOX / 2 - (metrics.ascent + metrics.descent) / 2}
+      />
+    </Canvas>
+  );
+}
 
 export default function PhotoFontPreviews({
   fonts,
@@ -21,12 +60,6 @@ export default function PhotoFontPreviews({
   disabled: boolean;
   onSelect: (font: PhotoFont) => void;
 }) {
-  const [loaded] = useFonts({
-    PhotoAnton: require('../../../assets/fonts/photo/anton/Anton-Regular.ttf'),
-    PhotoBebasNeue: require('../../../assets/fonts/photo/bebasneue/BebasNeue-Regular.ttf'),
-    PhotoRajdhani: require('../../../assets/fonts/photo/rajdhani/Rajdhani-SemiBold.ttf'),
-    PhotoOswald: require('../../../assets/fonts/photo/oswald/Oswald[wght].ttf'),
-  });
   return (
     <ScrollView
       horizontal
@@ -44,14 +77,7 @@ export default function PhotoFontPreviews({
           style={styles.item}
         >
           <View style={[styles.sample, selected === id && styles.selected]}>
-            <Text
-              style={[
-                styles.sampleText,
-                id !== 'system' && loaded && { fontFamily: families[id] },
-              ]}
-            >
-              Aa
-            </Text>
+            <FontSample font={id} />
           </View>
           <Text
             numberOfLines={1}
@@ -79,7 +105,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selected: { borderColor: 'white' },
-  sampleText: { color: 'white', fontSize: 30 },
+  sampleText: { color: 'white', fontSize: SAMPLE_SIZE },
+  sampleCanvas: { width: SAMPLE_BOX, height: SAMPLE_BOX },
   label: { color: '#BBB', fontSize: 12, textAlign: 'center' },
   selectedLabel: { color: 'white', fontWeight: '700' },
 });

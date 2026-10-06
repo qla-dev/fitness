@@ -120,7 +120,20 @@ export type RootStackParamList = {
    * repriced list back to GroceryList.
    */
   ShopComparison: { list: GroceryList; mode: 'add' | 'pick' };
-  WorkoutSetup: { sport: RecordingSport; sportId?: string };
+  WorkoutSetup: {
+    sport: RecordingSport;
+    sportId?: string;
+    /**
+     * A session to start on arrival, as MarkAI suggests one: its target is
+     * filled into the matching card and started through the same checks
+     * (weight, location, watch) a press on that card runs.
+     */
+    startGoal?: {
+      type: 'time' | 'distance' | 'calories';
+      /** Seconds, metres or kilocalories, like RecordingGoal.target. */
+      target: number;
+    };
+  };
   WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & {
     sport: RecordingSport;
     weightKg: number;

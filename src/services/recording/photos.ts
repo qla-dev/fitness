@@ -202,7 +202,9 @@ async function drawRecordingPhoto(
           ? Skia.Font(typeface, unitSize)
           : matchFont({ fontSize: unitSize, fontWeight: '600' })
         : undefined;
-      const unitText = unit ? ` ${unit}` : '';
+      // Every unit sits one space (in the smaller unit font) after its
+      // number; a rate unit ("/ km") also closes up to read "/km".
+      const unitText = unit ? ` ${unit.replace(/^\s*\/\s*/, '/')}` : '';
       if ('maxWidth' in metric && typeof metric.maxWidth === 'number') {
         const measured =
           font.measureText(metric.text).width +

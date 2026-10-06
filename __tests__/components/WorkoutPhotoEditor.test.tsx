@@ -47,7 +47,8 @@ jest.mock('expo-sharing', () => ({
   shareAsync: jest.fn(async () => undefined),
 }));
 jest.mock('../../src/services/recording/photos', () => ({
-  recordingPhotoUri: () => 'file:///saved.jpg',
+  recordingPhotoUri: (photo: { fileName: string }) =>
+    `file:///${photo.fileName}`,
   createPhotoPreview: jest.fn(async () => 'file:///preview.jpg'),
   createPhotoEditorLayers: jest.fn(async () => ({
     background: 'file:///background.png',
@@ -60,6 +61,9 @@ jest.mock(
   () => require('react-native').View
 );
 jest.mock('../../src/components/recording/PhotoTextColor', () => () => null);
+// The location sheet's map is native; the editor only needs it to mount.
+jest.mock('../../src/components/recording/PlacePicker', () => () => null);
+jest.mock('../../src/components/ui/NativePromptSheet', () => () => null);
 jest.mock('@expo/ui/community/menu', () => ({
   MenuView: ({ actions, onPressAction, children }: any) => {
     const { View, Pressable, Text } = require('react-native');
@@ -90,6 +94,12 @@ const photo: RecordingPhoto = {
     route: [],
   },
 };
+// Layers render only once the stage reports its proportions.
+function measureStage() {
+  fireEvent(screen.getByTestId('workout-photo-stage'), 'layout', {
+    nativeEvent: { layout: { width: 390, height: 650 } },
+  });
+}
 async function finishPreview() {
   // Let a saved draft load before the debounced layer render starts.
   await act(async () => {});
@@ -117,7 +127,11 @@ it('fills the image width, exports the stage proportions and shares through the 
     photo,
     expect.objectContaining({ aspectRatio: 0.6, layout: 'classic' })
   );
-  expect(screen.UNSAFE_getByType(Image).props.resizeMode).toBe('cover');
+  // The clean capture, not the saved file with the camera HUD burnt in.
+  expect(screen.UNSAFE_getByType(Image).props).toMatchObject({
+    resizeMode: 'cover',
+    source: { uri: 'file:///bbbb.jpg' },
+  });
   expect(
     StyleSheet.flatten(screen.getByTestId('workout-photo-stage').props.style)
   ).toMatchObject({ width: '100%' });
@@ -132,9 +146,26 @@ it('fills the image width, exports the stage proportions and shares through the 
   expect(screen.queryByText('Close')).toBeNull();
 });
 
+it('renders no layers until the stage is measured, so it opens on the final layout', async () => {
+  render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  await finishPreview();
+  expect(createPhotoEditorLayers).not.toHaveBeenCalled();
+  measureStage();
+  // The stage stays covered until the first layers are ready.
+  expect(screen.getByTestId('photo-loading-overlay')).toBeTruthy();
+  await finishPreview();
+  expect(screen.queryByTestId('photo-loading-overlay')).toBeNull();
+  expect(createPhotoEditorLayers).toHaveBeenCalledTimes(1);
+  expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({ aspectRatio: 0.6 })
+  );
+});
+
 it('waits for the selected layout before allowing sharing and discards only the editor', async () => {
   const discard = jest.fn();
   const view = render(<WorkoutPhotoEditor photo={photo} onClose={discard} />);
+  measureStage();
   await finishPreview();
   fireEvent.press(screen.getByText('Route poster'));
   fireEvent.press(screen.getByText('Adjusting'));
@@ -184,6 +215,7 @@ it('ignores a stale preview that finishes after a newer selection', async () => 
 
 it('updates the overlay font and waits for its export before sharing', async () => {
   render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  measureStage();
   await finishPreview();
   fireEvent.press(screen.getByLabelText('Text font'));
   expect(screen.getAllByText('Aa')).toHaveLength(5);
@@ -199,6 +231,7 @@ it('updates the overlay font and waits for its export before sharing', async () 
 
 it('selects a filter from the thumbnail strip and waits for its export', async () => {
   render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  measureStage();
   await finishPreview();
   fireEvent.press(screen.getByLabelText('More options'));
   fireEvent.press(screen.getByLabelText('Photo filter'));
@@ -217,6 +250,7 @@ it('selects a filter from the thumbnail strip and waits for its export', async (
 
 it('closes filters on an outside tap and provides sidebar haptics', async () => {
   render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  measureStage();
   await finishPreview();
   fireEvent.press(screen.getByLabelText('More options'));
   fireEvent(screen.getByLabelText('Photo filter'), 'pressIn');
@@ -229,28 +263,41 @@ it('closes filters on an outside tap and provides sidebar haptics', async () => 
   expect(fireSelectionHaptic).toHaveBeenCalledTimes(2);
 });
 
-it('positions a full-width map independently of route visibility', async () => {
+it('picks hiding the route, the outline or a faded map from one route style menu', async () => {
   render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  measureStage();
   await finishPreview();
+  // No separate show or move toggles beside the menu.
+  expect(screen.queryByLabelText('Show route')).toBeNull();
   expect(screen.queryByLabelText('Move map to top')).toBeNull();
-  expect(screen.queryByText('Faded map')).toBeNull();
   fireEvent.press(screen.getByLabelText('More options'));
-  expect(
-    screen.getByText('Route style', { includeHiddenElements: true })
-  ).toBeTruthy();
-  fireEvent.press(screen.getByText('Faded map'));
-  fireEvent.press(screen.getByLabelText('Move map to top'));
-  fireEvent.press(screen.getByLabelText('Show route'));
+  fireEvent.press(screen.getByText('Faded map top'));
   await finishPreview();
   expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
     photo,
     expect.objectContaining({
       routeStyle: 'map',
       mapPosition: 'top',
-      showRoute: false,
+      showRoute: true,
     })
   );
-  expect(screen.getByLabelText('Move map to bottom')).toBeTruthy();
+  // The overlay menu has a None too; the route style menu comes after it.
+  fireEvent.press(screen.getAllByText('None').at(-1)!);
+  await finishPreview();
+  expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({ showRoute: false })
+  );
+  fireEvent.press(screen.getByText('Faded map bottom'));
+  await finishPreview();
+  expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(
+    photo,
+    expect.objectContaining({
+      routeStyle: 'map',
+      mapPosition: 'bottom',
+      showRoute: true,
+    })
+  );
 });
 
 it('exports independent transforms without regenerating layers, then resets them on layout selection', async () => {
@@ -294,6 +341,7 @@ it('shares a file named after the workout and the person', async () => {
       userName="Ćamil Sijarić"
     />
   );
+  measureStage();
   await finishPreview();
   await act(async () => fireEvent.press(screen.getByText('Share')));
   expect(createPhotoPreview).toHaveBeenLastCalledWith(
@@ -306,6 +354,7 @@ it('shares a file named after the workout and the person', async () => {
 it('saves the setup as a draft and resumes it on the next open', async () => {
   const close = jest.fn();
   const view = render(<WorkoutPhotoEditor photo={photo} onClose={close} />);
+  measureStage();
   await finishPreview();
   fireEvent.press(screen.getByLabelText('Text font'));
   fireEvent.press(screen.getByLabelText('Anton'));
@@ -317,6 +366,7 @@ it('saves the setup as a draft and resumes it on the next open', async () => {
   view.unmount();
   jest.mocked(createPhotoEditorLayers).mockClear();
   render(<WorkoutPhotoEditor photo={photo} onClose={jest.fn()} />);
+  measureStage();
   await finishPreview();
   expect(createPhotoEditorLayers).toHaveBeenCalledTimes(1);
   expect(createPhotoEditorLayers).toHaveBeenLastCalledWith(

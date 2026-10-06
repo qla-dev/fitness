@@ -58,8 +58,8 @@ it('covers a lens restart in black and enables capture after the new camera is r
     expect(view.queryByTestId('camera-restarting-cover')).toBeNull();
     fireEvent.press(view.getByLabelText('Switch camera'));
     expect(mockMount.mock.calls.map(([facing]) => facing)).toEqual([
-      'front',
       'back',
+      'front',
     ]);
     expect(view.getByTestId('camera-restarting-cover')).toBeTruthy();
     fireEvent.press(view.getByLabelText('Capture photo with metrics'));

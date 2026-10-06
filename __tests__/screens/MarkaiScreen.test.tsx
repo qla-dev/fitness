@@ -58,6 +58,10 @@ jest.mock('../../src/components/CustomModal', () => ({
   default: () => null,
 }));
 let mockSignedIn = true;
+// Only the distance unit of a suggested session reads preferences.
+jest.mock('../../src/hooks/usePreferences', () => ({
+  usePreferences: () => ({ preferences: undefined }),
+}));
 jest.mock('../../src/hooks/useAppleSignIn', () => ({
   useAppleSignIn: () => ({
     available: true,
@@ -285,5 +289,5 @@ it('signed out, shows a still screen with sign-in pinned in the footer', () => {
   ).toBeNull();
   expect(screen.getByText('Sign in with Apple')).toBeTruthy();
   expect(screen.getByText(/Sign in to get 100 AI coins/)).toBeTruthy();
-  expect(screen.getByText('Training help')).toBeTruthy();
+  expect(screen.getByText('Moving help')).toBeTruthy();
 });

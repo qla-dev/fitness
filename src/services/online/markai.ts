@@ -41,11 +41,22 @@ export type GoalProposal =
  */
 export type MarkaiTask = 'all_macros';
 export const MARKAI_TASK_COINS: Record<MarkaiTask, number> = { all_macros: 10 };
+/**
+ * A session a Moving help reply suggests: value in minutes, kilometres or
+ * kilocalories by goal. Started through workout setup, never by itself.
+ */
+export type WorkoutSuggestion = {
+  sport: 'run' | 'ride';
+  goal: 'time' | 'distance' | 'calories';
+  value: number;
+};
 export type MarkaiReply = {
   text: string;
   food: FoodProposal | null;
   /** Absent on replies from before goals were proposed. */
   goal?: GoalProposal | null;
+  /** Absent on replies from before sessions were suggested. */
+  workout?: WorkoutSuggestion | null;
   food_id: string;
   log_requested: boolean;
 };

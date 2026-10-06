@@ -120,18 +120,31 @@ export function photoEditorLayout(
   // on a 1080-wide canvas. They get the live grid, in points of a phone-width
   // viewport scaled to that canvas, so their text is as large as any other.
   const legacy = composition.width / 390;
-  const sourceMetrics = composition.metrics.map((metric, index) =>
-    options.layout === 'classic' && !metric.iconAbove
-      ? {
-          ...metric,
-          x: 24 * legacy,
-          y: composition.top + [0, 82, 194, 298, 402][index] * legacy,
-          size: [48, 40, 34, 34, 28][index] * legacy,
-          labelSize: 12 * legacy,
-          iconAbove: true,
-        }
-      : metric
-  );
+  // Layouts that set the lead as one row among equals (route story, stats
+  // above route, compact) keep its icon and label so it lines up with the
+  // rest; classic, hero and poster show it as the large number on its own.
+  const gridLead =
+    options.layout === 'trail' ||
+    options.layout === 'summit' ||
+    options.layout === 'compact';
+  const sourceMetrics = composition.metrics
+    .map((metric) =>
+      metric.lead && !gridLead
+        ? { ...metric, icon: undefined, label: undefined }
+        : metric
+    )
+    .map((metric, index) =>
+      options.layout === 'classic' && !metric.iconAbove
+        ? {
+            ...metric,
+            x: 24 * legacy,
+            y: composition.top + [0, 82, 194, 298, 402][index] * legacy,
+            size: [48, 40, 34, 34, 28][index] * legacy,
+            labelSize: 12 * legacy,
+            iconAbove: true,
+          }
+        : metric
+    );
   // Keep every layout's readings and wordmark off the photo's side edges.
   const inset = Math.round(width * 0.06);
   const contentWidth = width - inset * 2;
@@ -142,7 +155,8 @@ export function photoEditorLayout(
       : options.layout === 'compact'
         ? 0.032
         : 0.04);
-  const brandGap = brandSize * 0.8;
+  // Proportional to the wordmark, so every layout keeps the same breathing room.
+  const brandGap = brandSize * 1.6;
   const classicBottom = Math.max(
     ...sourceMetrics.map(
       (item) =>
@@ -152,28 +166,44 @@ export function photoEditorLayout(
         (item.label ? (item.labelSize ?? 12) * 1.2 : 0)
     )
   );
-  // Classic starts below the editor's close button, which sits over the top
-  // left of the photo (its bottom edge is about a fifth of the width down),
-  // and stacks its wordmark under the last reading, so reserve that row.
-  const classicTop = Math.round(width * 0.2);
+  // Like a story editor, the header is the only safe area: the close button
+  // sits over the top left (its bottom edge about a fifth of the width down),
+  // and no layout starts above it. The tool buttons on the right may overlap.
+  const headerBottom = Math.round(width * 0.2);
+  // Classic stacks its wordmark under the last reading, so reserve that row.
+  const classicTop = headerBottom;
   const classicFirst = Math.min(...sourceMetrics.map((item) => item.y));
   const classicScale = Math.min(
     width / composition.width,
     (height * 0.95 - classicTop - brandGap - brandSize * 1.4) /
       (classicBottom - classicFirst)
   );
-  const classicShift = Math.max(0, classicTop - classicFirst * classicScale);
-  const metrics = sourceMetrics.map((metric, index) => {
+  const classicShift = classicTop - classicFirst * classicScale;
+  // The other layouts anchor a block of rows to the top of the photo (the
+  // rows above the middle); that block starts right under the header, as
+  // Classic does, taking the wordmark and route placed relative to it along.
+  const firstTopRow = {
+    trail: 0.15,
+    compact: 0.08,
+    summit: 0.065,
+    hero: 0.07,
+  }[options.layout as 'trail' | 'compact' | 'summit' | 'hero'];
+  const topShift =
+    firstTopRow === undefined ? 0 : headerBottom - firstTopRow * height;
+  const placed = sourceMetrics.map((metric, index) => {
     if (options.layout === 'classic') {
       const scale = classicScale;
+      const y = metric.y * scale + classicShift;
       return {
         ...metric,
         x: inset,
-        y: metric.y * scale + classicShift,
+        y,
         size: metric.size * scale,
         labelSize: (metric.labelSize ?? 12) * scale,
         iconSize: 24 * scale,
-        unitSize: 28 * scale,
+        // In step with its own reading, as the other layouts do; a fixed size
+        // made a small row's unit as large as its number.
+        unitSize: metric.size * scale * 0.58,
         maxWidth: contentWidth,
       };
     }
@@ -183,8 +213,8 @@ export function photoEditorLayout(
     let maxWidth = 1;
     if (options.layout === 'trail') {
       x = (index % 3) / 3;
-      y = 0.15 + Math.floor(index / 3) * 0.065;
-      size = 0.032;
+      y = 0.15 + Math.floor(index / 3) * 0.1;
+      size = 0.055;
       maxWidth = 1 / 3;
     } else if (options.layout === 'compact') {
       x = 0;
@@ -213,13 +243,14 @@ export function photoEditorLayout(
         (options.layout === 'compact'
           ? 0.035
           : options.layout === 'trail'
-            ? 0.028
+            ? 0.045
             : options.layout === 'summit'
               ? 0.04
               : index === 0
                 ? 0.11
                 : 0.032)
     );
+    const top = y * height + (y < 0.5 ? topShift : 0);
     return {
       ...metric,
       iconAbove: true,
@@ -227,16 +258,50 @@ export function photoEditorLayout(
       unitSize: rowSize * 0.58,
       labelSize: rowSize * 0.25,
       x: inset + x * contentWidth,
-      y: y * height,
+      y: top,
       size: rowSize,
       maxWidth: maxWidth * contentWidth,
     };
   });
+  // A grid row with empty cells (two readings in a three-column row) moves as
+  // one with the text alignment, so centered text centers the row itself.
+  const rowShift = (y: number) => {
+    const row = placed.filter((metric) => metric.y === y);
+    const used = row.reduce((total, metric) => total + metric.maxWidth, 0);
+    const spare = contentWidth - used;
+    if (options.layout === 'classic' || spare < 1) return 0;
+    return options.textAlign === 'center'
+      ? spare / 2
+      : options.textAlign === 'right'
+        ? spare
+        : 0;
+  };
+  const metrics = placed.map((metric) => ({
+    ...metric,
+    x: metric.x + rowShift(metric.y),
+  }));
   const route =
     options.layout === 'trail'
-      ? { x: 0.5, y: 0.64, width: 0.9, height: 0.66 }
+      ? { x: 0.5, y: 0.68, width: 0.9, height: 0.58 }
       : options.layout === 'classic' || options.layout === 'compact'
-        ? { x: 0.72, y: 0.76, width: 0.38, height: 0.3 }
+        ? {
+            // Classic's route sits opposite its text: right of left-aligned
+            // stats, under centered ones, left of right-aligned ones.
+            x:
+              options.layout === 'classic' && options.textAlign === 'center'
+                ? 0.5
+                : options.layout === 'classic' && options.textAlign === 'right'
+                  ? 0.28
+                  : 0.72,
+            // Beside left or right text it is centered vertically; under
+            // centered text it stays low, clear of the stats column.
+            y:
+              options.layout === 'classic' && options.textAlign !== 'center'
+                ? 0.5
+                : 0.76,
+            width: 0.38,
+            height: 0.3,
+          }
         : options.layout === 'summit'
           ? { x: 0.55, y: 0.64, width: 0.72, height: 0.48 }
           : options.layout === 'hero'
@@ -254,6 +319,18 @@ export function photoEditorLayout(
     )
   );
   const brandHeight = brandSize * 1.4;
+  // Layouts that stack from the top hang the wordmark one gap under the last
+  // reading, measured from what is drawn, so it sits the same distance away
+  // however many readings there are. Hero and poster place it between blocks.
+  const brandTop =
+    options.layout === 'poster'
+      ? (metrics[0]?.y ?? height * 0.69) - brandSize * 0.5 - brandHeight
+      : options.layout === 'hero'
+        ? height * 0.685
+        : metricsBottom + brandGap;
+  // Summit and hero hang their route under the top block, so it follows it.
+  const routeShift =
+    options.layout === 'summit' || options.layout === 'hero' ? topShift : 0;
   return {
     width,
     height,
@@ -269,15 +346,7 @@ export function photoEditorLayout(
       centerX: width / 2,
       inset,
       align: options.textAlign ?? 'left',
-      top:
-        options.layout === 'classic'
-          ? classicBottom * classicScale + classicShift + brandGap
-          : options.layout === 'trail'
-            ? metricsBottom + brandGap
-            : options.layout === 'poster'
-              ? (metrics[0]?.y ?? height * 0.69) - brandSize * 0.5 - brandHeight
-              : height *
-                { summit: 0.325, hero: 0.685, compact: 0.4 }[options.layout],
+      top: brandTop,
       fontSize: brandSize,
     },
     route: {
@@ -285,7 +354,10 @@ export function photoEditorLayout(
       y:
         options.routeStyle === 'map'
           ? height * (options.mapPosition === 'top' ? 0.25 : 0.75)
-          : route.y * height,
+          : Math.min(
+              route.y * height + routeShift,
+              height * (1 - route.height / 2)
+            ),
       width: options.routeStyle === 'map' ? width : route.width * width,
       height:
         options.routeStyle === 'map' ? height * 0.5 : route.height * height,

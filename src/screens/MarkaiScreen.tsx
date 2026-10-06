@@ -24,6 +24,8 @@ import {
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
 import MarkaiGoalCard from '../components/markai/MarkaiGoalCard';
+import MarkaiWorkoutCard from '../components/markai/MarkaiWorkoutCard';
+import { usePreferences } from '../hooks/usePreferences';
 import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon, { type IconName } from '../components/Icon';
@@ -112,6 +114,9 @@ function MarkaiContent() {
   // Opened by the questionnaire: a proposed goal goes back to it.
   const returnToSetup = useRef(!!route.params?.preset?.returnToSetup);
   const accent = useCSSVariable('--color-accent-primary') as string;
+  const { preferences } = usePreferences();
+  const distanceUnit =
+    preferences?.default_distance_unit === 'miles' ? 'miles' : 'km';
   // The message on its way, kept for a retry. A photo-only message has an
   // empty prompt, so this is an object rather than the prompt string.
   const [pending, setPending] = useState<{
@@ -210,7 +215,7 @@ function MarkaiContent() {
   });
   const labels: Record<Mode, string> = {
     macros: t('markai.macros', { defaultValue: 'Calculate macros' }),
-    training: t('markai.training', { defaultValue: 'Training help' }),
+    training: t('markai.training', { defaultValue: 'Moving help' }),
     free: t('markai.free', { defaultValue: 'Free chat' }),
   };
   useEffect(() => {
@@ -691,6 +696,31 @@ function MarkaiContent() {
                     {t('markai.log', { defaultValue: 'Log food' })}
                   </Button>
                 </View>
+              )}
+              {/* The suggested session closes a Moving help reply. */}
+              {message.reply.workout && typingId !== message.id && (
+                <MarkaiWorkoutCard
+                  workout={message.reply.workout}
+                  distanceUnit={distanceUnit}
+                  disabled={busy}
+                  onStart={() => {
+                    const workout = message.reply.workout;
+                    if (!workout) return;
+                    navigation.navigate('WorkoutSetup', {
+                      sport: workout.sport,
+                      startGoal: {
+                        type: workout.goal,
+                        // Setup takes seconds, metres and kilocalories.
+                        target:
+                          workout.goal === 'time'
+                            ? workout.value * 60
+                            : workout.goal === 'distance'
+                              ? workout.value * 1000
+                              : workout.value,
+                      },
+                    });
+                  }}
+                />
               )}
               {message.reply.goal && typingId !== message.id && (
                 <MarkaiGoalCard

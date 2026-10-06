@@ -85,10 +85,41 @@ const DETAIL_METRIC_ICONS: Record<keyof typeof METRIC_COLORS, PhotoMetricIcon> =
     distance: 'distance',
     pace: 'speed',
     heartRate: 'heart',
-    speed: 'speed',
+    // Only the recording's top speed carries this metric; pace keeps the gauge.
+    speed: 'maxSpeed',
     elevation: 'elevation',
     cadence: 'cadence',
   };
+
+// Every photo of a workout reads the same: distance leads, then pace or
+// speed, calories and the rest, with heart rate always last and only when
+// the workout has a reading.
+const PHOTO_STAT_RANK: Record<keyof typeof METRIC_COLORS, number> = {
+  distance: 0,
+  pace: 1,
+  speed: 1,
+  calories: 2,
+  duration: 3,
+  elevation: 4,
+  cadence: 5,
+  heartRate: 6,
+};
+const PHOTO_STAT_LIMIT = 5;
+const photoStatOrder = (stats: DetailStat[]) => {
+  const ordered = [...stats].sort(
+    (a, b) =>
+      (a.metric ? PHOTO_STAT_RANK[a.metric] : 6) -
+      (b.metric ? PHOTO_STAT_RANK[b.metric] : 6)
+  );
+  const heartRate = ordered.find(
+    (stat) => stat.metric === 'heartRate' && /[1-9]/.test(stat.value)
+  );
+  const rest = ordered.filter((stat) => stat.metric !== 'heartRate');
+  // The row limit trims the middle, never the heart rate at the end.
+  return heartRate
+    ? [...rest.slice(0, PHOTO_STAT_LIMIT - 1), heartRate]
+    : rest.slice(0, PHOTO_STAT_LIMIT);
+};
 
 type Props = RootStackScreenProps<'ActivityDetail'>;
 
@@ -689,6 +720,24 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     // dependency list would have to repeat all of it to stay correct.
   };
 
+  // The live HUD always leads with distance, even at zero, so a photo of a
+  // recorded run or ride does too; the stats card hides an empty distance.
+  const photoDetailStats = (): DetailStat[] => {
+    const stats = buildDetailStats();
+    if (!recordingDetail || stats.some((stat) => stat.metric === 'distance'))
+      return stats;
+    return [
+      {
+        label: t('activityDetail.stats.distance', { defaultValue: 'Distance' }),
+        value: '0',
+        unit: distanceUnit === 'miles' ? 'mi' : 'km',
+        color: METRIC_COLORS.distance,
+        metric: 'distance',
+      },
+      ...stats,
+    ];
+  };
+
   const renderStatsGrid = () => {
     const stats = buildStats();
     if (stats.length === 0) return null;
@@ -934,20 +983,34 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 height: 693,
                 top: 0,
                 metrics: liveMetricLayout(
-                  buildDetailStats()
-                    .slice(0, 5)
-                    .map((stat) => ({
-                      text: stat.value,
-                      unit: stat.unit,
-                      icon: stat.metric && DETAIL_METRIC_ICONS[stat.metric],
-                    })),
+                  photoStatOrder(photoDetailStats()).map((stat) => ({
+                    // Pace reads "12:39 / km" as one string on the card; on
+                    // a photo the rate becomes a unit, sized and spaced
+                    // like every other one ("12:39" + "/km").
+                    text: stat.value.split(' / ')[0],
+                    unit: stat.value.includes(' / ')
+                      ? `/${stat.value.split(' / ')[1]}`
+                      : stat.unit,
+                    // Labelled like the live HUD rows; the lead's label
+                    // shows only in the grid layouts.
+                    label: stat.label,
+                    icon: stat.metric && DETAIL_METRIC_ICONS[stat.metric],
+                  })),
                   0
                 ),
-                route: importedTelemetry.gps.map((point) => ({
-                  latitude: point.lat,
-                  longitude: point.lon,
-                  segment: 0,
-                })),
+                // A run or ride recorded here keeps its own trace (with
+                // pause segments); an imported workout brings Health's GPS.
+                route: recordingDetail?.points.length
+                  ? recordingDetail.points.map((point) => ({
+                      latitude: point.latitude,
+                      longitude: point.longitude,
+                      segment: point.segment,
+                    }))
+                  : importedTelemetry.gps.map((point) => ({
+                      latitude: point.lat,
+                      longitude: point.lon,
+                      segment: 0,
+                    })),
               }}
             />
             <WorkoutHeartRateSection

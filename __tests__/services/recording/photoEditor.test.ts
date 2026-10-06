@@ -10,6 +10,9 @@ import {
 import type { PhotoComposition } from '../../../src/services/recording/types';
 import { liveMetricLayout } from '../../../src/services/recording/liveMetricLayout';
 
+// The bottom of the editor's header (its close button), in export pixels.
+const closeBottom = 1080 * 0.2;
+
 it('keeps the live HUD sizing and stacked icons with full-width alignment boxes', () => {
   const metrics = liveMetricLayout(
     [
@@ -42,7 +45,7 @@ it('keeps the live HUD sizing and stacked icons with full-width alignment boxes'
   });
 });
 
-it('draws every reading with its icon in every layout', () => {
+it('draws every reading after the lead with its icon in every layout', () => {
   const metrics = liveMetricLayout(
     [
       { text: '32:10', icon: 'duration' },
@@ -63,8 +66,9 @@ it('draws every reading with its icon in every layout', () => {
       { width: 390, height: 693, top: 0, route: [], metrics },
       { ...defaultPhotoEditorOptions, layout }
     );
+    // The lead reading stands alone as the large number, as on the HUD.
     expect(result.metrics.map((metric) => metric.icon)).toEqual([
-      'duration',
+      undefined,
       'distance',
       'calories',
     ]);
@@ -154,6 +158,48 @@ it.each<PhotoLayout>(['classic', 'summit', 'hero', 'poster', 'compact'])(
         result.height
       );
     }
+  }
+);
+
+it.each<PhotoLayout>(['classic', 'trail', 'compact', 'summit', 'hero', 'poster'])(
+  '%s keeps readings and wordmark below the editor header',
+  (layout) => {
+    const values = [
+      { text: '0', unit: 'km' },
+      { text: '—', label: 'Pace' },
+      { text: '0', label: 'kcal' },
+      { text: '—', label: 'bpm' },
+    ];
+    // Taken mid-session (below the status bar) and added after the workout.
+    const compositions: PhotoComposition[] = [
+      {
+        width: 402,
+        height: 874,
+        top: 62,
+        route: [],
+        metrics: liveMetricLayout(values, 62),
+      },
+      {
+        width: 390,
+        height: 693,
+        top: 0,
+        route: [],
+        metrics: liveMetricLayout(values, 0),
+      },
+    ];
+    for (const source of compositions)
+      for (const aspectRatio of [9 / 16, 390 / 650, 4 / 5])
+        for (const textAlign of ['left', 'center', 'right'] as const) {
+          const result = photoEditorLayout(source, {
+            ...defaultPhotoEditorOptions,
+            layout,
+            aspectRatio,
+            textAlign,
+          });
+          for (const metric of result.metrics)
+            expect(metric.y).toBeGreaterThanOrEqual(closeBottom);
+          expect(result.branding.top).toBeGreaterThanOrEqual(closeBottom);
+        }
   }
 );
 

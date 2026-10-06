@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -32,6 +32,29 @@ import WorkoutPhotoEditor from './WorkoutPhotoEditor';
 import { fetchProfile } from '../../services/api/profileApi';
 import { profileQueryKey } from '../../hooks/queryKeys';
 
+/**
+ * Every photo of a workout is edited with the workout's final readings, laid
+ * out one way. A photo taken mid-session stored the live HUD at that moment
+ * (its viewport and a partial set of readings) and one added afterwards
+ * stored whatever this screen passed then; reopening either with the current
+ * composition makes them the same design. Only where it was taken is kept.
+ */
+function withCurrentReadings(
+  photo: RecordingPhoto,
+  current: PhotoComposition
+): RecordingPhoto {
+  if (!photo.composition) return photo;
+  return {
+    ...photo,
+    composition: {
+      ...current,
+      // Never trade a route the photo has for an empty one.
+      route: current.route.length ? current.route : photo.composition.route,
+      captureLocation: photo.composition.captureLocation,
+    },
+  };
+}
+
 export default function WorkoutPhotos({
   details,
   sessionId,
@@ -45,6 +68,13 @@ export default function WorkoutPhotos({
 }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<RecordingPhoto | null>(null);
+  // The composition is rebuilt on every parent render; key on its content so
+  // the editor only sees a new photo when the readings actually change.
+  const readingsKey = JSON.stringify(composition);
+  const editing = useMemo(
+    () => selected && withCurrentReadings(selected, JSON.parse(readingsKey)),
+    [selected, readingsKey]
+  );
   const [containerWidth, setContainerWidth] = useState(320);
   const tileWidth = Math.max(64, (containerWidth - 32) / 3);
   const client = useQueryClient();
@@ -205,9 +235,9 @@ export default function WorkoutPhotos({
           </Text>
         </Pressable>
       )}
-      {selected && (
+      {editing && (
         <WorkoutPhotoEditor
-          photo={selected}
+          photo={editing}
           onClose={() => setSelected(null)}
           workoutName={workoutName}
           userName={profile?.full_name ?? undefined}

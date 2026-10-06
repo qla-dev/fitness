@@ -22,6 +22,7 @@ import { useCSSVariable } from 'uniwind';
 
 import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
+import WorkoutGoalCard from '../components/recording/WorkoutGoalCard';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
 import WorkoutGoalSheet from '../components/recording/WorkoutGoalSheet';
 import WorkoutRouteSheet from '../components/recording/WorkoutRouteSheet';
@@ -44,9 +45,9 @@ import { fireSelectionHaptic } from '../services/haptics';
 import type { PlannedRoute, RecordingGoal } from '../services/recording/types';
 import { formatLocalizedNumber } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
-import { withAlpha } from '../utils/colors';
 import {
   distanceToKm,
+  distanceFromKm,
   weightFromKg,
   weightToKg,
 } from '../utils/unitConversions';
@@ -77,7 +78,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const { sport, sportId } = route.params;
+  const { sport, sportId, startGoal } = route.params;
 
   const [green, amber, blue, pink, surface] = useCSSVariable([
     '--color-cat-green',
@@ -94,7 +95,8 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
 
   // Stored metric, shown in the user's unit — the conversion the measurement
   // tiles already do. An edit takes over from the prefill.
-  const { history } = useMeasurementHistory(getTodayDate());
+  const { history, isLoading: historyLoading } =
+    useMeasurementHistory(getTodayDate());
   const lastWeight = history?.weight?.shown ?? null;
   // Standing facts about the person, shown so the estimate is not a black box:
   // height never changes between sessions, weight rarely does.
@@ -273,9 +275,23 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       ? ''
       : String(Math.round(weightFromKg(lastWeight, weightUnit) * 10) / 10));
 
-  const [minutes, setMinutes] = useState(DEFAULT_MINUTES);
-  const [distance, setDistance] = useState(DEFAULT_DISTANCE);
-  const [calories, setCalories] = useState(DEFAULT_CALORIES);
+  // A suggested session arrives with its target already on its card.
+  const [minutes, setMinutes] = useState(() =>
+    startGoal?.type === 'time'
+      ? Math.max(1, Math.round(startGoal.target / 60))
+      : DEFAULT_MINUTES
+  );
+  const [distance, setDistance] = useState(() =>
+    startGoal?.type === 'distance'
+      ? Math.round(distanceFromKm(startGoal.target / 1000, distanceUnit) * 10) /
+        10
+      : DEFAULT_DISTANCE
+  );
+  const [calories, setCalories] = useState(() =>
+    startGoal?.type === 'calories'
+      ? Math.round(startGoal.target)
+      : DEFAULT_CALORIES
+  );
 
   // Named the way the card that led here is named, not the way the recorder
   // labels the sport internally.
@@ -557,6 +573,25 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     begin(goal);
   };
 
+  // A suggested session starts once the checks a press would run can answer:
+  // the weight on file (or its absence) and the location permission. Once,
+  // so coming back to setup later does not start it again.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!startGoal || autoStarted.current) return;
+    if (historyLoading || locationGranted === null) return;
+    // After this commit, so the prefilled card and any prompt it raises
+    // (weight, location, watch) belong to a screen already on show. Marked
+    // done only when it fires, so a re-run's cleanup cannot swallow it.
+    const timer = setTimeout(() => {
+      autoStarted.current = true;
+      start({ type: startGoal.type, target: startGoal.target });
+    });
+    return () => clearTimeout(timer);
+    // start reads the latest state each render; this runs on readiness only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startGoal, historyLoading, locationGranted]);
+
   const card = (
     color: string,
     icon: IconName,
@@ -565,71 +600,15 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
     value?: string,
     onEdit?: () => void
   ) => (
-    <Pressable
-      accessibilityRole={onEdit ? 'button' : undefined}
-      accessibilityLabel={
-        onEdit
-          ? t('workoutSetup.editGoal', {
-              defaultValue: 'Edit {{goal}}',
-              goal: label,
-            })
-          : undefined
-      }
-      disabled={!onEdit}
-      onPress={() => {
-        if (!onEdit) return;
-        fireSelectionHaptic();
-        onEdit();
-      }}
-      className="rounded-3xl p-4 mb-3"
-      style={{ backgroundColor: withAlpha(color, 0.16) }}
-    >
-      <View className="flex-row items-center">
-        <Icon name={icon} size={30} color={color} />
-        <View className="flex-1 ml-3">
-          <Text className="text-text-primary text-xl font-bold">{label}</Text>
-          {value ? (
-            <Text
-              className="text-base font-semibold mt-0.5"
-              style={{ color }}
-              numberOfLines={1}
-            >
-              {value}
-            </Text>
-          ) : null}
-        </View>
-        {/* Glass, like the tab bar: the start control is the one thing on the
-            card that acts on its own, so it gets the material that reacts to
-            a press rather than a flat disc. */}
-        <LiquidGlassSurface
-          isInteractive
-          tintColor={color}
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            overflow: 'hidden',
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('workoutSetup.startGoal', {
-              defaultValue: 'Start {{goal}}',
-              goal: label,
-            })}
-            disabled={!canStart}
-            onPress={() => start(goal)}
-            className="w-full h-full items-center justify-center"
-            style={{
-              backgroundColor: usesGlass ? undefined : color,
-              opacity: canStart ? 1 : 0.4,
-            }}
-          >
-            <Icon name="play" size={24} color={surface} />
-          </Pressable>
-        </LiquidGlassSurface>
-      </View>
-    </Pressable>
+    <WorkoutGoalCard
+      color={color}
+      icon={icon}
+      label={label}
+      value={value}
+      onEdit={onEdit}
+      onStart={() => start(goal)}
+      startDisabled={!canStart}
+    />
   );
 
   return (

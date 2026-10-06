@@ -32,6 +32,8 @@ export type RouteCoordinate = { latitude: number; longitude: number };
 export interface RouteMapProps {
   plannedRoute?: RouteCoordinate[];
   destination?: RouteCoordinate;
+  /** The marker's title; "Destination" unless the point is something else. */
+  destinationTitle?: string;
   onSelectPoint?: (point: RouteCoordinate) => void;
   navigationMode?: boolean;
   controlsTop?: number;
@@ -82,6 +84,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
   controlsTop = 16,
   plannedRoute,
   destination,
+  destinationTitle,
   onSelectPoint,
 }) => {
   const { t } = useTranslation();
@@ -245,7 +248,9 @@ const RouteMap: React.FC<RouteMapProps> = ({
         {
           id: 'destination',
           coordinates: destination,
-          title: t('workoutRoute.destination', { defaultValue: 'Destination' }),
+          title:
+            destinationTitle ??
+            t('workoutRoute.destination', { defaultValue: 'Destination' }),
         },
       ]
     : [];

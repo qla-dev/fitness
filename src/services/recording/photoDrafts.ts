@@ -25,7 +25,37 @@ export async function savePhotoDraft(
 }
 
 export function removePhotoDraft(photo: Pick<RecordingPhoto, 'fileName'>) {
-  AsyncStorage.removeItem(key(photo)).catch(() => {
-    /* A stale draft for a deleted photo is harmless. */
+  AsyncStorage.multiRemove([key(photo), locationKey(photo)]).catch(() => {
+    /* A stale draft or location for a deleted photo is harmless. */
   });
+}
+
+type PhotoLocation = NonNullable<
+  NonNullable<RecordingPhoto['composition']>['captureLocation']
+>;
+const locationKey = (photo: Pick<RecordingPhoto, 'fileName'>) =>
+  `workoutPhotoLocation:${photo.fileName}`;
+
+/**
+ * Where a photo was taken, added by hand when it carries no GPS fix — one
+ * added after the workout, or from a session started on the watch. Kept per
+ * photo beside its draft, since a photo can live in a recording's details as
+ * well as in the added-photo list.
+ */
+export async function loadPhotoLocation(
+  photo: Pick<RecordingPhoto, 'fileName'>
+): Promise<PhotoLocation | null> {
+  try {
+    const value = await AsyncStorage.getItem(locationKey(photo));
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function savePhotoLocation(
+  photo: Pick<RecordingPhoto, 'fileName'>,
+  location: PhotoLocation
+) {
+  await AsyncStorage.setItem(locationKey(photo), JSON.stringify(location));
 }

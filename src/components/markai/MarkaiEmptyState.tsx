@@ -119,6 +119,25 @@ export default function MarkaiEmptyState({
       icon: 'sparkles' as const,
     },
     {
+      label: t('markai.allMacros', {
+        defaultValue: 'Calculate all my macros',
+      }),
+      prompt: t('markai.allMacrosPrompt', {
+        defaultValue:
+          'Calculate all my macros: calories, protein, carbs and fat for my goal',
+      }),
+      mode: 'macros' as const,
+      icon: 'calculator' as const,
+    },
+    {
+      label: t('markai.training', { defaultValue: 'Moving help' }),
+      prompt: t('markai.trainingPrompt', {
+        defaultValue: 'Help me move more and plan my next activity',
+      }),
+      mode: 'training' as const,
+      icon: 'exercise-walking' as const,
+    },
+    {
       label: t('macros.metricsPrompt', {
         defaultValue: 'Explain my daily metrics',
       }),
@@ -127,14 +146,6 @@ export default function MarkaiEmptyState({
       }),
       mode: 'free' as const,
       icon: 'sparkles' as const,
-    },
-    {
-      label: t('markai.training', { defaultValue: 'Training help' }),
-      prompt: t('markai.trainingPrompt', {
-        defaultValue: 'Help me plan my next workout',
-      }),
-      mode: 'training' as const,
-      icon: 'exercise' as const,
     },
   ];
   return (

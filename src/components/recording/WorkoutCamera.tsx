@@ -70,7 +70,7 @@ export default function WorkoutCamera({
     route,
     metrics,
   };
-  const [facing, setFacing] = useState<'front' | 'back'>('front');
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [foreground, setForeground] = useState(
     AppState.currentState === 'active'
   );

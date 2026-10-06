@@ -26,7 +26,7 @@ export default function MarkaiHistoryScreen({
   const [error, setError] = useState<string | null>(null);
   const labels: Record<MarkaiMode, string> = {
     macros: t('markai.macros', { defaultValue: 'Calculate macros' }),
-    training: t('markai.training', { defaultValue: 'Training help' }),
+    training: t('markai.training', { defaultValue: 'Moving help' }),
     free: t('markai.free', { defaultValue: 'Free chat' }),
   };
   const load = useCallback(async () => {

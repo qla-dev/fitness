@@ -94,7 +94,14 @@ export default function NativePromptSheet({
       background="background"
       title={category ?? ''}
       dismissOnBackdropPress={dismissOnBackdropPress}
-      onDismiss={onClose}
+      onDismiss={() => {
+        // Closed by the sheet itself (swipe, close chip, backdrop): it is no
+        // longer presented, so the parent's open=false must not dismiss it a
+        // second time — that left gorhom DISMISSING and every later open did
+        // nothing.
+        presented.current = false;
+        onClose();
+      }}
     >
       <View className="px-5">
         <Text className="text-text-primary text-3xl font-bold">{title}</Text>
