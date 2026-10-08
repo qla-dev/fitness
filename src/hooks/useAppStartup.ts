@@ -30,6 +30,7 @@ import { initializeRecorder } from '../services/recording/recorder';
 import { subscribeWatchGoals } from '../services/watchGoals';
 import { subscribeWatchMeasurements } from '../services/watchMeasurements';
 import { subscribeWatchPrograms } from '../services/watchPrograms';
+import { isWatchLinkAvailable } from '../../modules/watch-link';
 
 interface AppStartupArgs {
   /**
@@ -47,11 +48,14 @@ interface AppStartupArgs {
 export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
   useEffect(() => {
     let cancelled = false;
-    const watchGoals = Platform.OS === 'ios' ? subscribeWatchGoals() : null;
-    const watchPrograms =
-      Platform.OS === 'ios' ? subscribeWatchPrograms() : null;
-    const watchMeasurements =
-      Platform.OS === 'ios' ? subscribeWatchMeasurements() : null;
+    // Whether this build can reach a watch, not which platform it is: a Wear
+    // OS watch asks for goals and measurements and reads programs over the
+    // same bridge the Apple Watch does. Gated on iOS, an Android watch's
+    // entries timed out unanswered and its program list stayed empty.
+    const watchLink = isWatchLinkAvailable();
+    const watchGoals = watchLink ? subscribeWatchGoals() : null;
+    const watchPrograms = watchLink ? subscribeWatchPrograms() : null;
+    const watchMeasurements = watchLink ? subscribeWatchMeasurements() : null;
     const onLanguageChanged = () => {
       void registerLocalizedNotificationPresentation().catch((error) => {
         const message = error instanceof Error ? error.message : String(error);

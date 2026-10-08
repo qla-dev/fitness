@@ -4,6 +4,7 @@ import { loadRecording } from '../../../src/services/recording/database';
 import { createExerciseEntry } from '../../../src/services/api/exerciseApi';
 
 jest.mock('../../../modules/watch-link', () => ({
+  isWatchLinkAvailable: () => true,
   updateWatchMetrics: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('expo-task-manager', () => ({

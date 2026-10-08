@@ -7,6 +7,7 @@ import { startWatchHeartRate } from '../../../src/services/recording/sensors';
 import { checkpointRecording } from '../../../src/services/recording/database';
 
 jest.mock('../../../modules/watch-link', () => ({
+  isWatchLinkAvailable: () => true,
   updateWatchMetrics: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('expo-task-manager', () => ({ defineTask: jest.fn() }));

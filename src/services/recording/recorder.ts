@@ -1,5 +1,8 @@
 import { Platform } from 'react-native';
-import { updateWatchMetrics } from '../../../modules/watch-link';
+import {
+  isWatchLinkAvailable,
+  updateWatchMetrics,
+} from '../../../modules/watch-link';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { randomUUID } from 'expo-crypto';
@@ -89,7 +92,9 @@ function publish(patch: Partial<Snapshot>) {
   snapshot = { ...snapshot, ...patch };
   listeners.forEach((fn) => fn());
   const session = snapshot.session;
-  if (Platform.OS === 'ios' && session && session.watch !== false) {
+  // Any watch this build can reach mirrors the recorder, not just an Apple
+  // Watch: a Wear OS watch shows the same live figures from the same message.
+  if (isWatchLinkAvailable() && session && session.watch !== false) {
     const now = Date.now();
     const elapsed = elapsedSeconds(session, now);
     void updateWatchMetrics({
