@@ -104,6 +104,9 @@
     "owner": "qla-dev",
     "ios": {
       "buildNumber": "24"
+    },
+    "android": {
+      "versionCode": 2
     }
   }
 }
