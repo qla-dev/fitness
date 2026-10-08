@@ -199,9 +199,15 @@ export default function RunRideRecorder({
   const autoStarted = useRef(false);
   const [autoStartFailed, setAutoStartFailed] = useState(false);
   useEffect(() => {
-    if (!initialWeightKg || session || autoStarted.current) return;
+    if (!initialWeightKg || autoStarted.current) return;
     if (!snapshot.ready || Platform.OS === 'web') return;
+    // Arriving on a session already under way is the resume, and it uses up
+    // the auto-start: without this the effect waited, and discarding that
+    // session left `session` empty with the start still pending, so a new
+    // recording began in the background — GPS and the watch included — while
+    // the screen closed behind it.
     autoStarted.current = true;
+    if (session) return;
     void startRecording(
       initialSport ?? 'run',
       initialWeightKg,

@@ -85,3 +85,38 @@ it('sends a bare entry with nothing recording to workout setup', () => {
     sportId: undefined,
   });
 });
+
+it('does not start a new recording after discarding the session it resumed', async () => {
+  const { startRecording } = jest.requireMock(
+    '../../src/services/recording/recorder'
+  );
+  startRecording.mockClear();
+  mockSnapshot = { ready: true, points: [], session: pausedSession };
+  const nav = navigation();
+  jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+    buttons?.find((button) => button.style === 'destructive')?.onPress?.();
+  });
+  // Arrived from setup with everything an auto-start needs, onto a session
+  // that was already under way.
+  const view = render(
+    <RunRideRecorder
+      navigation={nav}
+      initialSport="ride"
+      initialSportId="cycling"
+      initialWeightKg={80}
+    />
+  );
+  await act(async () => {
+    fireEvent.press(screen.getByText('Discard'));
+  });
+  view.rerender(
+    <RunRideRecorder
+      navigation={nav}
+      initialSport="ride"
+      initialSportId="cycling"
+      initialWeightKg={80}
+    />
+  );
+  expect(discardRecording).toHaveBeenCalled();
+  expect(startRecording).not.toHaveBeenCalled();
+});
