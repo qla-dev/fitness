@@ -1,5 +1,6 @@
 package fitness.qla.dev.wear
 
+import androidx.compose.ui.graphics.Color
 import androidx.health.services.client.data.ExerciseType
 
 /**
@@ -135,9 +136,53 @@ object WearSportCatalogue {
 
     fun byId(id: String?): WearSport? = all.firstOrNull { it.id == id }
 
+    /** Strength training, which a program is recorded as on both watches. */
+    val strength: WearSport get() = byId("strength-training") ?: all.first()
+
     /** What a message names when it carries only the recording profile. */
     fun fallback(recording: String?): WearSport = when (recording) {
         "ride" -> byId("cycling")
         else -> byId("running")
     } ?: all.first()
 }
+
+/**
+ * SwiftUI's system colours in dark mode, the ones `WatchSportCatalogue.swift`
+ * tints each sport with, so a sport is the same colour on both watches.
+ */
+internal object SwiftColor {
+    val Orange = Color(0xFFFF9F0A)
+    val Green = Color(0xFF30D158)
+    val Teal = Color(0xFF40C8E0)
+    val Brown = Color(0xFFAC8E68)
+    val Cyan = Color(0xFF64D2FF)
+    val Blue = Color(0xFF0A84FF)
+    val Indigo = Color(0xFF5E5CE6)
+    val Mint = Color(0xFF63E6E2)
+    val Yellow = Color(0xFFFFD60A)
+    val Purple = Color(0xFFBF5AF2)
+    val Pink = Color(0xFFFF375F)
+    val Red = Color(0xFFFF453A)
+}
+
+/** The sport's own colour, matching its `tint` on the Apple Watch. */
+val WearSport.tint: Color
+    get() = when (id) {
+        "running", "basketball" -> SwiftColor.Orange
+        "cycling", "football" -> SwiftColor.Green
+        "walking" -> SwiftColor.Teal
+        "hiking" -> SwiftColor.Brown
+        "swimming" -> SwiftColor.Cyan
+        "rowing", "strength-training" -> SwiftColor.Blue
+        "elliptical", "crossfit" -> SwiftColor.Indigo
+        "stair-climbing" -> SwiftColor.Mint
+        "tennis" -> SwiftColor.Yellow
+        "yoga" -> SwiftColor.Purple
+        "pilates", "dancing" -> SwiftColor.Pink
+        "boxing", "hiit" -> SwiftColor.Red
+        else -> SwiftColor.Blue
+    }
+
+/** Cycling reads speed; everything else reads pace, as on the Apple Watch. */
+val WearSport.readsSpeed: Boolean
+    get() = exerciseType == ExerciseType.BIKING || recording == "ride"

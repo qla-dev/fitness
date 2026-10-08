@@ -37,17 +37,28 @@ object WearRequests {
      * spinner that never resolves because the phone went out of range is the
      * worst of the three outcomes to show.
      */
+    /**
+     * `entryId` is the entry's own identity and stays the same across a retry,
+     * so the phone (`watchMeasurementRepository`) writes it once however many
+     * times the reply is lost; `id` only matches this attempt's answer. The
+     * value is in storage units — ml or kg — whatever the watch displayed, and
+     * `date` is the watch's local day. Without those two fields the phone
+     * refuses the entry as invalid, which is what every Android entry used to
+     * get.
+     */
     suspend fun saveMeasurement(
         context: Context,
+        entryId: String,
         kind: String,
         value: Double,
-        unit: String,
+        date: String,
     ): Boolean = submit(context, WearLink.PATH_ADD_MEASUREMENT) { id ->
         JSONObject()
             .put("id", id)
+            .put("entryId", entryId)
             .put("kind", kind)
             .put("value", value)
-            .put("unit", unit)
+            .put("date", date)
     }
 
     suspend fun saveNutrientGoal(

@@ -48,6 +48,18 @@ object WearWorkout {
         )
     }
 
+    /**
+     * Tells the phone's recorder whether the wrist is streaming heart rate for
+     * the session it opened — the `{ state }` shape `sensors.ts` listens for.
+     */
+    suspend fun sendState(context: Context, sport: WearSport, running: Boolean): Boolean {
+        val body = JSONObject()
+            .put("state", if (running) "running" else "stopped")
+            .put("sport", sport.recording ?: "run")
+            .put("sportId", sport.id)
+        return WearLink.send(context, WearLink.PATH_STATE, body.toString().toByteArray())
+    }
+
     /** The final totals, for the phone to write as an exercise. */
     suspend fun finish(
         context: Context,

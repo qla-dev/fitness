@@ -20,6 +20,9 @@ data class WearLiveMetrics(
     val distanceMeters: Double = 0.0,
     val calories: Double = 0.0,
     val elapsedMillis: Long = 0L,
+    /** Mean of every beat reading this session, for the Apple Watch's "Average heart rate". */
+    val averageHeartRate: Int? = null,
+    val maxHeartRate: Int? = null,
 )
 
 /** Where a watch-recorded session is in its life. */
@@ -70,6 +73,11 @@ object WearHealth {
 
     private var client: ExerciseClient? = null
 
+    /** Running heart-rate totals for the average and the peak. */
+    private var heartRateSum = 0L
+    private var heartRateCount = 0
+    private var heartRateMax = 0
+
     private fun client(context: Context): ExerciseClient =
         client ?: HealthServices.getClient(context).exerciseClient.also { client = it }
 
@@ -97,6 +105,8 @@ object WearHealth {
 
     suspend fun start(context: Context, sport: WearSport): Boolean {
         if (_phase.value == WearSessionPhase.Running) return true
+        _phase.value = WearSessionPhase.Preparing
+        reset()
         _phase.value = WearSessionPhase.Preparing
         return runCatching {
             val exerciseClient = client(context)
@@ -137,6 +147,9 @@ object WearHealth {
     fun reset() {
         _phase.value = WearSessionPhase.Idle
         _metrics.value = WearLiveMetrics()
+        heartRateSum = 0L
+        heartRateCount = 0
+        heartRateMax = 0
     }
 
     private val callback = object : ExerciseUpdateCallback {
@@ -146,6 +159,13 @@ object WearHealth {
                 .lastOrNull()?.value?.toInt()
             val distance = latest.getData(DataType.DISTANCE_TOTAL)?.total
             val calories = latest.getData(DataType.CALORIES_TOTAL)?.total
+            for (sample in latest.getData(DataType.HEART_RATE_BPM)) {
+                val bpm = sample.value.toInt()
+                if (bpm <= 0) continue
+                heartRateSum += bpm
+                heartRateCount += 1
+                heartRateMax = maxOf(heartRateMax, bpm)
+            }
             _metrics.value = WearLiveMetrics(
                 // Each field keeps its last reading when this update does not
                 // carry one: heart rate arrives far less often than the update
@@ -163,6 +183,8 @@ object WearHealth {
                         (System.currentTimeMillis() - checkpoint.time.toEpochMilli())
                             .coerceAtLeast(0L)
                 } ?: _metrics.value.elapsedMillis,
+                averageHeartRate = if (heartRateCount > 0) (heartRateSum / heartRateCount).toInt() else null,
+                maxHeartRate = heartRateMax.takeIf { it > 0 },
             )
         }
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ScreenScaffold
+import kotlinx.coroutines.delay
+import kotlin.math.ceil
 
 /**
  * The watch app's entry point.
@@ -55,13 +58,33 @@ private enum class Page(val startIndex: Int) {
 private fun WearApp() {
     val context = LocalContext.current
 
-    // A session takes the whole watch while it runs: mid-effort there is
-    // nothing else to look at, and a pager under a running workout is a way to
-    // swipe away from the Finish button by accident.
-    var recording by remember { mutableStateOf<WearSport?>(null) }
+    // A session takes the whole watch while it runs, whichever side started
+    // it: mid-effort there is nothing else to look at, and a pager under a
+    // running workout is a way to swipe away from the Finish button by
+    // accident. The 3-2-1 comes first, as on the Apple Watch.
+    val session by WearSession.active.collectAsState()
+    val finishing by WearSession.finishing.collectAsState()
 
-    recording?.let { sport ->
-        WearActiveScreen(sport = sport, onFinished = { recording = null })
+    session?.let { active ->
+        var now by remember { mutableStateOf(System.currentTimeMillis()) }
+        LaunchedEffect(active.countdownUntil) {
+            while (System.currentTimeMillis() < active.countdownUntil) {
+                now = System.currentTimeMillis()
+                delay(100)
+            }
+            now = System.currentTimeMillis()
+        }
+        val remaining = active.countdownUntil - now
+        if (remaining > 0) {
+            WearCountdownScreen(sport = active.sport, seconds = ceil(remaining / 1000.0).toInt())
+        } else {
+            WearActiveScreen(session = active)
+        }
+        return
+    }
+
+    if (finishing) {
+        WearSavingScreen()
         return
     }
 
@@ -100,10 +123,7 @@ private fun WearApp() {
                     Page.Water -> WearMeasurementScreen(MeasurementKind.Water, listState)
                     Page.Nutrition -> WearNutritionScreen(listState)
                     Page.Dashboard -> WearDashboardScreen(listState)
-                    Page.Sports -> WearSportsScreen(
-                        listState = listState,
-                        onStarted = { sport -> recording = sport },
-                    )
+                    Page.Sports -> WearSportsScreen(listState = listState)
                     Page.Programs -> WearProgramsScreen(listState)
                 }
             }

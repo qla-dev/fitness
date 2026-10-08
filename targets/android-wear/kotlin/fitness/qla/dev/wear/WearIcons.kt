@@ -53,6 +53,24 @@ object WearIcon {
     const val Time = '' // time-outline
     const val Navigate = '' // navigate
     const val Scale = '' // scale-outline
+
+    // Macros, the nearest Ionicons to the SF Symbols the Apple Watch uses.
+    const val Fish = '' // fish
+    const val Nutrition = '' // nutrition
+    const val Leaf = '' // leaf
+    const val Cube = '' // cube
+    const val Heart = '' // heart
+    const val Cafe = '' // cafe
+    const val Sunny = '' // sunny
+    const val Ellipse = '' // ellipse
+
+    // Controls.
+    const val Add = '' // add
+    const val Remove = '' // remove
+    const val Stop = '' // stop
+    const val Pause = '' // pause
+    const val Play = '' // play
+    const val PhonePortrait = '' // phone-portrait-outline
 }
 
 private val Ionicons = FontFamily(Font(R.font.ionicons))
