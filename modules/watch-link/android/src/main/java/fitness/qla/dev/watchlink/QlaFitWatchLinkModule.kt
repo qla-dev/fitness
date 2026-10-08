@@ -11,6 +11,7 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -111,6 +112,9 @@ class QlaFitWatchLinkModule : Module() {
         AsyncFunction("startWorkout") { sport: String, sportId: String?, startAt: Double? ->
             val body = JSONObject()
                 .put("sport", sport)
+                // When this was asked for, so a watch that receives it late can
+                // tell a stale command from a live one, as `requestedAt` does on iOS.
+                .put("requestedAt", System.currentTimeMillis())
                 .apply {
                     sportId?.let { put("sportId", it) }
                     startAt?.let { put("startAt", it) }
@@ -130,8 +134,14 @@ class QlaFitWatchLinkModule : Module() {
             sendBlocking(pathPrograms, JSONObject(value).toString())
         }
 
+        // The recorder publishes on every GPS fix, far faster than a blocking
+        // Data Layer send returns. Sent inline, the calls queued up behind one
+        // another — and so did `stopWorkout` behind them: a discard reached
+        // the watch minutes late and it kept showing a session that had ended.
+        // Only the newest figures matter, so they are handed to one background
+        // sender that always takes the latest and drops what it skipped.
         AsyncFunction("updateMetrics") { value: Map<String, Any?> ->
-            sendBlocking(pathMetrics, JSONObject(value).toString())
+            queueMetrics(JSONObject(value).toString())
         }
 
         // The watch writes through the phone, so it waits for this before it
@@ -189,9 +199,11 @@ class QlaFitWatchLinkModule : Module() {
         }.getOrDefault(0)
     }
 
-    private fun sendBlocking(path: String, body: String): Boolean = runBlockingIO {
+    private fun sendBlocking(path: String, body: String): Boolean = runBlockingIO { send(path, body) }
+
+    private suspend fun send(path: String, body: String): Boolean {
         val nodes = connectedNodes()
-        if (nodes.isEmpty()) return@runBlockingIO false
+        if (nodes.isEmpty()) return false
         val client = Wearable.getMessageClient(context)
         var delivered = false
         for (node in nodes) {
@@ -199,7 +211,26 @@ class QlaFitWatchLinkModule : Module() {
                 client.sendMessage(node.id, path, body.toByteArray(Charsets.UTF_8)).await()
             }.onSuccess { delivered = true }
         }
-        delivered
+        return delivered
+    }
+
+    /** The newest metrics not yet sent; older ones are overwritten, not queued. */
+    private var pendingMetrics: String? = null
+    private var metricsSender: Job? = null
+
+    private fun queueMetrics(body: String) {
+        synchronized(this) {
+            pendingMetrics = body
+            if (metricsSender?.isActive == true) return
+            metricsSender = scope.launch {
+                while (true) {
+                    val next = synchronized(this@QlaFitWatchLinkModule) {
+                        pendingMetrics.also { pendingMetrics = null }
+                    } ?: break
+                    send(pathMetrics, next)
+                }
+            }
+        }
     }
 
     /**
