@@ -952,8 +952,9 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
             borderWidth: 1,
             borderColor: borderSubtle,
             minWidth: 64,
-            // Gives way to the Log button beside it; the label truncates.
-            flexShrink: 1,
+            // Fills the row up to the fixed-width Log button; a long label
+            // truncates.
+            flex: 1,
           }}
           accessibilityRole="button"
           accessibilityLabel={t('foodEntryAdd.pickers.selectServing', {
@@ -1957,6 +1958,9 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
           >
             <StepperInput
               height={FOOTER_CONTROL_HEIGHT}
+              // Narrow segments leave the serving label room beside it.
+              buttonWidth={36}
+              inputWidth={40}
               value={
                 countInServings
                   ? (servingsDraft ?? formatServingSizeDisplay(servings))

@@ -101,7 +101,8 @@ export default function SetupWizardScreen({
   const fields = step ? visibleFields(step, answers) : [];
   // The first round is never skippable on the full tour, and its last answer
   // always flashes the result, whether or not it was answered before.
-  const enforced = !!session?.firstRound && !singleStep;
+  const enforced =
+    (!!session?.firstRound || !!session?.enforceRequired) && !singleStep;
   const mandatory = enforced && !!step?.required;
   const lastRequired = enforced
     ? steps.map((candidate) => !!candidate.required).lastIndexOf(true)
@@ -221,7 +222,8 @@ export default function SetupWizardScreen({
               ? ''
               : String(index + 1),
         },
-        done
+        done,
+        done && !step
       );
       if (done && !step) fireSuccessHaptic();
       if (shouldClose) close();
@@ -638,7 +640,8 @@ export default function SetupWizardScreen({
                         count: selectedCount,
                       })
                     : t('common.continue', { defaultValue: 'Continue' })
-                  : t('setup.finish', { defaultValue: 'Save and start' })
+                  : (session.finishLabel ??
+                    t('setup.finish', { defaultValue: 'Save and start' }))
           }
         />
         <FlashOverlay

@@ -47,7 +47,7 @@ function useChatKeyboard() {
 
 /** Side inset of the composer with the keyboard down, and up. */
 const COMPOSER_INSET_CLOSED = 12;
-const COMPOSER_INSET_OPEN = 4;
+const COMPOSER_INSET_OPEN = 8;
 
 // Adapted from ABC Doctor's MarkComposer; license: docs/licenses/abc-doctor-composer.txt.
 // Full-width field, controls below, UI-thread keyboard lift.
@@ -226,55 +226,63 @@ export default function MarkaiComposer({
                 paddingHorizontal: 10,
               }}
             >
-              <MenuView
-                actions={[
-                  {
-                    id: 'camera',
-                    title: t('progressPhotos.takePhoto', {
-                      defaultValue: 'Take Photo',
-                    }),
-                    image: 'camera',
-                    attributes: { disabled: busy || attaching },
-                  },
-                  {
-                    id: 'library',
-                    title: t('progressPhotos.chooseLibrary', {
-                      defaultValue: 'Choose from Library',
-                    }),
-                    image: 'photo',
-                    attributes: { disabled: busy || attaching },
-                  },
-                ]}
-                onPressAction={({ nativeEvent }) => {
-                  if (
-                    nativeEvent.event === 'camera' ||
-                    nativeEvent.event === 'library'
-                  )
-                    onAttach(nativeEvent.event);
+              {/* The tap and keyboard dismiss live on a plain view around the
+                  menu: on iOS the SwiftUI menu keeps touches from the trigger
+                  inside it and has no open event (onOpenMenu is Android-only),
+                  but React Native's own touch handler still reports the touch
+                  to a view around it. */}
+              <View
+                onTouchStart={() => {
+                  fireSelectionHaptic();
+                  input.current?.blur();
+                  Keyboard.dismiss();
                 }}
               >
-                <View
-                  accessibilityRole="button"
-                  accessibilityLabel={t('markai.addPhoto', {
-                    defaultValue: 'Add photo',
-                  })}
-                  onTouchStart={() => {
-                    fireSelectionHaptic();
-                    input.current?.blur();
-                    Keyboard.dismiss();
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: controlFill,
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                <MenuView
+                  actions={[
+                    {
+                      id: 'camera',
+                      title: t('progressPhotos.takePhoto', {
+                        defaultValue: 'Take Photo',
+                      }),
+                      image: 'camera',
+                      attributes: { disabled: busy || attaching },
+                    },
+                    {
+                      id: 'library',
+                      title: t('progressPhotos.chooseLibrary', {
+                        defaultValue: 'Choose from Library',
+                      }),
+                      image: 'photo',
+                      attributes: { disabled: busy || attaching },
+                    },
+                  ]}
+                  onPressAction={({ nativeEvent }) => {
+                    if (
+                      nativeEvent.event === 'camera' ||
+                      nativeEvent.event === 'library'
+                    )
+                      onAttach(nativeEvent.event);
                   }}
                 >
-                  <Icon name="add" size={22} color={foreground} />
-                </View>
-              </MenuView>
+                  <View
+                    accessibilityRole="button"
+                    accessibilityLabel={t('markai.addPhoto', {
+                      defaultValue: 'Add photo',
+                    })}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: controlFill,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Icon name="add" size={22} color={foreground} />
+                  </View>
+                </MenuView>
+              </View>
               <Pressable
                 accessibilityRole="button"
                 onPress={options}

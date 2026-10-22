@@ -144,7 +144,7 @@ describe('SetupWizardScreen', () => {
       fireEvent.press(screen.getByText('Continue'));
     });
     expect(fireSelectionHaptic).toHaveBeenCalled();
-    expect(onSave).toHaveBeenCalledWith({ __step: '1' }, false);
+    expect(onSave).toHaveBeenCalledWith({ __step: '1' }, false, false);
     expect(screen.getByText('Second heading')).toBeTruthy();
   });
 
@@ -156,6 +156,7 @@ describe('SetupWizardScreen', () => {
     expect(fireSelectionHaptic).toHaveBeenCalled();
     expect(onSave).toHaveBeenCalledWith(
       { a: '', __skipped: ['a'], __step: '1' },
+      false,
       false
     );
     expect(screen.getByText('Second heading')).toBeTruthy();
@@ -172,7 +173,8 @@ describe('SetupWizardScreen', () => {
     await act(async () => {
       fireEvent.press(screen.getByLabelText('Back'));
     });
-    expect(onSave).toHaveBeenCalledWith({ __step: '' }, true);
+    // Closed early: done, but not finished from the review page.
+    expect(onSave).toHaveBeenCalledWith({ __step: '' }, true, false);
     expect(isSetupComplete(steps, onSave.mock.calls[0][0])).toBe(false);
     expect(onClose).toHaveBeenCalled();
     expect(navigation.goBack).toHaveBeenCalled();
@@ -443,7 +445,8 @@ describe('SetupWizardScreen', () => {
           fat: '80',
           __step: '',
         }),
-        true
+        true,
+        false
       );
       expect(screen.getByText('Your daily goals')).toBeTruthy();
       expect(onClose).not.toHaveBeenCalled();
@@ -497,6 +500,7 @@ describe('SetupWizardScreen', () => {
 
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({ calories: '2351', __step: '2' }),
+        false,
         false
       );
       expect(screen.getByText('2,351')).toBeTruthy();

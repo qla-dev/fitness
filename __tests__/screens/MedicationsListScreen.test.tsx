@@ -10,6 +10,7 @@ type ScreenProps = RootStackScreenProps<'MedicationsList'>;
 
 jest.mock('../../src/hooks/useMedications', () => ({
   useMedications: jest.fn(),
+  useCreateMedication: () => ({ mutateAsync: jest.fn() }),
 }));
 
 jest.mock('../../src/components/Icon', () => {
@@ -176,7 +177,8 @@ describe('MedicationsListScreen', () => {
 
     expect(screen.getByText('No medications yet')).toBeTruthy();
     fireEvent.press(screen.getByText('Add Medication'));
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('MedicationForm', {});
+    // A new medication is a questionnaire in the setup wizard.
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('SetupWizard');
   });
 
   it('offers a retry that refetches on error', () => {

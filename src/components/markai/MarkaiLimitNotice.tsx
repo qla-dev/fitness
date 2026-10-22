@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../Icon';
 import { withAlpha } from '../../utils/colors';
+import { getAppLocale } from '../../localization';
+import { fireSelectionHaptic } from '../../services/haptics';
 
 /**
  * Why MarkAI cannot answer right now, pinned above the composer the way
@@ -14,6 +16,13 @@ import { withAlpha } from '../../utils/colors';
  * - `task`: a priced task (a full macro plan) needs more credits than there
  *   are.
  */
+/** The next midnight UTC, when the backend's free-message day starts. */
+function nextUtcMidnight(now: Date): Date {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
+  );
+}
+
 export type MarkaiLimitKind = 'free' | 'credits' | 'task';
 
 export default function MarkaiLimitNotice({
@@ -40,16 +49,36 @@ export default function MarkaiLimitNotice({
         : t('markaiLimit.taskTitle', {
             defaultValue: 'Not enough credits for this',
           });
+  // The free allowance renews at the server's day boundary, midnight UTC
+  // (fitness.markai_free_daily), shown here on the user's own clock: just
+  // after local midnight it can still be hours away.
+  const renewsAt = nextUtcMidnight(new Date());
+  const time = renewsAt.toLocaleTimeString(getAppLocale(), {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const when =
+    renewsAt.toDateString() === new Date().toDateString()
+      ? t('markaiLimit.renewsToday', {
+          defaultValue: 'today at {{time}}',
+          time,
+        })
+      : t('markaiLimit.renewsTomorrow', {
+          defaultValue: 'tomorrow at {{time}}',
+          time,
+        });
   const body =
     kind === 'free'
       ? t('markaiLimit.freeBody', {
           defaultValue:
-            'The free plan includes 10 MarkAI messages a day. They come back tomorrow, or buy credits to keep chatting now.',
+            'The free plan includes 10 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.',
+          when,
         })
       : kind === 'credits'
         ? t('markaiLimit.creditsBody', {
             defaultValue:
-              'Your MarkAI credits are used up. Buy more to keep chatting, or wait for tomorrow’s 10 free messages.',
+              'Your MarkAI credits are used up. Buy more to keep chatting, or wait for 10 free messages {{when}}.',
+            when,
           })
         : t('markaiLimit.taskBody', {
             defaultValue:
@@ -77,7 +106,10 @@ export default function MarkaiLimitNotice({
       </View>
       <Pressable
         accessibilityRole="button"
-        onPress={onSeeUsage}
+        onPress={() => {
+          fireSelectionHaptic();
+          onSeeUsage();
+        }}
         hitSlop={6}
         className="rounded-full"
         style={{

@@ -133,7 +133,16 @@ export function isSetupComplete(steps: SetupStep[], answers: SetupAnswers) {
 export interface SetupWizardSession {
   steps: SetupStep[];
   initial: SetupAnswers;
-  onSave: (answers: SetupAnswers, done: boolean) => Promise<void>;
+  /**
+   * `finished` is true only for the review page's final action. Closing the
+   * wizard early also saves with `done`, so a session that creates something
+   * at the end (a medication) waits for `finished`.
+   */
+  onSave: (
+    answers: SetupAnswers,
+    done: boolean,
+    finished: boolean
+  ) => Promise<void>;
   onClose: () => void;
   /**
    * Opens on this one step and saves from it: the footer reads Save, Back
@@ -141,6 +150,13 @@ export interface SetupWizardSession {
    * it is shown — the Age tile on the Profile — without the rest of the tour.
    */
   singleStep?: string;
+  /**
+   * Enforces `required` steps (no Skip, Continue waits for an answer) without
+   * a `firstRound` result — a questionnaire whose first answer is mandatory.
+   */
+  enforceRequired?: boolean;
+  /** The review page's final action; "Save and start" by default. */
+  finishLabel?: string;
   /**
    * A result worked out from the required steps. When they were not all
    * answered on opening, the last one's action reads `label`, and its

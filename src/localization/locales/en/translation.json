@@ -1127,7 +1127,8 @@
       "invalidNumber": "Invalid number",
       "invalidNumberMessage": "Please enter valid numeric values for strength and dose.",
       "updateFailed": "Failed to update medication: {{error}}",
-      "createFailed": "Failed to create medication: {{error}}"
+      "createFailed": "Failed to create medication: {{error}}",
+      "nameLabel": "Name"
     },
     "detail": {
       "deleteTitle": "Delete Medication",
@@ -6454,9 +6455,27 @@
     "freeTitle": "You've used today's free messages",
     "creditsTitle": "You're out of credits",
     "taskTitle": "Not enough credits for this",
-    "freeBody": "The free plan includes 10 MarkAI messages a day. They come back tomorrow, or buy credits to keep chatting now.",
-    "creditsBody": "Your MarkAI credits are used up. Buy more to keep chatting, or wait for tomorrow’s 10 free messages.",
+    "freeBody": "The free plan includes 10 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.",
+    "creditsBody": "Your MarkAI credits are used up. Buy more to keep chatting, or wait for 10 free messages {{when}}.",
     "taskBody": "A full macro plan uses 10 credits. Buy more to run it.",
-    "seeUsage": "See usage"
+    "seeUsage": "See usage",
+    "renewsToday": "today at {{time}}",
+    "renewsTomorrow": "tomorrow at {{time}}"
+  },
+  "medicationSetup": {
+    "nameHeading": "What is it called?",
+    "nameHint": "The name on the package, so you recognise it later.",
+    "namePlaceholder": "Enter the medication name",
+    "typeHeading": "What form does it come in?",
+    "typeHint": "Pick the closest one.",
+    "strengthHeading": "How strong is it?",
+    "strengthHint": "The amount of active ingredient, like 10 mg.",
+    "strengthPlaceholder": "Enter the strength",
+    "doseHeading": "How much do you take at a time?",
+    "doseHint": "For example 1 tablet or 5 ml.",
+    "dosePlaceholder": "Enter the dose",
+    "detailsHeading": "Anything else to note?",
+    "detailsHint": "All optional. You can add these later.",
+    "notesPlaceholder": "Add a note"
   }
 }

@@ -119,6 +119,10 @@ interface StepperInputProps {
    * padding is what leaves three controls at three heights.
    */
   height?: number;
+  /** Width of the − and + segments; defaults to square (the height). */
+  buttonWidth?: number;
+  /** Width of the number field between them. */
+  inputWidth?: number;
 }
 
 type TextInputFocusEvent = NativeSyntheticEvent<TextInputFocusEventData>;
@@ -138,6 +142,8 @@ function StepperInput({
   accessibilityLabels,
   compact = false,
   height,
+  buttonWidth,
+  inputWidth: inputWidthProp,
 }: StepperInputProps) {
   const [accentColor, borderSubtle] = useCSSVariable([
     '--color-accent-primary',
@@ -146,7 +152,8 @@ function StepperInput({
   const [isFocused, setIsFocused] = useState(false);
 
   const size = height ?? (compact ? 32 : 40);
-  const inputWidth = compact ? 48 : 56;
+  const inputWidth = inputWidthProp ?? (compact ? 48 : 56);
+  const segmentWidth = buttonWidth ?? size;
   const iconSize = compact ? 18 : 20;
   const fontSize = compact ? 16 : 20;
 
@@ -165,7 +172,7 @@ function StepperInput({
       <TouchableOpacity
         onPress={onDecrement}
         style={{
-          width: size,
+          width: segmentWidth,
           height: size,
           borderRightWidth: 1,
           borderRightColor: borderColor,
@@ -207,7 +214,7 @@ function StepperInput({
       <TouchableOpacity
         onPress={onIncrement}
         style={{
-          width: size,
+          width: segmentWidth,
           height: size,
           borderLeftWidth: 1,
           borderLeftColor: borderColor,

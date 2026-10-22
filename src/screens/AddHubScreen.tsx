@@ -26,7 +26,7 @@ import type { SearchBarCommands } from 'react-native-screens';
 import { useCSSVariable } from 'uniwind';
 
 import Icon, { type IconName } from '../components/Icon';
-import { TAB_ICONS } from '../components/CustomTabBar';
+import { PILL_GAP, PILL_HEIGHT, TAB_ICONS } from '../components/CustomTabBar';
 import { NON_ADD_TABS, type NonAddTabName } from '../components/TabsLayout';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import AddHubSearchState from '../components/AddHubSearchState';
@@ -63,8 +63,12 @@ import type { RootStackParamList } from '../types/navigation';
 
 /** The height every row on this screen shares, drawn or built. */
 const ROW_HEIGHT = 56;
-/** The circles flanking the bottom field, sized to the field's own height. */
-const SEARCH_CIRCLE_SIZE = 48;
+/**
+ * The bottom row matches the main tab bar off Liquid Glass: circles and field
+ * at its pill height, with its side padding and gap, so switching tabs does
+ * not resize the controls under the thumb.
+ */
+const SEARCH_CIRCLE_SIZE = PILL_HEIGHT;
 
 /** How many past foods the landing offers before you have to search. */
 const LANDING_RECENT_LIMIT = 5;
@@ -671,14 +675,21 @@ export default function AddHubScreen() {
 
   const bottomSearch = (
     <KeyboardStickyView
+      // The row keeps the home-indicator padding below it; once the keyboard
+      // is up that padding is just air between field and keys, so the lift
+      // is shortened by it and the row sits a PILL_GAP above the keyboard.
+      offset={{
+        closed: 0,
+        opened: Math.max(insets.bottom, PILL_GAP) - PILL_GAP,
+      }}
       className="bg-background"
       style={{
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: Math.max(insets.bottom, 8),
+        paddingHorizontal: 12,
+        paddingTop: PILL_GAP,
+        paddingBottom: Math.max(insets.bottom, PILL_GAP),
       }}
     >
-      <View className="flex-row items-center" style={{ gap: 8 }}>
+      <View className="flex-row items-center" style={{ gap: PILL_GAP }}>
         {/* Out of the way while searching, which is when the field wants the
             width and the X beside it is the way back. */}
         {searching
@@ -701,6 +712,7 @@ export default function AddHubScreen() {
             })}
             onFocus={() => setSearchOpen(true)}
             onSubmitEditing={() => void recordRecentSearch(query)}
+            height={PILL_HEIGHT}
           />
         </View>
         {searching

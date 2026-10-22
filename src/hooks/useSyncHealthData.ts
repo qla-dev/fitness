@@ -9,6 +9,7 @@ import { addLog } from '../services/LogService';
 import type { TimeRange } from '../services/storage';
 import { serverConnectionQueryKey } from './queryKeys';
 import { refreshHealthSyncCache } from './refreshHealthSyncCache';
+import { nativeErrorCause } from '../utils/errors';
 
 interface SyncHealthDataParams {
   timeRange: TimeRange;
@@ -140,7 +141,9 @@ export function useSyncHealthData(options?: {
           text1: t('syncHealth.error', { defaultValue: 'Sync Error' }),
           text2: t('syncHealth.errorDetails', {
             defaultValue: 'The health data sync failed: {{message}}',
-            message: error.message,
+            // The reason, not Expo's "Calling the … function has failed"
+            // preamble the toast would truncate it behind.
+            message: nativeErrorCause(error.message),
           }),
           visibilityTime: 4000,
         });

@@ -1,5 +1,5 @@
 import React, { useState, type ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -161,7 +161,15 @@ function PromptScreenContent({
   return (
     <View
       className="flex-1 bg-background"
-      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
+      // Off the native header the bar is ours to place. On iOS this is a
+      // page sheet that already starts below the status bar, so the status
+      // bar inset was a second, empty band above the bar; Android presents
+      // it full screen and still needs it.
+      style={
+        usesNativeHeader
+          ? undefined
+          : { paddingTop: Platform.OS === 'ios' ? 8 : insets.top }
+      }
     >
       {header}
       {topAligned ? (

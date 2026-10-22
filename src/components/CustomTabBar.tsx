@@ -17,9 +17,9 @@ import { fireSelectionHaptic } from '../services/haptics';
  * The pill's own height. The bar around it adds the gap below and the safe
  * area, which is what {@link TAB_BAR_HEIGHT} covers.
  */
-const PILL_HEIGHT = 60;
+export const PILL_HEIGHT = 60;
 /** Between the pill and the screen's bottom inset, and beside the circle. */
-const PILL_GAP = 8;
+export const PILL_GAP = 8;
 
 export const TAB_BAR_HEIGHT = PILL_HEIGHT + PILL_GAP;
 

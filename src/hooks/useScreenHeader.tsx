@@ -369,7 +369,10 @@ export interface ScreenHeaderConfig {
   right?: HeaderItem | HeaderItem[] | null;
   /** Escape hatch for a custom-bar middle (simple, ref-less content). */
   center?: React.ReactNode;
-  /** Drop the custom bar's bottom hairline (large-title detail screens). */
+  /**
+   * @deprecated The custom bar no longer draws a bottom hairline on any
+   * screen, so this has no effect; kept so existing callers compile.
+   */
   borderless?: boolean;
   /** gestureEnabled / headerBackVisible etc. for edit-mode swaps. */
   nativeOptions?: Partial<NativeStackNavigationOptions>;
@@ -863,7 +866,6 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     left,
     right,
     center,
-    borderless,
     nativeOptions,
     animateKey,
     appearance,
@@ -1195,7 +1197,9 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
 
   const bar = (
     <View
-      className={`px-4 py-3 ${borderless ? '' : 'border-b border-border-subtle'}`}
+      // No bottom hairline: only some screens passed `borderless`, so the
+      // line came and went between screens; the bar now never draws one.
+      className="px-4 py-3"
       style={{
         position: 'relative',
         flexDirection: 'row',

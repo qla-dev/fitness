@@ -19,6 +19,13 @@ import Button from './ui/Button';
  */
 export const FOOTER_CONTROL_HEIGHT = 44;
 export const FOOTER_CONTROL_GAP = 8;
+/**
+ * The action's width beside a leading control: fixed, so the button never
+ * changes size with its label or the control, and the control takes the rest.
+ */
+export const FOOTER_ACTION_WIDTH = 120;
+/** One corner radius for every control in the footer row (rounded-lg). */
+export const FOOTER_CONTROL_RADIUS = 12;
 
 interface FooterSaveBarProps {
   onPress: () => void;
@@ -73,14 +80,16 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
         className="flex-row items-center"
         style={{ gap: FOOTER_CONTROL_GAP }}
       >
-        {/* Beside a leading control the action keeps its natural width and
-            the control gives way, so the label is never cut off. */}
+        {/* Beside a leading control the action has a fixed width and the
+            control fills the rest of the row, so there is no gap between. */}
         {leading ? (
           <View style={{ flex: 1, minWidth: 0 }}>{leading}</View>
         ) : null}
         <View
           className={leading ? '' : 'flex-1'}
-          style={leading ? { flexShrink: 0 } : undefined}
+          style={
+            leading ? { width: FOOTER_ACTION_WIDTH, flexShrink: 0 } : undefined
+          }
         >
           <Button
             // Stable across label changes: a test that presses the action by
@@ -99,7 +108,7 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
                 ? {
                     height: FOOTER_CONTROL_HEIGHT,
                     paddingVertical: 0,
-                    paddingHorizontal: 22,
+                    borderRadius: FOOTER_CONTROL_RADIUS,
                   }
                 : undefined
             }

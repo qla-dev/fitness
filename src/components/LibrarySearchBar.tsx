@@ -22,6 +22,11 @@ interface LibrarySearchBarProps {
   /** Fires when the field takes focus, for a screen that changes with it. */
   onFocus?: () => void;
   testID?: string;
+  /**
+   * A fixed-height, fully rounded field without the outer padding, for a row
+   * of controls it has to line up with (the Food dashboard's bottom bar).
+   */
+  height?: number;
 }
 
 const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
@@ -33,6 +38,7 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
   onSubmitEditing,
   onFocus,
   testID,
+  height,
 }) => {
   const [accentColor, textMuted] = useCSSVariable([
     '--color-accent-primary',
@@ -50,6 +56,14 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
       style={{
         borderWidth: 1,
         borderColor: isFocused ? accentColor : 'transparent',
+        ...(height
+          ? {
+              height,
+              borderRadius: height / 2,
+              paddingVertical: 0,
+              paddingHorizontal: 18,
+            }
+          : null),
       }}
     >
       <Icon name="search" size={18} color={textMuted} />
@@ -80,7 +94,7 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
   );
 
   return (
-    <View className="px-4 pb-3">
+    <View className={height ? '' : 'px-4 pb-3'}>
       {usesGlass ? (
         <LiquidGlassSurface
           isInteractive

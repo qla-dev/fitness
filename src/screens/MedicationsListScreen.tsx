@@ -1,16 +1,20 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  SectionList,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, SectionList, TouchableOpacity } from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import { useMedications } from '../hooks/useMedications';
+import { useCreateMedication, useMedications } from '../hooks/useMedications';
+import {
+  isSetupWizardOpen,
+  openSetupWizardSession,
+} from '../services/setupWizardSession';
+import {
+  MEDICATION_SETUP_INITIAL,
+  medicationFromAnswers,
+  medicationSteps,
+} from '../constants/medicationSteps';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import Icon from '../components/Icon';
@@ -36,6 +40,34 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
   const [showInactive, setShowInactive] = useState(false);
 
   const { data: medications, isLoading, isError, refetch } = useMedications();
+  const createMedication = useCreateMedication();
+
+  // A new medication is asked for as a questionnaire in the setup wizard;
+  // it is created once, from the review page, never from an early close.
+  const addMedication = useCallback(() => {
+    if (isSetupWizardOpen()) return;
+    let created: string | null = null;
+    openSetupWizardSession({
+      steps: medicationSteps(t),
+      initial: MEDICATION_SETUP_INITIAL,
+      enforceRequired: true,
+      finishLabel: t('medications.addMedicationTitle', {
+        defaultValue: 'Add Medication',
+      }),
+      onSave: async (answers, _done, finished) => {
+        if (!finished) return;
+        const medication = await createMedication.mutateAsync(
+          medicationFromAnswers(answers)
+        );
+        created = medication.id;
+      },
+      onClose: () => {
+        if (created)
+          navigation.navigate('MedicationDetail', { medicationId: created });
+      },
+    });
+    navigation.navigate('SetupWizard');
+  }, [createMedication, navigation, t]);
 
   const { active, inactive } = useMemo(() => {
     const meds = medications ?? [];
@@ -60,7 +92,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
       sfSymbol: 'plus',
       ionicon: 'add-outline',
       role: 'primary',
-      onPress: () => navigation.navigate('MedicationForm', {}),
+      onPress: addMedication,
       accessibilityLabel: t('medications.addMedication', {
         defaultValue: 'Add medication',
       }),
@@ -128,7 +160,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
           </Text>
           <TouchableOpacity
             className="mt-4 bg-accent-primary px-6 py-3 rounded-xl"
-            onPress={() => navigation.navigate('MedicationForm', {})}
+            onPress={addMedication}
           >
             <Text className="text-white font-semibold">
               {t('medications.addMedicationTitle', {

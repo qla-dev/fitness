@@ -585,17 +585,29 @@ function MarkaiContent() {
   // reply could sit under the keyboard with nothing scrolling until a card
   // finally pushed the content past full height.
   const pinToEnd = () => {
-    const visible = viewport.current - Math.abs(keyboardHeight.get());
-    if (
-      (messages.length || pending) &&
-      atBottom.current &&
-      viewport.current > 0 &&
-      contentHeight.current > visible
-    ) {
-      const animated = animateNext.current;
-      animateNext.current = false;
-      scroller.current?.scrollToEnd({ animated });
-    }
+    if (!(messages.length || pending) || !atBottom.current) return;
+    if (viewport.current <= 0) return;
+    // One offset from what this screen measures, rather than `scrollToEnd`:
+    // iOS clamps that at 0, but under the floating header a chat rests at
+    // minus the header's height, and it knows nothing of the keyboard space
+    // KeyboardChatScrollView adds as a content inset. Between them a short
+    // chat with the keyboard up either never moved or stopped short, leaving
+    // the newest reply under the composer.
+    //
+    // The keyboard space is the keyboard less the safe area, the `offset`
+    // the scroll view is given; the content's own bottom padding already
+    // clears the composer.
+    const keyboardSpace = Math.max(
+      0,
+      Math.abs(keyboardHeight.get()) - insets.bottom
+    );
+    const resting = nativeHeader ? -headerOffset : 0;
+    const endOffset = contentHeight.current - viewport.current + keyboardSpace;
+    // Everything already fits between the header and the composer.
+    if (endOffset <= resting) return;
+    const animated = animateNext.current;
+    animateNext.current = false;
+    scroller.current?.scrollTo({ y: endOffset, animated });
   };
   const pinRef = useRef(pinToEnd);
   useEffect(() => {
@@ -696,7 +708,7 @@ function MarkaiContent() {
         >
           {loading ? <ActivityIndicator /> : null}
           {messages.map((message) => (
-            <View key={message.id} style={{ gap: 14 }}>
+            <View key={message.id} style={{ gap: 22 }}>
               <MarkaiUserMessage
                 text={message.label || message.prompt}
                 imageUri={message.imageUri}

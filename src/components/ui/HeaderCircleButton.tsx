@@ -18,8 +18,8 @@ import { withAlpha } from '../../utils/colors';
 export const HEADER_CIRCLE_SIZE = 44;
 
 /**
- * The header button off Liquid Glass: a 44 pt circle with a faint fill and a
- * hairline ring, pressed state as a slight dim and a 1 px sink. Same recipe as
+ * The header button off Liquid Glass: a 44 pt circle with a faint fill and
+ * no ring (the hairline outline read as a border on every header), pressed state as a slight dim and a 1 px sink. Same recipe as
  * the strip in Predah's StoryDetail, which stood in for the glass pill on
  * Android there; this one also has a light-theme reading so it sits on this
  * app's white chrome.
@@ -72,7 +72,6 @@ export default function HeaderCircleButton({
   const dark = forcedDark || scheme === 'dark';
   const base = forcedDark ? '#FFFFFF' : textPrimary;
   const fill = withAlpha(base, dark ? 0.08 : 0.05);
-  const ring = withAlpha(base, dark ? 0.06 : 0.1);
 
   return (
     <Pressable
@@ -91,8 +90,6 @@ export default function HeaderCircleButton({
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: fill,
-          borderWidth: 1,
-          borderColor: ring,
         },
         pressed && { opacity: 0.82, transform: [{ translateY: 1 }] },
         disabled && { opacity: 0.4 },

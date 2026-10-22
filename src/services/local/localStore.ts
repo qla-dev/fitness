@@ -28,7 +28,7 @@ function database(): Promise<SQLiteDatabase> {
   if (!opening) {
     opening = (async () => {
       const db = await openDatabaseAsync('fitness-local.db');
-      await db.execAsync(`PRAGMA busy_timeout = 3000;
+      await db.execAsync(`PRAGMA busy_timeout = 10000;
         PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS local_tables (name TEXT PRIMARY KEY, data TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS local_meta (key TEXT PRIMARY KEY, data TEXT NOT NULL);`);
@@ -66,6 +66,31 @@ export async function readStoredDatabase(): Promise<{
     tables[row.name] = JSON.parse(row.data);
   }
   return { stored: { meta: JSON.parse(meta.data), tables }, snapshot };
+}
+
+/** SQLite's "database is locked" (SQLITE_BUSY, code 5). */
+function isLocked(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Error code 5|database is locked/i.test(message);
+}
+
+/**
+ * Retries a write the database refused as locked. Another connection holding
+ * the write lock is what this waits out — most often one a previous JS
+ * runtime left open (a reload keeps the native connection alive, see
+ * a3c9421) — and the busy timeout alone gave a health import one 10 s chance.
+ * The transaction rolled back, so running it again writes nothing twice.
+ */
+async function retryWhenLocked<T>(write: () => Promise<T>): Promise<T> {
+  const pauses = [500, 1500, 4000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await write();
+    } catch (error) {
+      if (!isLocked(error) || attempt >= pauses.length) throw error;
+      await new Promise((resolve) => setTimeout(resolve, pauses[attempt]));
+    }
+  }
 }
 
 /**
@@ -116,22 +141,24 @@ export async function writeStoredDatabase(
     if (snapshot.get(name) !== json) changed.push([name, json]);
   }
   const removed = [...snapshot.keys()].filter((name) => !updated.has(name));
-  await db.withTransactionAsync(async () => {
-    await runEach(
-      db,
-      'INSERT INTO local_tables (name, data) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET data = excluded.data',
-      changed
-    );
-    await runEach(
-      db,
-      'DELETE FROM local_tables WHERE name = ?',
-      removed.map((name) => [name])
-    );
-    await runEach(
-      db,
-      'INSERT INTO local_meta (key, data) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data',
-      [[META_KEY, JSON.stringify(next.meta)]]
-    );
-  });
+  await retryWhenLocked(() =>
+    db.withTransactionAsync(async () => {
+      await runEach(
+        db,
+        'INSERT INTO local_tables (name, data) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET data = excluded.data',
+        changed
+      );
+      await runEach(
+        db,
+        'DELETE FROM local_tables WHERE name = ?',
+        removed.map((name) => [name])
+      );
+      await runEach(
+        db,
+        'INSERT INTO local_meta (key, data) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data',
+        [[META_KEY, JSON.stringify(next.meta)]]
+      );
+    })
+  );
   return updated;
 }

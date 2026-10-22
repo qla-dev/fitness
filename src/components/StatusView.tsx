@@ -2,6 +2,7 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from './Icon';
 import Button from './ui/Button';
+import { fireSelectionHaptic } from '../services/haptics';
 
 interface StatusViewAction {
   label: string;
@@ -79,7 +80,10 @@ export default function StatusView({
       {action && (
         <Button
           variant={action.variant ?? 'secondary'}
-          onPress={action.onPress}
+          onPress={() => {
+            fireSelectionHaptic();
+            action.onPress();
+          }}
           className="mt-4 px-6"
         >
           {action.label}

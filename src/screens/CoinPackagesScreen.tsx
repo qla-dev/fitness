@@ -370,6 +370,13 @@ function BundleCard({
           })}
         </Text>
       </View>
+      <View
+        style={{
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: border,
+          marginVertical: 5,
+        }}
+      />
       <BundleItem
         text={t('coins.neverExpire', { defaultValue: 'Never expire' })}
         accent={accent}
