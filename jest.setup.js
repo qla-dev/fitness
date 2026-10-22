@@ -907,6 +907,19 @@ jest.mock('expo-sqlite', () => {
         lastInsertRowId: Number(result.lastInsertRowid),
       };
     },
+    prepareAsync: async (sql) => {
+      const statement = current(name).prepare(sql);
+      return {
+        executeAsync: async (...params) => {
+          const result = statement.run(...params.flat());
+          return {
+            changes: Number(result.changes),
+            lastInsertRowId: Number(result.lastInsertRowid),
+          };
+        },
+        finalizeAsync: async () => {},
+      };
+    },
     getAllAsync: async (sql, ...params) =>
       current(name)
         .prepare(sql)

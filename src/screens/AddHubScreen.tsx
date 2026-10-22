@@ -53,6 +53,11 @@ import {
 } from '../services/recentSearches';
 import { CARD_GAP } from '../constants/layout';
 import { withAlpha } from '../utils/colors';
+import {
+  refreshOnlineAccount,
+  useOnlineAccount,
+} from '../services/online/account';
+import { formatLocalizedNumber } from '../localization';
 import type { FoodInfoItem } from '../types/foodInfo';
 import type { RootStackParamList } from '../types/navigation';
 
@@ -71,6 +76,8 @@ interface HeadlineAction {
   icon: IconName;
   tint: string;
   onPress: () => void;
+  /** A small mark in the top-right corner, such as MarkAI's free messages left. */
+  badge?: string;
 }
 
 /** One of the rows under them. */
@@ -225,8 +232,8 @@ export default function AddHubScreen() {
     title: searching
       ? t('addHub.searchTitle', { defaultValue: 'Log food for today' })
       : t('addHub.title', { defaultValue: 'Food dashboard' }),
-    // MarkAI on the left, still a placeholder; the profile on the right, where
-    // every other tab header keeps it.
+    // MarkAI on the left; the profile on the right, where every other tab
+    // header keeps it.
     left: {
       kind: 'icon',
       sfSymbol: 'sparkles',
@@ -234,7 +241,7 @@ export default function AddHubScreen() {
       accessibilityLabel: t('addSheet.askMarkAI', {
         defaultValue: 'Ask MarkAI',
       }),
-      onPress: () => {},
+      onPress: () => navigation.navigate('MarkAI'),
     },
     right: {
       kind: 'icon',
@@ -296,6 +303,29 @@ export default function AddHubScreen() {
   // MarkAI leads, in the accent: it is the quickest way to log a meal, so it takes
   // the first card and the one colour that marks the primary action. Every
   // other card gets a category colour of its own, so no two read as related.
+  // Today's free MarkAI messages left, on the MarkAI card; signed out there
+  // is nothing to count.
+  const freeMessages = useOnlineAccount((state) =>
+    state.session ? (state.session.user.free_messages ?? null) : undefined
+  );
+  // The saved count can be yesterday's; ask for today's when the tab is shown.
+  const signedIn = freeMessages !== undefined;
+  useEffect(() => {
+    if (!signedIn) return;
+    const refresh = () => void refreshOnlineAccount();
+    refresh();
+    return navigation.addListener('focus', refresh);
+  }, [navigation, signedIn]);
+  const freeLeft =
+    freeMessages === undefined
+      ? undefined
+      : t('addHub.freeLeft', {
+          defaultValue: '{{left}}/{{limit}}',
+          left: formatLocalizedNumber(
+            Math.max(0, (freeMessages?.limit ?? 10) - (freeMessages?.used ?? 0))
+          ),
+          limit: formatLocalizedNumber(freeMessages?.limit ?? 10),
+        });
   const headline: HeadlineAction[] = [
     {
       key: 'ai',
@@ -305,6 +335,7 @@ export default function AddHubScreen() {
       icon: 'sparkles',
       tint: accent,
       onPress: () => navigation.navigate('MarkAI'),
+      badge: freeLeft,
     },
     {
       key: 'food',
@@ -414,6 +445,22 @@ export default function AddHubScreen() {
       className="flex-1 bg-surface rounded-2xl items-start p-3.5"
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
+      {action.badge ? (
+        <View
+          className="absolute rounded-full"
+          style={{
+            top: 12,
+            right: 12,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
+            backgroundColor: withAlpha(action.tint, 0.14),
+          }}
+        >
+          <Text className="text-xs font-bold" style={{ color: action.tint }}>
+            {action.badge}
+          </Text>
+        </View>
+      ) : null}
       <View
         className="rounded-xl items-center justify-center mb-2.5"
         style={{

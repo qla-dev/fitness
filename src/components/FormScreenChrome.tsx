@@ -73,8 +73,15 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
         className="flex-row items-center"
         style={{ gap: FOOTER_CONTROL_GAP }}
       >
-        {leading}
-        <View className="flex-1">
+        {/* Beside a leading control the action keeps its natural width and
+            the control gives way, so the label is never cut off. */}
+        {leading ? (
+          <View style={{ flex: 1, minWidth: 0 }}>{leading}</View>
+        ) : null}
+        <View
+          className={leading ? '' : 'flex-1'}
+          style={leading ? { flexShrink: 0 } : undefined}
+        >
           <Button
             // Stable across label changes: a test that presses the action by
             // its copy breaks every time the wording is edited.
@@ -89,7 +96,11 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
             // of text is taller than the row, so the label was being clipped.
             style={
               leading
-                ? { height: FOOTER_CONTROL_HEIGHT, paddingVertical: 0 }
+                ? {
+                    height: FOOTER_CONTROL_HEIGHT,
+                    paddingVertical: 0,
+                    paddingHorizontal: 22,
+                  }
                 : undefined
             }
             className={leading ? '' : 'py-3'}

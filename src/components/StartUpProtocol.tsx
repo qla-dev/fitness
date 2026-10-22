@@ -5,12 +5,16 @@ import { useServerConnection } from '../hooks/useServerConnection';
 import { useProfileSetup } from '../hooks/useProfileSetup';
 import { initHealthConnect } from '../services/healthConnectService';
 import {
+  applyBackgroundSyncEnabled,
   areAllHealthMetricsEnabled,
   enableAllHealthMetrics,
   isHealthStartupConfirmed,
   requestAllHealthPermissions,
 } from '../services/healthSyncSettings';
-import { loadSyncOnOpenEnabled } from '../services/storage';
+import {
+  loadSyncOnOpenEnabled,
+  saveSyncOnOpenEnabled,
+} from '../services/storage';
 import { addLog } from '../services/LogService';
 import { getErrorMessage } from '../utils/errors';
 
@@ -89,7 +93,16 @@ export default function StartUpProtocol() {
         await requestAllHealthPermissions();
         return;
       }
-      await enableAllHealthMetrics();
+      // Arrive with "Enable All" already on: it stands for the metrics AND both
+      // automatic syncs, and background sync defaults off, so enabling only
+      // the metrics left the switch reading off. Skipped when permission is
+      // refused, as the screen's own switch does.
+      if (await enableAllHealthMetrics()) {
+        await Promise.all([
+          applyBackgroundSyncEnabled(true),
+          saveSyncOnOpenEnabled(true),
+        ]);
+      }
       await settle();
       rootNavigationRef.navigate('AppleHealthCheck');
     };

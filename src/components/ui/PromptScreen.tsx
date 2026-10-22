@@ -12,6 +12,7 @@ import {
   HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
+  type HeaderItem,
 } from '../../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 
@@ -63,6 +64,8 @@ type PromptScreenProps = {
   dismissDisabled?: boolean;
   /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
+  /** One header action opposite the close button (MarkAI usage on history). */
+  headerRight?: HeaderItem;
   /**
    * Starts the content under the explanation instead of centring it, for a
    * control that is a list (conversation history) and fills the room. The
@@ -86,6 +89,7 @@ function PromptScreenContent({
   dismissDisabled = false,
   hasTextInput = false,
   topAligned = false,
+  headerRight,
   children,
 }: PromptScreenProps) {
   const navigation = useNavigation();
@@ -108,6 +112,7 @@ function PromptScreenContent({
       disabled: dismissDisabled,
       onPress: () => navigation.goBack(),
     },
+    right: headerRight,
     // iOS 26 draws its scroll-edge effect along the top of a screen's scroll
     // view. A top-aligned page scrolls from the top of the sheet like the
     // questionnaire, so the effect sits under the bar where it belongs. A

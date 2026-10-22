@@ -31,8 +31,11 @@ export default function MarkaiUserMessage({
         alignSelf: 'flex-end',
         maxWidth: '85%',
         borderRadius: 18,
-        paddingHorizontal: 13,
-        paddingVertical: 9,
+        // A photo gets the same inset on every side, so the bubble frames it
+        // evenly; text keeps the wider sides it reads best with.
+        ...(imageUri
+          ? { padding: 4 }
+          : { paddingHorizontal: 13, paddingVertical: 9 }),
       }}
     >
       {imageUri ? (
@@ -55,7 +58,15 @@ export default function MarkaiUserMessage({
         </View>
       ) : null}
       {text ? (
-        <Text style={{ color: '#FFFFFF', fontSize: 18, lineHeight: 25 }}>
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontSize: 18,
+            lineHeight: 25,
+            paddingHorizontal: imageUri ? 9 : 0,
+            paddingBottom: imageUri ? 5 : 0,
+          }}
+        >
           {text}
         </Text>
       ) : null}

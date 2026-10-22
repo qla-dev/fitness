@@ -952,6 +952,8 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
             borderWidth: 1,
             borderColor: borderSubtle,
             minWidth: 64,
+            // Gives way to the Log button beside it; the label truncates.
+            flexShrink: 1,
           }}
           accessibilityRole="button"
           accessibilityLabel={t('foodEntryAdd.pickers.selectServing', {
@@ -961,6 +963,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
           <Text
             className="text-text-primary text-base font-medium"
             numberOfLines={1}
+            style={{ flexShrink: 1 }}
           >
             {countInServings ? servingUnitLabel : quantityUnitLabel}
           </Text>

@@ -69,6 +69,36 @@ export async function readStoredDatabase(): Promise<{
 }
 
 /**
+ * Runs one prepared statement once per row of parameters.
+ *
+ * `runAsync` finalizes in a `finally`, and SQLite's finalize repeats the
+ * failed step's error, so the statement's real failure (locked, full, too
+ * big) surfaced only as "Calling the 'finalizeAsync' function has failed".
+ * Here a finalize error never replaces the error that caused it.
+ */
+async function runEach(
+  db: SQLiteDatabase,
+  sql: string,
+  rows: (string | number)[][]
+): Promise<void> {
+  if (!rows.length) return;
+  const statement = await db.prepareAsync(sql);
+  let failed = false;
+  try {
+    for (const params of rows) await statement.executeAsync(...params);
+  } catch (error) {
+    failed = true;
+    throw error;
+  } finally {
+    try {
+      await statement.finalizeAsync();
+    } catch (error) {
+      if (!failed) throw error;
+    }
+  }
+}
+
+/**
  * Writes the tables that differ from `snapshot`, removes tables that are
  * gone, and replaces the meta row, all in one transaction. Returns the new
  * snapshot; on failure nothing is written and the caller keeps the old one.
@@ -87,20 +117,20 @@ export async function writeStoredDatabase(
   }
   const removed = [...snapshot.keys()].filter((name) => !updated.has(name));
   await db.withTransactionAsync(async () => {
-    for (const [name, json] of changed) {
-      await db.runAsync(
-        'INSERT INTO local_tables (name, data) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET data = excluded.data',
-        name,
-        json
-      );
-    }
-    for (const name of removed) {
-      await db.runAsync('DELETE FROM local_tables WHERE name = ?', name);
-    }
-    await db.runAsync(
+    await runEach(
+      db,
+      'INSERT INTO local_tables (name, data) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET data = excluded.data',
+      changed
+    );
+    await runEach(
+      db,
+      'DELETE FROM local_tables WHERE name = ?',
+      removed.map((name) => [name])
+    );
+    await runEach(
+      db,
       'INSERT INTO local_meta (key, data) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data',
-      META_KEY,
-      JSON.stringify(next.meta)
+      [[META_KEY, JSON.stringify(next.meta)]]
     );
   });
   return updated;

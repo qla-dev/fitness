@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useCSSVariable } from 'uniwind';
 import PromptScreen from '../components/ui/PromptScreen';
 import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
@@ -21,6 +22,7 @@ export default function MarkaiHistoryScreen({
 }: RootStackScreenProps<'MarkaiHistory'>) {
   const { t } = useTranslation();
   const active = route.params?.activeConversation;
+  const iconColor = useCSSVariable('--color-text-secondary') as string;
   const [threads, setThreads] = useState<MarkaiThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +53,11 @@ export default function MarkaiHistoryScreen({
       title={t('markai.history', { defaultValue: 'Conversation history' })}
       footerLabel={t('markai.newChat', { defaultValue: 'New chat' })}
       onFooterPress={() => navigation.popTo('MarkAI', { newChat: Date.now() })}
+      headerRight={{
+        kind: 'text',
+        label: t('markai.usage', { defaultValue: 'Usage' }),
+        onPress: () => navigation.navigate('MarkaiUsage'),
+      }}
       topAligned
     >
       {error ? (
@@ -119,7 +126,7 @@ export default function MarkaiHistoryScreen({
             }}
           >
             <View
-              className="bg-surface"
+              className="bg-raised"
               style={{
                 width: 34,
                 height: 34,
@@ -128,7 +135,7 @@ export default function MarkaiHistoryScreen({
                 justifyContent: 'center',
               }}
             >
-              <Icon name="history" size={16} />
+              <Icon name="history" size={16} color={iconColor} />
             </View>
             <View style={{ flex: 1 }}>
               <Text

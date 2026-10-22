@@ -84,7 +84,7 @@ it('is off without a key', () => {
 
 it('buys coins as the account and lets the backend grant them', async () => {
   jest.mocked(onlineRequest).mockResolvedValue({ ai_coins: 503, programs: [] });
-  await expect(buyCoins('fitness.qla.dev.coins500')).resolves.toEqual({
+  await expect(buyCoins('fitness.qla.dev.coins200')).resolves.toEqual({
     ai_coins: 503,
     programs: [],
   });
@@ -93,10 +93,10 @@ it('buys coins as the account and lets the backend grant them', async () => {
     appUserID: 'qla-fit-user-7',
   });
   expect(Purchases.purchasePackage).toHaveBeenCalledWith(
-    expect.objectContaining({ identifier: 'coins500' })
+    expect.objectContaining({ identifier: 'coins200' })
   );
   expect(onlineRequest).toHaveBeenCalledWith('/purchases', {
-    product_id: 'fitness.qla.dev.coins500',
+    product_id: 'fitness.qla.dev.coins200',
   });
   expect(updateOnlineAccount).toHaveBeenCalledWith(
     expect.objectContaining({ ai_coins: 503 })

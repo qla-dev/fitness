@@ -1,8 +1,11 @@
 import type { ActivityGoalKey } from '../constants/activityGoals';
 import type {
+  PlannedRoute,
   RecordingGoal,
   RecordingSport,
 } from '../services/recording/types';
+
+type WorkoutGoalKind = 'time' | 'distance' | 'calories';
 import type { HealthTrendKey } from '../constants/healthTrends';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -77,6 +80,8 @@ export type RootStackParamList = {
   MarkaiHistory: { activeConversation?: string } | undefined;
   /** AI coin packages. Modal, like GoalEdit. */
   CoinPackages: undefined;
+  /** Today's free MarkAI messages and paid credits. Modal, like GoalEdit. */
+  MarkaiUsage: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   /**
@@ -133,6 +138,24 @@ export type RootStackParamList = {
       /** Seconds, metres or kilocalories, like RecordingGoal.target. */
       target: number;
     };
+    /** Handed back by WorkoutGoalEdit; `nonce` makes a repeat value land. */
+    editedGoal?: { kind: WorkoutGoalKind; value: number; nonce: number };
+    /** Handed back by WorkoutRoute. */
+    plannedRoute?: PlannedRoute;
+  };
+  /** One WorkoutSetup target, in the user's unit. Modal, like GoalEdit. */
+  WorkoutGoalEdit: {
+    /** Carried so the hand-back can name WorkoutSetup's required param. */
+    sport: RecordingSport;
+    kind: WorkoutGoalKind;
+    value: number;
+    distanceUnit: 'km' | 'miles';
+  };
+  /** The destination of a route workout. Modal, like GoalEdit. */
+  WorkoutRoute: {
+    sport: RecordingSport;
+    distanceUnit: 'km' | 'miles';
+    value?: PlannedRoute;
   };
   WatchWorkoutStart: NonNullable<RootStackParamList['RunOrRide']> & {
     sport: RecordingSport;

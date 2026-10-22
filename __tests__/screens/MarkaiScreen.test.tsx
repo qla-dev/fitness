@@ -76,6 +76,7 @@ jest.mock('../../src/services/online/account', () => ({
       session: mockSignedIn ? { user: { id: 'account', ai_coins: 100 } } : null,
     }),
   onlineRequest: jest.fn(),
+  refreshOnlineAccount: jest.fn(async () => undefined),
   updateOnlineAccount: jest.fn().mockResolvedValue(undefined),
   OnlineError: class OnlineError extends Error {},
 }));

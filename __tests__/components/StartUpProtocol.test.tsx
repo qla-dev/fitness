@@ -5,11 +5,15 @@ import StartUpProtocol from '../../src/components/StartUpProtocol';
 import { useProfileSetup } from '../../src/hooks/useProfileSetup';
 import {
   areAllHealthMetricsEnabled,
+  applyBackgroundSyncEnabled,
   enableAllHealthMetrics,
   isHealthStartupConfirmed,
   requestAllHealthPermissions,
 } from '../../src/services/healthSyncSettings';
-import { loadSyncOnOpenEnabled } from '../../src/services/storage';
+import {
+  loadSyncOnOpenEnabled,
+  saveSyncOnOpenEnabled,
+} from '../../src/services/storage';
 import { navigationRef } from '../../src/components/ActiveWorkoutBar';
 
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
@@ -34,6 +38,7 @@ jest.mock('../../src/services/healthConnectService', () => ({
 }));
 
 jest.mock('../../src/services/healthSyncSettings', () => ({
+  applyBackgroundSyncEnabled: jest.fn().mockResolvedValue(undefined),
   areAllHealthMetricsEnabled: jest.fn(),
   enableAllHealthMetrics: jest.fn().mockResolvedValue(true),
   isHealthStartupConfirmed: jest.fn(),
@@ -42,6 +47,7 @@ jest.mock('../../src/services/healthSyncSettings', () => ({
 
 jest.mock('../../src/services/storage', () => ({
   loadSyncOnOpenEnabled: jest.fn(),
+  saveSyncOnOpenEnabled: jest.fn().mockResolvedValue(undefined),
 }));
 
 const navigate = navigationRef.navigate as jest.Mock;
@@ -94,6 +100,8 @@ describe('StartUpProtocol', () => {
     closeWizard();
     await flush();
     expect(enableAllHealthMetrics).toHaveBeenCalledTimes(1);
+    expect(applyBackgroundSyncEnabled).toHaveBeenCalledWith(true);
+    expect(saveSyncOnOpenEnabled).toHaveBeenCalledWith(true);
     expect(navigate).toHaveBeenLastCalledWith('AppleHealthCheck');
   });
 

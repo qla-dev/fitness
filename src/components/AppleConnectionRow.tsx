@@ -16,7 +16,9 @@ import { useOnlineAccount } from '../services/online/account';
 import { useAppleSignIn } from '../hooks/useAppleSignIn';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 
-const TILE = 44;
+// The settings rows' tile, inset and gap (MenuItem / MenuItemIcon), so the
+// Apple row lines up with Email and Password under it.
+const TILE = 39;
 
 /**
  * Sign in with Apple as a sign-in method on the Account screen.
@@ -101,10 +103,12 @@ export default function AppleConnectionRow() {
         fireSelectionHaptic();
         void apple.signIn();
       }}
-      className="flex-row items-center px-4"
+      className="flex-row items-center"
       style={({ pressed }) => ({
         minHeight: 66,
-        gap: 14,
+        paddingLeft: 13,
+        paddingRight: 16,
+        gap: 12,
         opacity: pressed && actionable ? 0.7 : 1,
       })}
     >

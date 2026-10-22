@@ -1,14 +1,14 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as Location from 'expo-location';
-import WorkoutRouteSheet from '../../src/components/recording/WorkoutRouteSheet';
+import WorkoutRouteScreen from '../../src/screens/WorkoutRouteScreen';
 
 jest.mock('expo-location', () => ({
   Accuracy: { High: 4 },
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
 }));
-jest.mock('../../src/components/ui/NativePromptSheet', () => {
+jest.mock('../../src/components/ui/PromptScreen', () => {
   const { View } = require('react-native');
   return ({ children }: { children: React.ReactNode }) => (
     <View>{children}</View>
@@ -26,11 +26,15 @@ const permission = Location.requestForegroundPermissionsAsync as jest.Mock;
 const position = Location.getCurrentPositionAsync as jest.Mock;
 const screen = () =>
   render(
-    <WorkoutRouteSheet
-      sport="run"
-      distanceUnit="km"
-      onSave={jest.fn()}
-      onClose={jest.fn()}
+    <WorkoutRouteScreen
+      navigation={{ popTo: jest.fn() } as any}
+      route={
+        {
+          key: 'WorkoutRoute',
+          name: 'WorkoutRoute',
+          params: { sport: 'run', distanceUnit: 'km' },
+        } as any
+      }
     />
   );
 

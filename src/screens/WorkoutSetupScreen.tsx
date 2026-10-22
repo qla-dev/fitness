@@ -24,8 +24,6 @@ import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import WorkoutGoalCard from '../components/recording/WorkoutGoalCard';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
-import WorkoutGoalSheet from '../components/recording/WorkoutGoalSheet';
-import WorkoutRouteSheet from '../components/recording/WorkoutRouteSheet';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
@@ -133,8 +131,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   // court, where a trace is noise and the battery is better spent elsewhere.
   const [gpsEnabled, setGpsEnabled] = useState(true);
   const violet = useCSSVariable('--color-cat-violet') as string;
-  const [routeSheetOpen, setRouteSheetOpen] = useState(false);
-  const [plannedRoute, setPlannedRoute] = useState<PlannedRoute>();
+  const plannedRoute: PlannedRoute | undefined = route.params.plannedRoute;
   // Quick start is not a goal, so it only shows under "All"; "Custom" is where
   // saved workouts of your own will land and has nothing in it yet.
   const [goalFilter, setGoalFilter] = useState('all');
@@ -144,11 +141,6 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   const { isNavigationLocked: starting, runNavigationAction } =
     useNavigationActionGuard(navigation);
   const [sensorsOpen, setSensorsOpen] = useState(false);
-  // Which target the sheet is editing, if any. One sheet for the three cards:
-  // they ask the same question in different units.
-  const [editingGoal, setEditingGoal] = useState<
-    'time' | 'distance' | 'calories' | null
-  >(null);
   // Asked for here rather than at the first GPS fix: a permission sheet that
   // appears the moment you start running is a sheet nobody reads. Setup is
   // where you are still looking at the phone.
@@ -292,6 +284,29 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       ? Math.round(startGoal.target)
       : DEFAULT_CALORIES
   );
+  // A target edited on WorkoutGoalEdit comes back as a param; adopt it once
+  // per hand-back, the way GroceryList adopts a repriced list.
+  const [adoptedGoal, setAdoptedGoal] = useState(route.params.editedGoal);
+  const editedGoal = route.params.editedGoal;
+  if (editedGoal !== adoptedGoal) {
+    setAdoptedGoal(editedGoal);
+    if (editedGoal?.kind === 'time') setMinutes(editedGoal.value);
+    else if (editedGoal?.kind === 'distance') setDistance(editedGoal.value);
+    else if (editedGoal?.kind === 'calories') setCalories(editedGoal.value);
+  }
+  const editGoal = (kind: 'time' | 'distance' | 'calories', value: number) =>
+    navigation.navigate('WorkoutGoalEdit', {
+      sport,
+      kind,
+      value,
+      distanceUnit,
+    });
+  const openRoute = () =>
+    navigation.navigate('WorkoutRoute', {
+      sport,
+      distanceUnit,
+      value: plannedRoute,
+    });
 
   // Named the way the card that led here is named, not the way the recorder
   // labels the sport internally.
@@ -520,7 +535,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
       return;
     }
     if (goal.type === 'route' && !goal.route) {
-      setRouteSheetOpen(true);
+      openRoute();
       return;
     }
     fireSelectionHaptic();
@@ -782,7 +797,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               'workoutSetup.minutesUnit',
               { defaultValue: 'MIN' }
             )}`,
-            () => setEditingGoal('time')
+            () => editGoal('time', minutes)
           )}
         {goalFilter !== 'custom' &&
           card(
@@ -800,7 +815,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
                 ? t('workoutSetup.milesUnit', { defaultValue: 'MI' })
                 : t('workoutSetup.kmUnit', { defaultValue: 'KM' })
             }`,
-            () => setEditingGoal('distance')
+            () => editGoal('distance', distance)
           )}
         {goalFilter !== 'custom' &&
           card(
@@ -811,7 +826,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
             `${formatLocalizedNumber(calories, {
               maximumFractionDigits: 0,
             })} ${t('workoutSetup.kcalUnit', { defaultValue: 'KCAL' })}`,
-            () => setEditingGoal('calories')
+            () => editGoal('calories', calories)
           )}
         {gpsEnabled &&
           goalFilter !== 'custom' &&
@@ -829,7 +844,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
               : t('workoutRoute.choose', {
                   defaultValue: 'Choose a destination',
                 }),
-            () => setRouteSheetOpen(true)
+            openRoute
           )}
         {goalFilter === 'custom' && (
           <View className="items-center py-10 px-6">
@@ -848,36 +863,6 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
       <SensorSheet open={sensorsOpen} onClose={() => setSensorsOpen(false)} />
-      {routeSheetOpen && gpsEnabled && (
-        <WorkoutRouteSheet
-          value={plannedRoute}
-          sport={sport}
-          distanceUnit={distanceUnit}
-          onSave={setPlannedRoute}
-          onClose={() => setRouteSheetOpen(false)}
-        />
-      )}
-      <WorkoutGoalSheet
-        key={editingGoal ?? 'closed'}
-        open={editingGoal !== null}
-        kind={editingGoal ?? 'time'}
-        value={
-          editingGoal === 'distance'
-            ? distance
-            : editingGoal === 'calories'
-              ? calories
-              : minutes
-        }
-        distanceUnit={distanceUnit}
-        onChange={
-          editingGoal === 'distance'
-            ? setDistance
-            : editingGoal === 'calories'
-              ? setCalories
-              : setMinutes
-        }
-        onClose={() => setEditingGoal(null)}
-      />
     </View>
   );
 }

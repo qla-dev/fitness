@@ -12,8 +12,18 @@
 /** Offering identifiers in RevenueCat. */
 export const OFFERINGS = { coins: 'coins', programs: 'programs' } as const;
 
-/** AI coin packages. */
+/**
+ * AI coin packages, sold as MarkAI messages: one coin is one reply. The
+ * largest is the best value. coins500 is no longer sold; the backend still
+ * grants it so an earlier purchase verifies.
+ */
 export const COIN_PRODUCTS = [
+  {
+    productId: 'fitness.qla.dev.coins50',
+    packageId: 'coins50',
+    coins: 50,
+    listPrice: 0.99,
+  },
   {
     productId: 'fitness.qla.dev.coins100',
     packageId: 'coins100',
@@ -21,10 +31,10 @@ export const COIN_PRODUCTS = [
     listPrice: 2.99,
   },
   {
-    productId: 'fitness.qla.dev.coins500',
-    packageId: 'coins500',
-    coins: 500,
-    listPrice: 9.99,
+    productId: 'fitness.qla.dev.coins200',
+    packageId: 'coins200',
+    coins: 200,
+    listPrice: 4.99,
   },
 ] as const;
 

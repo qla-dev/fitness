@@ -23,6 +23,12 @@ export function fireSelectionHaptic(): void {
  * Success is wrong here — it fires when the pull commits, not when the data
  * arrives, and there is nothing yet to have succeeded.
  */
+/** A light tap as a message leaves the composer. */
+export function fireSendHaptic(): void {
+  if (!useAppPreferencesStore.getState().hapticsEnabled) return;
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
+
 export function fireRefreshHaptic(): void {
   if (!useAppPreferencesStore.getState().hapticsEnabled) return;
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

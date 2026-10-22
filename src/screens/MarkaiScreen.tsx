@@ -53,7 +53,11 @@ import {
   updateOnlineAccount,
   useOnlineAccount,
   onlineAccountEntryLabel,
+  refreshOnlineAccount,
 } from '../services/online/account';
+import MarkaiLimitNotice, {
+  type MarkaiLimitKind,
+} from '../components/markai/MarkaiLimitNotice';
 import {
   markaiFoodToFoodInfo,
   plainReplyText,
@@ -104,6 +108,33 @@ function MarkaiContent() {
   const headerOffset = useNativeHeaderOffset();
   const session = useOnlineAccount((s) => s.session);
   const accountId = session?.user.id;
+  // Which limit is stopping MarkAI, if any, for the notice over the composer.
+  // A priced task refused for want of credits is remembered until the
+  // balance goes up; running out of plain replies is read off the account.
+  const coins = session?.user.ai_coins ?? 0;
+  const [taskShort, setTaskShort] = useState(false);
+  const [hadCredits, setHadCredits] = useState(coins > 0);
+  const [seenCoins, setSeenCoins] = useState(coins);
+  if (coins !== seenCoins) {
+    setSeenCoins(coins);
+    if (coins > seenCoins) setTaskShort(false);
+    if (coins > 0) setHadCredits(true);
+  }
+  const free = session?.user.free_messages;
+  const freeUsedUp = !!free && free.used >= free.limit;
+  const limitKind: MarkaiLimitKind | null = !session
+    ? null
+    : freeUsedUp && coins === 0
+      ? hadCredits
+        ? 'credits'
+        : 'free'
+      : taskShort
+        ? 'task'
+        : null;
+  useEffect(() => {
+    // The stored account can be a day old; today's free count comes from here.
+    if (accountId) void refreshOnlineAccount();
+  }, [accountId]);
   const [mode, setMode] = useState<Mode>('free');
   const [loading, setLoading] = useState(Boolean(accountId));
   const route = useRoute<RouteProp<RootStackParamList, 'MarkAI'>>();
@@ -453,6 +484,7 @@ function MarkaiContent() {
         id: string;
         reply: MarkaiReply;
         ai_coins: number;
+        free_messages?: { limit: number; used: number };
       }>('/markai/messages', {
         id: pendingRequest.current.id,
         conversation_id: conversation,
@@ -481,6 +513,7 @@ function MarkaiContent() {
       await updateOnlineAccount({
         ...session.user,
         ai_coins: response.ai_coins,
+        free_messages: response.free_messages ?? session.user.free_messages,
       });
       await AsyncStorage.setItem(
         '@qla/markai/' + accountId + '/active',
@@ -489,6 +522,16 @@ function MarkaiContent() {
     } catch (e: unknown) {
       if (e instanceof OnlineError && e.status === 503)
         pendingRequest.current = null;
+      if (e instanceof OnlineError && e.status === 402) {
+        // Out of messages: the notice over the composer says so rather than
+        // a raw error line. The message stays pending, so it can be retried
+        // once there are credits (a refused request stored nothing).
+        if (!delivered)
+          setPending({ prompt, label, image, task, mode: sendMode });
+        if (task) setTaskShort(true);
+        await refreshOnlineAccount();
+        return;
+      }
       if (!delivered)
         setPending({ prompt, label, image, task, mode: sendMode });
       setError(e instanceof Error ? e.message : String(e));
@@ -536,13 +579,18 @@ function MarkaiContent() {
       : 0,
   }));
   // Keeps a followed chat on its last line, whichever of the content and the
-  // viewport was measured last.
+  // viewport was measured last. The keyboard covers the bottom of the
+  // viewport, so content counts as overflowing once it passes the part still
+  // visible; measured against the whole frame, a photo and the start of a
+  // reply could sit under the keyboard with nothing scrolling until a card
+  // finally pushed the content past full height.
   const pinToEnd = () => {
+    const visible = viewport.current - Math.abs(keyboardHeight.get());
     if (
       (messages.length || pending) &&
       atBottom.current &&
       viewport.current > 0 &&
-      contentHeight.current > viewport.current
+      contentHeight.current > visible
     ) {
       const animated = animateNext.current;
       animateNext.current = false;
@@ -615,7 +663,8 @@ function MarkaiContent() {
           // stretch is drawn outside this scroll view now.
           contentContainerStyle={{
             padding: 20,
-            gap: 16,
+            // Between turns: a reply and the next question read as separate.
+            gap: 28,
             paddingBottom: session ? barHeight + insets.bottom + 12 : 20,
           }}
           scrollEventThrottle={16}
@@ -691,7 +740,10 @@ function MarkaiContent() {
                   </Text>
                   <Button
                     disabled={busy}
-                    onPress={() => reviewFood(message.reply)}
+                    onPress={() => {
+                      fireSelectionHaptic();
+                      reviewFood(message.reply);
+                    }}
                   >
                     {t('markai.log', { defaultValue: 'Log food' })}
                   </Button>
@@ -797,6 +849,14 @@ function MarkaiContent() {
           busy={busy}
           disabled={loading || !conversation || Boolean(pending && !busy)}
           onHeight={measureBar}
+          notice={
+            limitKind ? (
+              <MarkaiLimitNotice
+                kind={limitKind}
+                onSeeUsage={() => navigation.navigate('MarkaiUsage')}
+              />
+            ) : null
+          }
         />
       ) : null}
       <CustomModal

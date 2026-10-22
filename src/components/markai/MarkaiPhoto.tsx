@@ -90,7 +90,7 @@ export default function MarkaiPhoto({
       style={{
         width: SIZE,
         height: SIZE,
-        borderRadius: 12,
+        borderRadius: 14, // concentric with the bubble: 18 − its 4 inset
         overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
@@ -107,9 +107,7 @@ export default function MarkaiPhoto({
           placeholderStyle,
         ]}
       />
-      {!loaded ? (
-        <Icon name="sparkles" size={18} color="#FFFFFF" />
-      ) : null}
+      {!loaded ? <Icon name="sparkles" size={18} color="#FFFFFF" /> : null}
       <Animated.View
         pointerEvents="none"
         style={[
@@ -125,9 +123,7 @@ export default function MarkaiPhoto({
           ringStyle,
         ]}
       />
-      <Animated.View
-        style={[{ position: 'absolute', inset: 0 }, imageStyle]}
-      >
+      <Animated.View style={[{ position: 'absolute', inset: 0 }, imageStyle]}>
         <Image
           source={{ uri }}
           accessibilityLabel={t('markai.photo', { defaultValue: 'Photo' })}

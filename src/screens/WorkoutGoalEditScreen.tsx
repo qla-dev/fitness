@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import NativePromptSheet from '../ui/NativePromptSheet';
-import SheetStepper from '../ui/SheetStepper';
-import Icon from '../Icon';
-import { formatLocalizedNumber } from '../../localization';
-import { fireSelectionHaptic } from '../../services/haptics';
-import type { WorkoutGoalSheetProps } from '../../types/workoutGoalSheet';
+import PromptScreen from '../components/ui/PromptScreen';
+import SheetStepper from '../components/ui/SheetStepper';
+import Icon from '../components/Icon';
+import { formatLocalizedNumber } from '../localization';
+import { fireSelectionHaptic } from '../services/haptics';
+import type { RootStackScreenProps } from '../types/navigation';
 
-export default function WorkoutGoalSheet({
-  open,
-  kind,
-  value,
-  distanceUnit,
-  onChange,
-  onClose,
-}: WorkoutGoalSheetProps) {
+/**
+ * One workout target — time, distance or calories — for `WorkoutSetup`.
+ * Modal, like GoalEdit; Done hands the value back through the setup screen's
+ * `editedGoal` param, and closing leaves it untouched.
+ */
+export default function WorkoutGoalEditScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<'WorkoutGoalEdit'>) {
+  const { sport, kind, value, distanceUnit } = route.params;
   const { t } = useTranslation();
   const [timeColor, distanceColor, caloriesColor] = useCSSVariable([
     '--color-cat-amber',
@@ -86,18 +88,19 @@ export default function WorkoutGoalSheet({
     );
   };
   return (
-    <NativePromptSheet
-      open={open}
-      onClose={onClose}
+    <PromptScreen
+      headerTitle={category}
       title={title}
-      category={category}
       description={description}
       footerLabel={t('common.done', { defaultValue: 'Done' })}
       footerTint={tint}
-      onFooterPress={() => {
-        onChange(draft);
-        onClose();
-      }}
+      onFooterPress={() =>
+        navigation.popTo(
+          'WorkoutSetup',
+          { sport, editedGoal: { kind, value: draft, nonce: Date.now() } },
+          { merge: true }
+        )
+      }
     >
       <SheetStepper
         value={formatLocalizedNumber(draft, { maximumFractionDigits: 1 })}
@@ -127,6 +130,6 @@ export default function WorkoutGoalSheet({
         onDecrement={() => step(-1)}
         onIncrement={() => step(1)}
       />
-    </NativePromptSheet>
+    </PromptScreen>
   );
 }

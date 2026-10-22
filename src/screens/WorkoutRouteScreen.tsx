@@ -2,35 +2,30 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import NativePromptSheet from '../ui/NativePromptSheet';
-import FilterChipRow from '../FilterChipRow';
-import PlacePicker from './PlacePicker';
+import PromptScreen from '../components/ui/PromptScreen';
+import FilterChipRow from '../components/FilterChipRow';
+import PlacePicker from '../components/recording/PlacePicker';
 import {
   calculateWorkoutRoute,
   NoDistinctReturnRouteError,
   type RoutePlace,
   type RoutePoint,
-} from '../../services/recording/routePlanner';
-import type {
-  PlannedRoute,
-  RecordingSport,
-} from '../../services/recording/types';
-import { distanceFromKm } from '../../utils/unitConversions';
-import { formatLocalizedNumber } from '../../localization';
+} from '../services/recording/routePlanner';
+import type { PlannedRoute } from '../services/recording/types';
+import { distanceFromKm } from '../utils/unitConversions';
+import { formatLocalizedNumber } from '../localization';
+import type { RootStackScreenProps } from '../types/navigation';
 
-export default function WorkoutRouteSheet({
-  sport,
-  distanceUnit,
-  onSave,
-  onClose,
-  value,
-}: {
-  sport: RecordingSport;
-  distanceUnit: 'km' | 'miles';
-  onSave: (route: PlannedRoute) => void;
-  onClose: () => void;
-  value?: PlannedRoute;
-}) {
+/**
+ * The destination of a route workout, for `WorkoutSetup`. Modal, like
+ * GoalEdit; Use route hands the plan back through the setup screen's
+ * `plannedRoute` param.
+ */
+export default function WorkoutRouteScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<'WorkoutRoute'>) {
+  const { sport, distanceUnit, value } = route.params;
   const { t } = useTranslation();
   const tint = useCSSVariable('--color-cat-violet') as string;
   const [start, setStart] = useState<RoutePoint>();
@@ -74,9 +69,8 @@ export default function WorkoutRouteSheet({
     return () => controller.abort();
   }, [start, destination, sport, roundTrip, t]);
   return (
-    <NativePromptSheet
-      open
-      onClose={onClose}
+    <PromptScreen
+      headerTitle={t('workoutSetup.filters.goals', { defaultValue: 'Goals' })}
       title={t('workoutRoute.title', { defaultValue: 'Route' })}
       hasTextInput
       footerTint={tint}
@@ -84,10 +78,12 @@ export default function WorkoutRouteSheet({
       footerDisabled={!plan || routing}
       footerLoading={routing}
       onFooterPress={() => {
-        if (plan) {
-          onSave(plan);
-          onClose();
-        }
+        if (plan)
+          navigation.popTo(
+            'WorkoutSetup',
+            { sport, plannedRoute: plan },
+            { merge: true }
+          );
       }}
     >
       <PlacePicker
@@ -157,6 +153,6 @@ export default function WorkoutRouteSheet({
           />
         </View>
       </PlacePicker>
-    </NativePromptSheet>
+    </PromptScreen>
   );
 }

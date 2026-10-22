@@ -23,8 +23,8 @@ import {
 /**
  * Choose one place by address search or by tapping the map, with the person's
  * own position found first so the map opens where they are. The workout route
- * sheet picks its destination with it, and the photo editor a photo's
- * location; each wraps it in its own NativePromptSheet.
+ * screen picks its destination with it (inside a PromptScreen), and the photo
+ * editor a photo's location (inside a NativePromptSheet).
  */
 export default function PlacePicker({
   tint,
@@ -297,40 +297,45 @@ export default function PlacePicker({
           </View>
         )}
       </View>
-      <Text className="text-text-secondary">{footer}</Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('workoutRoute.mapCredits', {
-          defaultValue: 'Map credits',
-        })}
-        className="self-end p-2"
-        onPress={() =>
-          Alert.alert(
-            t('workoutRoute.mapCredits', { defaultValue: 'Map credits' }),
-            t('workoutRoute.attribution', {
-              defaultValue:
-                '© OpenStreetMap contributors · Routing: FOSSGIS · Fix the map',
-            }),
-            [
-              {
-                text: t('common.close', { defaultValue: 'Close' }),
-                style: 'cancel',
-              },
-              {
-                text: t('workoutRoute.fixMap', {
-                  defaultValue: 'Fix the map',
-                }),
-                onPress: () =>
-                  void Linking.openURL(
-                    'https://www.openstreetmap.org/fixthemap'
-                  ),
-              },
-            ]
-          )
-        }
-      >
-        <Icon name="info-circle" size={18} color={tint} />
-      </Pressable>
+      {/* The credits button rides the hint's line rather than a row of its
+          own; OpenStreetMap's licence needs the attribution reachable. */}
+      <View className="flex-row items-center gap-2">
+        <Text className="text-text-secondary flex-1">{footer}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('workoutRoute.mapCredits', {
+            defaultValue: 'Map credits',
+          })}
+          hitSlop={8}
+          className="p-1"
+          onPress={() =>
+            Alert.alert(
+              t('workoutRoute.mapCredits', { defaultValue: 'Map credits' }),
+              t('workoutRoute.attribution', {
+                defaultValue:
+                  '© OpenStreetMap contributors · Routing: FOSSGIS · Fix the map',
+              }),
+              [
+                {
+                  text: t('common.close', { defaultValue: 'Close' }),
+                  style: 'cancel',
+                },
+                {
+                  text: t('workoutRoute.fixMap', {
+                    defaultValue: 'Fix the map',
+                  }),
+                  onPress: () =>
+                    void Linking.openURL(
+                      'https://www.openstreetmap.org/fixthemap'
+                    ),
+                },
+              ]
+            )
+          }
+        >
+          <Icon name="info-circle" size={18} color={tint} />
+        </Pressable>
+      </View>
     </View>
   );
 }

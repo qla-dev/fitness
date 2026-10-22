@@ -8,6 +8,11 @@ export type OnlineAccount = {
   id: string;
   name: string;
   ai_coins: number;
+  /**
+   * Today's free MarkAI replies, spent before coins. Missing on a session
+   * saved before the backend sent it.
+   */
+  free_messages?: { limit: number; used: number };
   /** How this account signs in; the email is what Apple verified, if sent. */
   sign_in?: {
     provider: 'apple';
@@ -86,6 +91,19 @@ export async function onlineRequest<T>(
     return result.data;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+/**
+ * Re-reads the signed-in account, for counts the saved session can hold from
+ * an earlier day (today's free MarkAI messages). Failures keep the saved one.
+ */
+export async function refreshOnlineAccount(): Promise<void> {
+  if (!useOnlineAccount.getState().session) return;
+  try {
+    await updateOnlineAccount(await onlineRequest<OnlineAccount>('/account'));
+  } catch {
+    // Offline or signed out meanwhile: the saved account still stands.
   }
 }
 

@@ -36,6 +36,7 @@ import {
   SafeMarkAI,
   SafeMarkaiHistory,
   SafeCoinPackages,
+  SafeMarkaiUsage,
   SafeFoodsLibrary,
   SafeMealsLibrary,
   SafeWeeklyPlans,
@@ -107,6 +108,8 @@ import {
   SafeCycleSettings,
   SafeCycleOnboarding,
   SafeGoalEdit,
+  SafeWorkoutGoalEdit,
+  SafeWorkoutRoute,
   SafeWaterEdit,
   SafeMeasurementEdit,
   SafeSetupWizard,
@@ -431,6 +434,7 @@ function AppContent() {
           <Stack.Screen name="MarkAI" component={SafeMarkAI} options={createStackScreenOptions(t('markai.title', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })} />
           <Stack.Screen name="MarkaiHistory" component={SafeMarkaiHistory} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
           <Stack.Screen name="CoinPackages" component={SafeCoinPackages} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
+          <Stack.Screen name="MarkaiUsage" component={SafeMarkaiUsage} options={createStackScreenOptions('', { presentation: 'modal', headerBackVisible: false, ...(Platform.OS === 'android' ? androidModalAnimation : {}) })} />
           <Stack.Screen name="Tabs" options={{ gestureEnabled: false }}>
             {() => (
               <TabsLayout
@@ -902,6 +906,25 @@ function AppContent() {
           <Stack.Screen
             name="GoalEdit"
             component={SafeGoalEdit}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          {/* Modal, like GoalEdit: WorkoutSetup's target and route pickers. */}
+          <Stack.Screen
+            name="WorkoutGoalEdit"
+            component={SafeWorkoutGoalEdit}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          <Stack.Screen
+            name="WorkoutRoute"
+            component={SafeWorkoutRoute}
             options={createStackScreenOptions('', {
               presentation: 'modal',
               headerBackVisible: false,
