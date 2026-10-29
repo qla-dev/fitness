@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 import type { TFunction } from 'i18next';
@@ -13,9 +14,9 @@ export type OnlineAccount = {
    * saved before the backend sent it.
    */
   free_messages?: { limit: number; used: number };
-  /** How this account signs in; the email is what Apple verified, if sent. */
+  /** How this account signs in; the email is what the provider verified. */
   sign_in?: {
-    provider: 'apple';
+    provider: 'apple' | 'google';
     email: string | null;
     private_email: boolean;
     connected_at?: string | null;
@@ -149,17 +150,79 @@ export async function signInWithApple(): Promise<boolean> {
   return result.registered;
 }
 
+/** OAuth clients from app.json extra.googleAuth, through app.config.ts. */
+const googleClientId = (key: 'googleIosClientId' | 'googleWebClientId') => {
+  const value = Constants.expoConfig?.extra?.[key];
+  return typeof value === 'string' ? value : '';
+};
+
+/**
+ * iOS signs in with its own client; Android gets its ID token through the
+ * web client. Without the one a platform needs, the button hides.
+ */
+export const googleSignInSupported = () =>
+  Platform.OS === 'ios'
+    ? googleClientId('googleIosClientId') !== ''
+    : Platform.OS === 'android' && googleClientId('googleWebClientId') !== '';
+
+/**
+ * Loaded on first use, so a build without the native module (an older dev
+ * client) still starts; only the Google button would fail.
+ */
+const googleSignInModule = () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
+
+export class SignInCancelledError extends Error {
+  constructor() {
+    super('Sign-in cancelled.');
+    this.name = 'SignInCancelledError';
+  }
+}
+
+/** Signs in with Google; the backend verifies the ID token, as for Apple. */
+export async function signInWithGoogle(): Promise<boolean> {
+  if (!googleSignInSupported())
+    throw new Error('Google sign-in is not available in this build.');
+  const { GoogleSignin, isSuccessResponse } = googleSignInModule();
+  const webClientId = googleClientId('googleWebClientId');
+  const iosClientId = googleClientId('googleIosClientId');
+  GoogleSignin.configure({
+    ...(webClientId ? { webClientId } : {}),
+    ...(iosClientId ? { iosClientId } : {}),
+  });
+  await GoogleSignin.hasPlayServices();
+  const response = await GoogleSignin.signIn();
+  if (!isSuccessResponse(response)) throw new SignInCancelledError();
+  if (!response.data.idToken)
+    throw new Error('Google did not return an ID token.');
+  const result = await onlineRequest<Session & { registered: boolean }>(
+    '/auth/google',
+    { id_token: response.data.idToken },
+    false
+  );
+  const session = { token: result.token, user: result.user };
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
+  useOnlineAccount.setState({ session });
+  return result.registered;
+}
+
 export async function signOutOnline(): Promise<void> {
   await onlineRequest('/session', undefined, true, 'DELETE');
   await SecureStore.deleteItemAsync(SESSION_KEY);
   useOnlineAccount.setState({ session: null });
+  // Lets the next Google sign-in offer the account chooser again.
+  if (googleSignInSupported())
+    void Promise.resolve()
+      .then(() => googleSignInModule().GoogleSignin.signOut())
+      .catch(() => undefined);
 }
 
 /**
  * What to call the row or button that opens the account screen.
  *
- * Apple sign-in is the only method there is, and the account screen gates it
- * on `Platform.OS === 'ios'` — so on Android every one of these entry points
+ * Apple sign-in is iOS-only and Google's needs a configured client, and the
+ * account screen shows only what the phone offers — so on Android every one of these entry points
  * was a primary action promising a sign-in that the screen it opens then says
  * is unavailable. Off iOS it is named for where it actually leads instead.
  *
@@ -168,6 +231,6 @@ export async function signOutOnline(): Promise<void> {
  */
 export function onlineAccountEntryLabel(t: TFunction): string {
   return Platform.OS === 'ios'
-    ? t('online.signIn', { defaultValue: 'Sign in with Apple' })
+    ? t('online.signInGeneric', { defaultValue: 'Sign in' })
     : t('online.account', { defaultValue: 'Your account' });
 }

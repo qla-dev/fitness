@@ -43,6 +43,8 @@ export default function AppleConnectionRow() {
     '--color-background',
   ]) as string[];
   const connected = !!session;
+  // Signed in with Google, the row names Google and has nothing to do.
+  const google = session?.user.sign_in?.provider === 'google';
   const email = session?.user.sign_in?.email ?? null;
   const privateEmail = session?.user.sign_in?.private_email ?? false;
 
@@ -69,7 +71,9 @@ export default function AppleConnectionRow() {
   }));
 
   const subtitle = connected
-    ? email
+    ? google
+      ? (email ?? '')
+      : email
       ? privateEmail
         ? t('account.appleRelay', {
             defaultValue: '{{email}} · Hidden by Apple',
@@ -85,17 +89,22 @@ export default function AppleConnectionRow() {
 
   // Connected with an email there is nothing to do; otherwise the row signs
   // in (which also refreshes a missing email).
-  const actionable = apple.available && !(connected && email);
+  const actionable = apple.available && !google && !(connected && email);
 
   return (
     <Pressable
       accessibilityRole={actionable ? 'button' : undefined}
       accessibilityLabel={
         connected
-          ? t('account.appleConnected', {
-              defaultValue: 'Apple, connected. {{detail}}',
-              detail: subtitle,
-            })
+          ? google
+            ? t('account.googleConnected', {
+                defaultValue: 'Google, connected. {{detail}}',
+                detail: subtitle,
+              })
+            : t('account.appleConnected', {
+                defaultValue: 'Apple, connected. {{detail}}',
+                detail: subtitle,
+              })
           : t('account.appleConnect', { defaultValue: 'Connect Apple' })
       }
       disabled={!actionable || apple.busy}
@@ -145,13 +154,19 @@ export default function AppleConnectionRow() {
             justifyContent: 'center',
           }}
         >
-          <Icon name="apple-logo" size={22} color={paper} />
+          <Icon
+            name={google ? 'google-logo' : 'apple-logo'}
+            size={22}
+            color={paper}
+          />
         </View>
       </View>
       <View className="flex-1 min-w-0">
         <Text className="text-base font-semibold text-text-primary">
           {connected
-            ? t('account.apple', { defaultValue: 'Apple' })
+            ? google
+              ? t('account.google', { defaultValue: 'Google' })
+              : t('account.apple', { defaultValue: 'Apple' })
             : t('account.appleConnect', { defaultValue: 'Connect Apple' })}
         </Text>
         <Text

@@ -1,7 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import OnlineAccountScreen from '../../src/screens/OnlineAccountScreen';
-import { signInWithApple } from '../../src/services/online/account';
+import {
+  signInWithApple,
+  signInWithGoogle,
+} from '../../src/services/online/account';
 import { syncOnline } from '../../src/services/online/sync';
 import type { RootStackScreenProps } from '../../src/types/navigation';
 
@@ -9,6 +12,9 @@ jest.mock('../../src/services/online/account', () => ({
   useOnlineAccount: (selector: (s: { session: null }) => unknown) =>
     selector({ session: null }),
   signInWithApple: jest.fn(),
+  signInWithGoogle: jest.fn(),
+  googleSignInSupported: () => true,
+  SignInCancelledError: class SignInCancelledError extends Error {},
 }));
 jest.mock('../../src/services/online/sync', () => ({
   syncOnline: jest.fn(),
@@ -69,4 +75,16 @@ it('keeps the sign-in sheet open when authentication fails', async () => {
   fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(screen.getByText('Sign-in failed')).toBeTruthy());
   expect(goBack).not.toHaveBeenCalled();
+});
+
+it('signs in with Google beside Apple', async () => {
+  goBack.mockClear();
+  jest.mocked(signInWithGoogle).mockResolvedValue(true);
+  jest.mocked(syncOnline).mockReturnValue(new Promise(() => {}));
+  const screen = render(<OnlineAccountScreen {...props} />);
+  await waitFor(() => expect(screen.getByText('Continue with Google')).toBeTruthy());
+  expect(screen.getByText('Continue with Apple')).toBeTruthy();
+  fireEvent.press(screen.getByText('Continue with Google'));
+  await waitFor(() => expect(goBack).toHaveBeenCalledTimes(1));
+  expect(signInWithGoogle).toHaveBeenCalledTimes(1);
 });

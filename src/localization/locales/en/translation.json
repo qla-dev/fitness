@@ -5197,7 +5197,9 @@
     "appleRelay": "{{email}} · Hidden by Apple",
     "appleEmailMissing": "Tap to sign in again and show your email",
     "connected": "Connected",
-    "connect": "Connect"
+    "connect": "Connect",
+    "google": "Google",
+    "googleConnected": "Google, connected. {{detail}}"
   },
   "profile": {
     "username": "Username",
@@ -6206,7 +6208,10 @@
     "benefitSyncTitle": "Your diary follows you",
     "benefitSyncBody": "Food, workouts and progress sync to your account, so a new phone picks up where the old one stopped.",
     "benefitPrivateTitle": "Private, offline first",
-    "benefitPrivateBody": "Apple can hide your email, and the diary keeps working without a connection. Sync settings appear once you sign in."
+    "benefitPrivateBody": "Apple can hide your email, and the diary keeps working without a connection. Sync settings appear once you sign in.",
+    "signInGeneric": "Sign in",
+    "signInGoogle": "Sign in with Google",
+    "continueWithGoogle": "Continue with Google"
   },
   "markai": {
     "title": "MarkAI",

@@ -98,12 +98,21 @@
           }
         },
         "projectId": "052f6afa-a233-46ce-a4f1-6f0516740237"
+      },
+      "googleAuth": {
+        "webClientId": "669419315944-plvujca4af4jo4a5nso0ckt2lfe7m38m.apps.googleusercontent.com",
+        "iosClientId": "669419315944-0nip6j1itvt66ekoqun0jnnh3h221edm.apps.googleusercontent.com"
+      },
+      "revenueCat": {
+        "iosApiKey": "appl_fVDCMhnHTgHRqXZvRgvRkzEtcxY",
+        "testStoreApiKey": "test_JUFBUiwrwqfzSmZdWwENnqRIDMn",
+        "useTestStore": false
       }
     },
     "version": "1.6.4",
     "owner": "qla-dev",
     "ios": {
-      "buildNumber": "24"
+      "buildNumber": "25"
     },
     "android": {
       "versionCode": 2

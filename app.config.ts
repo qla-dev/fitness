@@ -116,6 +116,30 @@ const packageJson = require('./package.json');
 
 export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
   const environment = process.env.APP_VARIANT || 'dev';
+  // Public service identifiers live in app.json expo.extra (googleAuth,
+  // revenueCat), as in Hideya; the environment only overrides them.
+  const revenueCat = (config.extra?.revenueCat ?? {}) as {
+    iosApiKey?: string;
+    androidApiKey?: string;
+    testStoreApiKey?: string;
+    useTestStore?: boolean;
+  };
+  const googleAuth = (config.extra?.googleAuth ?? {}) as {
+    webClientId?: string;
+    iosClientId?: string;
+  };
+  // Android gets its ID token through the web client; Google matches the
+  // Android client by package name and signing SHA-1, so it is never sent.
+  const googleWebClientId = (
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+    googleAuth.webClientId ||
+    ''
+  ).trim();
+  const googleIosClientId = (
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+    googleAuth.iosClientId ||
+    ''
+  ).trim();
 
   const isDev = environment === 'dev' || environment === 'development';
 
@@ -299,6 +323,17 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // Sign in with Apple. expo-auth-session needs no plugin of its own — it
       // redirects through the app `scheme` already declared above.
       'expo-apple-authentication',
+      // Google Sign-In needs the iOS client's reversed ID as a URL scheme.
+      ...(googleIosClientId
+        ? [
+            [
+              '@react-native-google-signin/google-signin',
+              {
+                iosUrlScheme: `com.googleusercontent.apps.${googleIosClientId.replace('.apps.googleusercontent.com', '')}`,
+              },
+            ] as [string, object],
+          ]
+        : []),
       [
         // GPS, for recording a run or ride.
         //
@@ -397,15 +432,31 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // is exposed; the SDK itself reads the key from the manifest.
       hasGoogleMapsKey: Boolean(process.env.GOOGLE_MAPS_API_KEY),
       iosAppGroup: getIosAppGroup(),
-      // Public RevenueCat SDK keys (appl_…, goog_…, test_…); the secret key
-      // lives on the backend only. Empty until set: purchases stay off.
+      // Public RevenueCat SDK keys (appl_…, goog_…, test_…) from app.json
+      // extra.revenueCat, as in Hideya; the environment only overrides them.
+      // The secret key lives on the backend only. Without a key, purchases
+      // stay off.
       revenueCat: {
-        iosApiKey: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY || '',
-        androidApiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY || '',
+        iosApiKey:
+          process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY ||
+          revenueCat.iosApiKey ||
+          '',
+        androidApiKey:
+          process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY ||
+          revenueCat.androidApiKey ||
+          '',
         testStoreApiKey:
-          process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY || '',
-        useTestStore: process.env.EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE === '1',
+          process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY ||
+          revenueCat.testStoreApiKey ||
+          '',
+        useTestStore:
+          process.env.EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE === '1' ||
+          revenueCat.useTestStore === true,
       },
+      // Unset, it is left out (Expo embeds a null in extra as {}), and the
+      // app hides the Google button.
+      ...(googleIosClientId ? { googleIosClientId } : {}),
+      ...(googleWebClientId ? { googleWebClientId } : {}),
     },
   };
 };

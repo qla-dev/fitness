@@ -12,9 +12,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import PromptScreen from '../components/ui/PromptScreen';
 import AppleSignInButton from '../components/AppleSignInButton';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import Icon, { type IconName } from '../components/Icon';
 import { useOnlineAccount } from '../services/online/account';
-import { useAppleSignIn } from '../hooks/useAppleSignIn';
+import { useAppleSignIn, useGoogleSignIn } from '../hooks/useAppleSignIn';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /**
@@ -140,7 +141,10 @@ export default function OnlineAccountScreen({
     if (navigation.canGoBack()) navigation.goBack();
     else navigation.replace('Tabs', { screen: 'Dashboard' });
   }, [navigation]);
-  const { available, busy, error, signIn } = useAppleSignIn(finish);
+  const apple = useAppleSignIn(finish);
+  const google = useGoogleSignIn(finish);
+  const busy = apple.busy || google.busy;
+  const error = apple.error ?? google.error;
   useEffect(() => {
     if (session) finish();
   }, [session, finish]);
@@ -192,14 +196,25 @@ export default function OnlineAccountScreen({
             })}
           />
         </View>
-        {available ? (
-          // The button shows its own spinner while Apple's sheet opens, so
+        {apple.available || google.available ? (
+          // Each button shows its own spinner while its sheet opens, so
           // nothing appears under it and it stays where it was tapped.
-          <AppleSignInButton
-            disabled={busy}
-            busy={busy}
-            onPress={() => void signIn()}
-          />
+          <View className="gap-3">
+            {apple.available && (
+              <AppleSignInButton
+                disabled={busy}
+                busy={apple.busy}
+                onPress={() => void apple.signIn()}
+              />
+            )}
+            {google.available && (
+              <GoogleSignInButton
+                disabled={busy}
+                busy={google.busy}
+                onPress={() => void google.signIn()}
+              />
+            )}
+          </View>
         ) : (
           <Text className="text-text-secondary">
             {t('online.appleOnly', {

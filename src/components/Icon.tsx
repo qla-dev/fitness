@@ -212,6 +212,8 @@ const ICON_MAP = {
   'heart-rate': { sf: 'heart.fill', ion: 'heart' },
   'apple-health': { sf: 'apple.logo', ion: 'logo-apple' },
   'apple-logo': { sf: 'apple.logo', ion: 'logo-apple' },
+  // SF Symbols has no Google mark.
+  'google-logo': { sf: 'g.circle', ion: 'logo-google', useIoniconOnIOS: true },
   // Where a session was measured, and whether it carries a track. Named for
   // what they mean here rather than for the hardware, so a future Android
   // wearable does not need a second entry.

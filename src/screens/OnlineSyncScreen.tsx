@@ -11,7 +11,8 @@ import Button from '../components/ui/Button';
 import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
 import AppleSignInButton from '../components/AppleSignInButton';
-import { useAppleSignIn } from '../hooks/useAppleSignIn';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import { useAppleSignIn, useGoogleSignIn } from '../hooks/useAppleSignIn';
 import { getAppLocale } from '../localization';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -40,6 +41,7 @@ export default function OnlineSyncScreen({
   const state = useOnlineSync();
   const session = useOnlineAccount((s) => s.session);
   const apple = useAppleSignIn();
+  const google = useGoogleSignIn();
   const header = useScreenHeader({
     title: t('online.sync', { defaultValue: 'Online sync' }),
     left: { kind: 'back' },
@@ -92,21 +94,30 @@ export default function OnlineSyncScreen({
           // Signed out there is nothing to schedule: the options would only
           // describe a sync that cannot run.
           <View className="gap-3">
-            {apple.available ? (
+            {apple.available && (
               <AppleSignInButton
                 variant="signIn"
-                disabled={apple.busy}
+                disabled={apple.busy || google.busy}
                 busy={apple.busy}
                 onPress={() => void apple.signIn()}
               />
-            ) : (
+            )}
+            {google.available && (
+              <GoogleSignInButton
+                variant="signIn"
+                disabled={apple.busy || google.busy}
+                busy={google.busy}
+                onPress={() => void google.signIn()}
+              />
+            )}
+            {!apple.available && !google.available && (
               <Button onPress={() => navigation.navigate('OnlineAccount')}>
                 {onlineAccountEntryLabel(t)}
               </Button>
             )}
-            {apple.error && (
+            {(apple.error ?? google.error) && (
               <Text accessibilityRole="alert" className="text-text-primary">
-                {apple.error}
+                {apple.error ?? google.error}
               </Text>
             )}
           </View>

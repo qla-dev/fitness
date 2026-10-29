@@ -42,7 +42,8 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import Button from '../components/ui/Button';
 import FooterCTA from '../components/ui/FooterCTA';
 import AppleSignInButton from '../components/AppleSignInButton';
-import { useAppleSignIn } from '../hooks/useAppleSignIn';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import { useAppleSignIn, useGoogleSignIn } from '../hooks/useAppleSignIn';
 import {
   useNativeHeaderOffset,
   useScreenHeader,
@@ -171,6 +172,7 @@ function MarkaiContent() {
     );
   }, []);
   const apple = useAppleSignIn();
+  const google = useGoogleSignIn();
   const coinColor = useCSSVariable('--color-macro-fat') as string;
   const optionsSheet = useRef<CustomModalRef>(null);
   const scroller =
@@ -832,13 +834,25 @@ function MarkaiContent() {
               'Sign in to get 100 AI coins. Each AI reply costs 1 coin; logging a food card is free.',
           })}
           action={
-            apple.available ? (
-              <AppleSignInButton
-                variant="signIn"
-                disabled={apple.busy}
-                busy={apple.busy}
-                onPress={() => void apple.signIn()}
-              />
+            apple.available || google.available ? (
+              <View className="gap-3">
+                {apple.available && (
+                  <AppleSignInButton
+                    variant="signIn"
+                    disabled={apple.busy || google.busy}
+                    busy={apple.busy}
+                    onPress={() => void apple.signIn()}
+                  />
+                )}
+                {google.available && (
+                  <GoogleSignInButton
+                    variant="signIn"
+                    disabled={apple.busy || google.busy}
+                    busy={google.busy}
+                    onPress={() => void google.signIn()}
+                  />
+                )}
+              </View>
             ) : (
               <Button onPress={() => navigation.navigate('OnlineAccount')}>
                 {onlineAccountEntryLabel(t)}
