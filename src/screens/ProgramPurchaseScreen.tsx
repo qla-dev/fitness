@@ -50,7 +50,7 @@ export default function ProgramPurchaseScreen({
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
   const owned = useOwnedPrograms().has(route.params.programId);
   const signedIn = useOnlineAccount((state) => !!state.session);
-  const price = useProgramPrice(program?.priceTier ?? 'program499');
+  const price = useProgramPrice(program?.priceTier ?? 'training1');
   // A build without a RevenueCat key cannot sell. Development builds still
   // install, so programs can be worked on; release builds say so and stop.
   const canSell = purchasesAvailable();
@@ -164,7 +164,7 @@ export default function ProgramPurchaseScreen({
           t('programs.purchase.restore', { defaultValue: 'Restore purchase' })
         ) : (
           t('programs.purchase.buy', {
-            defaultValue: 'Buy for {{price}}',
+            defaultValue: 'Subscribe for {{price}}/month',
             price,
           })
         )
@@ -251,7 +251,7 @@ export default function ProgramPurchaseScreen({
                 <Text className="text-text-secondary">
                   {owned
                     ? t('programs.purchase.owned', {
-                        defaultValue: 'Bought on your account',
+                        defaultValue: 'Included in your subscription',
                       })
                     : free
                       ? t('programs.purchase.free', { defaultValue: 'Free' })
@@ -262,7 +262,7 @@ export default function ProgramPurchaseScreen({
                           })
                         : t('programs.purchase.oneTime', {
                             defaultValue:
-                              '{{price}}, once. Yours on every device you sign in on.',
+                              '{{price}} a month, cancel anytime. Unlocks every program at this level and below, on every device you sign in on.',
                             price,
                           })}
                 </Text>
@@ -288,7 +288,7 @@ export default function ProgramPurchaseScreen({
                 {unconfirmed
                   ? t('programs.purchase.unconfirmed', {
                       defaultValue:
-                        'Your purchase has not been confirmed yet. Restore it to unlock the program; you will not be charged again.',
+                        'Your subscription has not been confirmed yet. Restore it to unlock the program; you will not be charged again.',
                     })
                   : t('programs.purchase.failed', {
                       defaultValue:

@@ -166,19 +166,22 @@ export async function buyCoins(productId: string): Promise<PurchaseState> {
   return grant(product.productId);
 }
 
-/** Buys a program at its price; resolves once the program is unlocked. */
+/**
+ * Subscribes to the training level a program is sold at; resolves once the
+ * backend has seen the subscription and unlocked the level's programs.
+ */
 export async function buyProgram(
   programId: string,
   tier: ProgramPriceTier
 ): Promise<PurchaseState> {
-  const { productId } = PROGRAM_PRICE_TIERS[tier];
-  await buy(OFFERINGS.programs, productId, tier);
+  const { productId, packageId } = PROGRAM_PRICE_TIERS[tier];
+  await buy(OFFERINGS.training, productId, packageId);
   return grant(productId, programId);
 }
 
 /**
- * Finishes a purchase the store completed but the backend never heard of
- * (the app was closed mid-way): asks it to grant again. Safe to repeat.
+ * Finishes a subscription the store completed but the backend never heard
+ * of (the app was closed mid-way): asks it to check again. Safe to repeat.
  */
 export async function restoreProgram(
   programId: string,

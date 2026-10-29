@@ -55,7 +55,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
   const alreadyInstalled = useInstalledPrograms().has(route.params.programId);
   // Bought on this account, maybe on another device: no price any more.
   const owned = useOwnedPrograms().has(route.params.programId);
-  const price = useProgramPrice(program?.priceTier ?? 'program499');
+  const price = useProgramPrice(program?.priceTier ?? 'training1');
   const { startInstalledProgram, isStarting } =
     useStartInstalledProgram(navigation);
   const openPurchase = () =>
@@ -236,7 +236,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
                           defaultValue: 'Add to my programs',
                         })
                       : t('programs.startFor', {
-                          defaultValue: 'Start for {{price}}',
+                          defaultValue: 'Start · {{price}}/month',
                           price,
                         })}
                 </Text>

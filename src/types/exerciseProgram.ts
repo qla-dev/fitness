@@ -63,8 +63,8 @@ export interface ExerciseProgram {
   rating: number;
   ratingCount: number;
   /**
-   * One of the three program prices (services/purchases/products.ts); the
-   * backend unlocks the program only for a purchase at this price.
+   * The training level the program is sold at (services/purchases/products.ts);
+   * a subscription to this level or a higher one unlocks it.
    */
   priceTier: ProgramPriceTier;
   /** CSS variable name supplying the card accent. */

@@ -51,26 +51,23 @@ beforeEach(() => {
   jest.mocked(Purchases.getOfferings).mockResolvedValue({
     all: {
       coins: offering(COIN_PRODUCTS),
-      programs: offering(
-        Object.entries(PROGRAM_PRICE_TIERS).map(([packageId, tier]) => ({
-          packageId,
-          productId: tier.productId,
-        }))
-      ),
+      training: offering(Object.values(PROGRAM_PRICE_TIERS)),
     },
     current: null,
   } as never);
 });
 
-it('sells every program at one of the three prices, the same as the backend', () => {
+it('sells every program at one of the three levels, the same as the backend', () => {
   expect(
     Object.values(PROGRAM_PRICE_TIERS).map((tier) => tier.listPrice)
-  ).toEqual([4.99, 13.99, 28.99]);
+  ).toEqual([5.99, 9.99, 13.99]);
   const backend = fs.readFileSync(backendConfig, 'utf8');
+  for (const tier of Object.values(PROGRAM_PRICE_TIERS))
+    expect(backend).toContain(`'${tier.productId}' => ${tier.level}`);
   for (const program of EXERCISE_PROGRAMS) {
     expect(PROGRAM_PRICE_TIERS[program.priceTier]).toBeDefined();
     expect(backend).toContain(
-      `'${program.id}' => '${PROGRAM_PRICE_TIERS[program.priceTier].productId}'`
+      `'${program.id}' => ${PROGRAM_PRICE_TIERS[program.priceTier].level}`
     );
   }
   for (const product of COIN_PRODUCTS)
@@ -103,13 +100,16 @@ it('buys coins as the account and lets the backend grant them', async () => {
   );
 });
 
-it('buys a program at its price for that program', async () => {
+it('subscribes to the level a program is sold at', async () => {
   jest
     .mocked(onlineRequest)
     .mockResolvedValue({ ai_coins: 3, programs: ['lean-machine'] });
-  await buyProgram('lean-machine', 'program2899');
+  await buyProgram('lean-machine', 'training3');
+  expect(Purchases.purchasePackage).toHaveBeenCalledWith(
+    expect.objectContaining({ identifier: 'training3monthly' })
+  );
   expect(onlineRequest).toHaveBeenCalledWith('/purchases', {
-    product_id: 'fitness.qla.dev.program2899',
+    product_id: 'fitness.qla.dev.training3monthly',
     program_id: 'lean-machine',
   });
 });
@@ -118,7 +118,7 @@ it('grants nothing when the buyer cancels', async () => {
   jest
     .mocked(Purchases.purchasePackage)
     .mockRejectedValueOnce({ userCancelled: true });
-  await expect(buyProgram('shred-30', 'program499')).rejects.toBeInstanceOf(
+  await expect(buyProgram('shred-30', 'training1')).rejects.toBeInstanceOf(
     PurchaseCancelledError
   );
   expect(onlineRequest).not.toHaveBeenCalled();

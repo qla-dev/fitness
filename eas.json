@@ -7,7 +7,10 @@
     "development": {
       "env": {
         "APP_VARIANT": "development",
-        "FITNESS_DATA_MODE": "local"
+        "FITNESS_DATA_MODE": "local",
+        "EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY": "appl_fVDCMhnHTgHRqXZvRgvRkzEtcxY",
+        "EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY": "test_JUFBUiwrwqfzSmZdWwENnqRIDMn",
+        "EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE": "1"
       },
       "developmentClient": true,
       "distribution": "internal"
@@ -15,14 +18,18 @@
     "preview": {
       "env": {
         "APP_VARIANT": "preview",
-        "FITNESS_DATA_MODE": "local"
+        "FITNESS_DATA_MODE": "local",
+        "EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY": "appl_fVDCMhnHTgHRqXZvRgvRkzEtcxY",
+        "EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY": "test_JUFBUiwrwqfzSmZdWwENnqRIDMn"
       },
       "distribution": "internal"
     },
     "production": {
       "env": {
         "APP_VARIANT": "production",
-        "FITNESS_DATA_MODE": "local"
+        "FITNESS_DATA_MODE": "local",
+        "EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY": "appl_fVDCMhnHTgHRqXZvRgvRkzEtcxY",
+        "EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY": "test_JUFBUiwrwqfzSmZdWwENnqRIDMn"
       },
       "android": {
         "buildType": "app-bundle"
