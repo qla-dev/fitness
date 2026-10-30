@@ -43,7 +43,7 @@ export default function PromptScreen(props: PromptScreenProps) {
   );
 }
 
-type PromptScreenProps = {
+export type PromptScreenProps = {
   /**
    * What kind of thing is being set, in the navigator's own bar — "Goals" over
    * Protein. The heading below says which one.
@@ -55,8 +55,12 @@ type PromptScreenProps = {
   description?: string;
   /** Small print above the action — a caveat, not an instruction. */
   footnote?: string;
-  footerLabel: ReactNode;
-  onFooterPress: () => void;
+  /**
+   * The committing action. Left out for a list whose rows commit on tap (a
+   * picker), which then has no footer at all.
+   */
+  footerLabel?: ReactNode;
+  onFooterPress?: () => void;
   footerDisabled?: boolean;
   footerLoading?: boolean;
   /** The action's fill, for a screen that is about one coloured thing. */
@@ -66,6 +70,13 @@ type PromptScreenProps = {
   hasTextInput?: boolean;
   /** One header action opposite the close button (MarkAI usage on history). */
   headerRight?: HeaderItem;
+  /** Called instead of going back when the close button is pressed. */
+  onDismiss?: () => void;
+  /**
+   * Leaves the content's sides unpadded, for a body that pads its own rows
+   * (a list of settings rows, a sheet moved over from a bottom sheet).
+   */
+  bleed?: boolean;
   /**
    * Starts the content under the explanation instead of centring it, for a
    * control that is a list (conversation history) and fills the room. The
@@ -90,8 +101,11 @@ function PromptScreenContent({
   hasTextInput = false,
   topAligned = false,
   headerRight,
+  onDismiss,
+  bleed = false,
   children,
 }: PromptScreenProps) {
+  const hasFooter = footerLabel !== undefined && onFooterPress !== undefined;
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -110,7 +124,7 @@ function PromptScreenContent({
     left: {
       kind: 'dismiss',
       disabled: dismissDisabled,
-      onPress: () => navigation.goBack(),
+      onPress: onDismiss ?? (() => navigation.goBack()),
     },
     right: headerRight,
     // iOS 26 draws its scroll-edge effect along the top of a screen's scroll
@@ -200,11 +214,13 @@ function PromptScreenContent({
           contentContainerStyle={{
             flexGrow: 1,
             paddingTop: usesNativeHeader ? HEADER_CONTENT_GAP : 8,
-            paddingBottom: footerHeight + 12,
+            paddingBottom: (hasFooter ? footerHeight : insets.bottom) + 12,
           }}
         >
           {heading}
-          <View className="flex-1 px-5 pt-6">{children}</View>
+          <View className={`flex-1 pt-6 ${bleed ? '' : 'px-5'}`}>
+            {children}
+          </View>
           {footnote ? (
             <Text className="text-text-muted text-xs px-5 pt-3">
               {footnote}
@@ -217,7 +233,7 @@ function PromptScreenContent({
               itself clear of the transparent bar. */}
           {heading}
           <View
-            className={`flex-1 px-5 ${hasTextInput ? 'pt-6' : 'justify-center'}`}
+            className={`flex-1 ${bleed ? '' : 'px-5'} ${hasTextInput ? 'pt-6' : 'justify-center'}`}
           >
             {children}
           </View>
@@ -228,17 +244,21 @@ function PromptScreenContent({
           ) : null}
         </>
       )}
-      <FooterCTA
-        absolute={topAligned}
-        edgeEffect={topAligned}
-        onHeightChange={topAligned ? setFooterHeight : undefined}
-        glass
-        label={footerLabel}
-        onPress={onFooterPress}
-        disabled={footerDisabled}
-        loading={footerLoading}
-        tint={footerTint}
-      />
+      {hasFooter ? (
+        <FooterCTA
+          absolute={topAligned}
+          edgeEffect={topAligned}
+          onHeightChange={topAligned ? setFooterHeight : undefined}
+          glass
+          label={footerLabel}
+          onPress={onFooterPress}
+          disabled={footerDisabled}
+          loading={footerLoading}
+          tint={footerTint}
+        />
+      ) : !topAligned ? (
+        <View style={{ height: insets.bottom + 12 }} />
+      ) : null}
     </View>
   );
 }

@@ -28,7 +28,7 @@ import Animated, {
 import Svg, { Circle } from 'react-native-svg';
 import { useCSSVariable } from 'uniwind';
 import { useTranslation } from 'react-i18next';
-import CustomModal, { type CustomModalRef } from './CustomModal';
+import CalendarModal, { type CalendarModalRef } from './CalendarModal';
 import {
   ACTIVITY_RING_COLORS,
   ringProgressFromParts,
@@ -398,7 +398,7 @@ const RingCalendarSheet = forwardRef<
   RingCalendarSheetRef,
   RingCalendarSheetProps
 >(({ selectedDate, onSelectDate, markedDates }, ref) => {
-  const sheetRef = useRef<CustomModalRef>(null);
+  const sheetRef = useRef<CalendarModalRef>(null);
   const { t } = useTranslation();
   const { appLocale, presentation } = useCalendarPresentation();
   const { width } = useWindowDimensions();
@@ -504,7 +504,7 @@ const RingCalendarSheet = forwardRef<
   );
 
   return (
-    <CustomModal ref={sheetRef} title={headerTitle}>
+    <CalendarModal ref={sheetRef} title={headerTitle}>
       <View className="flex-row px-2 pb-2 border-b border-border-subtle">
         {orderedWeekdays.map((label, index) => (
           <Text
@@ -576,7 +576,7 @@ const RingCalendarSheet = forwardRef<
           </View>
         )}
       />
-    </CustomModal>
+    </CalendarModal>
   );
 });
 

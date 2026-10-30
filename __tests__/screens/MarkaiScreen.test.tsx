@@ -51,6 +51,7 @@ jest.mock('../../src/hooks/useScreenHeader', () => ({
   useNativeHeaderOffset: () => 0,
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
 }));
 jest.mock('../../src/components/CustomModal', () => ({
@@ -65,6 +66,12 @@ jest.mock('../../src/hooks/usePreferences', () => ({
 jest.mock('../../src/hooks/useAppleSignIn', () => ({
   useAppleSignIn: () => ({
     available: true,
+    busy: false,
+    error: null,
+    signIn: jest.fn(),
+  }),
+  useGoogleSignIn: () => ({
+    available: false,
     busy: false,
     error: null,
     signIn: jest.fn(),

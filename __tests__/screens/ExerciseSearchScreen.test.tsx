@@ -54,6 +54,7 @@ jest.mock('../../src/services/storage', () => ({
 // Native-header path on both jest platforms, so the ownership filter menu is
 // mirrored into navigation.setOptions where pressHeaderMenuAction can reach it.
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => true,
   useNativeIOSTabsActive: () => false,
 }));

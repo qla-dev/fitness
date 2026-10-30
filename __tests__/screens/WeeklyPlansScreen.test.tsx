@@ -34,6 +34,7 @@ jest.mock('../../src/hooks/useMealPlans', () => ({
   useMealPlans: () => ({ mealPlans: mockManualPlans }),
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
 }));
 jest.mock('react-native-safe-area-context', () => ({

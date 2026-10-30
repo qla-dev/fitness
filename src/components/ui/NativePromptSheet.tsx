@@ -1,32 +1,14 @@
-import React, { useEffect, useRef, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
-
-import CustomModal, { type CustomModalRef } from '../CustomModal';
-import FooterCTA from './FooterCTA';
+import type { ReactNode } from 'react';
+import PromptSheet from './PromptSheet';
 
 /**
- * The app's one-decision sheet: a title, a line of explanation, one control,
- * and the action that commits it.
+ * The one-decision sheet (a title, a line of explanation, one control, the
+ * action that commits it), opened from a screen with `open` / `onClose`.
  *
- * Modelled on the system sheets Apple uses for the same job — set today's Move
- * goal, confirm a permission — rather than on a screen squeezed into a modal.
- *
- * It is {@link CustomModal} in `fullHeight`, which is what makes it read as
- * native: the app's handle, corner radius, status-bar inset and round close
- * chip, on the page background so the control inside is not a surface on a
- * surface. Built from a bare `BottomSheetModal` instead, the footer stranded
- * itself mid-sheet — `BottomSheetView` measures its children, so under a fixed
- * snap point it takes their natural height and leaves the rest empty
- * underneath. The same trap `CustomModal` already carries a comment about.
- *
- * `hasTextInput` is the one thing that changes its shape, because typing and
- * tapping want opposite layouts:
- *
- * - **With** a field, the control sits against the explanation and the
- *   keyboard is expected, so nothing is centred into the space it will take.
- * - **Without** one, the control is centred in the room between the title and
- *   the action, and no keyboard is raised — a stepper should not summon one
- *   just by opening.
+ * It is {@link PromptSheet}: the same modal route and PromptScreen as the
+ * Tracker's GoalEdit, so its header, close button, corner and footer are
+ * GoalEdit's. `hasTextInput` decides alignment, as there: with a field the
+ * control sits against the explanation; without one it is centred.
  */
 export default function NativePromptSheet({
   open,
@@ -41,16 +23,11 @@ export default function NativePromptSheet({
   footerLoading,
   footerTint,
   hasTextInput = false,
-  dismissOnBackdropPress = true,
   children,
 }: {
   open: boolean;
   onClose: () => void;
-  /**
-   * What kind of thing is being set, centred in the sheet's own bar above the
-   * title — "Measurements" over Weight. Left out, the bar holds only the close
-   * chip, which is how Apple's own single-value sheets look.
-   */
+  /** What kind of thing is being set, in the bar above the title. */
   category?: string;
   /** The heading: the one thing this sheet changes. */
   title: string;
@@ -58,80 +35,35 @@ export default function NativePromptSheet({
   description?: string;
   /** Small print above the action — a caveat, not an instruction. */
   footnote?: string;
-  /** The committing action, in the app's standard footer bar. */
+  /** The committing action, in the shared footer. */
   footerLabel: ReactNode;
   onFooterPress: () => void;
   footerDisabled?: boolean;
   footerLoading?: boolean;
   /** Match the action to the goal or metric being edited. */
   footerTint?: string;
-  /** See the note above: it decides alignment and whether a keyboard opens. */
+  /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
-  /** Whether tapping the dimmed area closes the sheet. */
+  /** Kept for callers; a modal route always closes by its own gestures. */
   dismissOnBackdropPress?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const sheet = useRef<CustomModalRef>(null);
-  const presented = useRef(false);
-
-  useEffect(() => {
-    if (open) {
-      presented.current = true;
-      sheet.current?.present();
-    } else if (presented.current) {
-      // Never dismiss a sheet that was not presented: gorhom marks a fresh
-      // modal as DISMISSING, and its portal then skips every later present(),
-      // so the first tap on a closed-on-mount sheet silently did nothing.
-      presented.current = false;
-      sheet.current?.dismiss();
-    }
-  }, [open]);
-
   return (
-    <CustomModal
-      ref={sheet}
-      fullHeight
-      background="background"
-      title={category ?? ''}
-      dismissOnBackdropPress={dismissOnBackdropPress}
-      onDismiss={() => {
-        // Closed by the sheet itself (swipe, close chip, backdrop): it is no
-        // longer presented, so the parent's open=false must not dismiss it a
-        // second time — that left gorhom DISMISSING and every later open did
-        // nothing.
-        presented.current = false;
-        onClose();
-      }}
+    <PromptSheet
+      open={open}
+      onClose={onClose}
+      headerTitle={category ?? ''}
+      title={title}
+      description={description}
+      footnote={footnote}
+      footerLabel={footerLabel}
+      onFooterPress={onFooterPress}
+      footerDisabled={footerDisabled}
+      footerLoading={footerLoading}
+      footerTint={footerTint}
+      hasTextInput={hasTextInput}
     >
-      <View className="px-5">
-        <Text className="text-text-primary text-3xl font-bold">{title}</Text>
-        {description ? (
-          <Text className="text-text-secondary text-base mt-2">
-            {description}
-          </Text>
-        ) : null}
-      </View>
-
-      <View
-        className={`flex-1 px-5 ${hasTextInput ? 'pt-6' : 'justify-center'}`}
-      >
-        {children}
-      </View>
-
-      {footnote ? (
-        <Text className="text-text-muted text-xs px-5 pb-3">{footnote}</Text>
-      ) : null}
-      <FooterCTA
-        // The sheet lifts for the keyboard on its own; a sticky footer lifting
-        // again on top of that threw it to the top of the sheet.
-        sticky={false}
-        glass
-        label={footerLabel}
-        onPress={onFooterPress}
-        disabled={footerDisabled}
-        loading={footerLoading}
-        tint={footerTint}
-      />
-    </CustomModal>
+      {children}
+    </PromptSheet>
   );
 }

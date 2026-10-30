@@ -3,17 +3,12 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, View } from 'react-native';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
-import Button from './ui/Button';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
+import PromptSheet from './ui/PromptSheet';
 
 /** Normalizes the picker's 6-way `DateType` into a JS `Date`. */
 export function dateTypeToDate(date: DateType): Date | null {
@@ -54,16 +49,13 @@ interface TimeSheetProps {
 const TimeSheet = forwardRef<TimeSheetRef, TimeSheetProps>(
   ({ value, onSelectTime }, ref) => {
     const { t } = useTranslation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [open, setOpen] = useState(false);
 
-    const [surfaceBg, textMuted, accentPrimary, textPrimary, borderSubtle] =
-      useCSSVariable([
-        '--color-surface',
-        '--color-text-muted',
-        '--color-accent-primary',
-        '--color-text-primary',
-        '--color-border-subtle',
-      ]) as [string, string, string, string, string];
+    const [accentPrimary, textPrimary, borderSubtle] = useCSSVariable([
+      '--color-accent-primary',
+      '--color-text-primary',
+      '--color-border-subtle',
+    ]) as [string, string, string];
 
     // The time the wheel is showing, committed by Done even if never scrolled.
     // Seeded at present() so an open sheet doesn't re-seed to "now" on parent
@@ -73,12 +65,10 @@ const TimeSheet = forwardRef<TimeSheetRef, TimeSheetProps>(
     useImperativeHandle(ref, () => ({
       present: () => {
         setDisplayed(dateToTimeString(timeStringToDate(value)));
-        bottomSheetRef.current?.present();
+        setOpen(true);
       },
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      dismiss: () => setOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const handleChange = useCallback(
       ({ date }: { date: DateType }) => {
@@ -94,7 +84,7 @@ const TimeSheet = forwardRef<TimeSheetRef, TimeSheetProps>(
 
     const handleDone = useCallback(() => {
       if (displayed) onSelectTime(displayed);
-      bottomSheetRef.current?.dismiss();
+      setOpen(false);
     }, [displayed, onSelectTime]);
 
     const pickerStyles = useMemo(
@@ -116,36 +106,29 @@ const TimeSheet = forwardRef<TimeSheetRef, TimeSheetProps>(
     );
 
     return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        enableContentPanningGesture={Platform.OS !== 'android'}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      // GoalEdit's sheet (PromptSheet): the wheel centred, Done in the footer.
+      <PromptSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        headerTitle=""
+        title={t('common.time', { defaultValue: 'Time' })}
+        footerLabel={t('common.done', { defaultValue: 'Done' })}
+        onFooterPress={handleDone}
       >
-        <BottomSheetView className="pb-safe-or-5 px-2">
-          <DateTimePicker
-            mode="single"
-            date={timeStringToDate(displayed || value)}
-            timePicker
-            initialView="time"
-            hideHeader
-            use12Hours
-            onChange={handleChange}
-            styles={pickerStyles}
-            // The wheels render 5 rows of 44px; the default 300px container
-            // centers them inside ~80px of dead space.
-            containerHeight={220}
-          />
-          <View className="px-2 pt-2">
-            <Button variant="primary" onPress={handleDone}>
-              {t('common.done', { defaultValue: 'Done' })}
-            </Button>
-          </View>
-        </BottomSheetView>
-      </BottomSheetModal>
+        <DateTimePicker
+          mode="single"
+          date={timeStringToDate(displayed || value)}
+          timePicker
+          initialView="time"
+          hideHeader
+          use12Hours
+          onChange={handleChange}
+          styles={pickerStyles}
+          // The wheels render 5 rows of 44px; the default 300px container
+          // centers them inside ~80px of dead space.
+          containerHeight={220}
+        />
+      </PromptSheet>
     );
   }
 );

@@ -63,7 +63,7 @@ jest.mock(
 jest.mock('../../src/components/recording/PhotoTextColor', () => () => null);
 // The location sheet's map is native; the editor only needs it to mount.
 jest.mock('../../src/components/recording/PlacePicker', () => () => null);
-jest.mock('../../src/components/ui/NativePromptSheet', () => () => null);
+jest.mock('../../src/components/recording/EditorPromptSheet', () => () => null);
 jest.mock('@expo/ui/community/menu', () => ({
   MenuView: ({ actions, onPressAction, children }: any) => {
     const { View, Pressable, Text } = require('react-native');

@@ -173,7 +173,6 @@ function MarkaiContent() {
   }, []);
   const apple = useAppleSignIn();
   const google = useGoogleSignIn();
-  const coinColor = useCSSVariable('--color-macro-fat') as string;
   const optionsSheet = useRef<CustomModalRef>(null);
   const scroller =
     useRef<React.ElementRef<typeof KeyboardChatScrollView>>(null);
@@ -889,27 +888,19 @@ function MarkaiContent() {
         ref={optionsSheet}
         title={t('markai.options', { defaultValue: 'Chat options' })}
         headerRight={
-          session ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('online.balance', {
-                defaultValue: '{{amount}} AI coins',
-                amount: session.user.ai_coins,
-              })}
-              hitSlop={8}
-              onPress={() => {
-                optionsSheet.current?.dismiss();
-                navigation.navigate('CoinPackages');
-              }}
-              className="bg-raised rounded-full flex-row items-center"
-              style={{ height: 36, paddingHorizontal: 12, gap: 6 }}
-            >
-              <Icon name="ai-coin" size={16} color={coinColor} />
-              <Text className="text-text-primary font-semibold">
-                {session.user.ai_coins}
-              </Text>
-            </Pressable>
-          ) : null
+          session
+            ? {
+                kind: 'text',
+                label: t('online.balance', {
+                  defaultValue: '{{amount}} AI coins',
+                  amount: session.user.ai_coins,
+                }),
+                onPress: () => {
+                  optionsSheet.current?.dismiss();
+                  navigation.navigate('CoinPackages');
+                },
+              }
+            : undefined
         }
       >
         <View className="px-4 gap-3">

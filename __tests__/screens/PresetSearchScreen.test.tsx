@@ -31,6 +31,7 @@ jest.mock('../../src/hooks/useExercisesLibrary', () => ({
   useExercisesLibrary: jest.fn(),
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));
 

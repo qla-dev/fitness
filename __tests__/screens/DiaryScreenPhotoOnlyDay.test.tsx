@@ -89,6 +89,7 @@ jest.mock('../../src/hooks/useHeaderActionColors', () => ({
 }));
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));
 

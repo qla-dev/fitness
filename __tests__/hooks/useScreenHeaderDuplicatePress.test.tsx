@@ -18,6 +18,7 @@ jest.mock('react-i18next', () => ({
 
 // Custom (non-native) path, so the header renders as Pressables we can press.
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));

@@ -42,6 +42,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));
 jest.mock('../../src/components/EditableSetList', () => () => null);

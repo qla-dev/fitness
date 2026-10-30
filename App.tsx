@@ -133,6 +133,7 @@ import { FullWindowOverlay } from 'react-native-screens';
 import type { RootStackParamList } from './src/types/navigation';
 import { AddActionsProvider } from './src/components/AddActionsContext';
 import { toastConfig } from './src/components/ui/toastConfig';
+import { PromptSheetScreen } from './src/components/ui/PromptSheet';
 import { TabsLayout } from './src/components/TabsLayout';
 import { createIOSSmallNativeHeaderOptions } from './src/utils/nativeHeaderItems';
 import { useHeaderActionColors } from './src/hooks/useHeaderActionColors';
@@ -897,6 +898,17 @@ function AppContent() {
           <Stack.Screen
             name="ProgramPurchase"
             component={SafeProgramPurchase}
+            options={createStackScreenOptions('', {
+              presentation: 'modal',
+              headerBackVisible: false,
+              ...(Platform.OS === 'android' ? androidModalAnimation : {}),
+            })}
+          />
+          {/* Every sheet in the app (PromptSheet), presented exactly like
+              GoalEdit below. */}
+          <Stack.Screen
+            name="Sheet"
+            component={PromptSheetScreen}
             options={createStackScreenOptions('', {
               presentation: 'modal',
               headerBackVisible: false,

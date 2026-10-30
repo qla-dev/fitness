@@ -19,6 +19,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));
 jest.mock('@react-navigation/native', () => ({

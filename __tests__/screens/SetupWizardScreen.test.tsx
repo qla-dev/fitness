@@ -57,6 +57,7 @@ jest.mock('../../src/components/ui/FlashOverlay', () => {
 });
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));

@@ -7,6 +7,7 @@ import ActiveWorkoutRestBar from '../../src/components/ActiveWorkoutRestBar';
 import { useNativeIOSTabsActive } from '../../src/services/nativeTabBarPreference';
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: jest.fn(() => false),
 }));
 

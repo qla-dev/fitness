@@ -154,6 +154,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: jest.fn(() => false),
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));

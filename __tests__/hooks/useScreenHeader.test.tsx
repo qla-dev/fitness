@@ -23,6 +23,7 @@ jest.mock('../../src/services/haptics', () => ({
 const mockFireSelectionHaptic = jest.fn();
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => mockUsesNativeHeader,
   useNativeIOSTabsActive: () => false,
 }));

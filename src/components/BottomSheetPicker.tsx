@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -8,14 +8,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import {
-  BottomSheetView,
-  BottomSheetScrollView,
-} from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
+import PromptSheet, { dismissPromptSheet } from './ui/PromptSheet';
 
 export interface PickerOption<T> {
   label: string;
@@ -95,12 +90,8 @@ function BottomSheetPicker<T extends string | number>({
   renderTrigger,
 }: BottomSheetPickerProps<T>) {
   const { t } = useTranslation();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [primary, textMuted, surfaceBg] = useCSSVariable([
-    '--color-accent-primary',
-    '--color-text-muted',
-    '--color-surface',
-  ]) as [string, string, string];
+  const [open, setOpen] = useState(false);
+  const primary = useCSSVariable('--color-accent-primary') as string;
 
   const normalizedSections = useMemo<PickerSection<T>[]>(() => {
     if (sections && sections.length > 0) {
@@ -120,34 +111,18 @@ function BottomSheetPicker<T extends string | number>({
     placeholder ||
     t('common.selectOption', { defaultValue: 'Select an option' });
 
-  // For long lists (>8 items), use a fixed max height with scrolling
-  // For short lists, use dynamic sizing to fit content exactly
-  const enableDynamic = flatOptions.length <= 8;
-  const snapPoints = useMemo(() => {
-    return enableDynamic ? undefined : [500];
-  }, [enableDynamic]);
-
+  // A pick commits and closes: the list is the whole decision, so the sheet
+  // has no footer action.
   const handleSelect = useCallback(
     (item: PickerOption<T>) => {
-      bottomSheetRef.current?.dismiss();
+      dismissPromptSheet();
+      setOpen(false);
       onSelect(item.value);
     },
     [onSelect]
   );
 
-  const handleOpen = useCallback(() => {
-    bottomSheetRef.current?.present();
-  }, []);
-
-  // Cleanup on unmount (handles conditional rendering in SyncFrequency)
-  useEffect(() => {
-    const sheetRef = bottomSheetRef.current;
-    return () => {
-      sheetRef?.dismiss();
-    };
-  }, []);
-
-  const renderBackdrop = useSheetBackdrop();
+  const handleOpen = useCallback(() => setOpen(true), []);
 
   const renderOption = (item: PickerOption<T>, isLast: boolean) => {
     const isSelected = item.value === value;
@@ -185,7 +160,7 @@ function BottomSheetPicker<T extends string | number>({
     return (
       <View
         key={`section-${section.title}-${index}`}
-        className="px-4 py-2 bg-surface"
+        className="px-4 pt-4 pb-2"
       >
         <Text className="text-xs font-semibold uppercase text-text-muted">
           {section.title}
@@ -215,9 +190,6 @@ function BottomSheetPicker<T extends string | number>({
     <>
       {renderTrigger ? (
         // renderTrigger is a render prop; invoking it during render is intended.
-        // handleOpen closes over bottomSheetRef but only reads it inside the
-        // deferred onPress, so no ref is actually accessed during render.
-        // eslint-disable-next-line react-hooks/refs
         renderTrigger({ onPress: handleOpen, selectedOption })
       ) : (
         <PickerTrigger
@@ -229,42 +201,21 @@ function BottomSheetPicker<T extends string | number>({
         />
       )}
 
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        snapPoints={snapPoints}
-        enableDynamicSizing={enableDynamic}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      <PromptSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        headerTitle=""
+        title={
+          title ||
+          placeholder ||
+          t('common.selectOption', { defaultValue: 'Select an option' })
+        }
+        topAligned
       >
-        {enableDynamic ? (
-          <BottomSheetView className="pb-safe-or-5">
-            {title && (
-              <View className="px-4 py-4 border-b border-border-subtle">
-                <Text className="text-lg font-semibold text-center text-text-primary">
-                  {title}
-                </Text>
-              </View>
-            )}
-            {renderSections()}
-          </BottomSheetView>
-        ) : (
-          <BottomSheetScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerClassName="pb-safe-or-5"
-          >
-            {title && (
-              <View className="px-4 py-4 border-b border-border-subtle">
-                <Text className="text-lg font-semibold text-center text-text-primary">
-                  {title}
-                </Text>
-              </View>
-            )}
-            {renderSections()}
-          </BottomSheetScrollView>
-        )}
-      </BottomSheetModal>
+        <View className="bg-surface rounded-2xl overflow-hidden">
+          {renderSections()}
+        </View>
+      </PromptSheet>
     </>
   );
 }

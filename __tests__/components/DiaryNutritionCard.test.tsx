@@ -90,7 +90,9 @@ describe('DiaryNutritionCard', () => {
     const { getAllByText } = render(<DiaryNutritionCard summary={summary} />);
     expect(getAllByText('Add Goal')).toHaveLength(11);
     fireEvent.press(getAllByText('Add Goal')[0]);
-    expect(mockNavigate).toHaveBeenCalledWith('GoalEdit', { goalKey: 'sugars' });
+    expect(mockNavigate).toHaveBeenCalledWith('GoalEdit', {
+      goalKey: 'sugars',
+    });
   });
 
   // A day with no goals set still has numbers worth showing.

@@ -32,6 +32,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
 }));
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));

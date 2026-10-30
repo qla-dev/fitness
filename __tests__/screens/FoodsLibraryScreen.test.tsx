@@ -34,6 +34,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
 // filter menu renders as an AnchoredMenu instead of a native UIMenu.
 let mockNativeHeadersActive = true;
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => mockNativeHeadersActive,
   useNativeIOSTabsActive: () => false,
 }));

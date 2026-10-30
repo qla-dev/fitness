@@ -1,24 +1,7 @@
-import React, {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  BackHandler,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useCSSVariable } from 'uniwind';
-import Icon from './Icon';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import PromptSheet, { dismissPromptSheet } from './ui/PromptSheet';
 
 export interface ActionSheetItem {
   key: string;
@@ -46,150 +29,55 @@ export interface ActionSheetRef {
 interface ActionSheetProps {
   title: string;
   items: ActionSheetItem[];
-  /** Renders a back chevron left of the title (content-swap flows). */
+  /** Adds a Back action in the header (content-swap flows). */
   onBack?: () => void;
   onDismiss?: () => void;
 }
 
 /**
- * A menu-style bottom sheet: a titled list of one-shot actions. Selection
- * state belongs to BottomSheetPicker; this is for overflow/context menus.
+ * A menu of one-shot actions under a title: overflow and context menus.
+ * Selection state belongs to BottomSheetPicker.
  *
- * Owners must set the state that drives `title`/`items` BEFORE calling
- * `present()`. When a present lands while the sheet is still animating
- * closed, it is queued and the interrupted dismissal's `onDismiss` is
- * swallowed — correct only because the queued present's state has already
- * overwritten the old.
+ * It is {@link PromptSheet}, GoalEdit's modal route, in its list layout: each
+ * group of actions is one card. Owners set the state that drives
+ * `title`/`items` before calling `present()`; the sheet shows whatever they
+ * hold while it is open.
  */
 const ActionSheet = React.forwardRef<ActionSheetRef, ActionSheetProps>(
   ({ title, items, onBack, onDismiss }, ref) => {
     const { t } = useTranslation();
-    const modalRef = useRef<BottomSheetModal>(null);
-    const isDismissingRef = useRef(false);
-    const isOpenRef = useRef(false);
-    const isPresentingRef = useRef(false);
-    const pendingPresentRef = useRef(false);
-    const presentFrameRef = useRef<number | null>(null);
-    // Mirrors the modal's open state for the Android hardware-back listener.
-    // Cleared in onDismiss (the terminal signal), not at dismissal start, so a
-    // Back press during the close animation is still swallowed by the sheet.
-    const [isOpen, setIsOpen] = useState(false);
-    const { height: windowHeight } = useWindowDimensions();
-
-    const [surfaceBg, textMuted, accentPrimary] = useCSSVariable([
-      '--color-surface',
-      '--color-text-muted',
-      '--color-accent-primary',
-    ]) as [string, string, string];
-
-    const clearScheduledPresent = useCallback(() => {
-      if (presentFrameRef.current != null) {
-        cancelAnimationFrame(presentFrameRef.current);
-        presentFrameRef.current = null;
-      }
-    }, []);
-
-    const schedulePresent = useCallback(() => {
-      clearScheduledPresent();
-      isPresentingRef.current = true;
-      presentFrameRef.current = requestAnimationFrame(() => {
-        presentFrameRef.current = null;
-        modalRef.current?.present();
-      });
-    }, [clearScheduledPresent]);
-
-    const presentSheet = useCallback(() => {
-      if (isDismissingRef.current) {
-        pendingPresentRef.current = true;
-        return;
-      }
-      if (isOpenRef.current || isPresentingRef.current) {
-        return;
-      }
-      pendingPresentRef.current = false;
-      schedulePresent();
-    }, [schedulePresent]);
-
-    const dismissSheet = useCallback(() => {
-      pendingPresentRef.current = false;
-      isPresentingRef.current = false;
-      isDismissingRef.current = true;
-      clearScheduledPresent();
-      modalRef.current?.dismiss();
-    }, [clearScheduledPresent]);
-
-    useImperativeHandle(
-      ref,
-      () => ({ present: presentSheet, dismiss: dismissSheet }),
-      [presentSheet, dismissSheet]
-    );
-
+    const [open, setOpen] = useState(false);
+    const openRef = useRef(false);
     useEffect(() => {
-      const modal = modalRef.current;
-      return () => {
-        clearScheduledPresent();
-        modal?.dismiss();
-      };
-    }, [clearScheduledPresent]);
+      openRef.current = open;
+    }, [open]);
 
-    useEffect(() => {
-      if (!isOpen || Platform.OS !== 'android') return;
-      // Registered while open (after any screen handlers), so the sheet wins
-      // Back and the press can't fall through and pop the screen.
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        () => {
-          dismissSheet();
-          return true;
-        }
-      );
-      return () => subscription.remove();
-    }, [isOpen, dismissSheet]);
+    const close = () => {
+      // At once, so an action that navigates lands on top of the screen the
+      // menu came from, not under the menu's route.
+      if (openRef.current) dismissPromptSheet();
+      openRef.current = false;
+      setOpen(false);
+    };
 
-    const handleAnimate = useCallback(
-      (fromIndex: number, toIndex: number) => {
-        if (fromIndex >= 0 && toIndex === -1) {
-          isDismissingRef.current = true;
-          isOpenRef.current = false;
-          isPresentingRef.current = false;
-          return;
-        }
-
-        if (toIndex >= 0) {
-          isDismissingRef.current = false;
-          isOpenRef.current = true;
-          isPresentingRef.current = false;
-          pendingPresentRef.current = false;
-          clearScheduledPresent();
-          setIsOpen(true);
-        }
+    useImperativeHandle(ref, () => ({
+      present: () => {
+        openRef.current = true;
+        setOpen(true);
       },
-      [clearScheduledPresent]
-    );
+      dismiss: close,
+    }));
 
-    const handleDismiss = useCallback(() => {
-      isDismissingRef.current = false;
-      isOpenRef.current = false;
-      setIsOpen(false);
-      if (pendingPresentRef.current) {
-        // A newer present interrupted this dismissal. Run it and swallow the
-        // owner's onDismiss so the stale close can't clear the newer state.
-        pendingPresentRef.current = false;
-        schedulePresent();
-        return;
-      }
-      isPresentingRef.current = false;
-      onDismiss?.();
-    }, [onDismiss, schedulePresent]);
-
-    const renderBackdrop = useSheetBackdrop();
+    const wasOpen = useRef(false);
+    useEffect(() => {
+      if (wasOpen.current && !open) onDismiss?.();
+      wasOpen.current = open;
+      // Only the open state decides; onDismiss is read as it is now.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
 
     const handleItemPress = (item: ActionSheetItem) => {
-      if (item.dismissOnPress === false) {
-        item.onPress();
-        return;
-      }
-      dismissSheet();
+      if (item.dismissOnPress !== false) close();
       item.onPress();
     };
 
@@ -204,48 +92,29 @@ const ActionSheet = React.forwardRef<ActionSheetRef, ActionSheetProps>(
     }
 
     return (
-      <BottomSheetModal
-        ref={modalRef}
-        enableDynamicSizing
-        maxDynamicContentSize={windowHeight * 0.8}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
-        onAnimate={handleAnimate}
-        onDismiss={handleDismiss}
+      <PromptSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        headerTitle=""
+        title={title}
+        topAligned
+        headerRight={
+          onBack
+            ? {
+                kind: 'text',
+                label: t('common.back', { defaultValue: 'Back' }),
+                onPress: onBack,
+              }
+            : undefined
+        }
       >
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-safe-or-5"
-        >
-          <View className="px-4 py-4 border-b border-border-subtle">
-            <Text
-              numberOfLines={1}
-              className="text-lg font-semibold text-center text-text-primary px-8"
+        <View className="gap-3">
+          {sections.map((section) => (
+            <View
+              key={section[0].key}
+              testID="action-sheet-group"
+              className="bg-surface rounded-2xl overflow-hidden"
             >
-              {title}
-            </Text>
-            {onBack && (
-              <Pressable
-                onPress={onBack}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.back', { defaultValue: 'Back' })}
-                className="absolute left-2 top-0 bottom-0 justify-center px-2"
-              >
-                <Icon name="chevron-back" size={20} color={accentPrimary} />
-              </Pressable>
-            )}
-          </View>
-          {sections.map((section, sectionIndex) => (
-            <React.Fragment key={section[0].key}>
-              {sectionIndex > 0 && (
-                <View
-                  testID="action-sheet-group-spacer"
-                  className="h-3 bg-background"
-                />
-              )}
               {section.map((item, itemIndex) => (
                 <Pressable
                   key={item.key}
@@ -275,10 +144,10 @@ const ActionSheet = React.forwardRef<ActionSheetRef, ActionSheetProps>(
                   </Text>
                 </Pressable>
               ))}
-            </React.Fragment>
+            </View>
           ))}
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+        </View>
+      </PromptSheet>
     );
   }
 );

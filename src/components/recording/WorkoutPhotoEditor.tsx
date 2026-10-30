@@ -32,7 +32,7 @@ import type {
   RecordingPhoto,
 } from '../../services/recording/types';
 import type { RoutePlace } from '../../services/recording/routePlanner';
-import NativePromptSheet from '../ui/NativePromptSheet';
+import EditorPromptSheet from './EditorPromptSheet';
 import PlacePicker from './PlacePicker';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import {
@@ -974,7 +974,7 @@ export default function WorkoutPhotoEditor({
               </Pressable>
             </View>
           </View>
-          <NativePromptSheet
+          <EditorPromptSheet
             open={locationSheet}
             onClose={() => setLocationSheet(false)}
             category={t('recording.editor.locationHeader', {
@@ -1029,7 +1029,7 @@ export default function WorkoutPhotoEditor({
                 }
               />
             )}
-          </NativePromptSheet>
+          </EditorPromptSheet>
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
     </Modal>

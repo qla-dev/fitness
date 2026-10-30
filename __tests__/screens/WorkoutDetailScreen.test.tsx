@@ -52,6 +52,7 @@ const mockUpdateSession = jest.requireMock(
 // in the tree — on the native path useScreenHeader mirrors them into
 // unstable_header*Items, which the test renderer can't press.
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: jest.fn(() => false),
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));

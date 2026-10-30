@@ -431,6 +431,8 @@ export type RootStackParamList = {
    * its header items are the system's, like every other modal in the app.
    */
   /** `prefill`: a value proposed elsewhere (MarkAI), shown for review, not saved. */
+  /** Every sheet (PromptSheet): modal, like GoalEdit. Content comes from the sheet host. */
+  Sheet: undefined;
   GoalEdit: { goalKey: string; prefill?: number };
   /** Hydration for one day, counted in servings. Modal, like GoalEdit. */
   WaterEdit: { date: string };

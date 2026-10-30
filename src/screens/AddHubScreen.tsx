@@ -21,7 +21,6 @@ import {
   KeyboardStickyView,
   useKeyboardState,
 } from 'react-native-keyboard-controller';
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import type { SearchBarCommands } from 'react-native-screens';
 import { useCSSVariable } from 'uniwind';
 
@@ -617,7 +616,6 @@ export default function AddHubScreen() {
       }}
     >
       <PillInput
-        InputComponent={BottomSheetTextInput}
         autoFocus
         accessibilityLabel={t('foodScan.manual.placeholder', {
           defaultValue: 'Barcode number',

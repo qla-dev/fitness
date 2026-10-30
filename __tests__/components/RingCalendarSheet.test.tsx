@@ -28,7 +28,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   };
 });
 
-jest.mock('../../src/components/CustomModal', () => {
+jest.mock('../../src/components/CalendarModal', () => {
   const { View } = require('react-native');
   const React = require('react');
   return {
@@ -64,8 +64,18 @@ jest.mock('../../src/utils/calendarLocalization', () => ({
     presentation: { firstDayOfWeek: 1 },
   }),
   getCalendarMonthNames: () => [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ],
   getCalendarWeekdayShortNames: () => ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
 }));
@@ -83,7 +93,10 @@ const renderSheet = (selectedDate: string) =>
       }}
     >
       <QueryClientProvider client={new QueryClient()}>
-        <RingCalendarSheet selectedDate={selectedDate} onSelectDate={jest.fn()} />
+        <RingCalendarSheet
+          selectedDate={selectedDate}
+          onSelectDate={jest.fn()}
+        />
       </QueryClientProvider>
     </SafeAreaProvider>
   );
@@ -117,21 +130,15 @@ test('opens on the current month, not twelve months back', async () => {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, '0');
 
-  const { getAllByText } = renderSheet(
-    `${today.getFullYear()}-${month}-15`
-  );
+  const { getAllByText } = renderSheet(`${today.getFullYear()}-${month}-15`);
 
   await waitFor(() => expect(mockFetch).toHaveBeenCalled());
 
   // The month the sheet asks for first is the one it is showing.
   const firstRequestedStart = mockFetch.mock.calls[0][0];
-  expect(firstRequestedStart).toBe(
-    `${today.getFullYear()}-${month}-01`
-  );
+  expect(firstRequestedStart).toBe(`${today.getFullYear()}-${month}-01`);
   expect(
-    getAllByText(
-      new RegExp(String(today.getFullYear()))
-    ).length
+    getAllByText(new RegExp(String(today.getFullYear()))).length
   ).toBeGreaterThan(0);
 });
 
@@ -153,7 +160,9 @@ test('draws the loading sweep until the month arrives', async () => {
     `${today.getFullYear()}-${month}-15`
   );
 
-  expect((await findAllByTestId('day-rings-loading')).length).toBeGreaterThan(0);
+  expect((await findAllByTestId('day-rings-loading')).length).toBeGreaterThan(
+    0
+  );
 
   await act(async () => {
     resolveRings([]);
@@ -203,9 +212,7 @@ test('requests the month on screen, not the selected date’s month', async () =
   await waitFor(() => expect(mockFetch).toHaveBeenCalled());
 
   expect(mockFetch).toHaveBeenCalledTimes(1);
-  expect(mockFetch.mock.calls[0][0]).toBe(
-    `${today.getFullYear()}-${month}-01`
-  );
+  expect(mockFetch.mock.calls[0][0]).toBe(`${today.getFullYear()}-${month}-01`);
 });
 
 // The month name belongs to the sheet header, not to each page: it stays put
@@ -214,8 +221,18 @@ test('names the visible month and year in the sheet header', async () => {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const { getByTestId } = renderSheet(`${today.getFullYear()}-${month}-15`);

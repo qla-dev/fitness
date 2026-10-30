@@ -22,6 +22,7 @@ jest.mock('../../src/hooks', () => ({
 // Force the screen-owned header bar so the Save action is a pressable label
 // rather than a native header item the renderer cannot reach.
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
   useNativeIOSTabsActive: () => false,
 }));

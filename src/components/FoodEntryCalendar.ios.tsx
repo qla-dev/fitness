@@ -2,7 +2,7 @@ import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { DatePicker, Host } from '@expo/ui/swift-ui';
 import { datePickerStyle, environment } from '@expo/ui/swift-ui/modifiers';
 import { useTranslation } from 'react-i18next';
-import CustomModal, { type CustomModalRef } from './CustomModal';
+import CalendarModal, { type CalendarModalRef } from './CalendarModal';
 import type { CalendarSheetRef } from './CalendarSheet';
 import { toLocalDateString } from '../utils/dateUtils';
 import { useAppLocale } from '../localization';
@@ -14,7 +14,7 @@ const FoodEntryCalendar = forwardRef<
     onSelectDate: (date: string) => void;
   }
 >(({ selectedDate, onSelectDate }, ref) => {
-  const sheet = useRef<CustomModalRef>(null);
+  const sheet = useRef<CalendarModalRef>(null);
   const { t } = useTranslation();
   const locale = useAppLocale();
   useImperativeHandle(ref, () => ({
@@ -23,7 +23,10 @@ const FoodEntryCalendar = forwardRef<
   }));
   const [year, month, day] = selectedDate.split('-').map(Number);
   return (
-    <CustomModal ref={sheet} title={t('common.date', { defaultValue: 'Date' })}>
+    <CalendarModal
+      ref={sheet}
+      title={t('common.date', { defaultValue: 'Date' })}
+    >
       <Host style={{ height: 360, width: '100%' }}>
         <DatePicker
           selection={new Date(year, month - 1, day, 12)}
@@ -38,7 +41,7 @@ const FoodEntryCalendar = forwardRef<
           }}
         />
       </Host>
-    </CustomModal>
+    </CalendarModal>
   );
 });
 FoodEntryCalendar.displayName = 'FoodEntryCalendar';

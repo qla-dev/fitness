@@ -52,6 +52,7 @@ jest.mock('../../src/hooks/useStartLiveWorkout', () => ({
 // as pressable React elements instead of being handed off to
 // unstable_header*Items, which the test renderer can't press.
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSTabsActive: jest.fn(() => false),
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));

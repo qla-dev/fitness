@@ -36,6 +36,7 @@ jest.mock('../../src/components/CalendarSheet', () => {
   return { __esModule: true, default: MockCalendarSheet };
 });
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: jest.fn(() => false),
   useNativeIOSTabsActive: jest.fn(() => false),
 }));

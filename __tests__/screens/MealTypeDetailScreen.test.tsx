@@ -70,6 +70,7 @@ jest.mock('../../src/hooks/useScreenHeader', () => {
 });
 
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
+  useLiquidGlassActive: () => false,
   useNativeIOSHeadersActive: () => false,
 }));
 

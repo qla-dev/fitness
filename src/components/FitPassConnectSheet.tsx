@@ -5,8 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Text, View } from 'react-native';
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Toast from 'react-native-toast-message';
@@ -40,9 +39,8 @@ export interface FitPassConnectSheetRef {
  * request. Replacing `connect` is all a real service needs; the storage, the
  * toggle and the disconnect path are already correct.
  *
- * The fields are `BottomSheetTextInput`, not the app's `FormInput`: a plain
- * TextInput inside a bottom sheet does not tell the sheet to move out of the
- * keyboard's way, so the field it focuses ends up underneath it.
+ * The fields are plain TextInputs: the sheet is a modal route now, which
+ * moves for the keyboard like any screen.
  */
 const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
   (_props, ref) => {
@@ -148,7 +146,7 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
           <Text className="text-text-secondary text-sm mb-1">
             {t('fitPass.username', { defaultValue: 'Username or email' })}
           </Text>
-          <BottomSheetTextInput
+          <TextInput
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -167,7 +165,7 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
           <Text className="text-text-secondary text-sm mb-1 mt-3">
             {t('fitPass.password', { defaultValue: 'Password' })}
           </Text>
-          <BottomSheetTextInput
+          <TextInput
             value={password}
             onChangeText={setPassword}
             secureTextEntry

@@ -4,6 +4,8 @@ import path from 'node:path';
 const mobileRoot = path.resolve(__dirname, '../..');
 
 const NATIVE_TABS_ROUTE_EXCLUSIONS = {
+  Sheet:
+    'Every sheet (PromptSheet) on the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   OnlineAccount:
     'Authentication uses the shared PromptScreen parent in a native modal above the tab host, like GoalEdit.',
   MarkaiHistory:
