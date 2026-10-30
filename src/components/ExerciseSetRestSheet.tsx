@@ -3,18 +3,14 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, Pressable, Text, View } from 'react-native';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import DurationWheel from './DurationWheel';
-import Button from './ui/Button';
+import PromptSheet from './ui/PromptSheet';
 import { formatRestLabel, formatRestRangeLabel } from './RestPeriodChip';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import { getDefaultRestSec } from '../utils/workoutSession';
 
 export interface ExerciseSetRestItem {
@@ -54,12 +50,11 @@ const ExerciseSetRestSheet = forwardRef<
   ExerciseSetRestSheetProps
 >(({ onApply }, ref) => {
   const { t } = useTranslation();
-  const sheetRef = useRef<BottomSheetModal>(null);
-  const [surfaceBg, textMuted, accentPrimary] = useCSSVariable([
-    '--color-surface',
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [textMuted, accentPrimary] = useCSSVariable([
     '--color-text-muted',
     '--color-accent-primary',
-  ]) as [string, string, string];
+  ]) as [string, string];
 
   const [title, setTitle] = useState('');
   const [sets, setSets] = useState<ExerciseSetRestItem[]>([]);
@@ -97,12 +92,10 @@ const ExerciseSetRestSheet = forwardRef<
       setSelectedKey(ALL_KEY);
       setAllOverwriteConfirmed(false);
       setWheelResetNonce(0);
-      sheetRef.current?.present();
+      setSheetOpen(true);
     },
-    dismiss: () => sheetRef.current?.dismiss(),
+    dismiss: () => setSheetOpen(false),
   }));
-
-  const renderBackdrop = useSheetBackdrop();
   const restTitle = isSupersetRound
     ? t('exerciseSetRest.roundRest', { defaultValue: 'Round Rest' })
     : t('exerciseSetRest.rest', { defaultValue: 'Rest' });
@@ -186,119 +179,108 @@ const ExerciseSetRestSheet = forwardRef<
       if (next !== initial) updates.push({ setId: set.setId, seconds: next });
     }
     if (updates.length > 0) onApply(updates);
-    sheetRef.current?.dismiss();
+    setSheetOpen(false);
   }, [draftBySetId, initialBySetId, onApply, sets]);
 
   return (
-    <BottomSheetModal
-      ref={sheetRef}
-      enableDynamicSizing
-      // On Android the sheet's content pan gesture steals vertical drags from
-      // the wheel picker's FlatLists. Must stay static; toggling it remounts content.
-      enableContentPanningGesture={Platform.OS !== 'android'}
-      containerComponent={sheetContainer}
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: surfaceBg }}
-      handleIndicatorStyle={{ backgroundColor: textMuted }}
+    // GoalEdit's sheet (PromptSheet): Done in the footer.
+    <PromptSheet
+      open={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      headerTitle=""
+      title={`${restTitle} — ${title}`}
+      footerLabel={t('common.done', { defaultValue: 'Done' })}
+      onFooterPress={handleDone}
+      topAligned
     >
-      <BottomSheetView className="px-5 pb-safe-or-8">
-        <Text className="text-lg font-semibold text-text-primary text-center mb-3">
-          {restTitle} — {title}
-        </Text>
-
-        <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-          <Pressable
-            onPress={() => setSelectedKey(ALL_KEY)}
-            className="px-3 py-2 rounded-lg border items-center"
-            style={{
-              borderColor: selectedKey === ALL_KEY ? accentPrimary : textMuted,
-              backgroundColor: 'transparent',
-            }}
+      <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+        <Pressable
+          onPress={() => setSelectedKey(ALL_KEY)}
+          className="px-3 py-2 rounded-lg border items-center"
+          style={{
+            borderColor: selectedKey === ALL_KEY ? accentPrimary : textMuted,
+            backgroundColor: 'transparent',
+          }}
+        >
+          <Text
+            className={
+              selectedKey === ALL_KEY
+                ? 'font-semibold text-text-primary'
+                : 'text-text-secondary'
+            }
+            style={
+              selectedKey === ALL_KEY ? { color: accentPrimary } : undefined
+            }
           >
-            <Text
-              className={
-                selectedKey === ALL_KEY
-                  ? 'font-semibold text-text-primary'
-                  : 'text-text-secondary'
-              }
-              style={
-                selectedKey === ALL_KEY ? { color: accentPrimary } : undefined
-              }
+            {t('exerciseSetRest.all', { defaultValue: 'All' })}
+          </Text>
+          <Text
+            className={
+              selectedKey === ALL_KEY
+                ? 'text-xs mt-0.5 font-semibold text-text-primary'
+                : 'text-xs mt-0.5 text-text-primary'
+            }
+            style={
+              selectedKey === ALL_KEY ? { color: accentPrimary } : undefined
+            }
+          >
+            {formatRestRangeLabel(
+              allSetRests,
+              getDefaultRestSec(),
+              t('restPeriod.off', { defaultValue: 'Off' })
+            )}
+          </Text>
+        </Pressable>
+        {sets.map((set) => {
+          const selected = selectedKey === set.setId;
+          const setRest = draftBySetId[set.setId] ?? getDefaultRestSec();
+          return (
+            <Pressable
+              key={set.setId}
+              onPress={() => setSelectedKey(set.setId)}
+              className="px-3 py-2 rounded-lg border items-center"
+              style={{
+                borderColor: selected ? accentPrimary : textMuted,
+                backgroundColor: 'transparent',
+              }}
             >
-              {t('exerciseSetRest.all', { defaultValue: 'All' })}
-            </Text>
-            <Text
-              className={
-                selectedKey === ALL_KEY
-                  ? 'text-xs mt-0.5 font-semibold text-text-primary'
-                  : 'text-xs mt-0.5 text-text-primary'
-              }
-              style={
-                selectedKey === ALL_KEY ? { color: accentPrimary } : undefined
-              }
-            >
-              {formatRestRangeLabel(
-                allSetRests,
-                getDefaultRestSec(),
-                t('restPeriod.off', { defaultValue: 'Off' })
-              )}
-            </Text>
-          </Pressable>
-          {sets.map((set) => {
-            const selected = selectedKey === set.setId;
-            const setRest = draftBySetId[set.setId] ?? getDefaultRestSec();
-            return (
-              <Pressable
-                key={set.setId}
-                onPress={() => setSelectedKey(set.setId)}
-                className="px-3 py-2 rounded-lg border items-center"
-                style={{
-                  borderColor: selected ? accentPrimary : textMuted,
-                  backgroundColor: 'transparent',
-                }}
+              <Text
+                className={
+                  selected
+                    ? 'font-semibold text-text-primary'
+                    : 'text-text-secondary'
+                }
+                style={selected ? { color: accentPrimary } : undefined}
               >
-                <Text
-                  className={
-                    selected
-                      ? 'font-semibold text-text-primary'
-                      : 'text-text-secondary'
-                  }
-                  style={selected ? { color: accentPrimary } : undefined}
-                >
-                  {itemTitle} {set.setNumber}
-                </Text>
-                <Text
-                  className={
-                    selected
-                      ? 'text-xs mt-0.5 font-semibold text-text-primary'
-                      : 'text-xs mt-0.5 text-text-primary'
-                  }
-                  style={selected ? { color: accentPrimary } : undefined}
-                >
-                  {formatRestLabel(
-                    setRest,
-                    t('restPeriod.off', { defaultValue: 'Off' })
-                  )}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                {itemTitle} {set.setNumber}
+              </Text>
+              <Text
+                className={
+                  selected
+                    ? 'text-xs mt-0.5 font-semibold text-text-primary'
+                    : 'text-xs mt-0.5 text-text-primary'
+                }
+                style={selected ? { color: accentPrimary } : undefined}
+              >
+                {formatRestLabel(
+                  setRest,
+                  t('restPeriod.off', { defaultValue: 'Off' })
+                )}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
-        <View className="pt-3 pb-2">
-          <DurationWheel
-            key={`${selectedKey}:${wheelResetNonce}`}
-            valueSec={selectedSeconds}
-            onChangeSec={handleChangeSeconds}
-            maxSec={MAX_REST_SEC}
-          />
-        </View>
-
-        <Button variant="primary" onPress={handleDone}>
-          {t('common.done', { defaultValue: 'Done' })}
-        </Button>
-      </BottomSheetView>
-    </BottomSheetModal>
+      <View className="pt-3 pb-2">
+        <DurationWheel
+          key={`${selectedKey}:${wheelResetNonce}`}
+          valueSec={selectedSeconds}
+          onChangeSec={handleChangeSeconds}
+          maxSec={MAX_REST_SEC}
+        />
+      </View>
+    </PromptSheet>
   );
 });
 

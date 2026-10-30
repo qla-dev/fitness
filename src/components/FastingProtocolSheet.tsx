@@ -3,24 +3,17 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  BottomSheetScrollView,
-  BottomSheetTextInput,
-} from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
+import PromptSheet from './ui/PromptSheet';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
 import { dateTypeToDate } from './TimeSheet';
 import Toast from 'react-native-toast-message';
 import { useAppLocale } from '../localization';
 
-import Button from './ui/Button';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import Icon from './Icon';
 import StepperInput from './StepperInput';
 import { useStartFast } from '../hooks/useFasting';
@@ -98,16 +91,15 @@ const FastingProtocolSheet = forwardRef<FastingProtocolSheetRef>(
   (_props, ref) => {
     const { t } = useTranslation();
     const appLocale = useAppLocale();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
 
-    const [surfaceBg, textMuted, accentPrimary, textPrimary, textSecondary] =
+    const [textMuted, accentPrimary, textPrimary, textSecondary] =
       useCSSVariable([
-        '--color-surface',
         '--color-text-muted',
         '--color-accent-primary',
         '--color-text-primary',
         '--color-text-secondary',
-      ]) as [string, string, string, string, string];
+      ]) as [string, string, string, string];
 
     const [selectedPresetId, setSelectedPresetId] =
       useState<string>(DEFAULT_PRESET_ID);
@@ -130,12 +122,10 @@ const FastingProtocolSheet = forwardRef<FastingProtocolSheetRef>(
         setStartDate(new Date());
         setShowStartPicker(false);
         setCustomHours(String(DEFAULT_CUSTOM_HOURS));
-        bottomSheetRef.current?.present();
+        setSheetOpen(true);
       },
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      dismiss: () => setSheetOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const handleStartChange = useCallback(({ date }: { date: DateType }) => {
       const js = dateTypeToDate(date);
@@ -195,7 +185,7 @@ const FastingProtocolSheet = forwardRef<FastingProtocolSheetRef>(
         },
         {
           onSuccess: () => {
-            bottomSheetRef.current?.dismiss();
+            setSheetOpen(false);
             Toast.show({
               type: 'success',
               text1: t('fastingProtocol.fastStarted', {
@@ -220,191 +210,160 @@ const FastingProtocolSheet = forwardRef<FastingProtocolSheetRef>(
     };
 
     return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        keyboardBehavior="interactive"
-        keyboardBlurBehavior="restore"
-        android_keyboardInputMode="adjustPan"
-        // On Android the sheet's content pan gesture steals vertical drags from
-        // the time picker's wheels (plain FlatLists), so content panning stays
-        // off there. Must be static: toggling this prop swaps the sheet's
-        // content wrapper component, remounting the content and dismissing the
-        // modal.
-        enableContentPanningGesture={Platform.OS !== 'android'}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      // GoalEdit's sheet (PromptSheet): Start in the footer.
+      <PromptSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        headerTitle=""
+        title={t('fastingProtocol.startTitle', {
+          defaultValue: 'Start a fast',
+        })}
+        footerLabel={
+          isPending
+            ? t('fastingProtocol.starting', { defaultValue: 'Starting...' })
+            : t('fastingProtocol.startAction', {
+                defaultValue: 'Start Fasting',
+              })
+        }
+        onFooterPress={handleStart}
+        footerDisabled={isPending || !customValid}
+        topAligned
       >
-        {/* bg-surface is a touch shield, not decoration: with content panning off
-          on Android, gesture-handler lets taps on background-less views fall
-          through to the backdrop's tap-to-close. A background makes this
-          container absorb them. */}
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="bg-surface px-5 pb-safe-or-8"
-        >
-          <Text className="text-lg font-semibold text-text-primary text-center mb-4">
-            {t('fastingProtocol.startTitle', { defaultValue: 'Start a fast' })}
-          </Text>
-
-          {/* Protocol list */}
-          {FASTING_PRESETS.map((preset) => {
-            const selected = preset.id === selectedPresetId;
-            return (
-              <TouchableOpacity
-                key={preset.id}
-                onPress={() => setSelectedPresetId(preset.id)}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                accessibilityLabel={getPresetCopy(
-                  t,
-                  preset.id,
-                  'name',
-                  preset.name
-                )}
-                activeOpacity={0.7}
-                className={`rounded-xl p-3 mb-2 border ${
-                  selected
-                    ? 'bg-accent-primary/10 border-accent-primary'
-                    : 'bg-raised border-border-subtle'
-                }`}
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base font-semibold text-text-primary">
-                    {getPresetCopy(t, preset.id, 'name', preset.name)}
-                  </Text>
-                  {preset.id !== CUSTOM_PRESET_ID && (
-                    <Text
-                      className="text-sm font-medium"
-                      style={{ color: accentPrimary }}
-                    >
-                      {preset.fastingHours}:{preset.eatingHours}
-                    </Text>
-                  )}
-                </View>
-                <Text className="text-sm text-text-secondary mt-0.5">
-                  {getPresetCopy(
-                    t,
-                    preset.id,
-                    'description',
-                    preset.description
-                  )}
+        {/* Protocol list */}
+        {FASTING_PRESETS.map((preset) => {
+          const selected = preset.id === selectedPresetId;
+          return (
+            <TouchableOpacity
+              key={preset.id}
+              onPress={() => setSelectedPresetId(preset.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={getPresetCopy(
+                t,
+                preset.id,
+                'name',
+                preset.name
+              )}
+              activeOpacity={0.7}
+              className={`rounded-xl p-3 mb-2 border ${
+                selected
+                  ? 'bg-accent-primary/10 border-accent-primary'
+                  : 'bg-raised border-border-subtle'
+              }`}
+            >
+              <View className="flex-row items-center justify-between">
+                <Text className="text-base font-semibold text-text-primary">
+                  {getPresetCopy(t, preset.id, 'name', preset.name)}
                 </Text>
-
-                {/* Custom duration input */}
-                {selected && preset.id === CUSTOM_PRESET_ID && (
-                  <View className="flex-row items-center mt-3">
-                    <StepperInput
-                      value={customHours}
-                      onChangeText={handleCustomChange}
-                      onDecrement={() => adjustCustom(-1)}
-                      onIncrement={() => adjustCustom(1)}
-                      keyboardType="number-pad"
-                      InputComponent={BottomSheetTextInput}
-                      accessibilityLabels={{
-                        decrement: t(
-                          'fastingProtocol.accessibility.decreaseHours',
-                          { defaultValue: 'Decrease fasting duration' }
-                        ),
-                        input: t(
-                          'fastingProtocol.accessibility.durationHours',
-                          { defaultValue: 'Fasting duration in hours' }
-                        ),
-                        increment: t(
-                          'fastingProtocol.accessibility.increaseHours',
-                          { defaultValue: 'Increase fasting duration' }
-                        ),
-                      }}
-                    />
-                    <Text className="text-text-secondary text-base ml-3">
-                      {t('fastingProtocol.hourFast', {
-                        defaultValue: 'hour fast',
-                      })}
-                    </Text>
-                  </View>
+                {preset.id !== CUSTOM_PRESET_ID && (
+                  <Text
+                    className="text-sm font-medium"
+                    style={{ color: accentPrimary }}
+                  >
+                    {preset.fastingHours}:{preset.eatingHours}
+                  </Text>
                 )}
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* Start-time adjust */}
-          <TouchableOpacity
-            onPress={() => setShowStartPicker((v) => !v)}
-            activeOpacity={0.7}
-            className="flex-row items-center justify-between py-3 mt-1"
-            accessibilityRole="button"
-            accessibilityLabel={t('fastingProtocol.accessibility.startTime', {
-              defaultValue: 'Start time: {{time}}',
-              time: startLabel,
-            })}
-          >
-            <Text className="text-base text-text-primary">
-              {t('fastingProtocol.startTime', { defaultValue: 'Start time' })}
-            </Text>
-            <View className="flex-row items-center">
-              <Text className="text-sm" style={{ color: accentPrimary }}>
-                {startLabel}
+              </View>
+              <Text className="text-sm text-text-secondary mt-0.5">
+                {getPresetCopy(t, preset.id, 'description', preset.description)}
               </Text>
-              <Icon
-                name={showStartPicker ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={accentPrimary}
-                style={{ marginLeft: 4 }}
-              />
-            </View>
-          </TouchableOpacity>
 
-          {showStartPicker && (
-            <DateTimePicker
-              mode="single"
-              date={startDate}
-              timePicker
-              onChange={handleStartChange}
-              components={{
-                IconPrev: (
-                  <Icon name="chevron-back" size={18} color={textPrimary} />
-                ),
-                IconNext: (
-                  <Icon name="chevron-forward" size={18} color={textPrimary} />
-                ),
-              }}
-              styles={{
-                selected: { backgroundColor: accentPrimary },
-                selected_label: { color: '#FFFFFF' },
-                today: { borderColor: accentPrimary, borderWidth: 1 },
-                day_label: { color: textPrimary },
-                weekday_label: { color: textSecondary },
-                month_selector_label: { color: textPrimary, fontWeight: '600' },
-                year_selector_label: { color: textPrimary, fontWeight: '600' },
-                time_selector_label: { color: textPrimary, fontWeight: '600' },
-                disabled_label: { color: textMuted },
-                month_label: { color: textPrimary },
-                year_label: { color: textPrimary },
-                time_label: { color: textPrimary },
-                selected_month: { backgroundColor: accentPrimary },
-                selected_month_label: { color: '#FFFFFF' },
-                selected_year: { backgroundColor: accentPrimary },
-                selected_year_label: { color: '#FFFFFF' },
-              }}
+              {/* Custom duration input */}
+              {selected && preset.id === CUSTOM_PRESET_ID && (
+                <View className="flex-row items-center mt-3">
+                  <StepperInput
+                    value={customHours}
+                    onChangeText={handleCustomChange}
+                    onDecrement={() => adjustCustom(-1)}
+                    onIncrement={() => adjustCustom(1)}
+                    keyboardType="number-pad"
+                    accessibilityLabels={{
+                      decrement: t(
+                        'fastingProtocol.accessibility.decreaseHours',
+                        { defaultValue: 'Decrease fasting duration' }
+                      ),
+                      input: t('fastingProtocol.accessibility.durationHours', {
+                        defaultValue: 'Fasting duration in hours',
+                      }),
+                      increment: t(
+                        'fastingProtocol.accessibility.increaseHours',
+                        { defaultValue: 'Increase fasting duration' }
+                      ),
+                    }}
+                  />
+                  <Text className="text-text-secondary text-base ml-3">
+                    {t('fastingProtocol.hourFast', {
+                      defaultValue: 'hour fast',
+                    })}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* Start-time adjust */}
+        <TouchableOpacity
+          onPress={() => setShowStartPicker((v) => !v)}
+          activeOpacity={0.7}
+          className="flex-row items-center justify-between py-3 mt-1"
+          accessibilityRole="button"
+          accessibilityLabel={t('fastingProtocol.accessibility.startTime', {
+            defaultValue: 'Start time: {{time}}',
+            time: startLabel,
+          })}
+        >
+          <Text className="text-base text-text-primary">
+            {t('fastingProtocol.startTime', { defaultValue: 'Start time' })}
+          </Text>
+          <View className="flex-row items-center">
+            <Text className="text-sm" style={{ color: accentPrimary }}>
+              {startLabel}
+            </Text>
+            <Icon
+              name={showStartPicker ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={accentPrimary}
+              style={{ marginLeft: 4 }}
             />
-          )}
+          </View>
+        </TouchableOpacity>
 
-          <Button
-            variant="primary"
-            onPress={handleStart}
-            disabled={isPending || !customValid}
-            className="mt-4"
-          >
-            {isPending
-              ? t('fastingProtocol.starting', { defaultValue: 'Starting...' })
-              : t('fastingProtocol.startAction', {
-                  defaultValue: 'Start Fasting',
-                })}
-          </Button>
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+        {showStartPicker && (
+          <DateTimePicker
+            mode="single"
+            date={startDate}
+            timePicker
+            onChange={handleStartChange}
+            components={{
+              IconPrev: (
+                <Icon name="chevron-back" size={18} color={textPrimary} />
+              ),
+              IconNext: (
+                <Icon name="chevron-forward" size={18} color={textPrimary} />
+              ),
+            }}
+            styles={{
+              selected: { backgroundColor: accentPrimary },
+              selected_label: { color: '#FFFFFF' },
+              today: { borderColor: accentPrimary, borderWidth: 1 },
+              day_label: { color: textPrimary },
+              weekday_label: { color: textSecondary },
+              month_selector_label: { color: textPrimary, fontWeight: '600' },
+              year_selector_label: { color: textPrimary, fontWeight: '600' },
+              time_selector_label: { color: textPrimary, fontWeight: '600' },
+              disabled_label: { color: textMuted },
+              month_label: { color: textPrimary },
+              year_label: { color: textPrimary },
+              time_label: { color: textPrimary },
+              selected_month: { backgroundColor: accentPrimary },
+              selected_month_label: { color: '#FFFFFF' },
+              selected_year: { backgroundColor: accentPrimary },
+              selected_year_label: { color: '#FFFFFF' },
+            }}
+          />
+        )}
+      </PromptSheet>
     );
   }
 );

@@ -1,9 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, {
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import {
@@ -14,11 +12,9 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable, useUniwind } from 'uniwind';
 import Icon from './Icon';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
+import PromptSheet from './ui/PromptSheet';
 import type {
   FoodUnitSelectionResult,
   FoodUnitVariant,
@@ -77,16 +73,11 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
   onSelect,
 }) => {
   const { t } = useTranslation();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [open, setOpen] = useState(false);
   const resolvedTitle =
     title ?? t('foodForm.selectUnit', { defaultValue: 'Select Unit' });
-  const isDismissingRef = useRef(false);
-  const isOpenRef = useRef(false);
-  const isPresentingRef = useRef(false);
-  const presentFrameRef = useRef<number | null>(null);
   const { theme } = useUniwind();
   const [
-    surfaceBg,
     raisedBg,
     borderSubtle,
     borderStrong,
@@ -95,7 +86,6 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
     warningIcon,
     dangerIcon,
   ] = useCSSVariable([
-    '--color-surface',
     '--color-raised',
     '--color-border-subtle',
     '--color-border-strong',
@@ -103,7 +93,7 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
     '--color-icon-success',
     '--color-icon-warning',
     '--color-icon-danger',
-  ]) as [string, string, string, string, string, string, string, string];
+  ]) as [string, string, string, string, string, string, string];
   const isDarkMode = theme === 'dark';
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -171,52 +161,10 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
     })).filter((group) => group.units.length > 0);
   }, [convertibleUnits, savedStandardUnits, selectedUnitKey]);
 
-  const renderBackdrop = useSheetBackdrop();
-
-  const clearScheduledPresent = useCallback(() => {
-    if (presentFrameRef.current != null) {
-      cancelAnimationFrame(presentFrameRef.current);
-      presentFrameRef.current = null;
-    }
-  }, []);
-
-  const handleOpen = useCallback(() => {
-    if (
-      isDismissingRef.current ||
-      isOpenRef.current ||
-      isPresentingRef.current
-    ) {
-      return;
-    }
-
-    clearScheduledPresent();
-    isPresentingRef.current = true;
-    presentFrameRef.current = requestAnimationFrame(() => {
-      presentFrameRef.current = null;
-      bottomSheetRef.current?.present();
-    });
-  }, [clearScheduledPresent]);
-
-  const dismissSheet = useCallback(() => {
-    isPresentingRef.current = false;
-    isDismissingRef.current = true;
-    clearScheduledPresent();
-    bottomSheetRef.current?.dismiss();
-  }, [clearScheduledPresent]);
-
-  const handleDismiss = useCallback(() => {
-    isDismissingRef.current = false;
-    isOpenRef.current = false;
-    isPresentingRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    const sheetRef = bottomSheetRef.current;
-    return () => {
-      clearScheduledPresent();
-      sheetRef?.dismiss();
-    };
-  }, [clearScheduledPresent]);
+  // The sheet route (PromptSheet) takes care of presenting once and of
+  // closing with its screen, so opening is just state.
+  const handleOpen = useCallback(() => setOpen(true), []);
+  const dismissSheet = useCallback(() => setOpen(false), []);
 
   const handleExistingVariantPress = useCallback(
     async (variant: FoodUnitVariant) => {
@@ -479,59 +427,39 @@ const FoodUnitSelectorSheet: React.FC<FoodUnitSelectorSheetProps> = ({
     <>
       {renderTrigger({ onPress: handleOpen })}
 
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        snapPoints={[500]}
-        enableDynamicSizing={false}
-        backdropComponent={renderBackdrop}
-        onDismiss={handleDismiss}
-        onChange={(index) => {
-          isOpenRef.current = index >= 0;
-          if (index >= 0) {
-            isPresentingRef.current = false;
-          }
-        }}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      <PromptSheet
+        open={open}
+        onClose={dismissSheet}
+        headerTitle=""
+        title={resolvedTitle}
+        topAligned
       >
-        <View className="flex-1">
-          <View className="px-4 py-4 border-b border-border-subtle">
-            <Text className="text-lg font-semibold text-center text-text-primary">
-              {resolvedTitle}
-            </Text>
-          </View>
+        <View className="bg-surface rounded-2xl overflow-hidden">
+          {customSavedVariants.length > 0 ? (
+            <>
+              <View className="px-4 pt-4 pb-2">
+                <Text className="text-xs font-semibold uppercase text-text-muted">
+                  {t('foodUnit.savedCustomUnits', {
+                    defaultValue: 'Saved Custom Units',
+                  })}
+                </Text>
+              </View>
+              {customSavedVariants.map(renderCustomVariantRow)}
+            </>
+          ) : null}
 
-          <BottomSheetScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerClassName="pb-safe-or-5"
-          >
-            {customSavedVariants.length > 0 ? (
-              <>
-                <View className="px-4 py-2 bg-surface">
-                  <Text className="text-xs font-semibold uppercase text-text-muted">
-                    {t('foodUnit.savedCustomUnits', {
-                      defaultValue: 'Saved Custom Units',
-                    })}
-                  </Text>
-                </View>
-                {customSavedVariants.map(renderCustomVariantRow)}
-              </>
-            ) : null}
-
-            {groupedUnits.map((group) => (
-              <React.Fragment key={group.label}>
-                <View className="px-4 py-2 bg-surface">
-                  <Text className="text-xs font-semibold uppercase text-text-muted">
-                    {localizeFoodUnitGroup(group.label, t)}
-                  </Text>
-                </View>
-                {group.units.map(renderUnitRow)}
-              </React.Fragment>
-            ))}
-          </BottomSheetScrollView>
+          {groupedUnits.map((group) => (
+            <React.Fragment key={group.label}>
+              <View className="px-4 pt-4 pb-2">
+                <Text className="text-xs font-semibold uppercase text-text-muted">
+                  {localizeFoodUnitGroup(group.label, t)}
+                </Text>
+              </View>
+              {group.units.map(renderUnitRow)}
+            </React.Fragment>
+          ))}
         </View>
-      </BottomSheetModal>
+      </PromptSheet>
     </>
   );
 };

@@ -1,17 +1,27 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
-import WeekdaySheet from '../../../src/components/medications/WeekdaySheet';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import WeekdaySheet, {
+  type WeekdaySheetRef,
+} from '../../../src/components/medications/WeekdaySheet';
 
-// The sheet's route is out of scope here: render its content in place.
-jest.mock('../../../src/components/ui/PromptSheet', () => ({
-  __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => children,
-}));
+jest.mock('../../../src/components/ui/PromptSheet', () =>
+  require('../../helpers/promptSheetMock')
+);
+
+/** Renders the sheet and opens it, as its row would. */
+const openSheet = (value: number[], onChange: (days: number[]) => void) => {
+  const ref = React.createRef<WeekdaySheetRef>();
+  const screen = render(
+    <WeekdaySheet ref={ref} value={value} onChange={onChange} />
+  );
+  act(() => ref.current?.present());
+  return screen;
+};
 
 describe('WeekdaySheet', () => {
   it('adds a tapped day and emits the selection sorted', () => {
     const onChange = jest.fn();
-    const screen = render(<WeekdaySheet value={[3]} onChange={onChange} />);
+    const screen = openSheet([3], onChange);
 
     fireEvent.press(screen.getByLabelText('Monday, not selected'));
 
@@ -20,7 +30,7 @@ describe('WeekdaySheet', () => {
 
   it('removes a tapped day that was already selected', () => {
     const onChange = jest.fn();
-    const screen = render(<WeekdaySheet value={[1, 3]} onChange={onChange} />);
+    const screen = openSheet([1, 3], onChange);
 
     fireEvent.press(screen.getByLabelText('Wednesday, selected'));
 
@@ -28,7 +38,7 @@ describe('WeekdaySheet', () => {
   });
 
   it('exposes selection through accessibilityState', () => {
-    const screen = render(<WeekdaySheet value={[3]} onChange={jest.fn()} />);
+    const screen = openSheet([3], jest.fn());
 
     expect(
       screen.getByLabelText('Wednesday, selected').props.accessibilityState

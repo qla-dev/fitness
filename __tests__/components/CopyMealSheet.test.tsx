@@ -7,6 +7,10 @@ import CopyMealSheet, {
 import { getTodayDate, addDays } from '../../src/utils/dateUtils';
 import i18n, { initializeI18n } from '../../src/localization/i18n';
 
+jest.mock('../../src/components/ui/PromptSheet', () =>
+  require('../helpers/promptSheetMock')
+);
+
 jest.mock('../../src/hooks/useMealTypes', () => ({
   useMealTypes: jest.fn(),
 }));

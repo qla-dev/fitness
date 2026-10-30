@@ -9,8 +9,7 @@ import Toast from 'react-native-toast-message';
 import FoodUnitSelectorSheet from '../../src/components/FoodUnitSelectorSheet';
 
 const mockIcon = jest.fn();
-const mockPresent = jest.fn();
-const mockDismiss = jest.fn();
+import { mockSheetClosed as mockDismiss } from '../helpers/promptSheetMock';
 
 jest.mock('react-native-toast-message', () => ({
   __esModule: true,
@@ -65,32 +64,19 @@ jest.mock('../../src/components/Icon', () => {
   };
 });
 
-jest.mock('@gorhom/bottom-sheet', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const MockBottomSheetModal = React.forwardRef(
-    ({ children, onDismiss }: any, ref: any) => {
-      React.useImperativeHandle(ref, () => ({
-        present: mockPresent,
-        dismiss: () => {
-          mockDismiss();
-          onDismiss?.();
-        },
-      }));
-      return <View>{children}</View>;
-    }
-  );
-  MockBottomSheetModal.displayName = 'MockBottomSheetModal';
+jest.mock('../../src/components/ui/PromptSheet', () =>
+  require('../helpers/promptSheetMock')
+);
 
-  return {
-    __esModule: true,
-    BottomSheetBackdrop: () => <View />,
-    BottomSheetModal: MockBottomSheetModal,
-    BottomSheetScrollView: ({ children }: any) => (
-      <View testID="bottom-sheet-scroll">{children}</View>
-    ),
-  };
-});
+/** A trigger that opens the sheet as soon as it mounts, as a tap would. */
+function OpenOnMount({ onPress }: { onPress: () => void }) {
+  const React = require('react');
+  React.useEffect(() => onPress(), [onPress]);
+  return null;
+}
+const openOnMount = ({ onPress }: { onPress: () => void }) => (
+  <OpenOnMount onPress={onPress} />
+);
 
 jest.mock('react-native-screens', () => ({
   FullWindowOverlay: ({ children }: any) => children,
@@ -121,7 +107,7 @@ describe('FoodUnitSelectorSheet', () => {
         variants={variants as any}
         selectedVariantId="variant-g"
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -143,7 +129,7 @@ describe('FoodUnitSelectorSheet', () => {
           variant: variants[0] as any,
         }}
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -188,7 +174,7 @@ describe('FoodUnitSelectorSheet', () => {
           variant: variants[0] as any,
         }}
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -215,7 +201,7 @@ describe('FoodUnitSelectorSheet', () => {
           requiresNutritionUpdate: true,
         }}
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -260,7 +246,7 @@ describe('FoodUnitSelectorSheet', () => {
           variant: customVariant as any,
         }}
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -284,7 +270,7 @@ describe('FoodUnitSelectorSheet', () => {
         variants={variants as any}
         selectedVariantId="variant-g"
         onSelect={onSelect}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -318,7 +304,7 @@ describe('FoodUnitSelectorSheet', () => {
           } as any,
         }}
         onSelect={onSelect}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -343,24 +329,26 @@ describe('FoodUnitSelectorSheet', () => {
           variant: variants[0] as any,
         }}
         onSelect={onSelect}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
+
+    // An incompatible unit carries no compatibility checkmark.
+    expect(
+      within(screen.getByTestId('food-unit-option-cup')).queryByText(
+        'icon-checkmark'
+      )
+    ).toBeNull();
 
     fireEvent.press(screen.getByText('cup'));
 
     await waitFor(() => {
       expect(onSelect).toHaveBeenCalled();
     });
-    expect(mockDismiss).toHaveBeenCalled();
+    await waitFor(() => expect(mockDismiss).toHaveBeenCalled());
     expect(mockToast.show).not.toHaveBeenCalled();
     expect(
       screen.queryByText('Please update the nutrition values manually.')
-    ).toBeNull();
-    expect(
-      within(screen.getByTestId('food-unit-option-cup')).queryByText(
-        'icon-checkmark'
-      )
     ).toBeNull();
   });
 
@@ -401,7 +389,7 @@ describe('FoodUnitSelectorSheet', () => {
           variant: aiCupVariant as any,
         }}
         onSelect={jest.fn()}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 
@@ -421,7 +409,7 @@ describe('FoodUnitSelectorSheet', () => {
         variants={variants as any}
         selectedVariantId="variant-g"
         onSelect={onSelect}
-        renderTrigger={() => <></>}
+        renderTrigger={openOnMount}
       />
     );
 

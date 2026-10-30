@@ -3,26 +3,16 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
+import PromptSheet from './ui/PromptSheet';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
 import Toast from 'react-native-toast-message';
 
 import Icon from './Icon';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import { useUpdateFast, useDeleteFast } from '../hooks/useFasting';
 import { formatHoursMinutes, formatDateTime } from '../utils/fasting';
 import { dateTypeToDate } from './TimeSheet';
@@ -42,23 +32,16 @@ interface FastingEditSheetProps {
 const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
   ({ onSaved }, ref) => {
     const { t } = useTranslation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
 
-    const [
-      surfaceBg,
-      textMuted,
-      accentPrimary,
-      textPrimary,
-      textSecondary,
-      danger,
-    ] = useCSSVariable([
-      '--color-surface',
-      '--color-text-muted',
-      '--color-accent-primary',
-      '--color-text-primary',
-      '--color-text-secondary',
-      '--color-icon-danger',
-    ]) as [string, string, string, string, string, string];
+    const [textMuted, accentPrimary, textPrimary, textSecondary, danger] =
+      useCSSVariable([
+        '--color-text-muted',
+        '--color-accent-primary',
+        '--color-text-primary',
+        '--color-text-secondary',
+        '--color-icon-danger',
+      ]) as [string, string, string, string, string];
 
     const [fastId, setFastId] = useState<string | null>(null);
     const [startDate, setStartDate] = useState<Date>(() => new Date());
@@ -77,12 +60,10 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
         const end = fast.end_time ? new Date(fast.end_time) : new Date();
         setEndDate(Number.isNaN(end.getTime()) ? new Date() : end);
         setOpenPicker(null);
-        bottomSheetRef.current?.present();
+        setSheetOpen(true);
       },
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      dismiss: () => setSheetOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const handleStartChange = useCallback(({ date }: { date: DateType }) => {
       const js = dateTypeToDate(date);
@@ -153,7 +134,7 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
         },
         {
           onSuccess: () => {
-            bottomSheetRef.current?.dismiss();
+            setSheetOpen(false);
             Toast.show({
               type: 'success',
               text1: t('fastingEdit.updated', { defaultValue: 'Fast updated' }),
@@ -194,7 +175,7 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
             onPress: () => {
               deleteFast(fastId, {
                 onSuccess: () => {
-                  bottomSheetRef.current?.dismiss();
+                  setSheetOpen(false);
                   Toast.show({
                     type: 'success',
                     text1: t('fastingEdit.deleted', {
@@ -289,91 +270,66 @@ const FastingEditSheet = forwardRef<FastingEditSheetRef, FastingEditSheetProps>(
     );
 
     return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        // On Android the sheet's content pan gesture steals vertical drags from
-        // the time picker's wheels (plain FlatLists), so content panning stays
-        // off there. Must be static: toggling this prop swaps the sheet's
-        // content wrapper component, remounting the content and dismissing the
-        // modal.
-        enableContentPanningGesture={Platform.OS !== 'android'}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      // GoalEdit's sheet (PromptSheet): Save in the footer, Delete under the
+      // times as the quieter action.
+      <PromptSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        headerTitle=""
+        title={t('fastingEdit.editTitle', { defaultValue: 'Edit fast' })}
+        description={t('fastingEdit.fasted', {
+          defaultValue: '{{duration}} fasted',
+          duration: durationLabel,
+        })}
+        footerLabel={
+          isSavePending
+            ? t('fastingEdit.saving', { defaultValue: 'Saving...' })
+            : t('fastingEdit.saveChanges', { defaultValue: 'Save changes' })
+        }
+        onFooterPress={handleSave}
+        footerDisabled={isPending || !isValid}
+        topAligned
       >
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="bg-surface px-5 pb-safe-or-8"
-        >
-          <Text className="text-lg font-semibold text-text-primary text-center mb-1">
-            {t('fastingEdit.editTitle', { defaultValue: 'Edit fast' })}
-          </Text>
-          <Text className="text-center text-text-secondary mb-4">
-            {t('fastingEdit.fasted', {
-              defaultValue: '{{duration}} fasted',
-              duration: durationLabel,
+        {renderRow(
+          t('fastingEdit.started', { defaultValue: 'Started' }),
+          formatDateTime(startDate),
+          'start'
+        )}
+        {openPicker === 'start' &&
+          renderInlinePicker(startDate, handleStartChange)}
+
+        {renderRow(
+          t('fastingEdit.ended', { defaultValue: 'Ended' }),
+          formatDateTime(endDate),
+          'end'
+        )}
+        {openPicker === 'end' && renderInlinePicker(endDate, handleEndChange)}
+
+        {!isValid && (
+          <Text className="text-text-danger-subtle text-sm mt-3 text-center">
+            {t('fastingEdit.beforeEnd', {
+              defaultValue: 'Start time must be before the end time.',
             })}
           </Text>
+        )}
 
-          {renderRow(
-            t('fastingEdit.started', { defaultValue: 'Started' }),
-            formatDateTime(startDate),
-            'start'
-          )}
-          {openPicker === 'start' &&
-            renderInlinePicker(startDate, handleStartChange)}
-
-          {renderRow(
-            t('fastingEdit.ended', { defaultValue: 'Ended' }),
-            formatDateTime(endDate),
-            'end'
-          )}
-          {openPicker === 'end' && renderInlinePicker(endDate, handleEndChange)}
-
-          {!isValid && (
-            <Text className="text-text-danger-subtle text-sm mt-3 text-center">
-              {t('fastingEdit.beforeEnd', {
-                defaultValue: 'Start time must be before the end time.',
-              })}
-            </Text>
-          )}
-
-          <Pressable
-            onPress={handleSave}
-            disabled={isPending || !isValid}
-            className={`flex-row items-center justify-center rounded-xl py-3.5 mt-4 bg-accent-primary ${
-              isPending || !isValid ? 'opacity-50' : ''
-            }`}
-          >
-            <Text className="text-white text-base font-semibold">
-              {isSavePending
-                ? t('fastingEdit.saving', { defaultValue: 'Saving...' })
-                : t('fastingEdit.saveChanges', {
-                    defaultValue: 'Save changes',
-                  })}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={handleDelete}
-            disabled={isPending}
-            className={`flex-row items-center justify-center rounded-xl py-3.5 mt-3 mb-2 ${
-              isPending ? 'opacity-50' : ''
-            }`}
-          >
-            <Icon name="trash" size={15} color={danger} />
-            <Text className="text-icon-danger text-base font-semibold ml-2">
-              {isDeletePending
-                ? t('fastingEdit.deleting', { defaultValue: 'Deleting...' })
-                : t('fastingEdit.deleteAction', {
-                    defaultValue: 'Delete fast',
-                  })}
-            </Text>
-          </Pressable>
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+        <Pressable
+          onPress={handleDelete}
+          disabled={isPending}
+          className={`flex-row items-center justify-center rounded-xl py-3.5 mt-3 mb-2 ${
+            isPending ? 'opacity-50' : ''
+          }`}
+        >
+          <Icon name="trash" size={15} color={danger} />
+          <Text className="text-icon-danger text-base font-semibold ml-2">
+            {isDeletePending
+              ? t('fastingEdit.deleting', { defaultValue: 'Deleting...' })
+              : t('fastingEdit.deleteAction', {
+                  defaultValue: 'Delete fast',
+                })}
+          </Text>
+        </Pressable>
+      </PromptSheet>
     );
   }
 );

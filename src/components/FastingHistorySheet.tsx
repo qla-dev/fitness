@@ -13,15 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useCSSVariable } from 'uniwind';
+import PromptSheet from './ui/PromptSheet';
 import Toast from 'react-native-toast-message';
 
 import Icon from './Icon';
 import { DeleteRowAction } from './SwipeableDeleteRow';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import FastingEditSheet, { type FastingEditSheetRef } from './FastingEditSheet';
 import { FastingProtocolBadge } from './FastingSharedComponents';
 import { useFastingHistory, useDeleteFast } from '../hooks/useFasting';
@@ -116,16 +114,15 @@ export interface FastingHistorySheetRef {
 const FastingHistorySheet = forwardRef<FastingHistorySheetRef>(
   (_props, ref) => {
     const { t } = useTranslation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
     const editSheetRef = useRef<FastingEditSheetRef>(null);
 
     const [limit, setLimit] = useState(PAGE_SIZE);
 
-    const [surfaceBg, textMuted, accentPrimary] = useCSSVariable([
-      '--color-surface',
+    const [textMuted, accentPrimary] = useCSSVariable([
       '--color-text-muted',
       '--color-accent-primary',
-    ]) as [string, string, string];
+    ]) as [string, string];
 
     const { data: history, isLoading } = useFastingHistory(limit, 0);
     const { mutate: deleteFast } = useDeleteFast();
@@ -136,11 +133,9 @@ const FastingHistorySheet = forwardRef<FastingHistorySheetRef>(
     const canLoadMore = (history?.length ?? 0) >= limit;
 
     useImperativeHandle(ref, () => ({
-      present: () => bottomSheetRef.current?.present(),
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      present: () => setSheetOpen(true),
+      dismiss: () => setSheetOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const openEdit = (fast: FastingLog) => editSheetRef.current?.present(fast);
 
@@ -188,71 +183,61 @@ const FastingHistorySheet = forwardRef<FastingHistorySheetRef>(
 
     return (
       <>
-        <BottomSheetModal
-          ref={bottomSheetRef}
-          enableDynamicSizing
-          backdropComponent={renderBackdrop}
-          containerComponent={sheetContainer}
-          backgroundStyle={{ backgroundColor: surfaceBg }}
-          handleIndicatorStyle={{ backgroundColor: textMuted }}
+        <PromptSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          headerTitle=""
+          title={t('fastingHistory.title', {
+            defaultValue: 'Fasting history',
+          })}
+          description={t('fastingHistory.hint', {
+            defaultValue: 'Tap to edit · swipe left to delete',
+          })}
+          topAligned
         >
-          <BottomSheetScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerClassName="bg-surface px-5 pb-safe-or-8"
-          >
-            <Text className="text-lg font-semibold text-text-primary text-center mb-1">
-              {t('fastingHistory.title', { defaultValue: 'Fasting history' })}
-            </Text>
-            <Text className="text-center text-text-muted text-xs mb-4">
-              {t('fastingHistory.hint', {
-                defaultValue: 'Tap to edit · swipe left to delete',
-              })}
-            </Text>
+          {isLoading && pastFasts.length === 0 ? (
+            <View className="items-center py-8">
+              <ActivityIndicator size="small" color={accentPrimary} />
+            </View>
+          ) : pastFasts.length === 0 ? (
+            <View className="items-center py-8">
+              <Icon name="history" size={28} color={textMuted} />
+              <Text className="text-sm text-text-muted mt-2">
+                {t('fastingHistory.empty', {
+                  defaultValue: 'No past fasts yet.',
+                })}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {pastFasts.map((fast, index) => (
+                <FastingHistoryRow
+                  key={fast.id}
+                  fast={fast}
+                  isLast={index === pastFasts.length - 1}
+                  onEdit={openEdit}
+                  onDelete={confirmDelete}
+                  textMuted={textMuted}
+                  t={t}
+                />
+              ))}
+            </View>
+          )}
 
-            {isLoading && pastFasts.length === 0 ? (
-              <View className="items-center py-8">
-                <ActivityIndicator size="small" color={accentPrimary} />
-              </View>
-            ) : pastFasts.length === 0 ? (
-              <View className="items-center py-8">
-                <Icon name="history" size={28} color={textMuted} />
-                <Text className="text-sm text-text-muted mt-2">
-                  {t('fastingHistory.empty', {
-                    defaultValue: 'No past fasts yet.',
-                  })}
-                </Text>
-              </View>
-            ) : (
-              <View>
-                {pastFasts.map((fast, index) => (
-                  <FastingHistoryRow
-                    key={fast.id}
-                    fast={fast}
-                    isLast={index === pastFasts.length - 1}
-                    onEdit={openEdit}
-                    onDelete={confirmDelete}
-                    textMuted={textMuted}
-                    t={t}
-                  />
-                ))}
-              </View>
-            )}
-
-            {canLoadMore && (
-              <Pressable
-                onPress={() => setLimit((n) => n + PAGE_SIZE)}
-                className="items-center py-3 mt-1"
+          {canLoadMore && (
+            <Pressable
+              onPress={() => setLimit((n) => n + PAGE_SIZE)}
+              className="items-center py-3 mt-1"
+            >
+              <Text
+                className="text-sm font-medium"
+                style={{ color: accentPrimary }}
               >
-                <Text
-                  className="text-sm font-medium"
-                  style={{ color: accentPrimary }}
-                >
-                  {t('common.loadMore', { defaultValue: 'Load more' })}
-                </Text>
-              </Pressable>
-            )}
-          </BottomSheetScrollView>
-        </BottomSheetModal>
+                {t('common.loadMore', { defaultValue: 'Load more' })}
+              </Text>
+            </Pressable>
+          )}
+        </PromptSheet>
 
         <FastingEditSheet ref={editSheetRef} />
       </>

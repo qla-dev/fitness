@@ -3,18 +3,14 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
 import { useCSSVariable } from 'uniwind';
+import PromptSheet from './ui/PromptSheet';
 import DateTimePicker, { type DateType } from 'react-native-ui-datepicker';
-import Button from './ui/Button';
-import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import Icon from './Icon';
 import { useMealTypes } from '../hooks/useMealTypes';
 import { getLocalizedMealLabel } from '../constants/meals';
@@ -45,16 +41,15 @@ const CopyMealSheet = forwardRef<CopyMealSheetRef, CopyMealSheetProps>(
       ? 'pl-PL'
       : 'en-US';
     const { presentation } = useCalendarPresentation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
 
-    const [surfaceBg, textMuted, accentPrimary, textPrimary, textSecondary] =
+    const [textMuted, accentPrimary, textPrimary, textSecondary] =
       useCSSVariable([
-        '--color-surface',
         '--color-text-muted',
         '--color-accent-primary',
         '--color-text-primary',
         '--color-text-secondary',
-      ]) as [string, string, string, string, string];
+      ]) as [string, string, string, string];
 
     const [source, setSource] = useState<{
       date: string;
@@ -83,12 +78,10 @@ const CopyMealSheet = forwardRef<CopyMealSheetRef, CopyMealSheetProps>(
         // before copying.
         setTargetDate(sourceDate);
         setTargetMealTypeId(sourceMealTypeId);
-        bottomSheetRef.current?.present();
+        setSheetOpen(true);
       },
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      dismiss: () => setSheetOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const handleDateChange = useCallback(({ date }: { date: DateType }) => {
       if (!date) return;
@@ -177,139 +170,119 @@ const CopyMealSheet = forwardRef<CopyMealSheetRef, CopyMealSheetProps>(
     }, [source, targetDate, targetMealTypeId, mealTypes, onCopy, t]);
 
     return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        enableContentPanningGesture={Platform.OS !== 'android'}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      // GoalEdit's sheet (PromptSheet): Copy in the footer.
+      <PromptSheet
+        open={sheetOpen && source !== null}
+        onClose={() => setSheetOpen(false)}
+        headerTitle=""
+        title={t('copyMeal.title', {
+          defaultValue: 'Copy meal: {{meal}}',
+          meal: sourceTitle,
+        })}
+        description={
+          source
+            ? t('copyMeal.sourceDate', {
+                defaultValue: 'Source date: {{date}}',
+                date: formatDateLabel(source.date, t, dateLocale),
+              })
+            : undefined
+        }
+        footerLabel={
+          isPending
+            ? t('copyMeal.copying', { defaultValue: 'Copying...' })
+            : t('copyMeal.copy', { defaultValue: 'Copy' })
+        }
+        onFooterPress={handleCopy}
+        footerDisabled={
+          isPending ||
+          !source ||
+          !targetDate ||
+          !targetMealTypeId ||
+          (source.date === targetDate && source.mealTypeId === targetMealTypeId)
+        }
+        topAligned
       >
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-safe-or-8"
-        >
-          {source && (
-            <View className="px-5">
-              <View className="items-center mb-4">
-                <Text className="text-text-primary text-lg font-semibold text-center">
-                  {t('copyMeal.title', {
-                    defaultValue: 'Copy meal: {{meal}}',
-                    meal: sourceTitle,
-                  })}
-                </Text>
-                <Text className="text-text-secondary text-sm mt-1 text-center">
-                  {t('copyMeal.sourceDate', {
-                    defaultValue: 'Source date: {{date}}',
-                    date: formatDateLabel(source.date, t, dateLocale),
-                  })}
-                </Text>
-              </View>
+        {source && (
+          <View>
+            {/* Target date */}
+            <Text className="text-xs font-semibold uppercase text-text-muted mb-1">
+              {t('copyMeal.targetDate', { defaultValue: 'Target date' })}
+            </Text>
+            <DateTimePicker
+              mode="single"
+              date={dateValue}
+              onChange={handleDateChange}
+              locale={presentation.locale}
+              firstDayOfWeek={presentation.firstDayOfWeek}
+              components={{
+                IconPrev: (
+                  <Icon name="chevron-back" size={18} color={textPrimary} />
+                ),
+                IconNext: (
+                  <Icon name="chevron-forward" size={18} color={textPrimary} />
+                ),
+              }}
+              styles={{
+                selected: { backgroundColor: accentPrimary },
+                selected_label: { color: '#FFFFFF' },
+                today: { borderColor: accentPrimary, borderWidth: 1 },
+                day_label: { color: textPrimary },
+                weekday_label: { color: textSecondary },
+                month_selector_label: {
+                  color: textPrimary,
+                  fontWeight: '600',
+                },
+                year_selector_label: {
+                  color: textPrimary,
+                  fontWeight: '600',
+                },
+                disabled_label: { color: textMuted },
+                month_label: { color: textPrimary },
+                year_label: { color: textPrimary },
+                selected_month: { backgroundColor: accentPrimary },
+                selected_month_label: { color: '#FFFFFF' },
+                selected_year: { backgroundColor: accentPrimary },
+                selected_year_label: { color: '#FFFFFF' },
+              }}
+            />
 
-              {/* Target date */}
-              <Text className="text-xs font-semibold uppercase text-text-muted mb-1">
-                {t('copyMeal.targetDate', { defaultValue: 'Target date' })}
-              </Text>
-              <DateTimePicker
-                mode="single"
-                date={dateValue}
-                onChange={handleDateChange}
-                locale={presentation.locale}
-                firstDayOfWeek={presentation.firstDayOfWeek}
-                components={{
-                  IconPrev: (
-                    <Icon name="chevron-back" size={18} color={textPrimary} />
-                  ),
-                  IconNext: (
-                    <Icon
-                      name="chevron-forward"
-                      size={18}
-                      color={textPrimary}
-                    />
-                  ),
-                }}
-                styles={{
-                  selected: { backgroundColor: accentPrimary },
-                  selected_label: { color: '#FFFFFF' },
-                  today: { borderColor: accentPrimary, borderWidth: 1 },
-                  day_label: { color: textPrimary },
-                  weekday_label: { color: textSecondary },
-                  month_selector_label: {
-                    color: textPrimary,
-                    fontWeight: '600',
-                  },
-                  year_selector_label: {
-                    color: textPrimary,
-                    fontWeight: '600',
-                  },
-                  disabled_label: { color: textMuted },
-                  month_label: { color: textPrimary },
-                  year_label: { color: textPrimary },
-                  selected_month: { backgroundColor: accentPrimary },
-                  selected_month_label: { color: '#FFFFFF' },
-                  selected_year: { backgroundColor: accentPrimary },
-                  selected_year_label: { color: '#FFFFFF' },
-                }}
-              />
-
-              {/* Target meal type */}
-              <Text className="text-xs font-semibold uppercase text-text-muted mt-4 mb-2">
-                {t('copyMeal.targetMeal', { defaultValue: 'Target meal' })}
-              </Text>
-              <View className="flex-row flex-wrap gap-2 mb-6">
-                {mealTypes.map((mt) => {
-                  const isSelected = mt.id === targetMealTypeId;
-                  return (
-                    <TouchableOpacity
-                      key={mt.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={displayMealType(mt)}
-                      accessibilityState={{ selected: isSelected }}
-                      onPress={() => setTargetMealTypeId(mt.id)}
-                      activeOpacity={0.7}
-                      className={`px-4 py-2 rounded-full border ${
+            {/* Target meal type */}
+            <Text className="text-xs font-semibold uppercase text-text-muted mt-4 mb-2">
+              {t('copyMeal.targetMeal', { defaultValue: 'Target meal' })}
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-6">
+              {mealTypes.map((mt) => {
+                const isSelected = mt.id === targetMealTypeId;
+                return (
+                  <TouchableOpacity
+                    key={mt.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={displayMealType(mt)}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => setTargetMealTypeId(mt.id)}
+                    activeOpacity={0.7}
+                    className={`px-4 py-2 rounded-full border ${
+                      isSelected
+                        ? 'bg-accent-primary border-accent-primary'
+                        : 'bg-raised border-border-subtle'
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm ${
                         isSelected
-                          ? 'bg-accent-primary border-accent-primary'
-                          : 'bg-raised border-border-subtle'
+                          ? 'text-white font-semibold'
+                          : 'text-text-primary'
                       }`}
                     >
-                      <Text
-                        className={`text-sm ${
-                          isSelected
-                            ? 'text-white font-semibold'
-                            : 'text-text-primary'
-                        }`}
-                      >
-                        {displayMealType(mt)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <Button
-                variant="primary"
-                onPress={handleCopy}
-                accessibilityLabel={t('copyMeal.copy', {
-                  defaultValue: 'Copy',
-                })}
-                disabled={
-                  isPending ||
-                  !targetDate ||
-                  !targetMealTypeId ||
-                  (source.date === targetDate &&
-                    source.mealTypeId === targetMealTypeId)
-                }
-              >
-                {isPending
-                  ? t('copyMeal.copying', { defaultValue: 'Copying...' })
-                  : t('copyMeal.copy', { defaultValue: 'Copy' })}
-              </Button>
+                      {displayMealType(mt)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          )}
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+          </View>
+        )}
+      </PromptSheet>
     );
   }
 );
