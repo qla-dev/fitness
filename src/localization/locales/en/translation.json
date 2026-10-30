@@ -5203,7 +5203,9 @@
     "providerConnect": "Connect {{provider}}",
     "disconnectBody": "Disconnect {{provider}} to stop signing in with it. Your other sign-in method keeps the account.",
     "disconnectProvider": "Disconnect {{provider}}",
-    "manageHint": "Disconnect this method or sign out"
+    "manageHint": "Disconnect this method or sign out",
+    "sync": "Sync",
+    "syncSubtitle": "Your diary on every phone you sign in on"
   },
   "profile": {
     "username": "Username",
@@ -5283,7 +5285,8 @@
     "changeTodayGoal": "Change today's goal",
     "goalIncrease": "Increase goal",
     "goalDecrease": "Decrease goal",
-    "fieldSaveFailed": "Could not save {{field}}. Please try again."
+    "fieldSaveFailed": "Could not save {{field}}. Please try again.",
+    "aiAssistant": "AI assistant"
   },
   "programs": {
     "title": "Program",
@@ -6215,7 +6218,8 @@
     "benefitPrivateBody": "Apple can hide your email, and the diary keeps working without a connection. Sync settings appear once you sign in.",
     "signInGeneric": "Sign in",
     "signInGoogle": "Sign in with Google",
-    "continueWithGoogle": "Continue with Google"
+    "continueWithGoogle": "Continue with Google",
+    "coins": "AI coins"
   },
   "markai": {
     "title": "MarkAI",

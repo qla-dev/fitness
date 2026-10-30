@@ -52,6 +52,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
       queryFn: hasAccountPassword,
     }).data ?? false;
 
+  const signedIn = useOnlineAccount((s) => !!s.session);
   const appleEmail = useOnlineAccount(
     (s) => s.session?.user.sign_in?.email ?? null
   );
@@ -155,6 +156,22 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
             )}
             onPress={() =>
               navigation.navigate('ProfileEdit', { field: 'password' })
+            }
+          />
+        </SettingsRowGroup>
+        <View style={{ height: 24 }} />
+        <SettingsRowGroup title={t('account.sync', { defaultValue: 'Sync' })}>
+          <SettingsRow
+            icon="sync"
+            iconColor={iconColor}
+            title={t('online.sync', { defaultValue: 'Online sync' })}
+            subtitle={t('account.syncSubtitle', {
+              defaultValue: 'Your diary on every phone you sign in on',
+            })}
+            // Signed out there is nothing to sync yet, so this opens the
+            // sign-in sheet instead of an empty sync screen.
+            onPress={() =>
+              navigation.navigate(signedIn ? 'OnlineSync' : 'OnlineAccount')
             }
           />
         </SettingsRowGroup>

@@ -4,7 +4,6 @@ import {
   updateOnlineAccount,
   useOnlineAccount,
   type OnlineAccount,
-  onlineAccountEntryLabel,
 } from '../services/online/account';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -256,35 +255,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       >
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
-          <SettingsRowGroup>
+          <SettingsRowGroup
+            title={t('profile.aiAssistant', { defaultValue: 'AI assistant' })}
+          >
             <SettingsRow
-              icon="profile"
-              title={
+              icon="ai-coin"
+              title={t('online.coins', { defaultValue: 'AI coins' })}
+              // Signed in, the balance; signed out, what an account brings.
+              subtitle={
                 onlineSession
                   ? t('online.balance', {
                       defaultValue: '{{amount}} AI coins',
                       amount: onlineSession.user.ai_coins,
                     })
-                  : onlineAccountEntryLabel(t)
+                  : t('online.profileReward', {
+                      defaultValue: '100 AI coins when you create your account',
+                    })
               }
-              subtitle={t('online.profileReward', {
-                defaultValue: '100 AI coins when you create your account',
-              })}
               onPress={() =>
                 onlineSession
                   ? navigation.navigate('CoinPackages')
                   : navigation.navigate('OnlineAccount')
-              }
-            />
-            <SettingsRow
-              icon="sync"
-              title={t('online.sync', { defaultValue: 'Online sync' })}
-              // Signed out there is nothing to sync yet, so this opens the same
-              // sign-in sheet as the row above instead of an empty sync screen.
-              onPress={() =>
-                navigation.navigate(
-                  onlineSession ? 'OnlineSync' : 'OnlineAccount'
-                )
               }
             />
             <SettingsRow
