@@ -1,18 +1,10 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from '../ui/BottomSheetModal';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import { localizedWeekdayLabels } from '../../utils/medicationScheduleLocalization';
 import Icon from '../Icon';
-import { sheetContainer, useSheetBackdrop } from '../ui/sheetChrome';
+import PromptSheet from '../ui/PromptSheet';
 
 export interface WeekdaySheetRef {
   present: () => void;
@@ -25,25 +17,19 @@ interface WeekdaySheetProps {
   onChange: (days: number[]) => void;
 }
 
-/** Multi-select bottom sheet for a schedule's days_of_week. Selecting a day
- * toggles it without dismissing, so several days can be picked in one visit. */
+/** Multi-select sheet for a schedule's days_of_week (GoalEdit's PromptSheet).
+ * Selecting a day toggles it without closing, so several days can be picked
+ * in one visit; Done closes it. */
 const WeekdaySheet = forwardRef<WeekdaySheetRef, WeekdaySheetProps>(
   ({ value, onChange }, ref) => {
     const { t } = useTranslation();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
-
-    const [surfaceBg, textMuted, accentPrimary] = useCSSVariable([
-      '--color-surface',
-      '--color-text-muted',
-      '--color-accent-primary',
-    ]) as [string, string, string];
+    const [open, setOpen] = useState(false);
+    const accentPrimary = useCSSVariable('--color-accent-primary') as string;
 
     useImperativeHandle(ref, () => ({
-      present: () => bottomSheetRef.current?.present(),
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      present: () => setOpen(true),
+      dismiss: () => setOpen(false),
     }));
-
-    const renderBackdrop = useSheetBackdrop();
 
     const toggle = (day: number) => {
       const next = value.includes(day)
@@ -55,23 +41,18 @@ const WeekdaySheet = forwardRef<WeekdaySheetRef, WeekdaySheetProps>(
     const weekdayLabels = localizedWeekdayLabels(t);
 
     return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableDynamicSizing
-        enableContentPanningGesture={Platform.OS !== 'android'}
-        backdropComponent={renderBackdrop}
-        containerComponent={sheetContainer}
-        backgroundStyle={{ backgroundColor: surfaceBg }}
-        handleIndicatorStyle={{ backgroundColor: textMuted }}
+      <PromptSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        headerTitle=""
+        title={t('medications.weekdays.title', {
+          defaultValue: 'Days of Week',
+        })}
+        footerLabel={t('common.done', { defaultValue: 'Done' })}
+        onFooterPress={() => setOpen(false)}
+        topAligned
       >
-        <BottomSheetView className="pb-safe-or-5">
-          <View className="px-4 py-4 border-b border-border-subtle">
-            <Text className="text-lg font-semibold text-center text-text-primary">
-              {t('medications.weekdays.title', {
-                defaultValue: 'Days of Week',
-              })}
-            </Text>
-          </View>
+        <View className="bg-surface rounded-2xl overflow-hidden">
           {weekdayLabels.map((label, day) => {
             const selected = value.includes(day);
             return (
@@ -114,8 +95,8 @@ const WeekdaySheet = forwardRef<WeekdaySheetRef, WeekdaySheetProps>(
               </TouchableOpacity>
             );
           })}
-        </BottomSheetView>
-      </BottomSheetModal>
+        </View>
+      </PromptSheet>
     );
   }
 );

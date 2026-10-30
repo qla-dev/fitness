@@ -2,6 +2,12 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import WeekdaySheet from '../../../src/components/medications/WeekdaySheet';
 
+// The sheet's route is out of scope here: render its content in place.
+jest.mock('../../../src/components/ui/PromptSheet', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 describe('WeekdaySheet', () => {
   it('adds a tapped day and emits the selection sorted', () => {
     const onChange = jest.fn();

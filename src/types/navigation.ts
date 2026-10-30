@@ -432,7 +432,7 @@ export type RootStackParamList = {
    */
   /** `prefill`: a value proposed elsewhere (MarkAI), shown for review, not saved. */
   /** Every sheet (PromptSheet): modal, like GoalEdit. Content comes from the sheet host. */
-  Sheet: undefined;
+  Sheet: { owner: number };
   GoalEdit: { goalKey: string; prefill?: number };
   /** Hydration for one day, counted in servings. Modal, like GoalEdit. */
   WaterEdit: { date: string };

@@ -1,25 +1,33 @@
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
-import { StackActions, useNavigation } from '@react-navigation/native';
+import {
+  CommonActions,
+  StackActions,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import PromptScreen, { type PromptScreenProps } from './PromptScreen';
 import { navigationRef } from '../ActiveWorkoutBar';
+import type { RootStackParamList } from '../../types/navigation';
 
 /**
- * Every sheet in the app, presented the one way: the `Sheet` modal route,
- * which is GoalEdit's presentation — the native header with its native close
+ * Every sheet in the app, presented the one way: a `Sheet` modal route, which
+ * is GoalEdit's presentation — the native header with its native close
  * button, the system's modal corner, and the shared footer — drawn by
  * {@link PromptScreen}. There is no other sheet component; CustomModal,
  * NativePromptSheet, BottomSheetPicker, ActionSheet and TimeSheet are this
- * underneath. The calendar is the one exception.
+ * underneath. The calendars are the one exception.
  *
  * A screen renders `<PromptSheet open onClose …>` where it used to render a
  * bottom sheet. While open, every render publishes its props and children to
- * the route, so the sheet stays live: state the screen changes shows in the
+ * its route, so the sheet stays live: state the screen changes shows in the
  * sheet at once. Closing it from the route (the close button, a swipe down,
  * Android Back) calls `onClose`; setting `open` to false closes the route.
  *
- * One sheet at a time, as before: opening another while one is showing
- * replaces its content in place.
+ * Each open sheet is its own route, so a sheet opened from inside another
+ * (a fast's history, then one fast to edit) stacks on top of it, and closing
+ * the inner one goes back to the outer.
  */
 
 type SheetSpec = Omit<PromptScreenProps, 'children' | 'onDismiss'> & {
@@ -27,34 +35,60 @@ type SheetSpec = Omit<PromptScreenProps, 'children' | 'onDismiss'> & {
   onClose: () => void;
 };
 
-const useSheetHost = create<{ spec: SheetSpec | null; owner: number | null }>(
-  () => ({ spec: null, owner: null })
-);
+const useSheetHost = create<{ specs: Record<number, SheetSpec> }>(() => ({
+  specs: {},
+}));
 
 export const SHEET_ROUTE = 'Sheet' as const;
 
 let nextOwner = 1;
+/** Sheets their owner is closing, so the route does not report it back. */
+const closing = new Set<number>();
 
-const sheetRouteShowing = () =>
-  navigationRef.isReady() &&
-  navigationRef.getCurrentRoute()?.name === SHEET_ROUTE;
+type SheetRoute = { key: string; name: string; params?: { owner?: number } };
 
-/** Closes the route if this owner's sheet is the one showing. */
+const sheetRoutes = (): SheetRoute[] =>
+  navigationRef.isReady()
+    ? ((navigationRef.getRootState()?.routes ?? []) as SheetRoute[]).filter(
+        (route) => route.name === SHEET_ROUTE
+      )
+    : [];
+
+const routeFor = (owner: number) =>
+  sheetRoutes().find((route) => route.params?.owner === owner);
+
+/** Closes this owner's sheet route, if it is showing. */
 function closeFor(owner: number) {
-  if (useSheetHost.getState().owner !== owner) return;
-  useSheetHost.setState({ owner: null });
-  if (sheetRouteShowing()) navigationRef.dispatch(StackActions.pop());
+  const route = routeFor(owner);
+  if (!route) return;
+  closing.add(owner);
+  if (navigationRef.getCurrentRoute()?.key === route.key) {
+    navigationRef.dispatch(StackActions.pop());
+    return;
+  }
+  // Under another sheet: take it out of the stack without moving the top.
+  navigationRef.dispatch((state) => {
+    const routes = state.routes.filter((item) => item.key !== route.key);
+    return CommonActions.reset({
+      ...state,
+      routes,
+      index: routes.length - 1,
+    });
+  });
 }
 
 /**
- * Closes the sheet that is showing, now rather than on the next render. For an
- * action that closes its sheet and then navigates: the close has to reach the
+ * Closes the sheet on top, now rather than on the next render. For an action
+ * that closes its sheet and then navigates: the close has to reach the
  * navigator first, or it would pop the screen just opened instead. The owner
  * still sets its own `open` to false; it is not told through `onClose`.
  */
 export function dismissPromptSheet() {
-  const { owner } = useSheetHost.getState();
-  if (owner !== null) closeFor(owner);
+  const current = navigationRef.isReady()
+    ? (navigationRef.getCurrentRoute() as SheetRoute | undefined)
+    : undefined;
+  const owner = current?.name === SHEET_ROUTE ? current.params?.owner : null;
+  if (typeof owner === 'number') closeFor(owner);
 }
 
 export type PromptSheetProps = SheetSpec & { open: boolean };
@@ -65,7 +99,10 @@ export default function PromptSheet({ open, ...spec }: PromptSheetProps) {
 
   // Every render while open: the route always shows this render's content.
   useLayoutEffect(() => {
-    if (open) useSheetHost.setState({ spec, owner });
+    if (open)
+      useSheetHost.setState((state) => ({
+        specs: { ...state.specs, [owner]: spec },
+      }));
   });
 
   useEffect(() => {
@@ -73,8 +110,10 @@ export default function PromptSheet({ open, ...spec }: PromptSheetProps) {
       closeFor(owner);
       return;
     }
-    if (!sheetRouteShowing() && navigationRef.isReady())
-      navigationRef.navigate(SHEET_ROUTE);
+    if (!routeFor(owner) && navigationRef.isReady()) {
+      closing.delete(owner);
+      navigationRef.dispatch(StackActions.push(SHEET_ROUTE, { owner }));
+    }
   }, [open, owner]);
 
   // Unmounted while open (its screen went away): take the sheet with it.
@@ -83,21 +122,31 @@ export default function PromptSheet({ open, ...spec }: PromptSheetProps) {
   return null;
 }
 
-/** The `Sheet` route: whatever PromptSheet is open, in a PromptScreen. */
+/** A `Sheet` route: its owner's PromptSheet, in a PromptScreen. */
 export function PromptSheetScreen() {
   const navigation = useNavigation();
-  const spec = useSheetHost((state) => state.spec);
+  // Read once: the route's params do not change, and a route on its way out
+  // can render once more after it has left the stack.
+  const route = useRoute<RouteProp<RootStackParamList, typeof SHEET_ROUTE>>();
+  const [owner] = useState(() => route?.params?.owner ?? -1);
+  const spec = useSheetHost((state) => state.specs[owner]);
 
   // However the route goes — close button, swipe, Back, or the owner closing
-  // it — the owner hears about it once, and the slot is cleared.
+  // it — its content is dropped, and the owner hears about it unless it was
+  // the one closing.
   useEffect(
     () =>
       navigation.addListener('beforeRemove', () => {
-        const current = useSheetHost.getState();
-        useSheetHost.setState({ spec: null, owner: null });
-        if (current.owner !== null) current.spec?.onClose();
+        const current = useSheetHost.getState().specs[owner];
+        useSheetHost.setState((state) => {
+          const specs = { ...state.specs };
+          delete specs[owner];
+          return { specs };
+        });
+        if (closing.delete(owner)) return;
+        current?.onClose();
       }),
-    [navigation]
+    [navigation, owner]
   );
 
   if (!spec) return null;

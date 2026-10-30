@@ -1,14 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { View, Text } from 'react-native';
-import Button from './ui/Button';
-import { useSheetBackdrop } from './ui/sheetChrome';
-import {
-  BottomSheetView,
-  BottomSheetTextInput,
-} from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
-import { useCSSVariable } from 'uniwind';
+import PromptSheet from './ui/PromptSheet';
 import StepperInput from './StepperInput';
 import { useUpdateFoodEntry } from '../hooks/useUpdateFoodEntry';
 import type { FoodEntry } from '../types/foodEntries';
@@ -24,18 +17,19 @@ interface ServingAdjustSheetProps {
   onViewEntry?: (entry: FoodEntry) => void;
 }
 
+/**
+ * Quick serving change for a diary entry: GoalEdit's sheet (PromptSheet),
+ * the food as the heading, the quantity stepper and the resulting calories in
+ * the middle, Done in the footer.
+ */
 const ServingAdjustSheet = forwardRef<
   ServingAdjustSheetRef,
   ServingAdjustSheetProps
 >(({ onViewEntry }, ref) => {
   const { t } = useTranslation();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [open, setOpen] = useState(false);
   const [entry, setEntry] = useState<FoodEntry | null>(null);
   const [quantityText, setQuantityText] = useState('0');
-  const [surfaceBg, textMuted] = useCSSVariable([
-    '--color-surface',
-    '--color-text-muted',
-  ]) as [string, string];
 
   const quantity = parseDecimalInput(quantityText) || 0;
   const totalCalories =
@@ -48,7 +42,7 @@ const ServingAdjustSheet = forwardRef<
     entryDate: entry?.entry_date ?? '',
     onSuccess: () => {
       invalidateCache();
-      bottomSheetRef.current?.dismiss();
+      setOpen(false);
     },
   });
 
@@ -57,11 +51,9 @@ const ServingAdjustSheet = forwardRef<
       if (!newEntry.serving_size || newEntry.serving_size <= 0) return;
       setEntry(newEntry);
       setQuantityText(String(newEntry.quantity));
-      bottomSheetRef.current?.present();
+      setOpen(true);
     },
-    dismiss: () => {
-      bottomSheetRef.current?.dismiss();
-    },
+    dismiss: () => setOpen(false),
   }));
 
   const formatQuantity = (value: number): string => {
@@ -95,97 +87,56 @@ const ServingAdjustSheet = forwardRef<
   const handleDone = () => {
     if (!entry || quantity <= 0) return;
     if (quantity === entry.quantity) {
-      bottomSheetRef.current?.dismiss();
+      setOpen(false);
       return;
     }
     updateEntry({ quantity });
   };
 
-  const renderBackdrop = useSheetBackdrop();
-
   return (
-    <BottomSheetModal
-      ref={bottomSheetRef}
-      enableDynamicSizing
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustPan"
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: surfaceBg }}
-      handleIndicatorStyle={{ backgroundColor: textMuted }}
+    <PromptSheet
+      open={open && entry !== null}
+      onClose={() => setOpen(false)}
+      headerTitle=""
+      title={
+        entry?.food_name ||
+        t('foodRow.unknownFood', { defaultValue: 'Unknown food' })
+      }
+      description={
+        entry
+          ? `${entry.serving_size} ${formatServingUnit(entry.unit)} = ${entry.calories} ${t('nutrition.caloriesUnit', { defaultValue: 'Cal' })}`
+          : undefined
+      }
+      footerLabel={
+        isPending
+          ? t('common.saving', { defaultValue: 'Saving…' })
+          : t('common.done', { defaultValue: 'Done' })
+      }
+      onFooterPress={handleDone}
+      footerDisabled={isPending || quantity <= 0}
+      hasTextInput
     >
-      <BottomSheetView className="px-6 pb-safe-or-8">
-        {entry && (
-          <>
-            {/* Header */}
-            <View className="items-center mb-5">
-              <Text
-                className="text-text-primary text-lg font-semibold text-center"
-                numberOfLines={2}
-              >
-                {entry.food_name ||
-                  t('foodRow.unknownFood', { defaultValue: 'Unknown food' })}
-              </Text>
-              <Text className="text-text-secondary text-sm mt-1">
-                {entry.serving_size} {formatServingUnit(entry.unit)} ={' '}
-                {entry.calories}{' '}
-                {t('nutrition.caloriesUnit', { defaultValue: 'Cal' })}
-              </Text>
-            </View>
-
-            {/* Quantity stepper */}
-            <View className="items-center mb-5">
-              <View className="flex-row items-center">
-                <StepperInput
-                  value={quantityText}
-                  onChangeText={updateQuantityText}
-                  onBlur={clampQuantity}
-                  onDecrement={() => adjustQuantity(-1)}
-                  onIncrement={() => adjustQuantity(1)}
-                  InputComponent={BottomSheetTextInput}
-                />
-                <Text className="text-text-secondary text-lg ml-3">
-                  {formatServingUnit(entry.unit)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Calories */}
-            <View className="items-center mb-6">
-              <Text className="text-text-primary text-2xl font-semibold">
-                {totalCalories}{' '}
-                {t('nutrition.caloriesUnit', { defaultValue: 'Cal' })}
-              </Text>
-            </View>
-
-            {/* More link */}
-            {/* {onViewEntry && (
-              <TouchableOpacity
-                onPress={() => {
-                  bottomSheetRef.current?.dismiss();
-                  onViewEntry(entry);
-                }}
-                className="items-center mb-4"
-                activeOpacity={0.7}
-              >
-                <Text className="text-accent-primary text-sm font-medium">More</Text>
-              </TouchableOpacity>
-            )} */}
-
-            {/* Done button */}
-            <Button
-              variant="primary"
-              onPress={handleDone}
-              disabled={isPending || quantity <= 0}
-            >
-              {isPending
-                ? t('common.saving', { defaultValue: 'Saving…' })
-                : t('common.done', { defaultValue: 'Done' })}
-            </Button>
-          </>
-        )}
-      </BottomSheetView>
-    </BottomSheetModal>
+      {entry && (
+        <View className="items-center gap-5">
+          <View className="flex-row items-center">
+            <StepperInput
+              value={quantityText}
+              onChangeText={updateQuantityText}
+              onBlur={clampQuantity}
+              onDecrement={() => adjustQuantity(-1)}
+              onIncrement={() => adjustQuantity(1)}
+            />
+            <Text className="text-text-secondary text-lg ml-3">
+              {formatServingUnit(entry.unit)}
+            </Text>
+          </View>
+          <Text className="text-text-primary text-2xl font-semibold">
+            {totalCalories}{' '}
+            {t('nutrition.caloriesUnit', { defaultValue: 'Cal' })}
+          </Text>
+        </View>
+      )}
+    </PromptSheet>
   );
 });
 

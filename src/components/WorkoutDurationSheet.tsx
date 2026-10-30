@@ -3,19 +3,11 @@ import {
   useCallback,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
-import {
-  BottomSheetTextInput,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
-import { BottomSheetModal } from './ui/BottomSheetModal';
-import { useCSSVariable } from 'uniwind';
-import Button from './ui/Button';
-import { useSheetBackdrop } from './ui/sheetChrome';
+import PromptSheet from './ui/PromptSheet';
 import StepperInput from './StepperInput';
 import { formatDuration } from '../utils/workoutSession';
 
@@ -33,17 +25,16 @@ interface WorkoutDurationSheetProps {
  * Custom editor for the end-of-workout "adjust duration" prompt: pick how many
  * minutes the workout counts as, capped at its wall-clock span. The value in
  * minutes; exercise duration and burned calories derive from it.
+ *
+ * GoalEdit's sheet (PromptSheet): the stepper under the explanation, Save in
+ * the footer.
  */
 const WorkoutDurationSheet = forwardRef<
   WorkoutDurationSheetRef,
   WorkoutDurationSheetProps
 >(({ onSave }, ref) => {
   const { t } = useTranslation();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [surfaceBg, textMuted] = useCSSVariable([
-    '--color-surface',
-    '--color-text-muted',
-  ]) as [string, string];
+  const [open, setOpen] = useState(false);
 
   const [currentValue, setCurrentValue] = useState<number>(60);
   const [maxMinutes, setMaxMinutes] = useState<number>(60);
@@ -61,9 +52,9 @@ const WorkoutDurationSheet = forwardRef<
       setMaxMinutes(boundedMax);
       setCurrentValue(initial);
       setText(String(initial));
-      bottomSheetRef.current?.present();
+      setOpen(true);
     },
-    dismiss: () => bottomSheetRef.current?.dismiss(),
+    dismiss: () => setOpen(false),
   }));
 
   const parsed = useMemo(() => {
@@ -94,53 +85,38 @@ const WorkoutDurationSheet = forwardRef<
   const handleSave = () => {
     const base = Number.isNaN(parsed) ? currentValue : parsed;
     onSave(clampMinutes(base, maxMinutes));
-    bottomSheetRef.current?.dismiss();
+    setOpen(false);
   };
 
-  const renderBackdrop = useSheetBackdrop();
-
   return (
-    <BottomSheetModal
-      ref={bottomSheetRef}
-      enableDynamicSizing
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustPan"
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: surfaceBg }}
-      handleIndicatorStyle={{ backgroundColor: textMuted }}
+    <PromptSheet
+      open={open}
+      onClose={() => setOpen(false)}
+      headerTitle=""
+      title={t('workout.durationTitle', { defaultValue: 'Workout duration' })}
+      description={t('workout.durationDescription', {
+        defaultValue:
+          'Minutes this workout counts as, up to its {{span}} span.',
+        span: formatDuration(maxMinutes),
+      })}
+      footerLabel={t('common.save', { defaultValue: 'Save' })}
+      onFooterPress={handleSave}
+      hasTextInput
     >
-      <BottomSheetView className="px-6 pb-safe-or-8">
-        <Text className="text-lg font-semibold text-text-primary text-center mb-1">
-          {t('workout.durationTitle', { defaultValue: 'Workout duration' })}
+      <View className="flex-row items-center justify-center">
+        <StepperInput
+          value={text}
+          onChangeText={handleTextChange}
+          onBlur={clampOnBlur}
+          onDecrement={() => adjust(-5)}
+          onIncrement={() => adjust(5)}
+          keyboardType="number-pad"
+        />
+        <Text className="text-text-secondary text-base ml-3">
+          {formatDuration(Number.isNaN(parsed) ? currentValue : parsed)}
         </Text>
-        <Text className="text-sm text-text-muted text-center mb-4">
-          {t('workout.durationDescription', {
-            defaultValue:
-              'Minutes this workout counts as, up to its {{span}} span.',
-            span: formatDuration(maxMinutes),
-          })}
-        </Text>
-
-        <View className="flex-row items-center justify-center mb-3">
-          <StepperInput
-            value={text}
-            onChangeText={handleTextChange}
-            onBlur={clampOnBlur}
-            onDecrement={() => adjust(-5)}
-            onIncrement={() => adjust(5)}
-            keyboardType="number-pad"
-            InputComponent={BottomSheetTextInput}
-          />
-          <Text className="text-text-secondary text-base ml-3">
-            {formatDuration(Number.isNaN(parsed) ? currentValue : parsed)}
-          </Text>
-        </View>
-        <Button variant="primary" onPress={handleSave}>
-          {t('common.save', { defaultValue: 'Save' })}
-        </Button>
-      </BottomSheetView>
-    </BottomSheetModal>
+      </View>
+    </PromptSheet>
   );
 });
 
