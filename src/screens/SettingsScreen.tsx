@@ -113,8 +113,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     catPink,
     catViolet,
     catCalories,
-    hydration,
     catBlue,
+    catAmber,
+    catGreen,
+    catTeal,
   ] = useCSSVariable([
     '--color-icon-success',
     '--color-bg-danger',
@@ -122,9 +124,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     '--color-cat-pink',
     '--color-cat-violet',
     '--color-calories',
-    '--color-hydration',
     '--color-cat-blue',
-  ]) as [string, string, string, string, string, string, string, string];
+    '--color-cat-amber',
+    '--color-cat-green',
+    '--color-cat-teal',
+  ]) as string[];
+  // No two neighbouring icons on this screen share a colour, across group
+  // edges and with optional rows hidden: AI coins amber · MarkAI violet;
+  // Health sync pink · FitPass green; App slate · Calories · Cycle pink ·
+  // Medications teal · Workout blue; What's new amber · Logs slate · About
+  // teal · Share blue.
 
   const serverSubtitle = activeConfig ? (
     <View className="flex-row items-center">
@@ -260,6 +269,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           >
             <SettingsRow
               icon="ai-coin"
+              iconColor={catAmber}
               title={t('online.coins', { defaultValue: 'AI coins' })}
               // Signed in, the balance; signed out, what an account brings.
               subtitle={
@@ -280,6 +290,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             />
             <SettingsRow
               icon="sparkles"
+              iconColor={catViolet}
               title={t('markai.title', { defaultValue: 'MarkAI' })}
               subtitle={t('markai.subtitle', {
                 defaultValue: 'Macros, training help and free chat',
@@ -344,7 +355,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   defaultValue: 'Bring your gym visits into the diary',
                 })}
                 onPress={() => fitPassSheet.current?.present()}
-                iconColor={catSlate}
+                iconColor={catGreen}
               />
             </SettingsRowGroup>
 
@@ -358,7 +369,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   defaultValue: 'Appearance, language, and notifications',
                 })}
                 onPress={() => navigation.navigate('AppSettings')}
-                iconColor={catViolet}
+                iconColor={catSlate}
               />
               {isConnected && (
                 <SettingsRow
@@ -395,7 +406,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   defaultValue: 'Medications',
                 })}
                 onPress={() => navigation.navigate('MedicationsList')}
-                iconColor={catPink}
+                iconColor={catTeal}
               />
 
               <SettingsRow
@@ -423,7 +434,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   defaultValue: 'Latest features and improvements',
                 })}
                 onPress={() => navigation.navigate('WhatsNew')}
-                iconColor={catPink}
+                iconColor={catAmber}
               />
               <SettingsRow
                 icon="document-text"
@@ -441,7 +452,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                   defaultValue: 'App details and version information',
                 })}
                 onPress={() => navigation.navigate('About')}
-                iconColor={hydration}
+                iconColor={catTeal}
               />
               <SettingsRow
                 icon="share"
