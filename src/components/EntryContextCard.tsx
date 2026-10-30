@@ -3,7 +3,7 @@ import { useCSSVariable } from 'uniwind';
 
 import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
+import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
 
 /**
@@ -25,7 +25,7 @@ export default function EntryContextCard({
   value: string;
   onPress: () => void;
 }) {
-  const usesGlass = canUseLiquidGlass();
+  const usesGlass = useLiquidGlassActive();
   const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
   return (

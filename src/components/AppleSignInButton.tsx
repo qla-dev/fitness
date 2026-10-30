@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
 import Button from './ui/Button';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
+import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
 
 const APPLE_BLACK = '#000000';
@@ -42,7 +42,7 @@ export default function AppleSignInButton({
     variant === 'signIn'
       ? t('online.signIn', { defaultValue: 'Sign in with Apple' })
       : t('online.continueWithApple', { defaultValue: 'Continue with Apple' });
-  const usesGlass = canUseLiquidGlass();
+  const usesGlass = useLiquidGlassActive();
 
   const button = (
     <Button

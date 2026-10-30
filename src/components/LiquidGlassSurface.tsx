@@ -4,7 +4,7 @@ import { GlassView, type GlassViewProps } from 'expo-glass-effect';
 import { useCSSVariable } from 'uniwind';
 
 import { withAlpha } from '../utils/colors';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
+import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 
 export const LIQUID_GLASS_HORIZONTAL_MARGIN = 20;
 export const LIQUID_GLASS_VERTICAL_GAP = 6;
@@ -26,7 +26,7 @@ export const LIQUID_GLASS_VERTICAL_GAP = 6;
  */
 export function useGlassChipFill(): (selected: boolean) => ViewStyle | null {
   const raised = useCSSVariable('--color-raised') as string;
-  const glass = canUseLiquidGlass();
+  const glass = useLiquidGlassActive();
   return React.useCallback(
     (selected: boolean) =>
       selected || glass ? null : { backgroundColor: raised },
@@ -75,8 +75,9 @@ const LiquidGlassSurface: React.FC<LiquidGlassSurfaceProps> = ({
   ...props
 }) => {
   const fallbackBackground = useCSSVariable('--color-chrome') as string;
+  const glassActive = useLiquidGlassActive();
 
-  if (!canUseLiquidGlass()) {
+  if (!glassActive) {
     // Without the material, a forced scheme has to be painted by hand: a
     // surface pinned to `dark` sits over artwork and carries white text, so
     // the theme's chrome (near-white in light mode) rendered that text

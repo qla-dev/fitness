@@ -23,7 +23,7 @@ import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import WorkoutGoalCard from '../components/recording/WorkoutGoalCard';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
+import { useLiquidGlassActive , useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
@@ -38,7 +38,6 @@ import {
 import { usePreferences } from '../hooks/usePreferences';
 import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import { useScreenHeader } from '../hooks/useScreenHeader';
-import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
 import type { PlannedRoute, RecordingGoal } from '../services/recording/types';
 import { formatLocalizedNumber } from '../localization';
@@ -126,7 +125,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
   }, [editingStat]);
 
   const upsertCheckIn = useUpsertCheckIn();
-  const usesGlass = canUseLiquidGlass();
+  const usesGlass = useLiquidGlassActive();
   // Off means the session is timed but leaves no route — indoors, or on a
   // court, where a trace is noise and the battery is better spent elsewhere.
   const [gpsEnabled, setGpsEnabled] = useState(true);

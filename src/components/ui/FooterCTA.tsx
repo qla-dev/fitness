@@ -6,7 +6,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import Button from './Button';
 import LiquidGlassSurface from '../LiquidGlassSurface';
-import { canUseLiquidGlass } from '../../utils/liquidGlass';
+import { useLiquidGlassActive } from '../../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../../services/haptics';
 
 /** The gap under the button once the keyboard has taken the space below it. */
@@ -100,9 +100,9 @@ export default function FooterCTA({
   sticky?: boolean;
   /**
    * Renders the action as an interactive glass capsule rather than a filled
-   * button — the same material and press response as the tab bar. Ignored
-   * where Liquid Glass is unavailable, which keeps Android and older iOS on
-   * the filled button instead of a flat grey imitation of glass.
+   * one — the same material and press response as the tab bar. Ignored where
+   * Liquid Glass is unavailable or turned off in App Settings, which keeps
+   * Android, older iOS and the toggle's off state on the filled capsule.
    */
   glass?: boolean;
   /**
@@ -118,7 +118,8 @@ export default function FooterCTA({
   const bottomInset = useOptionalBottomInset();
   const accent = useCSSVariable('--color-accent-primary') as string;
   const fill = tint ?? accent;
-  const usesGlass = glass && canUseLiquidGlass();
+  const glassActive = useLiquidGlassActive();
+  const usesGlass = glass && glassActive;
   const usesEdgeEffect = edgeEffect && usesGlass;
 
   const press = () => {
@@ -148,11 +149,13 @@ export default function FooterCTA({
       </Button>
     </LiquidGlassSurface>
   ) : (
+    // The same capsule as the glass one, so the action has one shape
+    // whether or not Liquid Glass is on.
     <Button
       loading={loading}
       disabled={disabled}
       onPress={press}
-      style={tint ? { backgroundColor: tint } : undefined}
+      style={[{ borderRadius: 999 }, tint ? { backgroundColor: tint } : null]}
     >
       {label}
     </Button>
@@ -160,9 +163,9 @@ export default function FooterCTA({
 
   const bar = (
     <View
-      // The glass capsule separates itself from the content by its own
-      // material, so the rule above it is one line too many.
-      className={`px-5 pt-3 ${usesEdgeEffect ? '' : 'bg-background'} ${usesGlass || customAction ? '' : 'border-t border-border'}`}
+      // No rule above it on any platform: the capsule stands apart from the
+      // content on its own, as on the Tracker's goal sheet.
+      className={`px-5 pt-3 ${usesEdgeEffect ? '' : 'bg-background'}`}
       style={{ paddingBottom: footerCtaRestingPadding(bottomInset) }}
       onLayout={
         onHeightChange

@@ -3,7 +3,7 @@ import { View, TextInput, ActivityIndicator } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
+import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 
 interface LibrarySearchBarProps {
   value: string;
@@ -46,7 +46,8 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
   ]) as [string, string];
   const [isFocused, setIsFocused] = useState(false);
 
-  const usesGlass = glass && canUseLiquidGlass();
+  const glassActive = useLiquidGlassActive();
+  const usesGlass = glass && glassActive;
 
   const field = (
     <View

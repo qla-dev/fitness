@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
-import { canUseLiquidGlass } from '../../utils/liquidGlass';
+import { useLiquidGlassActive } from '../../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../../services/haptics';
 import { withAlpha } from '../../utils/colors';
 
@@ -34,7 +34,7 @@ export default function WorkoutGoalCard({
 }) {
   const { t } = useTranslation();
   const surface = useCSSVariable('--color-surface') as string;
-  const usesGlass = canUseLiquidGlass();
+  const usesGlass = useLiquidGlassActive();
   return (
     <Pressable
       accessibilityRole={onEdit ? 'button' : undefined}

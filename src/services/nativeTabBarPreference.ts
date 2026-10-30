@@ -14,6 +14,17 @@ export function useNativeIOSTabsActive(): boolean {
 }
 
 /**
+ * Whether to draw Liquid Glass: the device has it AND the user's Liquid Glass
+ * toggle is on. Every surface that renders glass asks this, not the bare
+ * capability check, so turning the toggle off takes the glass away
+ * everywhere at once.
+ */
+export function useLiquidGlassActive(): boolean {
+  const enabled = useAppPreferencesStore((s) => s.liquidGlassTabBarEnabled);
+  return canUseLiquidGlass() && enabled;
+}
+
+/**
  * Reactive "effective" flag for the native iOS stack headers. Unlike the tab
  * bar, native headers are not glass-only: iOS releases without the glass APIs
  * keep the classic native header, so the Liquid Glass toggle only matters on
