@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Animated, { useReducedMotion, ZoomIn } from 'react-native-reanimated';
 import Icon from './Icon';
+import MenuItemIcon from './MenuItemIcon';
 import {
   linkSignInMethod,
   signInMethods,
@@ -164,6 +165,7 @@ export default function SignInMethodRow({
           [cancel, signOut]
         );
 
+  const logo = provider === 'apple' ? 'apple-logo' : 'google-logo';
   const tileStyle =
     provider === 'apple'
       ? { backgroundColor: ink }
@@ -211,22 +213,30 @@ export default function SignInMethodRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <View
-        style={{
-          width: TILE,
-          height: TILE,
-          borderRadius: 12,
-          alignItems: 'center',
-          justifyContent: 'center',
-          ...tileStyle,
-        }}
-      >
-        <Icon
-          name={provider === 'apple' ? 'apple-logo' : 'google-logo'}
-          size={22}
-          color={provider === 'apple' ? paper : '#1F1F1F'}
-        />
-      </View>
+      {connected ? (
+        // Connected, the provider's own tile.
+        <View
+          style={{
+            width: TILE,
+            height: TILE,
+            borderRadius: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...tileStyle,
+          }}
+        >
+          <Icon
+            name={logo}
+            size={22}
+            color={provider === 'apple' ? paper : '#1F1F1F'}
+          />
+        </View>
+      ) : (
+        // Not connected, the same tile as the Email and Password rows.
+        <MenuItemIcon size={TILE}>
+          <Icon name={logo} size={22} color={secondary} weight="semibold" />
+        </MenuItemIcon>
+      )}
       <View className="flex-1 min-w-0">
         <Text className="text-base font-semibold text-text-primary">
           {connected
