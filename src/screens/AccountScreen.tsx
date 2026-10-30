@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 
 import Icon from '../components/Icon';
-import AppleConnectionRow from '../components/AppleConnectionRow';
+import SignInMethodRow from '../components/SignInMethodRow';
 import {
   onlineRequest,
   updateOnlineAccount,
@@ -131,13 +131,14 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
         <SettingsRowGroup
           title={t('account.signIn', { defaultValue: 'Sign-in methods' })}
         >
-          <AppleConnectionRow />
+          <SignInMethodRow provider="apple" />
+          <SignInMethodRow provider="google" />
           <SettingsRow
             icon="account-email"
             iconColor={iconColor}
             title={t('profile.email', { defaultValue: 'Email' })}
-            // The profile's own email first; signed in with Apple and none
-            // typed, the address Apple verified.
+            // The profile's own email first; signed in and none typed, the
+            // address Apple or Google verified.
             rightAccessory={value(profile?.email || appleEmail)}
             onPress={() =>
               navigation.navigate('ProfileEdit', { field: 'email' })

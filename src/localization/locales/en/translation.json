@@ -5191,15 +5191,17 @@
     "signIn": "Sign-in methods",
     "passwordSet": "Set",
     "apple": "Apple",
-    "appleConnect": "Connect Apple",
     "appleConnectHint": "Sync across phones · 100 free AI coins",
-    "appleConnected": "Apple, connected. {{detail}}",
     "appleRelay": "{{email}} · Hidden by Apple",
-    "appleEmailMissing": "Tap to sign in again and show your email",
     "connected": "Connected",
     "connect": "Connect",
     "google": "Google",
-    "googleConnected": "Google, connected. {{detail}}"
+    "signedIn": "Signed in",
+    "signOutTitle": "Sign out of {{provider}}?",
+    "signOutBody": "Your diary stays on this phone. Sign in again to sync it and use your AI coins.",
+    "providerConnected": "{{provider}}, connected. {{detail}}",
+    "providerConnect": "Connect {{provider}}",
+    "signOutHint": "Signs you out"
   },
   "profile": {
     "username": "Username",
