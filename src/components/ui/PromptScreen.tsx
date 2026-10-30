@@ -1,5 +1,5 @@
 import React, { useState, type ReactNode } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -10,6 +10,7 @@ import {
 import FooterCTA from './FooterCTA';
 import {
   HEADER_CONTENT_GAP,
+  useModalTopPadding,
   useNativeHeaderOffset,
   useScreenHeader,
   type HeaderItem,
@@ -110,6 +111,7 @@ function PromptScreenContent({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
+  const modalTopPadding = useModalTopPadding();
   const [footerHeight, setFooterHeight] = useState(0);
   const edgeEffectRef = useScrollEdgeEffectRef();
   // How far the page scrolls before the heading has gone under the bar, at
@@ -175,15 +177,9 @@ function PromptScreenContent({
   return (
     <View
       className="flex-1 bg-background"
-      // Off the native header the bar is ours to place. On iOS this is a
-      // page sheet that already starts below the status bar, so the status
-      // bar inset was a second, empty band above the bar; Android presents
-      // it full screen and still needs it.
-      style={
-        usesNativeHeader
-          ? undefined
-          : { paddingTop: Platform.OS === 'ios' ? 8 : insets.top }
-      }
+      // Off the native header the bar is ours to place, at the height every
+      // modal route shares (see useModalTopPadding).
+      style={{ paddingTop: modalTopPadding }}
     >
       {header}
       {topAligned ? (

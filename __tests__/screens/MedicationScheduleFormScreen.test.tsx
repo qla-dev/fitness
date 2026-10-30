@@ -17,6 +17,10 @@ import { getTodayDate } from '../../src/utils/dateUtils';
 import type { MedicationDetail, MedicationSchedule } from '@workspace/shared';
 import type { RootStackScreenProps } from '../../src/types/navigation';
 
+jest.mock('../../src/components/ui/PromptSheet', () =>
+  require('../helpers/promptSheetMock')
+);
+
 type ScreenProps = RootStackScreenProps<'MedicationScheduleForm'>;
 
 jest.mock('../../src/hooks/useMedications', () => ({
@@ -317,6 +321,7 @@ describe('MedicationScheduleFormScreen', () => {
     );
     expect(createMutate).not.toHaveBeenCalled();
 
+    fireEvent.press(screen.getByLabelText('Select days of week'));
     fireEvent.press(screen.getByLabelText('Wednesday, not selected'));
     fireEvent.press(screen.getByLabelText('Monday, not selected'));
     // Picking the days is seconds of real user time; the header Save guard
@@ -402,7 +407,8 @@ describe('MedicationScheduleFormScreen', () => {
     });
 
     expect(
-      screen.getByLabelText('Wednesday, selected').props.accessibilityState
+      (fireEvent.press(screen.getByLabelText('Select days of week')),
+      screen.getByLabelText('Wednesday, selected')).props.accessibilityState
         .selected
     ).toBe(true);
 

@@ -34,7 +34,7 @@ import DateRangeSheet, {
   type DateRangeSheetRef,
 } from '../components/DateRangeSheet';
 import HealthMetricList from '../components/HealthMetricList';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import { useScreenHeader, useModalTopPadding } from '../hooks/useScreenHeader';
 import { useWritebackToggles } from '../hooks/useWritebackToggles';
 import { useSyncHealthData } from '../hooks';
 import { openHealthConnectSettings } from 'react-native-health-connect';
@@ -158,6 +158,8 @@ export default function AppleHealthCheckScreen({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  // GoalEdit's height for the bar (see useModalTopPadding).
+  const modalTopPadding = useModalTopPadding();
   const [accentColor, textSecondary] = useCSSVariable([
     '--color-accent-primary',
     '--color-text-secondary',
@@ -519,7 +521,7 @@ export default function AppleHealthCheckScreen({
   return (
     <View
       className="flex-1 bg-background"
-      style={{ paddingTop: usesNativeHeader ? 0 : insets.top }}
+      style={{ paddingTop: modalTopPadding }}
     >
       {header}
       <ScrollView

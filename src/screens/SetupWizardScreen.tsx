@@ -16,6 +16,7 @@ import { formatLocalizedNumber } from '../localization';
 import {
   useNativeHeaderOffset,
   useScreenHeader,
+  useModalTopPadding,
 } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
@@ -71,6 +72,8 @@ export default function SetupWizardScreen({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  // GoalEdit's height for the bar (see useModalTopPadding).
+  const modalTopPadding = useModalTopPadding();
   const headerOffset = useNativeHeaderOffset();
   const accentColor =
     (useCSSVariable('--color-accent-primary') as string) || '#0A84FF';
@@ -391,7 +394,7 @@ export default function SetupWizardScreen({
     <KeyboardProvider>
       <View
         className="flex-1 bg-background"
-        style={{ paddingTop: usesNativeHeader ? 0 : insets.top }}
+        style={{ paddingTop: modalTopPadding }}
       >
         {header}
         <KeyboardAwareScrollView

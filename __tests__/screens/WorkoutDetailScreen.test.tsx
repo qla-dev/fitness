@@ -21,6 +21,10 @@ import type {
   PresetSessionResponse,
 } from '@workspace/shared';
 
+jest.mock('../../src/components/ui/PromptSheet', () =>
+  require('../helpers/promptSheetMock')
+);
+
 jest.mock('../../src/hooks/usePreferences', () => ({
   usePreferences: jest.fn(),
 }));

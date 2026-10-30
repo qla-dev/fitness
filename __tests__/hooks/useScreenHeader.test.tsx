@@ -456,14 +456,20 @@ describe('useScreenHeader haptics', () => {
    * button is OS-drawn and has no JS press handler. Firing here as well would
    * buzz twice for one press on the custom path.
    */
-  it('leaves back to the pop-transition haptic rather than doubling up', () => {
+  it('buzzes once for the app-drawn back button, on the press', () => {
+    const {
+      fireBackNavigationHaptic,
+    } = require('../../src/utils/backNavigationHaptic');
     mockUsesNativeHeader = false;
     renderResult = render(<TestScreen right={[]} left={{ kind: 'back' }} />);
 
     pressCustomBarButton('Back');
 
     expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
-    expect(mockFireSelectionHaptic).not.toHaveBeenCalled();
+    expect(mockFireSelectionHaptic).toHaveBeenCalledTimes(1);
+    // The pop transition the press starts does not buzz a second time.
+    fireBackNavigationHaptic({ routes: [{ key: 'gone-already' }] }, 'popped');
+    expect(mockFireSelectionHaptic).toHaveBeenCalledTimes(1);
   });
 });
 

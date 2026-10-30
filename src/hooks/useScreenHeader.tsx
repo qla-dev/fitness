@@ -14,6 +14,7 @@ import { useCSSVariable } from 'uniwind';
 import { useNavigation } from '@react-navigation/native';
 import { useAnimatedHeaderHeight } from '@react-navigation/native-stack';
 import { createDuplicatePressGuard } from '../utils/duplicatePress';
+import { fireBackPressHaptic } from '../utils/backNavigationHaptic';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { ParamListBase } from '@react-navigation/native';
@@ -33,6 +34,7 @@ import AnchoredMenu, {
 import type { AnchoredMenuItem, AnchorRect } from '../components/AnchoredMenu';
 import { useHeaderActionColors } from './useHeaderActionColors';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   createNativeHeaderAccentBadge,
   createNativeHeaderIconButtonItem,
@@ -228,6 +230,24 @@ const TRANSPARENT_HEADER_OPTIONS: Partial<NativeStackNavigationOptions> = {
  * pushed screen and a modal, so it must be measured rather than assumed.
  */
 /**
+ * The space above the header of a modal route (GoalEdit, the setup wizard,
+ * every PromptSheet), so all of them put their bar at the same height.
+ *
+ * On the native header path the system places the bar: nothing. Off it (the
+ * Liquid Glass toggle off, or Android) the bar is ours. On iOS a modal is a
+ * page sheet that already starts below the status bar, so adding the status
+ * bar inset again left an empty band above the bar — the wizard sat ~90pt
+ * lower than GoalEdit. Android presents modals full screen and still needs
+ * the inset.
+ */
+export function useModalTopPadding(): number {
+  const usesNativeHeader = useNativeIOSHeadersActive();
+  const insets = useSafeAreaInsets();
+  if (usesNativeHeader) return 0;
+  return Platform.OS === 'ios' ? 8 : insets.top;
+}
+
+/**
  * The measured native bar height, for a screen on the `transparent` variant
  * that has to pad its content by hand — a `KeyboardAwareScrollView`, say,
  * which ignores `contentInsetAdjustmentBehavior`.
@@ -413,16 +433,21 @@ function itemPlacement(item: HeaderItem): HeaderPlacement {
  * Every header button answers a press with the selection haptic, so a bar of
  * icons feels the same as the rest of the app on both paths.
  *
- * `back` is the exception: the iOS native back button is drawn by the OS and
- * exposes no JS press handler, so back feedback hangs off the pop transition
- * instead (`fireBackNavigationHaptic`). Firing here as well would buzz twice
- * for one press on the custom path, where both would run.
+ * `back` buzzes through `fireBackPressHaptic`, which also tells the pop
+ * transition's haptic (`fireBackNavigationHaptic`, there for the iOS native
+ * back button the OS draws) to stand down, so one press buzzes once.
  */
 function resolvePress(
   item: Exclude<HeaderItem, MenuHeaderItem>,
   goBack: () => void
 ): () => void {
-  if (item.kind === 'back') return item.onPress ?? goBack;
+  if (item.kind === 'back') {
+    const back = item.onPress ?? goBack;
+    return () => {
+      fireBackPressHaptic();
+      back();
+    };
+  }
   const press = item.onPress;
   return () => {
     fireSelectionHaptic();

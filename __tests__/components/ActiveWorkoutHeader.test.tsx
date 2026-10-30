@@ -7,6 +7,10 @@ import ActiveWorkoutHeader, {
 } from '../../src/components/ActiveWorkoutHeader';
 import { formatElapsed } from '../../src/utils/workoutSession';
 
+jest.mock('../../src/components/ui/PromptSheet', () =>
+  require('../helpers/promptSheetMock')
+);
+
 function makeSession(): PresetSessionResponse {
   return {
     type: 'preset',
@@ -251,12 +255,13 @@ describe('ActiveWorkoutHeader', () => {
       }
     );
     fireEvent.press(getByLabelText('Workout menu'));
-    expect(queryAllByTestId('action-sheet-group-spacer')).toHaveLength(3);
+    // One card per group.
+    expect(queryAllByTestId('action-sheet-group')).toHaveLength(4);
   });
 
-  it('renders the minimal menu (Discard only) without group spacers', () => {
+  it('renders the minimal menu (Discard only) as a single group', () => {
     const { getByLabelText, queryAllByTestId } = renderHeaderComponent({});
     fireEvent.press(getByLabelText('Workout menu'));
-    expect(queryAllByTestId('action-sheet-group-spacer')).toHaveLength(0);
+    expect(queryAllByTestId('action-sheet-group')).toHaveLength(1);
   });
 });

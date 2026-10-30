@@ -45,5 +45,27 @@ export function fireBackNavigationHaptic(
   state: StackStateLike,
   targetKey: string | undefined
 ): void {
-  if (isPopTransition(state, targetKey)) fireSelectionHaptic();
+  if (!isPopTransition(state, targetKey)) return;
+  // The app's own back button already buzzed on its press.
+  if (Date.now() - backPressedAt < BACK_PRESS_WINDOW_MS) {
+    backPressedAt = 0;
+    return;
+  }
+  fireSelectionHaptic();
+}
+
+/** How long a back press stands in for the pop transition it starts. */
+const BACK_PRESS_WINDOW_MS = 1000;
+let backPressedAt = 0;
+
+/**
+ * The haptic for a back button the app draws itself (the header off the
+ * native path: the Liquid Glass toggle off, or Android). It fires on the
+ * press like every other header button, rather than waiting on a pop
+ * transition that does not always reach JS for a screen-owned header; the
+ * transition that follows is then skipped so one press buzzes once.
+ */
+export function fireBackPressHaptic(): void {
+  backPressedAt = Date.now();
+  fireSelectionHaptic();
 }
