@@ -1,3 +1,4 @@
+import { useFallbackTabBarInset } from '../hooks/useFallbackTabBarInset';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
@@ -42,6 +43,7 @@ type Props = CompositeScreenProps<
 
 export default function TrendsScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const tabBarInset = useFallbackTabBarInset();
   const usesNativeTabs = useNativeIOSTabsActive();
   const { defaultColor } = useHeaderActionColors();
   const accent = useCSSVariable('--color-accent-primary') as string;
@@ -184,7 +186,7 @@ export default function TrendsScreen({ navigation }: Props) {
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
-          paddingBottom: 16 + bottomPadding,
+          paddingBottom: 16 + bottomPadding + tabBarInset,
         }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}

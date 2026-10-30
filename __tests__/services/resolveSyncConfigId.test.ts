@@ -1,25 +1,16 @@
-/**
- * Regression: local mode has no server config on purpose — getActiveServerConfig
- * returns null before it reads anything — and every piece of sync bookkeeping
- * was keyed off that call. The backfill read it as "no server" and returned
- * before probing, so Sync History Now spun its button and imported nothing on
- * every local-first build, and the checkpoint it resumes from was never
- * reachable either.
- */
-jest.mock('expo-constants', () => ({
-  __esModule: true,
-  default: { expoConfig: { extra: { dataMode: 'local' } } },
-}));
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   LOCAL_SYNC_CONFIG_ID,
   getActiveServerConfig,
   resolveSyncConfigId,
 } from '../../src/services/storage';
-import { isLocalDataMode } from '../../src/services/dataMode';
 
-test('local mode has a sync config id although it has no server config', async () => {
-  expect(isLocalDataMode()).toBe(true);
+test('health sync keeps its diary destination even with saved legacy server settings', async () => {
+  await AsyncStorage.setItem('activeServerConfigId', 'legacy-server');
+  await AsyncStorage.setItem(
+    'serverConfigs',
+    JSON.stringify([{ id: 'legacy-server', url: 'https://example.com' }])
+  );
   await expect(getActiveServerConfig()).resolves.toBeNull();
   await expect(resolveSyncConfigId()).resolves.toBe(LOCAL_SYNC_CONFIG_ID);
 });

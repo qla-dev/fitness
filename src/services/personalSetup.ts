@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { z } from 'zod';
-import { isLocalDataMode } from './dataMode';
-import { getActiveServerConfig } from './storage';
 
 export const answersSchema = z.record(
   z.string(),
@@ -69,10 +67,7 @@ export const withList = (
     : [list, ...state.lists],
 });
 export async function setupScope(): Promise<string> {
-  if (isLocalDataMode()) return 'local';
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('No active account');
-  return config.id;
+  return 'local';
 }
 const key = (scope: string) => `@qla/personal-setup/v1/${scope}`;
 export async function readSetup(scope: string): Promise<PersonalSetup> {

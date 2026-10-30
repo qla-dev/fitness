@@ -1,6 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getActiveServerConfig } from './storage';
-import { isLocalDataMode } from './dataMode';
 
 export interface ProgramAccess {
   programId: string;
@@ -9,10 +7,7 @@ export interface ProgramAccess {
 }
 
 export async function programAccessScope(): Promise<string> {
-  if (isLocalDataMode()) return 'local';
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('No active server for program access');
-  return config.id;
+  return 'local';
 }
 
 export function createProgramAccess(

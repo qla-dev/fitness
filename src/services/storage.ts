@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { isLocalDataMode } from './dataMode';
 import * as SecureStore from 'expo-secure-store';
 import { CATEGORY_ORDER } from '../HealthMetrics';
 import { addLog } from './LogService';
@@ -150,56 +149,15 @@ export const getActiveServerConfigId = async (): Promise<string | null> => {
   return AsyncStorage.getItem(ACTIVE_SERVER_CONFIG_ID_KEY);
 };
 
-/**
- * The id every piece of sync bookkeeping is keyed by: the backfill checkpoint,
- * the auto-sync cooldown, the server a run pins itself to. Local mode has no
- * server config on purpose — getActiveServerConfig returns null below — so a
- * stable synthetic id stands in: the health data still has somewhere to go,
- * namely the on-device database. Without it every one of those callers reads
- * "no server" and quietly does nothing.
- */
+/** Stable diary identifier used by health sync checkpoints and cooldowns. */
 export const LOCAL_SYNC_CONFIG_ID = 'local';
 
-export const resolveSyncConfigId = async (): Promise<string | null> => {
-  if (isLocalDataMode()) return LOCAL_SYNC_CONFIG_ID;
-  return (await getActiveServerConfig())?.id ?? null;
-};
+export const resolveSyncConfigId = async (): Promise<string> =>
+  LOCAL_SYNC_CONFIG_ID;
 
-/**
- * Retrieves the currently active server configuration.
- */
-export const getActiveServerConfig = async (): Promise<ServerConfig | null> => {
-  // Raw upload/auth clients also use this accessor. Local mode must not expose
-  // credentials from an earlier server session or accidentally send local data.
-  if (isLocalDataMode()) return null;
-  if (activeServerConfigCache !== undefined) {
-    return activeServerConfigCache;
-  }
-
-  try {
-    const activeId = await AsyncStorage.getItem(ACTIVE_SERVER_CONFIG_ID_KEY);
-    if (!activeId) {
-      activeServerConfigCache = null;
-      return null;
-    }
-
-    const configs = await getAllServerConfigs();
-    const result = configs.find((config) => config.id === activeId) || null;
-    // Only cache non-null results; getAllServerConfigs swallows errors and returns [],
-    // so a transient failure would otherwise be cached as "no config" permanently.
-    if (result !== null) {
-      activeServerConfigCache = result;
-    }
-    return result;
-  } catch (e) {
-    const message = getErrorMessage(e);
-    addLog(
-      `[Storage] Failed to retrieve active server config: ${message}`,
-      'ERROR'
-    );
-    throw e;
-  }
-};
+/** Legacy server clients have no active configuration in the device-backed app. */
+export const getActiveServerConfig = async (): Promise<ServerConfig | null> =>
+  null;
 
 /**
  * Retrieves all saved server configurations.

@@ -24,12 +24,7 @@ import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCSSVariable } from 'uniwind';
-import {
-  useServerConnection,
-  useServerConfigs,
-  usePreferences,
-  queryClient,
-} from '../hooks';
+import { useServerConnection, usePreferences, queryClient } from '../hooks';
 import DevTools from '../components/DevTools';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
@@ -48,7 +43,6 @@ import { loadLastSyncedTime } from '../services/storage';
 import { formatRelativeTime } from '../utils/dateUtils';
 import type { DiagnosticQueryState } from '../types/diagnosticReport';
 import Constants from 'expo-constants';
-import { isLocalDataMode } from '../services/dataMode';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 
 import type { RootStackScreenProps } from '../types/navigation';
@@ -79,7 +73,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const fitPassSheet = React.useRef<FitPassConnectSheetRef>(null);
 
   const { isConnected } = useServerConnection();
-  const { activeConfig } = useServerConfigs();
   const { preferences: userPreferences } = usePreferences({
     enabled: isConnected,
   });
@@ -107,8 +100,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     : t('date.neverSynced', { defaultValue: 'Never synced' });
 
   const [
-    success,
-    danger,
     catSlate,
     catPink,
     catViolet,
@@ -118,8 +109,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     catGreen,
     catTeal,
   ] = useCSSVariable([
-    '--color-icon-success',
-    '--color-bg-danger',
     '--color-cat-slate',
     '--color-cat-pink',
     '--color-cat-violet',
@@ -134,24 +123,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   // Health sync pink · FitPass green; App slate · Calories · Cycle pink ·
   // Medications teal · Workout blue; What's new amber · Logs slate · About
   // teal · Share blue.
-
-  const serverSubtitle = activeConfig ? (
-    <View className="flex-row items-center">
-      <View
-        className="w-2 h-2 rounded-full mr-2"
-        style={{ backgroundColor: isConnected ? success : danger }}
-      />
-      <Text
-        className="text-sm text-text-secondary flex-1"
-        numberOfLines={1}
-        ellipsizeMode="middle"
-      >
-        {activeConfig.url}
-      </Text>
-    </View>
-  ) : (
-    t('settings.addServer', { defaultValue: 'Tap to add a server' })
-  );
 
   const handleShareDiagnosticReport = async (): Promise<void> => {
     setIsSharing(true);
@@ -198,7 +169,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const profile = useQuery({
     queryKey: profileQueryKey,
     queryFn: fetchProfile,
-    enabled: isLocalDataMode(),
   }).data;
   const share = (message: string, what: string) => {
     Share.share({ message }).catch((error: unknown) => {
@@ -298,29 +268,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               onPress={() => navigation.navigate('MarkAI')}
             />
           </SettingsRowGroup>
-
-          {!isLocalDataMode() && (
-            <SettingsRow
-              icon="server"
-              title={t('settings.rows.server', { defaultValue: 'Server' })}
-              subtitle={serverSubtitle}
-              onPress={() => navigation.navigate('ServerSettings')}
-              iconColor={catSlate}
-              accessibilityLabel={
-                activeConfig
-                  ? isConnected
-                    ? t('settings.serverConnected', {
-                        defaultValue: 'Server settings. Connected.',
-                      })
-                    : t('settings.serverConnectionFailed', {
-                        defaultValue: 'Server settings. Connection failed.',
-                      })
-                  : t('settings.serverNotConfigured', {
-                      defaultValue: 'Server settings. No server configured.',
-                    })
-              }
-            />
-          )}
 
           <SectionErrorBoundary
             sectionName={t('settings.title', { defaultValue: 'Settings' })}

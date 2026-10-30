@@ -23,6 +23,7 @@ import ActiveWorkoutBar, {
   setActiveWorkoutBarTabBarHeight,
 } from './ActiveWorkoutBar';
 import CustomTabBar from './CustomTabBar';
+import BottomEdgeEffect from './ui/BottomEdgeEffect';
 import WhatsNewBanner, {
   WhatsNewBannerContent,
   useWhatsNewBannerState,
@@ -415,10 +416,28 @@ export function FallbackTabsLayout({
         headerShown: false,
       }}
       tabBar={(props) => (
-        <View collapsable={false}>
+        <View
+          collapsable={false}
+          pointerEvents="box-none"
+          style={
+            props.state.routes[props.state.index]?.name === 'Add'
+              ? { backgroundColor: 'transparent' }
+              : {
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'transparent',
+                }
+          }
+        >
           <WhatsNewBanner reserveAddButtonClearance />
           <ActiveWorkoutBar variant="embedded" />
-          <CustomTabBar {...props} />
+          {props.state.routes[props.state.index]?.name !== 'Add' ? (
+            <BottomEdgeEffect>
+              <CustomTabBar {...props} />
+            </BottomEdgeEffect>
+          ) : null}
         </View>
       )}
     >

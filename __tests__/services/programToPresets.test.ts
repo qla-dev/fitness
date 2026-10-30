@@ -13,9 +13,6 @@ import {
   deleteWorkoutPreset,
 } from '../../src/services/api/workoutPresetsApi';
 import type { ExerciseProgram } from '../../src/types/exerciseProgram';
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 
 jest.mock('../../src/services/api/exerciseApi', () => ({
   fetchExercisesPage: jest.fn(),

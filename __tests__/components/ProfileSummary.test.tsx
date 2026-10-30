@@ -21,10 +21,6 @@ const { fetchProfile } = require('../../src/services/api/profileApi') as {
   fetchProfile: jest.Mock;
 };
 
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
-
 jest.mock('../../src/services/themeService', () => ({
   useThemePreference: () => 'System',
   setThemePreference: jest.fn(),

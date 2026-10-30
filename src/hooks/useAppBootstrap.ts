@@ -5,13 +5,11 @@ import {
 } from '../services/online/account';
 
 import { initializeAppLanguage } from '../localization';
-import { getActiveServerConfig } from '../services/storage';
 import { addLog } from '../services/LogService';
-import { isLocalDataMode } from '../services/dataMode';
 import { localApiFetch } from '../services/local/localApi';
 import { revealFirstScreen, SPLASH_FALLBACK_MS } from '../services/startupGate';
 
-export type BootstrapRoute = 'Tabs' | 'Onboarding' | 'OnlineAccount';
+export type BootstrapRoute = 'Tabs' | 'OnlineAccount';
 
 export interface AppBootstrapResult {
   initialRoute: BootstrapRoute | null;
@@ -30,7 +28,7 @@ export function useAppBootstrap(): AppBootstrapResult {
     const determine = async (): Promise<void> => {
       // Language initialization and route selection are independent failure
       // domains: a broken locale must never change the route, and a missing
-      // server config must never block language startup.
+      // diary must never block language startup.
       try {
         await initializeAppLanguage();
       } catch (error) {
@@ -42,29 +40,24 @@ export function useAppBootstrap(): AppBootstrapResult {
       if (cancelled) return;
 
       try {
-        const local = isLocalDataMode();
-        if (local) await localApiFetch({ endpoint: '/api/user-preferences' });
-        const config = local ? null : await getActiveServerConfig();
+        await localApiFetch({ endpoint: '/api/user-preferences' });
         if (cancelled) return;
-
-        if (local) await loadOnlineAccount();
+        await loadOnlineAccount();
         if (cancelled) return;
-        const showAccount = local && !useOnlineAccount.getState().session;
-        const route: BootstrapRoute = showAccount
-          ? 'OnlineAccount'
-          : local || config
-            ? 'Tabs'
-            : 'Onboarding';
+        const route: BootstrapRoute = useOnlineAccount.getState().session
+          ? 'Tabs'
+          : 'OnlineAccount';
         setInitialRoute(route);
         setLinkingEnabled(route === 'Tabs');
       } catch (error) {
         if (cancelled) return;
         const message = error instanceof Error ? error.message : String(error);
         addLog(
-          `[App] Failed to load active server config on startup: ${message}`,
+          `[App] Failed to initialize diary or account on startup: ${message}`,
           'ERROR'
         );
-        setInitialRoute('Onboarding');
+        setInitialRoute('Tabs');
+        setLinkingEnabled(true);
       }
 
       // The splash comes down when the first screen has drawn (the

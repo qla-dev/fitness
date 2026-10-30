@@ -1,3 +1,4 @@
+import { useFallbackTabBarInset } from '../hooks/useFallbackTabBarInset';
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useRef, useState, useMemo } from 'react';
 import {
@@ -70,6 +71,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
   route,
 }) => {
   const { t } = useTranslation();
+  const tabBarInset = useFallbackTabBarInset();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
@@ -88,7 +90,8 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     '--color-text-secondary',
     '--color-text-primary',
   ]) as [string, string];
-  const scrollBottomPadding = insets.bottom + activeWorkoutBarPadding + 16;
+  const scrollBottomPadding =
+    Math.max(insets.bottom, tabBarInset) + activeWorkoutBarPadding + 16;
   const [searchText, setSearchText] = useState('');
   const ownershipFilter = useAppPreferencesStore(
     (s) => s.exercisesLibraryOwnershipFilter

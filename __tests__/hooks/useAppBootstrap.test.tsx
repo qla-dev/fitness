@@ -9,13 +9,12 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppBootstrap } from '../../src/hooks/useAppBootstrap';
-import { isLocalDataMode } from '../../src/services/dataMode';
-import { useOnlineAccount } from '../../src/services/online/account';
+import {
+  loadOnlineAccount,
+  useOnlineAccount,
+} from '../../src/services/online/account';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: jest.fn(() => false),
-}));
 jest.mock('../../src/services/local/localApi', () => ({
   localApiFetch: jest.fn(async () => ({})),
 }));
@@ -54,6 +53,7 @@ jest.mock('../../src/services/LogService', () => ({
 import { initializeAppLanguage } from '../../src/localization';
 import { getActiveServerConfig } from '../../src/services/storage';
 import { addLog } from '../../src/services/LogService';
+import { localApiFetch } from '../../src/services/local/localApi';
 import * as SplashScreen from 'expo-splash-screen';
 import { revealFirstScreen } from '../../src/services/startupGate';
 
@@ -95,18 +95,17 @@ function t(key: string, lang: string): string {
 describe('useAppBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(isLocalDataMode).mockReturnValue(false);
     jest
       .mocked(useOnlineAccount.getState)
       .mockReturnValue({ session: null, ready: true });
     mockInitializeAppLanguage.mockResolvedValue('en');
-    mockGetActiveServerConfig.mockResolvedValue(null);
+    jest.mocked(loadOnlineAccount).mockResolvedValue(undefined);
+    jest.mocked(localApiFetch).mockResolvedValue({});
     mockSplashScreen.hideAsync.mockResolvedValue(undefined);
     mockSplashFallbackMs = 60_000;
   });
 
   it('prompts on every signed-out startup even after a previous dismissal', async () => {
-    jest.mocked(isLocalDataMode).mockReturnValue(true);
     await AsyncStorage.setItem('@qla/sign-in-seen', 'true');
     const first = renderHook(() => useAppBootstrap());
     await waitFor(() =>
@@ -120,7 +119,6 @@ describe('useAppBootstrap', () => {
   });
 
   it('skips the startup sign-in sheet for a restored account', async () => {
-    jest.mocked(isLocalDataMode).mockReturnValue(true);
     jest.mocked(useOnlineAccount.getState).mockReturnValue({
       ready: true,
       session: {
@@ -150,11 +148,11 @@ describe('useAppBootstrap', () => {
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
   });
 
-  it('resolves to Tabs when a server config is active', async () => {
+  it('ignores a legacy server config when choosing the sign-in route', async () => {
     mockGetActiveServerConfig.mockResolvedValue({
       id: 'srv-1',
       url: 'https://example.com',
@@ -165,20 +163,22 @@ describe('useAppBootstrap', () => {
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Tabs');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
-    expect(result.current.linkingEnabled).toBe(true);
+    expect(mockGetActiveServerConfig).not.toHaveBeenCalled();
+    expect(result.current.linkingEnabled).toBe(false);
   });
 
   it('routes to Tabs even when language initialization rejects (broken locale never changes the route)', async () => {
     mockInitializeAppLanguage.mockRejectedValue(
       new Error('language init failed')
     );
-    mockGetActiveServerConfig.mockResolvedValue({
-      id: 'srv-1',
-      url: 'https://example.com',
-      apiKey: '',
-      authType: 'apiKey' as const,
+    jest.mocked(useOnlineAccount.getState).mockReturnValue({
+      ready: true,
+      session: {
+        token: 'test',
+        user: { id: '1', name: 'Member', ai_coins: 100 },
+      },
     });
 
     const { result } = renderHook(() => useAppBootstrap());
@@ -193,7 +193,7 @@ describe('useAppBootstrap', () => {
     );
   });
 
-  it('still routes to Onboarding from a missing config when language init rejects', async () => {
+  it('still offers sign-in when language initialization fails', async () => {
     mockInitializeAppLanguage.mockRejectedValue(
       new Error('language init failed')
     );
@@ -202,23 +202,23 @@ describe('useAppBootstrap', () => {
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
   });
 
-  it('falls back to Onboarding and logs when config loading throws', async () => {
-    mockGetActiveServerConfig.mockRejectedValue(
-      new Error('storage unavailable')
-    );
+  it('opens the diary and logs when account restoration fails', async () => {
+    jest
+      .mocked(loadOnlineAccount)
+      .mockRejectedValue(new Error('storage unavailable'));
 
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('Tabs');
     });
-    expect(result.current.linkingEnabled).toBe(false);
+    expect(result.current.linkingEnabled).toBe(true);
     expect(mockAddLog).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to load active server config'),
+      expect.stringContaining('Failed to initialize diary or account'),
       'ERROR'
     );
   });
@@ -236,7 +236,7 @@ describe('useAppBootstrap', () => {
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
     // Nothing is on screen yet: hiding now uncovered an empty window.
     expect(revealFirstScreen).not.toHaveBeenCalled();
@@ -271,7 +271,7 @@ describe('useAppBootstrap', () => {
     const { result, rerender } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
 
     const callsAfterFirstComplete = mockInitializeAppLanguage.mock.calls.length;
@@ -352,7 +352,7 @@ describe('useAppBootstrap', () => {
     const { result, rerender } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => {
-      expect(result.current.initialRoute).toBe('Onboarding');
+      expect(result.current.initialRoute).toBe('OnlineAccount');
     });
 
     const initialRouteBefore = result.current.initialRoute;

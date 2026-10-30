@@ -3,17 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppBootstrap } from '../../src/hooks/useAppBootstrap';
 import { apiFetch } from '../../src/services/api/apiClient';
 import { getActiveServerConfig } from '../../src/services/storage';
-import { isLocalDataMode } from '../../src/services/dataMode';
 
 // The first screen counts as shown, so deferred startup work runs at once.
 jest.mock('../../src/services/startupGate', () => ({
   afterFirstScreen: () => Promise.resolve(),
   revealFirstScreen: jest.fn(),
   SPLASH_FALLBACK_MS: 50,
-}));
-jest.mock('expo-constants', () => ({
-  __esModule: true,
-  default: { expoConfig: { extra: { dataMode: 'local' } } },
 }));
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
@@ -39,8 +34,7 @@ beforeEach(async () => {
   jest.clearAllMocks();
 });
 
-test('first local startup offers Apple sign-in without consulting a server configuration', async () => {
-  expect(isLocalDataMode()).toBe(true);
+test('signed-out startup offers Apple sign-in without consulting a server configuration', async () => {
   const { result } = renderHook(() => useAppBootstrap());
   await waitFor(() =>
     expect(result.current.initialRoute).toBe('OnlineAccount')
@@ -49,11 +43,13 @@ test('first local startup offers Apple sign-in without consulting a server confi
   expect(getActiveServerConfig).not.toHaveBeenCalled();
 });
 
-test('returning local startup opens tabs after sign-in was offered', async () => {
+test('signed-out startup still offers sign-in after an earlier dismissal', async () => {
   await AsyncStorage.setItem('@qla/sign-in-seen', 'true');
   const { result } = renderHook(() => useAppBootstrap());
-  await waitFor(() => expect(result.current.initialRoute).toBe('Tabs'));
-  expect(result.current.linkingEnabled).toBe(true);
+  await waitFor(() =>
+    expect(result.current.initialRoute).toBe('OnlineAccount')
+  );
+  expect(result.current.linkingEnabled).toBe(false);
   expect(getActiveServerConfig).not.toHaveBeenCalled();
 });
 

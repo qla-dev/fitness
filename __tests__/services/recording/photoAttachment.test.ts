@@ -20,22 +20,17 @@ jest.mock('../../../src/services/api/exerciseApi', () => ({}));
 jest.mock('../../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
 }));
-jest.mock('../../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 jest.mock('../../../src/services/LogService', () => ({ addLog: jest.fn() }));
 jest.mock('../../../src/services/recording/photos', () => ({
   deleteRecordingPhoto: jest.fn(),
 }));
 jest.mock('../../../src/services/recording/database', () => ({
-  loadRecording: jest
-    .fn()
-    .mockResolvedValue({
-      id: 'current',
-      sport: 'run',
-      phase: 'paused',
-      watch: false,
-    }),
+  loadRecording: jest.fn().mockResolvedValue({
+    id: 'current',
+    sport: 'run',
+    phase: 'paused',
+    watch: false,
+  }),
   recordingSamples: jest.fn().mockResolvedValue([]),
   checkpointRecording: jest.fn().mockResolvedValue(undefined),
   clearRecording: jest.fn().mockResolvedValue(undefined),

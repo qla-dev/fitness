@@ -1,16 +1,9 @@
-import { File } from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
-import { isLocalDataMode } from '../dataMode';
 import {
   copyProgressPhoto,
   removeProgressPhoto,
 } from '../local/progressPhotoFiles';
-import { apiFetch, normalizeUrl } from './apiClient';
-import { ApiError } from './errors';
-import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
-import { getAuthHeaders, notifySessionExpired } from './authService';
-import { addLog } from '../LogService';
-import { UPLOAD_TIMEOUT_MS, fetchWithTimeout } from '../../utils/concurrency';
+import { apiFetch } from './apiClient';
 import type {
   CheckInPhoto,
   CheckInPhotoWithWeight,
@@ -56,7 +49,7 @@ export const fetchPhotosByDate = async (
   });
 };
 
-/** Removes one photo. Replacing an angle does not need this: the server upserts. */
+/** Removes one photo. Replacing an angle does not need this: the repository upserts. */
 export const deletePhoto = async (id: string): Promise<void> => {
   await apiFetch<void>({
     endpoint: `/api/measurements/check-in-photos/photo/${encodeURIComponent(id)}`,
@@ -64,12 +57,12 @@ export const deletePhoto = async (id: string): Promise<void> => {
     operation: 'delete photo',
     method: 'DELETE',
   });
-  if (isLocalDataMode()) removeProgressPhoto(id);
+  removeProgressPhoto(id);
 };
 
 /**
  * Uploads one angle for one day, replacing whatever was there before (the
- * server upserts on user + date + type).
+ * repository upserts on date + type).
  */
 export async function uploadPhoto(params: {
   date: string;
@@ -77,85 +70,23 @@ export async function uploadPhoto(params: {
   uri: string;
 }): Promise<CheckInPhoto> {
   const { date, type, uri } = params;
-  if (isLocalDataMode()) {
-    const previous = (await fetchPhotosByDate(date)).find(
-      (photo) => photo.photo_type === type
-    );
-    const id = randomUUID();
-    copyProgressPhoto(uri, id);
-    try {
-      const photo = await apiFetch<CheckInPhoto>({
-        endpoint: '/api/measurements/check-in-photos',
-        method: 'POST',
-        body: { id, entry_date: date, photo_type: type },
-        serviceName: SERVICE,
-        operation: 'save local photo',
-      });
-      if (previous) removeProgressPhoto(previous.id);
-      return photo;
-    } catch (error) {
-      removeProgressPhoto(id);
-      throw error;
-    }
-  }
-
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('Server configuration not found.');
-  const baseUrl = normalizeUrl(config.url);
-  // Same transport guard `apiFetch` applies: these requests carry auth headers
-  // and user photos, so never send them over plaintext in a release build.
-  if (!__DEV__ && baseUrl.toLowerCase().startsWith('http://')) {
-    throw new Error(
-      'HTTPS is required for server connections. Please update your server URL in Settings.'
-    );
-  }
-
-  const form = new FormData();
-  // Global fetch is expo/fetch (WinterCG), which rejects React Native's
-  // `{uri, name, type}` FormData parts with "Unsupported FormDataPart
-  // implementation". expo-file-system's File implements Blob, which
-  // expo/fetch serializes correctly. Same approach as pregnancyPhotosApi.
-  form.append('photo', new File(uri));
-
-  const endpoint = `${baseUrl}/api/measurements/check-in-photos/${encodeURIComponent(date)}/${type}`;
-
-  let response: Response;
+  const previous = (await fetchPhotosByDate(date)).find(
+    (photo) => photo.photo_type === type
+  );
+  const id = randomUUID();
+  copyProgressPhoto(uri, id);
   try {
-    response = await fetchWithTimeout(
-      endpoint,
-      {
-        method: 'POST',
-        headers: {
-          ...proxyHeadersToRecord(config.proxyHeaders),
-          ...getAuthHeaders(config),
-          // Multer must set the multipart boundary itself, so no Content-Type.
-        },
-        body: form,
-      },
-      UPLOAD_TIMEOUT_MS
-    );
-  } catch (err) {
-    // Nothing ever came back (dropped connection, timeout, or a proxy
-    // rejecting the body before the app server saw it), so log it here — the
-    // response-error path below cannot.
-    addLog(`[${SERVICE}] Photo upload failed without a response`, 'ERROR', [
-      String(err),
-    ]);
-    throw err;
+    const photo = await apiFetch<CheckInPhoto>({
+      endpoint: '/api/measurements/check-in-photos',
+      method: 'POST',
+      body: { id, entry_date: date, photo_type: type },
+      serviceName: SERVICE,
+      operation: 'save local photo',
+    });
+    if (previous) removeProgressPhoto(previous.id);
+    return photo;
+  } catch (error) {
+    removeProgressPhoto(id);
+    throw error;
   }
-
-  if (!response.ok) {
-    if (response.status === 401 && config.authType === 'session') {
-      notifySessionExpired(config.id);
-    }
-    const text = await response.text();
-    addLog(`[${SERVICE}] Failed to upload photo`, 'ERROR', [text]);
-    throw new ApiError(
-      `Server error: ${response.status} - ${text}`,
-      response.status,
-      text
-    );
-  }
-
-  return response.json();
 }

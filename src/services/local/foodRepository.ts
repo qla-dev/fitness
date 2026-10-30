@@ -353,9 +353,7 @@ export function foodRepository(
         ? undefined
         : asRecords(body.foods).map((ingredient) => {
             if (ingredient.item_type === 'meal')
-              throw new Error(
-                'Nested meals are not supported in local mode yet.'
-              );
+              throw new Error('Nested meals are not supported yet.');
             const snapshot = foodSnapshot(db, ingredient);
             return { ...snapshot, brand: snapshot.brand_name ?? null };
           });

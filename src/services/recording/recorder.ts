@@ -14,8 +14,6 @@ import {
   searchExercises,
   type CreateExerciseEntryPayload,
 } from '../api/exerciseApi';
-import { getActiveServerConfig } from '../storage';
-import { isLocalDataMode } from '../dataMode';
 import { getTodayDate } from '../../utils/dateUtils';
 import { WORKOUT_SPORTS } from '../../constants/workoutSports';
 import { addLog } from '../LogService';
@@ -128,10 +126,7 @@ let wheelAt = 0;
 let sensorSubscription: (() => void) | undefined;
 
 async function scope() {
-  if (isLocalDataMode()) return 'local';
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('No active server');
-  return config.id;
+  return 'local';
 }
 async function assertScope(s: RecordingSession) {
   if (s.scope !== (await scope()))

@@ -30,6 +30,7 @@ import { NON_ADD_TABS, type NonAddTabName } from '../components/TabsLayout';
 import LibrarySearchBar from '../components/LibrarySearchBar';
 import AddHubSearchState from '../components/AddHubSearchState';
 import NativePromptSheet from '../components/ui/NativePromptSheet';
+import BottomEdgeEffect from '../components/ui/BottomEdgeEffect';
 import PillInput from '../components/ui/PillInput';
 import FoodResultRow from '../components/foodSearch/FoodResultRow';
 import { useFoods } from '../hooks/useFoods';
@@ -39,7 +40,6 @@ import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useTabPress } from '../hooks/useTabPress';
 import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
-import { isLocalDataMode } from '../services/dataMode';
 import { useCycleMode } from '../hooks';
 import { fireSelectionHaptic } from '../services/haptics';
 import {
@@ -404,8 +404,6 @@ export default function AddHubScreen() {
       icon: 'add-circle',
       onPress: actions.newMealPlan,
     },
-    // Server-dependent rows stay behind the same check the sheet used, so a
-    // local build does not offer a row that cannot do anything.
     ...(!cycleEnabled
       ? []
       : [
@@ -416,24 +414,12 @@ export default function AddHubScreen() {
             onPress: actions.openCycle,
           },
         ]),
-    ...(isLocalDataMode()
-      ? []
-      : [
-          {
-            key: 'markai',
-            label: t('addSheet.askMarkAI', { defaultValue: 'Ask MarkAI' }),
-            icon: 'sparkles' as IconName,
-            onPress: actions.askMarkAI,
-          },
-          {
-            key: 'sync',
-            label: t('addSheet.syncHealth', {
-              defaultValue: 'Sync Health Data',
-            }),
-            icon: 'sync' as IconName,
-            onPress: actions.syncHealthData,
-          },
-        ]),
+    {
+      key: 'sync',
+      label: t('addSheet.syncHealth', { defaultValue: 'Sync Health Data' }),
+      icon: 'sync',
+      onPress: actions.syncHealthData,
+    },
   ];
 
   const renderCard = (action: HeadlineAction) => (
@@ -532,7 +518,11 @@ export default function AddHubScreen() {
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingBottom:
-          Math.max(insets.bottom, keyboardHeight) +
+          (usesNativeTabs
+            ? Math.max(insets.bottom, keyboardHeight)
+            : PILL_HEIGHT +
+              PILL_GAP +
+              Math.max(insets.bottom, keyboardHeight, PILL_GAP)) +
           32 +
           activeWorkoutBarPadding,
         gap: CARD_GAP,
@@ -680,51 +670,55 @@ export default function AddHubScreen() {
         closed: 0,
         opened: Math.max(insets.bottom, PILL_GAP) - PILL_GAP,
       }}
-      className="bg-background"
-      style={{
-        paddingHorizontal: 12,
-        paddingTop: PILL_GAP,
-        paddingBottom: Math.max(insets.bottom, PILL_GAP),
-      }}
+      pointerEvents="box-none"
+      style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
     >
-      <View className="flex-row items-center" style={{ gap: PILL_GAP }}>
-        {/* Out of the way while searching, which is when the field wants the
+      <BottomEdgeEffect
+        style={{
+          paddingHorizontal: 12,
+          paddingTop: PILL_GAP,
+          paddingBottom: Math.max(insets.bottom, PILL_GAP),
+        }}
+      >
+        <View className="flex-row items-center" style={{ gap: PILL_GAP }}>
+          {/* Out of the way while searching, which is when the field wants the
             width and the X beside it is the way back. */}
-        {searching
-          ? null
-          : circle(
-              () =>
-                navigation.navigate('Tabs', {
-                  screen: previousTab ?? 'Dashboard',
-                }),
-              (previousTab ? TAB_ICONS[previousTab] : undefined) ??
-                'exercise-weights',
-              t('common.back', { defaultValue: 'Back' })
-            )}
-        <View className="flex-1">
-          <LibrarySearchBar
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t('addHub.searchPlaceholder', {
-              defaultValue: 'Search food or meals',
-            })}
-            onFocus={() => setSearchOpen(true)}
-            onSubmitEditing={() => void recordRecentSearch(query)}
-            height={PILL_HEIGHT}
-          />
+          {searching
+            ? null
+            : circle(
+                () =>
+                  navigation.navigate('Tabs', {
+                    screen: previousTab ?? 'Dashboard',
+                  }),
+                (previousTab ? TAB_ICONS[previousTab] : undefined) ??
+                  'exercise-weights',
+                t('common.back', { defaultValue: 'Back' })
+              )}
+          <View className="flex-1">
+            <LibrarySearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('addHub.searchPlaceholder', {
+                defaultValue: 'Search food or meals',
+              })}
+              onFocus={() => setSearchOpen(true)}
+              onSubmitEditing={() => void recordRecentSearch(query)}
+              height={PILL_HEIGHT}
+            />
+          </View>
+          {searching
+            ? circle(
+                () => {
+                  setQuery('');
+                  setSearchOpen(false);
+                  Keyboard.dismiss();
+                },
+                'close',
+                t('common.cancel', { defaultValue: 'Cancel' })
+              )
+            : null}
         </View>
-        {searching
-          ? circle(
-              () => {
-                setQuery('');
-                setSearchOpen(false);
-                Keyboard.dismiss();
-              },
-              'close',
-              t('common.cancel', { defaultValue: 'Cancel' })
-            )
-          : null}
-      </View>
+      </BottomEdgeEffect>
     </KeyboardStickyView>
   );
 

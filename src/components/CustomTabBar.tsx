@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon, { type IconName } from './Icon';
 import { fireSelectionHaptic } from '../services/haptics';
+import { withAlpha } from '../utils/colors';
 
 /**
  * The pill's own height. The bar around it adds the gap below and the safe
@@ -37,13 +38,13 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [chrome, chromeBorder, tabActive, tabInactive, accentPrimary] =
+  const [chrome, chromeBorder, tabActive, tabInactive, textPrimary] =
     useCSSVariable([
       '--color-chrome',
       '--color-chrome-border',
       '--color-tab-active',
       '--color-tab-inactive',
-      '--color-accent-primary',
+      '--color-text-primary',
     ]) as [string, string, string, string, string];
 
   // The tab bar iOS 26 draws: the content tabs in one floating pill, and the
@@ -92,13 +93,14 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       pointerEvents="box-none"
     >
       <View
-        className="flex-1 flex-row items-center overflow-hidden"
+        className="flex-1 flex-row items-center"
         style={{
           height: PILL_HEIGHT,
           borderRadius: PILL_HEIGHT / 2,
           backgroundColor: chrome,
           borderColor: chromeBorder,
           borderWidth: StyleSheet.hairlineWidth,
+          padding: 5,
           ...Platform.select({
             ios: {
               shadowColor: '#000',
@@ -128,6 +130,13 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               {...pressHandlers(route)}
               className="flex-1 items-center justify-center gap-0.5"
+              style={{
+                height: PILL_HEIGHT - 10,
+                borderRadius: (PILL_HEIGHT - 10) / 2,
+                backgroundColor: isFocused
+                  ? withAlpha(tabActive, 0.12)
+                  : 'transparent',
+              }}
             >
               {iconName && (
                 <Icon
@@ -163,7 +172,9 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
             width: PILL_HEIGHT,
             height: PILL_HEIGHT,
             borderRadius: PILL_HEIGHT / 2,
-            backgroundColor: accentPrimary,
+            backgroundColor: chrome,
+            borderColor: chromeBorder,
+            borderWidth: StyleSheet.hairlineWidth,
             ...Platform.select({
               ios: {
                 shadowColor: '#000',
@@ -175,7 +186,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
             }),
           }}
         >
-          <Icon name="food" size={24} color="#FFFFFF" weight="bold" />
+          <Icon name="food" size={24} color={textPrimary} weight="bold" />
         </TouchableOpacity>
       ) : null}
     </View>

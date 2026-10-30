@@ -5,9 +5,6 @@ import { resetLocalDatabaseCache } from '../../src/services/local/database';
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
 }));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 
 const request = <T = any>(
   endpoint: string,
@@ -52,7 +49,9 @@ describe('local medications', () => {
       dose_unit_snapshot: 'tablet',
     });
     await expect(
-      request('/api/v2/medications/entries?fromDate=2026-10-01&toDate=2026-10-01')
+      request(
+        '/api/v2/medications/entries?fromDate=2026-10-01&toDate=2026-10-01'
+      )
     ).resolves.toHaveLength(1);
     await expect(
       request('/api/v2/medications/entries?fromDate=2026-10-02')
@@ -61,7 +60,9 @@ describe('local medications', () => {
     await request(`/api/v2/medications/schedules/${schedule.id}`, 'PUT', {
       time_of_day: '09:00',
     });
-    await expect(request(`/api/v2/medications/${med.id}`)).resolves.toMatchObject({
+    await expect(
+      request(`/api/v2/medications/${med.id}`)
+    ).resolves.toMatchObject({
       schedules: [expect.objectContaining({ time_of_day: '09:00' })],
     });
 
@@ -108,7 +109,9 @@ describe('local cycle tracking', () => {
     expect(overview.prediction.cycles[0].periodStart).toBe('2026-09-26');
 
     // A cycle keeps its id when the logs are rewritten around it.
-    await request('/api/v2/cycle/logs/2026-08-31', 'PUT', { flow_level: 'light' });
+    await request('/api/v2/cycle/logs/2026-08-31', 'PUT', {
+      flow_level: 'light',
+    });
     const again = await request('/api/v2/cycle/cycles');
     expect(again.map((c: { id: string }) => c.id)).toEqual(
       cycles.map((c: { id: string }) => c.id)
@@ -124,16 +127,25 @@ describe('local cycle tracking', () => {
   });
 
   it('reads basal body temperature from the custom measurement', async () => {
-    const category = await request('/api/measurements/custom-categories', 'POST', {
-      name: 'basal_body_temperature',
-    });
+    const category = await request(
+      '/api/measurements/custom-categories',
+      'POST',
+      {
+        name: 'basal_body_temperature',
+      }
+    );
     await request('/api/measurements/custom-entries', 'POST', {
       category_id: category.id,
       value: '36.6',
       entry_date: '2026-09-10',
     });
-    await request('/api/v2/cycle/logs/2026-09-10', 'PUT', { energy: 3, bbt: 99 });
-    await expect(request('/api/v2/cycle/logs/2026-09-10')).resolves.toMatchObject({
+    await request('/api/v2/cycle/logs/2026-09-10', 'PUT', {
+      energy: 3,
+      bbt: 99,
+    });
+    await expect(
+      request('/api/v2/cycle/logs/2026-09-10')
+    ).resolves.toMatchObject({
       energy: 3,
       bbt: 36.6,
     });
@@ -164,7 +176,9 @@ describe('local pregnancy', () => {
       due_date_basis: 'lmp',
     });
     // 2027-03-01 minus 280 days is 2026-05-25, so 2026-08-03 is week 10.
-    const overview = await request('/api/v2/pregnancy/overview?date=2026-08-03');
+    const overview = await request(
+      '/api/v2/pregnancy/overview?date=2026-08-03'
+    );
     expect(overview.gestation).toMatchObject({ week: 10, trimester: 1 });
     const firstAppointment = overview.checklist.find(
       (item: { template_key: string }) => item.template_key === 'first_appt'

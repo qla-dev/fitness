@@ -12,9 +12,6 @@ import { calculateExerciseStats } from '../../src/utils/workoutSession';
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
 }));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 jest.mock('../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
 }));

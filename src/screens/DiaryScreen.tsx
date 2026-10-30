@@ -1,3 +1,4 @@
+import { useFallbackTabBarInset } from '../hooks/useFallbackTabBarInset';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -81,6 +82,7 @@ type DiaryScreenProps = CompositeScreenProps<
 >;
 const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const { t, i18n: translationI18n } = useTranslation();
+  const tabBarInset = useFallbackTabBarInset();
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
@@ -384,7 +386,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           // large title, and adding to it pushed the line away from the name it
           // belongs to.
           paddingTop: 0,
-          paddingBottom: SCREEN_GUTTER + activeWorkoutBarPadding,
+          paddingBottom: SCREEN_GUTTER + activeWorkoutBarPadding + tabBarInset,
           gap: CARD_GAP,
         }}
         showsVerticalScrollIndicator={false}

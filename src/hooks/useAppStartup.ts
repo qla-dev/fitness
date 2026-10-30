@@ -18,7 +18,6 @@ import { initializeTheme } from '../services/themeService';
 import { addLog, initLogService } from '../services/LogService';
 import { warmLocalDatabase } from '../services/local/database';
 import { afterFirstScreen } from '../services/startupGate';
-import { isLocalDataMode } from '../services/dataMode';
 import {
   initNotifications,
   registerLocalizedNotificationPresentation,
@@ -115,13 +114,10 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
     // Load the on-device database in the background. On the first launch after
     // the SQLite update this is also when an AsyncStorage copy moves over; it
     // is deleted only after SQLite reads back identical.
-    if (isLocalDataMode()) void warmLocalDatabase();
+    void warmLocalDatabase();
 
     const initializeSyncServices = async () => {
-      // Deliberately NOT gated on isLocalDataMode(): health sync is what fills
-      // a local-first build. Apple Health / Health Connect is the data source
-      // and the on-device database is the destination, so background sync,
-      // timezone bootstrap and the HealthKit observers all still apply.
+      // Health services import from Apple Health / Health Connect into the diary.
       // Bootstrap timezone before any sync path is configured so the store
       // has a stable timezone for the very first sync.
       const timezone = await ensureTimezoneBootstrapped();

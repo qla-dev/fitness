@@ -10,7 +10,6 @@ import { useCSSVariable } from 'uniwind';
 
 import { fetchProfile } from '../services/api/profileApi';
 import { profileQueryKey } from '../hooks/queryKeys';
-import { isLocalDataMode } from '../services/dataMode';
 import { fireSelectionHaptic } from '../services/haptics';
 import Icon from './Icon';
 import type { RootStackParamList } from '../types/navigation';
@@ -35,7 +34,6 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
   });
   const textSecondary = useCSSVariable('--color-text-secondary') as string;
 
-  const editable = isLocalDataMode();
   // The row is the person, so an empty profile asks for a name rather than
   // labelling itself "Profile" — a heading the screen already carries. The
   // prompt is not a name, so it seeds no initials: the avatar falls back to a
@@ -58,8 +56,7 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
     <>
       <View className="bg-surface rounded-2xl overflow-hidden mb-5">
         <Pressable
-          accessibilityRole={editable ? 'button' : undefined}
-          disabled={!editable}
+          accessibilityRole="button"
           onPress={() => {
             fireSelectionHaptic();
             navigation.navigate('Account');
@@ -92,21 +89,17 @@ export default function ProfileSummary({ enabled }: { enabled: boolean }) {
             </Text>
             {/* What the row opens, the way the system's own account row
                 reads "Apple Account, iCloud and more" under the name. */}
-            {editable ? (
-              <Text
-                className="text-text-secondary text-sm mt-1"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {t('profile.accountSubtitle', {
-                  defaultValue: 'Username, sign-in methods, password',
-                })}
-              </Text>
-            ) : null}
+            <Text
+              className="text-text-secondary text-sm mt-1"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {t('profile.accountSubtitle', {
+                defaultValue: 'Username, sign-in methods, password',
+              })}
+            </Text>
           </View>
-          {editable && (
-            <Icon name="chevron-forward" size={12} color={textSecondary} />
-          )}
+          <Icon name="chevron-forward" size={12} color={textSecondary} />
         </Pressable>
 
         <ProfileSetup enabled={enabled} />

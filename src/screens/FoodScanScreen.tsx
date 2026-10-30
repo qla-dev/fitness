@@ -1,4 +1,3 @@
-import { isLocalDataMode } from '../services/dataMode';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -38,10 +37,7 @@ import {
 import { selectDisplayVariant } from '../utils/foodDetails';
 import { getApiErrorMessage } from '../services/api/errors';
 import { TimeoutError } from '../utils/concurrency';
-import {
-  fireSelectionHaptic,
-  fireSuccessHaptic,
-} from '../services/haptics';
+import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { toFormString } from '../types/foodInfo';
 import { useActiveAiServiceSetting } from '../hooks/useActiveAiServiceSetting';
@@ -138,6 +134,17 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
   const selectionPickerMode = isSelectionMode ? pickerMode : undefined;
   const mealPlanTarget = lookupParams?.mealPlanTarget;
 
+  const aiSettingQuery = useActiveAiServiceSetting({
+    // Skip the AI gating fetch in capture-barcode mode — Photo segment is
+    // unreachable there.
+    enabled: !isCaptureBarcodeMode,
+    // Refresh scanner capabilities on entry instead of tying them to a build.
+    staleTime: 0,
+  });
+  const aiSetting = aiSettingQuery.data ?? null;
+  const photoModeAvailable = isFoodPhotoAvailable(aiSetting);
+  const photoModeLoading = scanMode === 'photo' && aiSettingQuery.isLoading;
+
   // Photo estimation always logs to the diary; hide it for meal-builder
   // scans so we don't drop the user into a flow that ignores pickerMode.
   // capture-barcode mode is barcode-only.
@@ -148,11 +155,10 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
         label: t('foodScan.segment.barcode', { defaultValue: 'Barcode' }),
       }));
     }
-    // Label and Photo are AI-backed and have no local adapter; barcode
-    // resolves against Open Food Facts directly, so it stays.
-    const available = isLocalDataMode()
-      ? SCAN_SEGMENTS.filter((key) => key === 'barcode')
-      : SCAN_SEGMENTS;
+    // AI scan tools require a configured provider; barcode needs no account.
+    const available: ScanMode[] = photoModeAvailable
+      ? SCAN_SEGMENTS
+      : SCAN_SEGMENTS.filter((key) => key === 'barcode');
     return (
       isSelectionMode ? available.filter((key) => key !== 'photo') : available
     ).map((key) => ({
@@ -164,19 +170,7 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
             ? t('foodScan.segment.label', { defaultValue: 'Label' })
             : t('foodScan.segment.photo', { defaultValue: 'Photo' }),
     }));
-  }, [isCaptureBarcodeMode, isSelectionMode, t]);
-
-  const aiSettingQuery = useActiveAiServiceSetting({
-    // Skip the AI gating fetch in capture-barcode mode — Photo segment is
-    // unreachable there.
-    enabled: !isCaptureBarcodeMode && scanMode === 'photo',
-    // Refresh on every photo-mode entry so a user who left to set up AI in
-    // the web app sees the gate clear when they come back.
-    staleTime: 0,
-  });
-  const aiSetting = aiSettingQuery.data ?? null;
-  const photoModeAvailable = isFoodPhotoAvailable(aiSetting);
-  const photoModeLoading = scanMode === 'photo' && aiSettingQuery.isLoading;
+  }, [isCaptureBarcodeMode, isSelectionMode, photoModeAvailable, t]);
 
   const buildFoodFormParams = (
     extra: Partial<
@@ -794,481 +788,493 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
     >
       {typingOnly ? null : (
         <>
-      <CameraView
-        ref={cameraRef}
-        onBarcodeScanned={
-          scanMode === 'barcode' && !scanned ? handleBarcodeScanned : undefined
-        }
-        barcodeScannerSettings={
-          scanMode === 'barcode'
-            ? {
-                barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
-              }
-            : undefined
-        }
-        style={StyleSheet.absoluteFill}
-        enableTorch={flashlight}
-      />
-
-      {scanMode === 'barcode' &&
-      !notFoundBarcode &&
-      !lookupError &&
-      !loading &&
-      !manualEntryVisible ? (
-        <View
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-          className="justify-center items-center"
-        >
-          <View
-            style={{
-              width: GUIDE_WIDTH,
-              height: GUIDE_HEIGHT,
-            }}
-          >
-            <View
-              style={{
-                ...CORNER_STYLE,
-                top: 0,
-                left: 0,
-                borderTopWidth: CORNER_BORDER,
-                borderLeftWidth: CORNER_BORDER,
-                borderTopLeftRadius: 4,
-              }}
-            />
-            <View
-              style={{
-                ...CORNER_STYLE,
-                top: 0,
-                right: 0,
-                borderTopWidth: CORNER_BORDER,
-                borderRightWidth: CORNER_BORDER,
-                borderTopRightRadius: 4,
-              }}
-            />
-            <View
-              style={{
-                ...CORNER_STYLE,
-                bottom: 0,
-                left: 0,
-                borderBottomWidth: CORNER_BORDER,
-                borderLeftWidth: CORNER_BORDER,
-                borderBottomLeftRadius: 4,
-              }}
-            />
-            <View
-              style={{
-                ...CORNER_STYLE,
-                bottom: 0,
-                right: 0,
-                borderBottomWidth: CORNER_BORDER,
-                borderRightWidth: CORNER_BORDER,
-                borderBottomRightRadius: 4,
-              }}
-            />
-          </View>
-        </View>
-      ) : null}
-
-      <View
-        className="absolute left-4 right-4 flex-row justify-between items-center"
-        style={{ top: Platform.OS === 'android' ? insets.top + 8 : 16 }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            fireSelectionHaptic();
-            navigation.goBack();
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={t('foodScan.accessibility.back', {
-            defaultValue: 'Go back',
-          })}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          className="bg-black/50 rounded-full p-2"
-        >
-          <Icon name="chevron-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            fireSelectionHaptic();
-            setFlashlight(!flashlight);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={
-            flashlight
-              ? t('foodScan.accessibility.flashlightOff', {
-                  defaultValue: 'Turn flashlight off',
-                })
-              : t('foodScan.accessibility.flashlightOn', {
-                  defaultValue: 'Turn flashlight on',
-                })
-          }
-          className="bg-black/50 rounded-full p-2"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon
-            name={flashlight ? 'flashlight-on' : 'flashlight-off'}
-            size={22}
-            color={flashlight ? accentPrimary : '#fff'}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {loading || labelProcessing ? (
-        <View className="absolute inset-0 justify-center items-center bg-black/40">
-          <ActivityIndicator size="large" color="#fff" />
-          {labelProcessing ? (
-            <Text className="text-white text-base mt-3">
-              {t('foodScan.label.analyzing', {
-                defaultValue: 'Analyzing label...',
-              })}
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      {capturedPhoto && !labelProcessing ? (
-        <View className="absolute inset-0 bg-black">
-          <Image
-            source={{ uri: capturedPhoto.uri }}
+          <CameraView
+            ref={cameraRef}
+            onBarcodeScanned={
+              scanMode === 'barcode' && !scanned
+                ? handleBarcodeScanned
+                : undefined
+            }
+            barcodeScannerSettings={
+              scanMode === 'barcode'
+                ? {
+                    barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
+                  }
+                : undefined
+            }
             style={StyleSheet.absoluteFill}
-            resizeMode="contain"
+            enableTorch={flashlight}
           />
+
+          {scanMode === 'barcode' &&
+          !notFoundBarcode &&
+          !lookupError &&
+          !loading &&
+          !manualEntryVisible ? (
+            <View
+              pointerEvents="none"
+              style={StyleSheet.absoluteFill}
+              className="justify-center items-center"
+            >
+              <View
+                style={{
+                  width: GUIDE_WIDTH,
+                  height: GUIDE_HEIGHT,
+                }}
+              >
+                <View
+                  style={{
+                    ...CORNER_STYLE,
+                    top: 0,
+                    left: 0,
+                    borderTopWidth: CORNER_BORDER,
+                    borderLeftWidth: CORNER_BORDER,
+                    borderTopLeftRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    ...CORNER_STYLE,
+                    top: 0,
+                    right: 0,
+                    borderTopWidth: CORNER_BORDER,
+                    borderRightWidth: CORNER_BORDER,
+                    borderTopRightRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    ...CORNER_STYLE,
+                    bottom: 0,
+                    left: 0,
+                    borderBottomWidth: CORNER_BORDER,
+                    borderLeftWidth: CORNER_BORDER,
+                    borderBottomLeftRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    ...CORNER_STYLE,
+                    bottom: 0,
+                    right: 0,
+                    borderBottomWidth: CORNER_BORDER,
+                    borderRightWidth: CORNER_BORDER,
+                    borderBottomRightRadius: 4,
+                  }}
+                />
+              </View>
+            </View>
+          ) : null}
+
           <View
-            className="absolute bottom-12 left-4 right-4 flex-row gap-3"
-            style={{ paddingBottom: insets.bottom }}
+            className="absolute left-4 right-4 flex-row justify-between items-center"
+            style={{ top: Platform.OS === 'android' ? insets.top + 8 : 16 }}
           >
             <TouchableOpacity
-              onPress={handleRetake}
-              accessibilityRole="button"
-              accessibilityLabel={t('foodScan.accessibility.retakePhoto', {
-                defaultValue: 'Retake photo',
-              })}
-              className="flex-1 bg-white/20 py-4 rounded-lg items-center"
-            >
-              <Text className="text-white font-semibold text-base">
-                {t('foodScan.label.retake', { defaultValue: 'Retake' })}
-              </Text>
-            </TouchableOpacity>
-            <UIButton
-              variant="primary"
               onPress={() => {
-                void handleUsePhoto();
+                fireSelectionHaptic();
+                navigation.goBack();
               }}
-              className="flex-1 py-4 rounded-lg"
+              accessibilityRole="button"
+              accessibilityLabel={t('foodScan.accessibility.back', {
+                defaultValue: 'Go back',
+              })}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              className="bg-black/50 rounded-full p-2"
             >
-              {t('foodScan.label.usePhoto', { defaultValue: 'Use Photo' })}
-            </UIButton>
-          </View>
-        </View>
-      ) : null}
-
-      {!isCaptureBarcodeMode &&
-      !capturedPhoto &&
-      !labelProcessing &&
-      !loading &&
-      !manualEntryVisible &&
-      scanMode === 'barcode' &&
-      (notFoundBarcode || lookupError) ? (
-        <View
-          className="absolute left-0 right-0 items-center px-8"
-          style={{ bottom: Math.max(insets.bottom + 8, 24) + 76 }}
-        >
-          <View className="self-stretch bg-surface rounded-xl p-5 items-center gap-3">
-            <Text className="text-text-primary text-base font-semibold">
-              {lookupError
-                ? t('foodScan.lookup.failed', { defaultValue: 'Lookup failed' })
-                : t('foodScan.lookup.noMatch', {
-                    defaultValue: 'No match for barcode',
-                  })}
-            </Text>
-            <Text className="text-text-secondary text-sm text-center">
-              {lookupError
-                ? lookupError.message
-                : t('foodScan.lookup.nextSteps', {
-                    defaultValue:
-                      'You can scan the nutrition label or enter it manually.',
-                  })}
-            </Text>
-            <View className="gap-3 mt-2 self-stretch">
-              <UIButton
-                variant="primary"
-                onPress={handleScanLabel}
-                className="rounded-lg"
-                textClassName="text-sm"
-              >
-                {t('foodScan.lookup.scanLabel', {
-                  defaultValue: 'Scan Nutrition Label',
-                })}
-              </UIButton>
-              <UIButton
-                variant="outline"
-                onPress={() =>
-                  navigation.replace(
-                    'FoodForm',
-                    buildFoodFormParams({
-                      barcode:
-                        lookupError?.barcode ?? notFoundBarcode ?? undefined,
+              <Icon name="chevron-back" size={22} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                fireSelectionHaptic();
+                setFlashlight(!flashlight);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={
+                flashlight
+                  ? t('foodScan.accessibility.flashlightOff', {
+                      defaultValue: 'Turn flashlight off',
                     })
-                  )
-                }
-                className="rounded-lg"
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: accentPrimary,
-                  }}
-                >
-                  {t('foodScan.lookup.addManually', {
-                    defaultValue: 'Add Food Manually',
+                  : t('foodScan.accessibility.flashlightOn', {
+                      defaultValue: 'Turn flashlight on',
+                    })
+              }
+              className="bg-black/50 rounded-full p-2"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon
+                name={flashlight ? 'flashlight-on' : 'flashlight-off'}
+                size={22}
+                color={flashlight ? accentPrimary : '#fff'}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {loading || labelProcessing ? (
+            <View className="absolute inset-0 justify-center items-center bg-black/40">
+              <ActivityIndicator size="large" color="#fff" />
+              {labelProcessing ? (
+                <Text className="text-white text-base mt-3">
+                  {t('foodScan.label.analyzing', {
+                    defaultValue: 'Analyzing label...',
                   })}
                 </Text>
-              </UIButton>
-            </View>
-          </View>
-        </View>
-      ) : null}
-
-      {scanMode === 'photo' &&
-      !capturedPhoto &&
-      !loading &&
-      !manualEntryVisible &&
-      !photoGateVisible &&
-      photoModeAvailable ? (
-        <View
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-          className="justify-center items-center"
-        >
-          <View
-            style={{
-              width: GUIDE_WIDTH,
-              height: GUIDE_WIDTH,
-              marginBottom: 120,
-              borderWidth: 2,
-              borderColor: 'rgba(255,255,255,0.85)',
-              borderRadius: 12,
-            }}
-          />
-          <Text
-            className="text-white text-sm mt-3"
-            style={{ position: 'absolute', bottom: 220 }}
-          >
-            {t('foodScan.photo.frameMeal', {
-              defaultValue: 'Frame the whole meal',
-            })}
-          </Text>
-        </View>
-      ) : null}
-
-      {photoGateVisible ? (
-        <View
-          className="absolute left-0 right-0 items-center px-6"
-          style={{ bottom: Math.max(insets.bottom + 8, 24) + 76 }}
-        >
-          <View className="self-stretch bg-surface rounded-xl p-5 gap-3">
-            <Text className="text-text-primary text-base font-semibold">
-              {t('foodScan.photo.notSetUp', {
-                defaultValue: "AI photo estimates aren't set up",
-              })}
-            </Text>
-            <Text className="text-text-secondary text-sm">
-              {t('foodScan.photo.setupHelp', {
-                defaultValue:
-                  'Open qla.fit in a browser and visit Settings → AI to add an AI provider, then return here.',
-              })}
-            </Text>
-            <View className="gap-2 mt-2">
-              <UIButton
-                variant="primary"
-                onPress={handlePhotoGateLogManually}
-                className="rounded-lg"
-                textClassName="text-sm"
-              >
-                {t('foodScan.photo.logManually', {
-                  defaultValue: 'Log manually',
-                })}
-              </UIButton>
-              <UIButton
-                variant="ghost"
-                onPress={handleDismissPhotoGate}
-                className="rounded-lg"
-                textClassName="text-sm"
-              >
-                {t('common.later', { defaultValue: 'Later' })}
-              </UIButton>
-            </View>
-          </View>
-        </View>
-      ) : null}
-
-      {!capturedPhoto && !labelProcessing && !loading && !manualEntryVisible ? (
-        <View
-          className="absolute bottom-0 left-0 right-0 items-center gap-4"
-          style={{ paddingBottom: Math.max(insets.bottom + 8, 24) }}
-        >
-          {/* A switch with one position is not a switch: with only Barcode
-              available it named the mode rather than offering a choice. */}
-          {scanSegments.length > 1 ? (
-            <View className="bg-black/50 rounded-lg mx-8 self-stretch">
-              <SegmentedControl
-                segments={scanSegments}
-                activeKey={scanMode}
-                onSelect={handleSegmentChange}
-              />
+              ) : null}
             </View>
           ) : null}
 
-          {!(scanMode === 'barcode' && (notFoundBarcode || lookupError)) &&
-          !(scanMode === 'photo' && photoGateVisible) ? (
-            <View className="h-20 items-center justify-center self-stretch">
-              {/* Only in capture mode. Everywhere else typing a barcode is
+          {capturedPhoto && !labelProcessing ? (
+            <View className="absolute inset-0 bg-black">
+              <Image
+                source={{ uri: capturedPhoto.uri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="contain"
+              />
+              <View
+                className="absolute bottom-12 left-4 right-4 flex-row gap-3"
+                style={{ paddingBottom: insets.bottom }}
+              >
+                <TouchableOpacity
+                  onPress={handleRetake}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('foodScan.accessibility.retakePhoto', {
+                    defaultValue: 'Retake photo',
+                  })}
+                  className="flex-1 bg-white/20 py-4 rounded-lg items-center"
+                >
+                  <Text className="text-white font-semibold text-base">
+                    {t('foodScan.label.retake', { defaultValue: 'Retake' })}
+                  </Text>
+                </TouchableOpacity>
+                <UIButton
+                  variant="primary"
+                  onPress={() => {
+                    void handleUsePhoto();
+                  }}
+                  className="flex-1 py-4 rounded-lg"
+                >
+                  {t('foodScan.label.usePhoto', { defaultValue: 'Use Photo' })}
+                </UIButton>
+              </View>
+            </View>
+          ) : null}
+
+          {!isCaptureBarcodeMode &&
+          !capturedPhoto &&
+          !labelProcessing &&
+          !loading &&
+          !manualEntryVisible &&
+          scanMode === 'barcode' &&
+          (notFoundBarcode || lookupError) ? (
+            <View
+              className="absolute left-0 right-0 items-center px-8"
+              style={{ bottom: Math.max(insets.bottom + 8, 24) + 76 }}
+            >
+              <View className="self-stretch bg-surface rounded-xl p-5 items-center gap-3">
+                <Text className="text-text-primary text-base font-semibold">
+                  {lookupError
+                    ? t('foodScan.lookup.failed', {
+                        defaultValue: 'Lookup failed',
+                      })
+                    : t('foodScan.lookup.noMatch', {
+                        defaultValue: 'No match for barcode',
+                      })}
+                </Text>
+                <Text className="text-text-secondary text-sm text-center">
+                  {lookupError
+                    ? lookupError.message
+                    : t('foodScan.lookup.nextSteps', {
+                        defaultValue:
+                          'You can scan the nutrition label or enter it manually.',
+                      })}
+                </Text>
+                <View className="gap-3 mt-2 self-stretch">
+                  <UIButton
+                    variant="primary"
+                    onPress={handleScanLabel}
+                    className="rounded-lg"
+                    textClassName="text-sm"
+                  >
+                    {t('foodScan.lookup.scanLabel', {
+                      defaultValue: 'Scan Nutrition Label',
+                    })}
+                  </UIButton>
+                  <UIButton
+                    variant="outline"
+                    onPress={() =>
+                      navigation.replace(
+                        'FoodForm',
+                        buildFoodFormParams({
+                          barcode:
+                            lookupError?.barcode ??
+                            notFoundBarcode ??
+                            undefined,
+                        })
+                      )
+                    }
+                    className="rounded-lg"
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: accentPrimary,
+                      }}
+                    >
+                      {t('foodScan.lookup.addManually', {
+                        defaultValue: 'Add Food Manually',
+                      })}
+                    </Text>
+                  </UIButton>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          {scanMode === 'photo' &&
+          !capturedPhoto &&
+          !loading &&
+          !manualEntryVisible &&
+          !photoGateVisible &&
+          photoModeAvailable ? (
+            <View
+              pointerEvents="none"
+              style={StyleSheet.absoluteFill}
+              className="justify-center items-center"
+            >
+              <View
+                style={{
+                  width: GUIDE_WIDTH,
+                  height: GUIDE_WIDTH,
+                  marginBottom: 120,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255,255,255,0.85)',
+                  borderRadius: 12,
+                }}
+              />
+              <Text
+                className="text-white text-sm mt-3"
+                style={{ position: 'absolute', bottom: 220 }}
+              >
+                {t('foodScan.photo.frameMeal', {
+                  defaultValue: 'Frame the whole meal',
+                })}
+              </Text>
+            </View>
+          ) : null}
+
+          {photoGateVisible ? (
+            <View
+              className="absolute left-0 right-0 items-center px-6"
+              style={{ bottom: Math.max(insets.bottom + 8, 24) + 76 }}
+            >
+              <View className="self-stretch bg-surface rounded-xl p-5 gap-3">
+                <Text className="text-text-primary text-base font-semibold">
+                  {t('foodScan.photo.notSetUp', {
+                    defaultValue: "AI photo estimates aren't set up",
+                  })}
+                </Text>
+                <Text className="text-text-secondary text-sm">
+                  {t('foodScan.photo.setupHelp', {
+                    defaultValue:
+                      'Open qla.fit in a browser and visit Settings → AI to add an AI provider, then return here.',
+                  })}
+                </Text>
+                <View className="gap-2 mt-2">
+                  <UIButton
+                    variant="primary"
+                    onPress={handlePhotoGateLogManually}
+                    className="rounded-lg"
+                    textClassName="text-sm"
+                  >
+                    {t('foodScan.photo.logManually', {
+                      defaultValue: 'Log manually',
+                    })}
+                  </UIButton>
+                  <UIButton
+                    variant="ghost"
+                    onPress={handleDismissPhotoGate}
+                    className="rounded-lg"
+                    textClassName="text-sm"
+                  >
+                    {t('common.later', { defaultValue: 'Later' })}
+                  </UIButton>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          {!capturedPhoto &&
+          !labelProcessing &&
+          !loading &&
+          !manualEntryVisible ? (
+            <View
+              className="absolute bottom-0 left-0 right-0 items-center gap-4"
+              style={{ paddingBottom: Math.max(insets.bottom + 8, 24) }}
+            >
+              {/* A switch with one position is not a switch: with only Barcode
+              available it named the mode rather than offering a choice. */}
+              {scanSegments.length > 1 ? (
+                <View className="bg-black/50 rounded-lg mx-8 self-stretch">
+                  <SegmentedControl
+                    segments={scanSegments}
+                    activeKey={scanMode}
+                    onSelect={handleSegmentChange}
+                  />
+                </View>
+              ) : null}
+
+              {!(scanMode === 'barcode' && (notFoundBarcode || lookupError)) &&
+              !(scanMode === 'photo' && photoGateVisible) ? (
+                <View className="h-20 items-center justify-center self-stretch">
+                  {/* Only in capture mode. Everywhere else typing a barcode is
                   its own card on the Food dashboard, which opens this screen
                   straight on the sheet without starting the camera — but a
                   capture is reached from a food's own barcode field, which
                   has no such card behind it. */}
-              {isCaptureBarcodeMode && scanMode === 'barcode' ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    scanLock.current = true;
-                    setManualEntryVisible(true);
-                    setScanned(true);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('foodScan.barcode.typeInstead', {
-                    defaultValue: 'Type Barcode Instead',
-                  })}
-                  className="bg-raised px-6 py-3 rounded-xl"
-                >
-                  <Text className="text-text-primary text-sm font-semibold">
-                    {t('foodScan.barcode.typeInstead', {
-                      defaultValue: 'Type Barcode Instead',
-                    })}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-
-              {scanMode === 'label' ? (
-                <>
-                  <TouchableOpacity
-                    onPress={() => {
-                      void handleLabelCapture();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={t(
-                      'foodScan.accessibility.takeLabelPhoto',
-                      { defaultValue: 'Take nutrition label photo' }
-                    )}
-                    className="w-20 h-20 rounded-full border-4 border-white items-center justify-center"
-                    activeOpacity={0.7}
-                  >
-                    <View className="w-16 h-16 rounded-full bg-white" />
-                  </TouchableOpacity>
-                  {/* Same placement as photo mode's library button. */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      void handleLabelPickFromLibrary();
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    accessibilityLabel={t(
-                      'foodScan.accessibility.chooseLabelPhoto',
-                      { defaultValue: 'Choose label photo from library' }
-                    )}
-                    accessibilityRole="button"
-                    className="bg-black/50 rounded-full items-center justify-center"
-                    style={{
-                      position: 'absolute',
-                      left: '25%',
-                      top: 18,
-                      width: 44,
-                      height: 44,
-                      transform: [{ translateX: -26 }],
-                    }}
-                  >
-                    <Icon name="photo-library" size={26} color="#fff" />
-                  </TouchableOpacity>
-                </>
-              ) : null}
-
-              {scanMode === 'photo' ? (
-                <>
-                  {photoModeLoading ? (
-                    <ActivityIndicator size="large" color="#fff" />
-                  ) : (
+                  {isCaptureBarcodeMode && scanMode === 'barcode' ? (
                     <TouchableOpacity
                       onPress={() => {
-                        void handlePhotoCapture();
+                        scanLock.current = true;
+                        setManualEntryVisible(true);
+                        setScanned(true);
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={t(
-                        'foodScan.accessibility.takeMealPhoto',
-                        { defaultValue: 'Take meal photo' }
-                      )}
-                      disabled={!photoModeAvailable}
-                      className={`w-20 h-20 rounded-full border-4 border-white items-center justify-center ${photoModeAvailable ? '' : 'opacity-40'}`}
-                      activeOpacity={0.7}
+                      accessibilityLabel={t('foodScan.barcode.typeInstead', {
+                        defaultValue: 'Type Barcode Instead',
+                      })}
+                      className="bg-raised px-6 py-3 rounded-xl"
                     >
-                      <View className="w-16 h-16 rounded-full bg-white" />
-                    </TouchableOpacity>
-                  )}
-                  {/* Centered between the capture button and the segmented control's left edge. */}
-                  {photoModeAvailable && !photoModeLoading ? (
-                    <TouchableOpacity
-                      onPress={() => {
-                        void handlePhotoPickFromLibrary();
-                      }}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      accessibilityLabel={t(
-                        'foodScan.accessibility.choosePhoto',
-                        { defaultValue: 'Choose photo from library' }
-                      )}
-                      accessibilityRole="button"
-                      className="bg-black/50 rounded-full items-center justify-center"
-                      style={{
-                        position: 'absolute',
-                        left: '25%',
-                        top: 18,
-                        width: 44,
-                        height: 44,
-                        transform: [{ translateX: -26 }],
-                      }}
-                    >
-                      <Icon name="photo-library" size={26} color="#fff" />
+                      <Text className="text-text-primary text-sm font-semibold">
+                        {t('foodScan.barcode.typeInstead', {
+                          defaultValue: 'Type Barcode Instead',
+                        })}
+                      </Text>
                     </TouchableOpacity>
                   ) : null}
-                  {/* Centered between the capture button and the segmented control's right edge. */}
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate('FoodPhotoIntro', {
-                        date,
-                        mealTypeId: mealTypeId ?? undefined,
-                      })
-                    }
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    accessibilityLabel={t('foodScan.accessibility.howItWorks', {
-                      defaultValue: 'How photo estimation works',
-                    })}
-                    accessibilityRole="button"
-                    className="bg-black/50 rounded-full items-center justify-center"
-                    style={{
-                      position: 'absolute',
-                      right: '25%',
-                      top: 18,
-                      width: 44,
-                      height: 44,
-                      transform: [{ translateX: 26 }],
-                    }}
-                  >
-                    <Icon name="help-circle" size={28} color="#fff" />
-                  </TouchableOpacity>
-                </>
+
+                  {scanMode === 'label' ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          void handleLabelCapture();
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t(
+                          'foodScan.accessibility.takeLabelPhoto',
+                          { defaultValue: 'Take nutrition label photo' }
+                        )}
+                        className="w-20 h-20 rounded-full border-4 border-white items-center justify-center"
+                        activeOpacity={0.7}
+                      >
+                        <View className="w-16 h-16 rounded-full bg-white" />
+                      </TouchableOpacity>
+                      {/* Same placement as photo mode's library button. */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          void handleLabelPickFromLibrary();
+                        }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityLabel={t(
+                          'foodScan.accessibility.chooseLabelPhoto',
+                          { defaultValue: 'Choose label photo from library' }
+                        )}
+                        accessibilityRole="button"
+                        className="bg-black/50 rounded-full items-center justify-center"
+                        style={{
+                          position: 'absolute',
+                          left: '25%',
+                          top: 18,
+                          width: 44,
+                          height: 44,
+                          transform: [{ translateX: -26 }],
+                        }}
+                      >
+                        <Icon name="photo-library" size={26} color="#fff" />
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
+
+                  {scanMode === 'photo' ? (
+                    <>
+                      {photoModeLoading ? (
+                        <ActivityIndicator size="large" color="#fff" />
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => {
+                            void handlePhotoCapture();
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={t(
+                            'foodScan.accessibility.takeMealPhoto',
+                            { defaultValue: 'Take meal photo' }
+                          )}
+                          disabled={!photoModeAvailable}
+                          className={`w-20 h-20 rounded-full border-4 border-white items-center justify-center ${photoModeAvailable ? '' : 'opacity-40'}`}
+                          activeOpacity={0.7}
+                        >
+                          <View className="w-16 h-16 rounded-full bg-white" />
+                        </TouchableOpacity>
+                      )}
+                      {/* Centered between the capture button and the segmented control's left edge. */}
+                      {photoModeAvailable && !photoModeLoading ? (
+                        <TouchableOpacity
+                          onPress={() => {
+                            void handlePhotoPickFromLibrary();
+                          }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          accessibilityLabel={t(
+                            'foodScan.accessibility.choosePhoto',
+                            { defaultValue: 'Choose photo from library' }
+                          )}
+                          accessibilityRole="button"
+                          className="bg-black/50 rounded-full items-center justify-center"
+                          style={{
+                            position: 'absolute',
+                            left: '25%',
+                            top: 18,
+                            width: 44,
+                            height: 44,
+                            transform: [{ translateX: -26 }],
+                          }}
+                        >
+                          <Icon name="photo-library" size={26} color="#fff" />
+                        </TouchableOpacity>
+                      ) : null}
+                      {/* Centered between the capture button and the segmented control's right edge. */}
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate('FoodPhotoIntro', {
+                            date,
+                            mealTypeId: mealTypeId ?? undefined,
+                          })
+                        }
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityLabel={t(
+                          'foodScan.accessibility.howItWorks',
+                          {
+                            defaultValue: 'How photo estimation works',
+                          }
+                        )}
+                        accessibilityRole="button"
+                        className="bg-black/50 rounded-full items-center justify-center"
+                        style={{
+                          position: 'absolute',
+                          right: '25%',
+                          top: 18,
+                          width: 44,
+                          height: 44,
+                          transform: [{ translateX: 26 }],
+                        }}
+                      >
+                        <Icon name="help-circle" size={28} color="#fff" />
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
+                </View>
               ) : null}
             </View>
           ) : null}
-        </View>
-      ) : null}
         </>
       )}
 

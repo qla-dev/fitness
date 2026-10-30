@@ -1,4 +1,4 @@
-import { isLocalDataMode } from '../services/dataMode';
+import { useFallbackTabBarInset } from '../hooks/useFallbackTabBarInset';
 import SectionIntro from '../components/SectionIntro';
 import { distanceFromKm } from '../utils/unitConversions';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -35,8 +35,6 @@ import type { ActivityGoalKey } from '../constants/activityGoals';
 import { emptyDailySummary } from '../services/dailySummaryService';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
 import CompactActivityCard from '../components/CompactActivityCard';
-import FastingCard from '../components/FastingCard';
-import FastingGoalReconciler from '../components/FastingGoalReconciler';
 import Icon from '../components/Icon';
 import MedicationsCard from '../components/MedicationsCard';
 import ProgressPhotosCard from '../components/ProgressPhotosCard';
@@ -78,6 +76,7 @@ type DashboardScreenProps = CompositeScreenProps<
 
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const { t, i18n: translationI18n } = useTranslation();
+  const tabBarInset = useFallbackTabBarInset();
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
@@ -259,9 +258,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
-  const fastingCardVisible = useAppPreferencesStore(
-    (s) => s.fastingCardVisible
-  );
   const cycleCardVisible = useAppPreferencesStore((s) => s.cycleCardVisible);
   const askMarkAIVisible = useAppPreferencesStore((s) => s.askMarkAIVisible);
   const medicationsCardVisible = useAppPreferencesStore(
@@ -289,7 +285,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       refetchMeasurements(),
       refetchCustomNutrients(),
       refetchNutrientPrefs(),
-      // FastingCard owns its own queries; nudge them on pull-to-refresh.
+      // Refresh any fasting detail queries left in the cache.
       queryClient.invalidateQueries({ queryKey: fastingRootQueryKey }),
       // MedicationsCard owns its own queries.
       queryClient.invalidateQueries({ queryKey: medicationsRootQueryKey }),
@@ -373,7 +369,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingBottom: 16 + activeWorkoutBarPadding,
+          paddingBottom: 16 + activeWorkoutBarPadding + tabBarInset,
         }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
@@ -419,9 +415,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             here more trouble than it is worth. The composer autofocuses on
             arrival so the affordance is honored immediately. Visibility is a
             local app setting toggled from Activities Settings. */}
-        {!isLocalDataMode() && askMarkAIVisible && (
+        {askMarkAIVisible && (
           <Pressable
-            onPress={() => navigation.navigate('Chat')}
+            onPress={() => navigation.navigate('MarkAI')}
             className="flex-row items-center bg-surface rounded-2xl px-4 py-3 mb-3"
           >
             <Icon name="sparkles" size={18} color={accentColor} />
@@ -446,25 +442,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           onOpenGoal={openGoal}
         />
 
-        {/* Goal-notification reconciliation is owned here (headless, always
-            mounted) so it survives the card being hidden. Fasting is "now"-based,
-            so the card is deliberately date-independent — it always reflects the
-            current/active fast regardless of the date navigator. Do not wire it
-            to `selectedDate`. Visibility is a local app setting toggled from
-            Dashboard Settings. */}
-        {!isLocalDataMode() && <FastingGoalReconciler />}
-        {!isLocalDataMode() && fastingCardVisible && (
-          <FastingCard navigation={navigation} />
-        )}
-        {cycleCardVisible && (
-          <CycleCard navigation={navigation} />
-        )}
+        {cycleCardVisible && <CycleCard navigation={navigation} />}
 
-        {medicationsCardVisible && (
-          <MedicationsCard navigation={navigation} />
-        )}
+        {medicationsCardVisible && <MedicationsCard navigation={navigation} />}
 
-        {!isLocalDataMode() && progressPhotosCardVisible && (
+        {progressPhotosCardVisible && (
           <ProgressPhotosCard navigation={navigation} date={selectedDate} />
         )}
 

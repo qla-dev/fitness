@@ -1,9 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readSetup, updateSetup } from '../../src/services/personalSetup';
 
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 jest.mock('../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
 }));

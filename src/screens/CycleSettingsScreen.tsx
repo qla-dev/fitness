@@ -331,8 +331,7 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
     return <StatusView loading className="bg-background" />;
   }
 
-  // Settings resolve to null until cycle tracking has been set up (and always
-  // in local mode, where the endpoint returns null). Showing the loader here
+  // Settings resolve to null until cycle tracking has been set up. A loader here
   // hung the screen forever with no header to leave by; this offers the way
   // in instead.
   if (!settings) {

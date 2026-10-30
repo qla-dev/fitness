@@ -95,7 +95,7 @@ function initialise(db: LocalDatabase) {
       },
     ];
   if (!db.tables.goals) db.tables.goals = [{ id: 'goals', ...initialGoals }];
-  // The upstream server creates these rows per user at signup; local mode
+  // The upstream server creates these rows per user at signup; the diary
   // seeds the ones `providerCatalog` can actually answer for.
   if (!db.tables.providers)
     db.tables.providers = LOCAL_PROVIDER_SEEDS.map((provider) => ({
@@ -415,10 +415,7 @@ function route(db: LocalDatabase, request: LocalRequest): unknown {
       ].includes(path)
     )
       return [];
-    if (
-      ['/api/fasting/current'].includes(path)
-    )
-      return null;
+    if (['/api/fasting/current'].includes(path)) return null;
   }
   throw new Error(
     `Local data does not support ${method} ${path}. A backend is required for this feature.`

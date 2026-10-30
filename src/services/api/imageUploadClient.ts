@@ -1,29 +1,8 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
-import { isLocalDataMode } from '../dataMode';
 import { localApiFetch } from '../local/localApi';
-import { normalizeUrl } from './apiClient';
-import { ApiError } from './errors';
-import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
-import { getAuthHeaders, notifySessionExpired } from './authService';
-import { addLog } from '../LogService';
-import { UPLOAD_TIMEOUT_MS, fetchWithTimeout } from '../../utils/concurrency';
 
-/**
- * Shared multipart transport for food/meal/entry images.
- *
- * `apiFetch` JSON-encodes its body, so image writes cannot go through it. This
- * mirrors `pregnancyPhotosApi.uploadPhoto` — the app's one proven multipart
- * path — and exists so the auth/proxy/timeout/session-expiry handling is not
- * hand-copied into every image endpoint.
- *
- * Two rules are load-bearing and easy to break:
- *  - Global fetch is Expo's WinterCG `expo/fetch`, which rejects React
- *    Native's `{uri, name, type}` FormData parts with "Unsupported
- *    FormDataPart implementation". An `expo-file-system` `File` implements
- *    Blob and serializes correctly.
- *  - Content-Type must be left unset so multer receives a boundary.
- */
+/** Copies images into app storage and saves their ordered URIs with the diary row. */
 export async function postImageMultipart<T>(params: {
   endpoint: string;
   serviceName: string;
@@ -37,145 +16,42 @@ export async function postImageMultipart<T>(params: {
   payload?: unknown;
   wrapperField?: string;
 }): Promise<T> {
-  const {
-    endpoint,
-    serviceName,
-    operation,
-    method = 'POST',
-    order,
-    newUris,
-    payload,
-    wrapperField,
-  } = params;
+  const { endpoint, method = 'POST', order, newUris, payload } = params;
 
-  if (isLocalDataMode()) {
-    const directory = new Directory(Paths.document, 'fitness-images');
-    directory.create({ idempotent: true, intermediates: true });
-    const copied: File[] = [];
-    try {
-      const uris = newUris.map((uri) => {
-        const source = new File(uri);
-        const target = new File(
-          directory,
-          `${randomUUID()}${source.extension || '.jpg'}`
-        );
-        source.copy(target);
-        copied.push(target);
-        return target.uri;
-      });
-      const images = order.map((item) => {
-        if (!item.startsWith('__new__')) return item;
-        const uri = uris[Number(item.slice('__new__'.length))];
-        if (!uri) throw new Error('Missing local image.');
-        return uri;
-      });
-      return await localApiFetch<T>({
-        endpoint,
-        method,
-        body: { ...((payload as object) ?? {}), images },
-      });
-    } catch (error) {
-      copied.forEach((file) => {
-        if (file.exists) file.delete();
-      });
-      throw error;
-    }
-  }
-
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('Server configuration not found.');
-  const baseUrl = normalizeUrl(config.url);
-  // Same transport guard `apiFetch` applies: these requests carry auth headers
-  // and user photos, so never send them over plaintext in a release build.
-  if (!__DEV__ && baseUrl.toLowerCase().startsWith('http://')) {
-    throw new Error(
-      'HTTPS is required for server connections. Please update your server URL in Settings.'
-    );
-  }
-
-  const form = new FormData();
-
-  // Where the order array goes depends on whether the route wraps its body.
-  //
-  // Wrapped routes (foods, meals) run parseMultipartBody, which REPLACES the
-  // body with the parsed wrapper object and discards every other text field —
-  // so a top-level `images` field would be silently dropped, and the server
-  // would treat the request as "these uploads are the complete set" and unlink
-  // the existing photos. It has to travel inside the wrapper, as web does.
-  //
-  // Unwrapped routes (the per-entry image endpoints) read `req.body.images`
-  // directly, so the top-level field is correct there.
-  //
-  // Text fields must precede the file parts either way: multer only reliably
-  // exposes fields that arrive before the files in the multipart stream.
-  if (payload !== undefined && wrapperField) {
-    form.append(
-      wrapperField,
-      JSON.stringify({ ...(payload as object), images: order })
-    );
-  } else {
-    form.append('images', JSON.stringify(order));
-  }
-
-  for (const uri of newUris) {
-    form.append('images', new File(uri));
-  }
-
-  let response: Response;
+  const directory = new Directory(Paths.document, 'fitness-images');
+  directory.create({ idempotent: true, intermediates: true });
+  const copied: File[] = [];
   try {
-    response = await fetchWithTimeout(
-      `${baseUrl}${endpoint}`,
-      {
-        method,
-        headers: {
-          ...proxyHeadersToRecord(config.proxyHeaders),
-          ...getAuthHeaders(config),
-          // Multer needs to set the boundary: do NOT set Content-Type here.
-        },
-        body: form,
-      },
-      UPLOAD_TIMEOUT_MS
-    );
-  } catch (err) {
-    // A throw here means no response ever arrived (dropped connection,
-    // timeout, or a proxy rejecting the body before the app server saw it),
-    // so log it; the response-error path below cannot.
-    addLog(`[${serviceName}] ${operation} failed without a response`, 'ERROR', [
-      String(err),
-    ]);
-    throw err;
+    const uris = newUris.map((uri) => {
+      const source = new File(uri);
+      const target = new File(
+        directory,
+        `${randomUUID()}${source.extension || '.jpg'}`
+      );
+      source.copy(target);
+      copied.push(target);
+      return target.uri;
+    });
+    const images = order.map((item) => {
+      if (!item.startsWith('__new__')) return item;
+      const uri = uris[Number(item.slice('__new__'.length))];
+      if (!uri) throw new Error('Missing local image.');
+      return uri;
+    });
+    return await localApiFetch<T>({
+      endpoint,
+      method,
+      body: { ...((payload as object) ?? {}), images },
+    });
+  } catch (error) {
+    copied.forEach((file) => {
+      if (file.exists) file.delete();
+    });
+    throw error;
   }
-
-  if (!response.ok) {
-    if (response.status === 401 && config.authType === 'session') {
-      notifySessionExpired(config.id);
-    }
-    const text = await response.text();
-    addLog(`[${serviceName}] Failed to ${operation}`, 'ERROR', [text]);
-    throw new ApiError(
-      `Server error: ${response.status} - ${text}`,
-      response.status,
-      text
-    );
-  }
-
-  // 204 has no body; image endpoints otherwise return the updated row. An
-  // empty 200 is treated the same, as apiFetch does — response.json() would
-  // throw on it after an otherwise successful upload.
-  if (
-    response.status === 204 ||
-    response.headers?.get('content-length') === '0'
-  ) {
-    return undefined as T;
-  }
-  return (await response.json()) as T;
 }
 
-/**
- * Sends a JSON payload, switching to multipart only when there are files to
- * upload — matching web's `buildPayloadRequest`, so servers see the same plain
- * JSON body they always have when a user touches no images.
- */
+/** Saves an image payload, copying newly picked files into app storage first. */
 export async function postPayloadWithImages<T>(params: {
   endpoint: string;
   serviceName: string;

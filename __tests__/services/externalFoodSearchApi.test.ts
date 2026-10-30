@@ -1,3 +1,4 @@
+import { apiFetch } from '../../src/services/api/apiClient';
 import {
   _transformOpenFoodFactsProduct as transformOpenFoodFactsProduct,
   _searchOpenFoodFacts as searchOpenFoodFacts,
@@ -25,6 +26,11 @@ import {
   getActiveServerConfig,
   ServerConfig,
 } from '../../src/services/storage';
+
+jest.mock('../../src/services/api/apiClient', () => ({
+  ...jest.requireActual('../../src/services/api/apiClient'),
+  apiFetch: jest.fn(),
+}));
 
 jest.mock('../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
@@ -139,83 +145,22 @@ describe('externalFoodSearchApi', () => {
   });
 
   describe('searchOpenFoodFacts', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
-    test('calls correct endpoint with query and page', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            products: [],
-            pagination: {
-              page: 1,
-              pageSize: 20,
-              totalCount: 0,
-              hasMore: false,
-            },
-          }),
-      });
-
-      await searchOpenFoodFacts('peanut butter');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '/api/foods/openfoodfacts/search?query=peanut+butter&page=1'
-        ),
-        expect.anything()
-      );
-    });
-
-    test('passes page parameter to endpoint', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            products: [],
-            pagination: {
-              page: 3,
-              pageSize: 20,
-              totalCount: 50,
-              hasMore: false,
-            },
-          }),
-      });
-
-      await searchOpenFoodFacts('peanut butter', 3);
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('page=3'),
-        expect.anything()
-      );
-    });
-
     test('returns items and pagination from response', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            products: [
-              {
-                product_name: 'Banana',
-                brands: 'Chiquita',
-                code: 'abc',
-                nutriments: { 'energy-kcal_100g': 89 },
-              },
-            ],
-            pagination: {
-              page: 1,
-              pageSize: 20,
-              totalCount: 1,
-              hasMore: false,
-            },
-          }),
+      jest.mocked(apiFetch).mockResolvedValue({
+        products: [
+          {
+            product_name: 'Banana',
+            brands: 'Chiquita',
+            code: 'abc',
+            nutriments: { 'energy-kcal_100g': 89 },
+          },
+        ],
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+          hasMore: false,
+        },
       });
 
       const result = await searchOpenFoodFacts('banana');
@@ -234,23 +179,18 @@ describe('externalFoodSearchApi', () => {
     });
 
     test('filters out products with falsy product_name', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            products: [
-              { product_name: 'Good Food', code: '1', nutriments: {} },
-              { product_name: '', code: '2', nutriments: {} },
-              { product_name: 'Also Good', code: '3', nutriments: {} },
-            ],
-            pagination: {
-              page: 1,
-              pageSize: 20,
-              totalCount: 3,
-              hasMore: false,
-            },
-          }),
+      jest.mocked(apiFetch).mockResolvedValue({
+        products: [
+          { product_name: 'Good Food', code: '1', nutriments: {} },
+          { product_name: '', code: '2', nutriments: {} },
+          { product_name: 'Also Good', code: '3', nutriments: {} },
+        ],
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          totalCount: 3,
+          hasMore: false,
+        },
       });
 
       const result = await searchOpenFoodFacts('food');
@@ -259,28 +199,9 @@ describe('externalFoodSearchApi', () => {
       expect(result.items[0].name).toBe('Good Food');
       expect(result.items[1].name).toBe('Also Good');
     });
-
-    test('propagates errors', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve('Internal Server Error'),
-      });
-
-      await expect(searchOpenFoodFacts('test')).rejects.toThrow(
-        'Server error: 500'
-      );
-    });
   });
 
   describe('USDA', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
     describe('transformUsdaFoodItem', () => {
       test('transforms a complete item', () => {
         const item = {
@@ -441,64 +362,29 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('searchUsda', () => {
-      test('calls correct endpoint with x-provider-id header and page', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchUsda('blueberry', 'provider-abc');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(
-            '/api/foods/usda/search?query=blueberry&page=1'
-          ),
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              'x-provider-id': 'provider-abc',
-            }),
-          })
-        );
-      });
-
       test('returns items and pagination from response', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: [
+            {
+              fdcId: 100,
+              description: 'Banana, raw',
+              brandOwner: 'Fresh Farms',
+              foodNutrients: [
                 {
-                  fdcId: 100,
-                  description: 'Banana, raw',
-                  brandOwner: 'Fresh Farms',
-                  foodNutrients: [
-                    {
-                      nutrientId: 1008,
-                      nutrientName: 'Energy',
-                      unitName: 'KCAL',
-                      value: 89,
-                    },
-                  ],
+                  nutrientId: 1008,
+                  nutrientName: 'Energy',
+                  unitName: 'KCAL',
+                  value: 89,
                 },
               ],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 1,
-                hasMore: false,
-              },
-            }),
+            },
+          ],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 1,
+            hasMore: false,
+          },
         });
 
         const result = await searchUsda('banana', 'provider-1');
@@ -517,23 +403,18 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('filters out items with empty description', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [
-                { fdcId: 1, description: 'Good Food', foodNutrients: [] },
-                { fdcId: 2, description: '', foodNutrients: [] },
-                { fdcId: 3, description: 'Also Good', foodNutrients: [] },
-              ],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 3,
-                hasMore: false,
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: [
+            { fdcId: 1, description: 'Good Food', foodNutrients: [] },
+            { fdcId: 2, description: '', foodNutrients: [] },
+            { fdcId: 3, description: 'Also Good', foodNutrients: [] },
+          ],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 3,
+            hasMore: false,
+          },
         });
 
         const result = await searchUsda('food', 'provider-1');
@@ -542,29 +423,10 @@ describe('externalFoodSearchApi', () => {
         expect(result.items[0].name).toBe('Good Food');
         expect(result.items[1].name).toBe('Also Good');
       });
-
-      test('propagates errors', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve('Internal Server Error'),
-        });
-
-        await expect(searchUsda('test', 'provider-1')).rejects.toThrow(
-          'Server error: 500'
-        );
-      });
     });
   });
 
   describe('FatSecret', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
     describe('parseFatSecretDescription', () => {
       test('parses a standard description string', () => {
         const result = parseFatSecretDescription(
@@ -704,64 +566,29 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('searchFatSecret', () => {
-      test('calls correct endpoint with x-provider-id header and page', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: { food: [] },
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchFatSecret('rice', 'provider-fs');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(
-            '/api/foods/fatsecret/search?query=rice&page=1'
-          ),
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              'x-provider-id': 'provider-fs',
-            }),
-          })
-        );
-      });
-
       test('returns items and pagination from response', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: {
-                food: [
-                  {
-                    food_id: '1',
-                    food_name: 'Fried Rice',
-                    food_description:
-                      'Per 246g - Calories: 627kcal | Fat: 24.67g | Carbs: 101.62g | Protein: 4.53g',
-                  },
-                  {
-                    food_id: '2',
-                    food_name: '',
-                    food_description: 'Per 100g - Calories: 100kcal',
-                  },
-                ],
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: {
+            food: [
+              {
+                food_id: '1',
+                food_name: 'Fried Rice',
+                food_description:
+                  'Per 246g - Calories: 627kcal | Fat: 24.67g | Carbs: 101.62g | Protein: 4.53g',
               },
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 2,
-                hasMore: false,
+              {
+                food_id: '2',
+                food_name: '',
+                food_description: 'Per 100g - Calories: 100kcal',
               },
-            }),
+            ],
+          },
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 2,
+            hasMore: false,
+          },
         });
 
         const result = await searchFatSecret('rice', 'provider-fs');
@@ -779,26 +606,21 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('handles single food object (not array)', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: {
-                food: {
-                  food_id: '1',
-                  food_name: 'Solo Result',
-                  food_description:
-                    'Per 100g - Calories: 200kcal | Fat: 10g | Carbs: 20g | Protein: 15g',
-                },
-              },
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 1,
-                hasMore: false,
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: {
+            food: {
+              food_id: '1',
+              food_name: 'Solo Result',
+              food_description:
+                'Per 100g - Calories: 200kcal | Fat: 10g | Carbs: 20g | Protein: 15g',
+            },
+          },
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 1,
+            hasMore: false,
+          },
         });
 
         const result = await searchFatSecret('solo', 'provider-fs');
@@ -808,19 +630,14 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('returns empty items when foods.food is missing (no matches)', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: {},
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: {},
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 0,
+            hasMore: false,
+          },
         });
 
         const result = await searchFatSecret('nonexistent', 'provider-fs');
@@ -829,18 +646,13 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('returns empty items when foods is missing', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 0,
+            hasMore: false,
+          },
         });
 
         const result = await searchFatSecret('nonexistent', 'provider-fs');
@@ -851,50 +663,45 @@ describe('externalFoodSearchApi', () => {
 
     describe('fetchFatSecretNutrients', () => {
       test('selects preferred serving and rounds string values', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              food: {
-                food_id: '42',
-                food_name: 'Pasta',
-                servings: {
-                  serving: [
-                    {
-                      serving_id: '1',
-                      serving_description: '100g',
-                      measurement_description: '100 g',
-                      metric_serving_amount: '100.00',
-                      metric_serving_unit: 'g',
-                      calories: '157.50',
-                      protein: '5.76',
-                      carbohydrate: '30.86',
-                      fat: '0.93',
-                      saturated_fat: '0.18',
-                      sodium: '1.00',
-                      fiber: '1.80',
-                      sugar: '0.56',
-                    },
-                    {
-                      serving_id: '2',
-                      serving_description: '1 serving (140g)',
-                      measurement_description: '1 serving',
-                      metric_serving_amount: '140.00',
-                      metric_serving_unit: 'g',
-                      calories: '220.50',
-                      protein: '8.06',
-                      carbohydrate: '43.20',
-                      fat: '1.30',
-                      saturated_fat: '0.25',
-                      sodium: '1.40',
-                      fiber: '2.52',
-                      sugar: '0.78',
-                    },
-                  ],
+        jest.mocked(apiFetch).mockResolvedValue({
+          food: {
+            food_id: '42',
+            food_name: 'Pasta',
+            servings: {
+              serving: [
+                {
+                  serving_id: '1',
+                  serving_description: '100g',
+                  measurement_description: '100 g',
+                  metric_serving_amount: '100.00',
+                  metric_serving_unit: 'g',
+                  calories: '157.50',
+                  protein: '5.76',
+                  carbohydrate: '30.86',
+                  fat: '0.93',
+                  saturated_fat: '0.18',
+                  sodium: '1.00',
+                  fiber: '1.80',
+                  sugar: '0.56',
                 },
-              },
-            }),
+                {
+                  serving_id: '2',
+                  serving_description: '1 serving (140g)',
+                  measurement_description: '1 serving',
+                  metric_serving_amount: '140.00',
+                  metric_serving_unit: 'g',
+                  calories: '220.50',
+                  protein: '8.06',
+                  carbohydrate: '43.20',
+                  fat: '1.30',
+                  saturated_fat: '0.25',
+                  sodium: '1.40',
+                  fiber: '2.52',
+                  sugar: '0.78',
+                },
+              ],
+            },
+          },
         });
 
         const result = await fetchFatSecretNutrients('42', 'provider-fs');
@@ -916,29 +723,24 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('handles single serving (not array)', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              food: {
-                food_id: '99',
-                food_name: 'Simple Food',
-                servings: {
-                  serving: {
-                    serving_id: '1',
-                    serving_description: '1 serving',
-                    measurement_description: 'serving',
-                    metric_serving_amount: '200.00',
-                    metric_serving_unit: 'g',
-                    calories: '300',
-                    protein: '10',
-                    carbohydrate: '40',
-                    fat: '12',
-                  },
-                },
+        jest.mocked(apiFetch).mockResolvedValue({
+          food: {
+            food_id: '99',
+            food_name: 'Simple Food',
+            servings: {
+              serving: {
+                serving_id: '1',
+                serving_description: '1 serving',
+                measurement_description: 'serving',
+                metric_serving_amount: '200.00',
+                metric_serving_unit: 'g',
+                calories: '300',
+                protein: '10',
+                carbohydrate: '40',
+                fat: '12',
               },
-            }),
+            },
+          },
         });
 
         const result = await fetchFatSecretNutrients('99', 'provider-fs');
@@ -951,30 +753,25 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('sodium is not multiplied (already in mg)', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              food: {
-                food_id: '55',
-                food_name: 'Salty Snack',
-                servings: {
-                  serving: {
-                    serving_id: '1',
-                    serving_description: '1 serving',
-                    measurement_description: 'serving',
-                    metric_serving_amount: '30.00',
-                    metric_serving_unit: 'g',
-                    calories: '150',
-                    protein: '2',
-                    carbohydrate: '18',
-                    fat: '8',
-                    sodium: '480',
-                  },
-                },
+        jest.mocked(apiFetch).mockResolvedValue({
+          food: {
+            food_id: '55',
+            food_name: 'Salty Snack',
+            servings: {
+              serving: {
+                serving_id: '1',
+                serving_description: '1 serving',
+                measurement_description: 'serving',
+                metric_serving_amount: '30.00',
+                metric_serving_unit: 'g',
+                calories: '150',
+                protein: '2',
+                carbohydrate: '18',
+                fat: '8',
+                sodium: '480',
               },
-            }),
+            },
+          },
         });
 
         const result = await fetchFatSecretNutrients('55', 'provider-fs');
@@ -984,32 +781,27 @@ describe('externalFoodSearchApi', () => {
     });
 
     test('fetchFatSecretNutrients falls back to raw values when no metric servings exist', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            food: {
-              food_id: '77',
-              food_name: 'Non-metric Food',
-              servings: {
-                serving: {
-                  serving_id: '1',
-                  serving_description: '1 cup',
-                  measurement_description: 'cup',
-                  // No metric_serving_amount or metric_serving_unit
-                  calories: '250.5',
-                  protein: '12.3',
-                  carbohydrate: '30.7',
-                  fat: '8.9',
-                  saturated_fat: '2.1',
-                  sodium: '350',
-                  fiber: '4.6',
-                  sugar: '5.8',
-                },
-              },
+      jest.mocked(apiFetch).mockResolvedValue({
+        food: {
+          food_id: '77',
+          food_name: 'Non-metric Food',
+          servings: {
+            serving: {
+              serving_id: '1',
+              serving_description: '1 cup',
+              measurement_description: 'cup',
+              // No metric_serving_amount or metric_serving_unit
+              calories: '250.5',
+              protein: '12.3',
+              carbohydrate: '30.7',
+              fat: '8.9',
+              saturated_fat: '2.1',
+              sodium: '350',
+              fiber: '4.6',
+              sugar: '5.8',
             },
-          }),
+          },
+        },
       });
 
       const result = await fetchFatSecretNutrients('77', 'provider-fs');
@@ -1177,46 +969,7 @@ describe('externalFoodSearchApi', () => {
   });
 
   describe('lookupBarcode', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
-    test('calls correct endpoint with barcode', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            source: 'local',
-            food: {
-              id: 'food-1',
-              name: 'Test Food',
-              brand: null,
-              is_custom: false,
-              default_variant: {
-                serving_size: 100,
-                serving_unit: 'g',
-                calories: 100,
-                protein: 5,
-                carbs: 10,
-                fat: 3,
-              },
-            },
-          }),
-      });
-
-      await lookupBarcode('1234567890');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/foods/barcode/1234567890'),
-        expect.anything()
-      );
-    });
-
     test('returns local source result', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
       const localFood = {
         id: 'food-42',
         name: 'Scanned Food',
@@ -1231,10 +984,9 @@ describe('externalFoodSearchApi', () => {
           fat: 8,
         },
       };
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ source: 'local', food: localFood }),
-      });
+      jest
+        .mocked(apiFetch)
+        .mockResolvedValue({ source: 'local', food: localFood });
 
       const result = await lookupBarcode('0987654321');
 
@@ -1243,39 +995,18 @@ describe('externalFoodSearchApi', () => {
     });
 
     test('returns not_found result', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ source: 'not_found', food: null }),
-      });
+      jest
+        .mocked(apiFetch)
+        .mockResolvedValue({ source: 'not_found', food: null });
 
       const result = await lookupBarcode('0000000000');
 
       expect(result.source).toBe('not_found');
       expect(result.food).toBeNull();
     });
-
-    test('throws on non-OK response', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        text: () => Promise.resolve('Not Found'),
-      });
-
-      await expect(lookupBarcode('1234567890')).rejects.toThrow(
-        'Server error: 404'
-      );
-    });
   });
 
   describe('Mealie', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
     describe('transformMealieItem', () => {
       test('transforms a complete item with all optional fields', () => {
         const item = {
@@ -1388,62 +1119,29 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('searchMealie', () => {
-      test('calls correct endpoint with x-provider-id header and page', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              items: [],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchMealie('soup', 'provider-mealie', 1);
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/foods/mealie/search?query=soup&page=1'),
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              'x-provider-id': 'provider-mealie',
-            }),
-          })
-        );
-      });
-
       test('returns items and pagination', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              items: [
-                {
-                  provider_external_id: 'mealie-1',
-                  name: 'Tomato Soup',
-                  brand: null,
-                  default_variant: {
-                    serving_size: 250,
-                    serving_unit: 'ml',
-                    calories: 90,
-                    protein: 3,
-                    carbs: 15,
-                    fat: 2,
-                  },
-                },
-              ],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 1,
-                hasMore: false,
+        jest.mocked(apiFetch).mockResolvedValue({
+          items: [
+            {
+              provider_external_id: 'mealie-1',
+              name: 'Tomato Soup',
+              brand: null,
+              default_variant: {
+                serving_size: 250,
+                serving_unit: 'ml',
+                calories: 90,
+                protein: 3,
+                carbs: 15,
+                fat: 2,
               },
-            }),
+            },
+          ],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 1,
+            hasMore: false,
+          },
         });
 
         const result = await searchMealie('soup', 'provider-mealie');
@@ -1460,46 +1158,41 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('filters out items with empty name', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              items: [
-                {
-                  provider_external_id: 'mealie-1',
-                  name: 'Good Item',
-                  brand: null,
-                  default_variant: {
-                    serving_size: 100,
-                    serving_unit: 'g',
-                    calories: 100,
-                    protein: 5,
-                    carbs: 10,
-                    fat: 3,
-                  },
-                },
-                {
-                  provider_external_id: 'mealie-2',
-                  name: '',
-                  brand: null,
-                  default_variant: {
-                    serving_size: 100,
-                    serving_unit: 'g',
-                    calories: 50,
-                    protein: 2,
-                    carbs: 5,
-                    fat: 1,
-                  },
-                },
-              ],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 2,
-                hasMore: false,
+        jest.mocked(apiFetch).mockResolvedValue({
+          items: [
+            {
+              provider_external_id: 'mealie-1',
+              name: 'Good Item',
+              brand: null,
+              default_variant: {
+                serving_size: 100,
+                serving_unit: 'g',
+                calories: 100,
+                protein: 5,
+                carbs: 10,
+                fat: 3,
               },
-            }),
+            },
+            {
+              provider_external_id: 'mealie-2',
+              name: '',
+              brand: null,
+              default_variant: {
+                serving_size: 100,
+                serving_unit: 'g',
+                calories: 50,
+                protein: 2,
+                carbs: 5,
+                fat: 1,
+              },
+            },
+          ],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 2,
+            hasMore: false,
+          },
         });
 
         const result = await searchMealie('food', 'provider-mealie');
@@ -1507,29 +1200,10 @@ describe('externalFoodSearchApi', () => {
         expect(result.items).toHaveLength(1);
         expect(result.items[0].name).toBe('Good Item');
       });
-
-      test('propagates errors', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve('Internal Server Error'),
-        });
-
-        await expect(searchMealie('soup', 'provider-mealie')).rejects.toThrow(
-          'Server error: 500'
-        );
-      });
     });
   });
 
   describe('V2 API', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
     describe('transformNormalizedFood', () => {
       test('carries the provider photo through to the search row', () => {
         // Regression: provider results rendered a placeholder icon on mobile
@@ -2093,110 +1767,33 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('searchExternalFoods', () => {
-      test('calls correct v2 endpoint with providerType and query params', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchExternalFoods('openfoodfacts', 'chicken', 2);
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(
-            '/api/v2/foods/search/openfoodfacts?query=chicken&page=2'
-          ),
-          expect.anything()
-        );
-      });
-
-      test('includes providerId in query params when provided', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchExternalFoods('usda', 'rice', 1, 'provider-abc');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('providerId=provider-abc'),
-          expect.anything()
-        );
-      });
-
-      test('omits providerId when undefined', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 0,
-                hasMore: false,
-              },
-            }),
-        });
-
-        await searchExternalFoods('openfoodfacts', 'rice', 1);
-
-        const url = mockFetch.mock.calls[0][0] as string;
-        expect(url).not.toContain('providerId');
-      });
-
       test('transforms response foods through transformNormalizedFood', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              foods: [
-                {
-                  name: 'Rice',
-                  brand: null,
-                  provider_external_id: 'rice-1',
-                  provider_type: 'usda',
-                  is_custom: false,
-                  default_variant: {
-                    serving_size: 45,
-                    serving_unit: 'g',
-                    calories: 160,
-                    protein: 3,
-                    carbs: 36,
-                    fat: 0,
-                    dietary_fiber: 1,
-                    is_default: true,
-                  },
-                },
-              ],
-              pagination: {
-                page: 1,
-                pageSize: 20,
-                totalCount: 1,
-                hasMore: false,
+        jest.mocked(apiFetch).mockResolvedValue({
+          foods: [
+            {
+              name: 'Rice',
+              brand: null,
+              provider_external_id: 'rice-1',
+              provider_type: 'usda',
+              is_custom: false,
+              default_variant: {
+                serving_size: 45,
+                serving_unit: 'g',
+                calories: 160,
+                protein: 3,
+                carbs: 36,
+                fat: 0,
+                dietary_fiber: 1,
+                is_default: true,
               },
-            }),
+            },
+          ],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalCount: 1,
+            hasMore: false,
+          },
         });
 
         const result = await searchExternalFoods('usda', 'rice', 1, 'prov-1');
@@ -2210,101 +1807,35 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('fetchExternalFoodDetails', () => {
-      test('calls correct v2 endpoint', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              name: 'Pasta',
-              brand: null,
-              provider_external_id: '42',
-              is_custom: false,
-              default_variant: {
-                serving_size: 140,
-                serving_unit: 'g',
-                calories: 220,
-                protein: 8,
-                carbs: 43,
-                fat: 1,
-                is_default: true,
-              },
-            }),
-        });
-
-        await fetchExternalFoodDetails('fatsecret', '42', 'prov-fs');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(
-            '/api/v2/foods/details/fatsecret/42?providerId=prov-fs'
-          ),
-          expect.anything()
-        );
-      });
-
-      test('omits query string when no providerId', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              name: 'Banana',
-              brand: null,
-              provider_external_id: 'abc',
-              is_custom: false,
-              default_variant: {
-                serving_size: 118,
-                serving_unit: 'g',
-                calories: 105,
-                protein: 1,
-                carbs: 27,
-                fat: 0,
-                is_default: true,
-              },
-            }),
-        });
-
-        await fetchExternalFoodDetails('openfoodfacts', 'abc');
-
-        const url = mockFetch.mock.calls[0][0] as string;
-        expect(url).toContain('/api/v2/foods/details/openfoodfacts/abc');
-        expect(url).not.toContain('?');
-      });
-
       test('returns transformed ExternalFoodItem', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              name: 'Pasta',
-              brand: 'Barilla',
-              provider_external_id: '42',
-              provider_type: 'fatsecret',
-              is_custom: false,
-              default_variant: {
-                serving_size: 140,
-                serving_unit: 'g',
-                calories: 220,
-                protein: 8,
-                carbs: 43,
-                fat: 1,
-                trans_fat: 0,
-                cholesterol: 0,
-                is_default: true,
-              },
-              variants: [
-                {
-                  serving_size: 56,
-                  serving_unit: 'g',
-                  calories: 200,
-                  protein: 7,
-                  carbs: 42,
-                  fat: 1,
-                  is_default: false,
-                },
-              ],
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          name: 'Pasta',
+          brand: 'Barilla',
+          provider_external_id: '42',
+          provider_type: 'fatsecret',
+          is_custom: false,
+          default_variant: {
+            serving_size: 140,
+            serving_unit: 'g',
+            calories: 220,
+            protein: 8,
+            carbs: 43,
+            fat: 1,
+            trans_fat: 0,
+            cholesterol: 0,
+            is_default: true,
+          },
+          variants: [
+            {
+              serving_size: 56,
+              serving_unit: 'g',
+              calories: 200,
+              protein: 7,
+              carbs: 42,
+              fat: 1,
+              is_default: false,
+            },
+          ],
         });
 
         const result = await fetchExternalFoodDetails(
@@ -2326,27 +1857,10 @@ describe('externalFoodSearchApi', () => {
     });
 
     describe('lookupBarcodeV2', () => {
-      test('calls correct v2 endpoint', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () => Promise.resolve({ source: 'not_found', food: null }),
-        });
-
-        await lookupBarcodeV2('1234567890');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v2/foods/barcode/1234567890'),
-          expect.anything()
-        );
-      });
-
       test('returns not_found when food is null', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () => Promise.resolve({ source: 'not_found', food: null }),
-        });
+        jest
+          .mocked(apiFetch)
+          .mockResolvedValue({ source: 'not_found', food: null });
 
         const result = await lookupBarcodeV2('0000000000');
 
@@ -2355,31 +1869,26 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('returns local source with id', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              source: 'local',
-              food: {
-                id: 'food-42',
-                name: 'Local Food',
-                brand: 'Brand X',
-                barcode: '1234567890',
-                is_custom: false,
-                default_variant: {
-                  serving_size: 100,
-                  serving_unit: 'g',
-                  calories: 250,
-                  protein: 12,
-                  carbs: 30,
-                  fat: 8,
-                  trans_fat: 0.5,
-                  cholesterol: 20,
-                  is_default: true,
-                },
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          source: 'local',
+          food: {
+            id: 'food-42',
+            name: 'Local Food',
+            brand: 'Brand X',
+            barcode: '1234567890',
+            is_custom: false,
+            default_variant: {
+              serving_size: 100,
+              serving_unit: 'g',
+              calories: 250,
+              protein: 12,
+              carbs: 30,
+              fat: 8,
+              trans_fat: 0.5,
+              cholesterol: 20,
+              is_default: true,
+            },
+          },
         });
 
         const result = await lookupBarcodeV2('1234567890');
@@ -2391,32 +1900,27 @@ describe('externalFoodSearchApi', () => {
       });
 
       test('returns external source for non-local match', async () => {
-        mockGetActiveServerConfig.mockResolvedValue(testConfig);
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              source: 'openfoodfacts',
-              food: {
-                name: 'External Food',
-                brand: null,
-                barcode: '9999999999',
-                provider_external_id: 'off-abc',
-                provider_type: 'openfoodfacts',
-                is_custom: false,
-                default_variant: {
-                  serving_size: 30,
-                  serving_unit: 'g',
-                  calories: 120,
-                  protein: 3,
-                  carbs: 20,
-                  fat: 4,
-                  potassium: 80,
-                  calcium: 15,
-                  is_default: true,
-                },
-              },
-            }),
+        jest.mocked(apiFetch).mockResolvedValue({
+          source: 'openfoodfacts',
+          food: {
+            name: 'External Food',
+            brand: null,
+            barcode: '9999999999',
+            provider_external_id: 'off-abc',
+            provider_type: 'openfoodfacts',
+            is_custom: false,
+            default_variant: {
+              serving_size: 30,
+              serving_unit: 'g',
+              calories: 120,
+              protein: 3,
+              carbs: 20,
+              fat: 4,
+              potassium: 80,
+              calcium: 15,
+              is_default: true,
+            },
+          },
         });
 
         const result = await lookupBarcodeV2('9999999999');
@@ -2431,49 +1935,7 @@ describe('externalFoodSearchApi', () => {
   });
 
   describe('scanNutritionLabel', () => {
-    const testConfig: ServerConfig = {
-      id: 'test-id',
-      url: 'https://example.com',
-      apiKey: 'test-api-key',
-    };
-
-    test('sends POST to /api/foods/scan-label with image and mime_type in body', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            name: 'Granola Bar',
-            brand: 'Nature Valley',
-            serving_size: 42,
-            serving_unit: 'g',
-            calories: 190,
-            protein: 4,
-            carbs: 29,
-            fat: 7,
-            fiber: 2,
-            saturated_fat: 1,
-            sodium: 150,
-            sugars: 12,
-          }),
-      });
-
-      await scanNutritionLabel('base64encodedimage==', 'image/jpeg');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/foods/scan-label'),
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({
-            image: 'base64encodedimage==',
-            mime_type: 'image/jpeg',
-          }),
-        })
-      );
-    });
-
     test('returns parsed scan result', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
       const scanResult = {
         name: 'Granola Bar',
         brand: 'Nature Valley',
@@ -2495,10 +1957,7 @@ describe('externalFoodSearchApi', () => {
         vitamin_a: null,
         vitamin_c: null,
       };
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(scanResult),
-      });
+      jest.mocked(apiFetch).mockResolvedValue(scanResult);
 
       const result = await scanNutritionLabel(
         'base64encodedimage==',
@@ -2506,19 +1965,6 @@ describe('externalFoodSearchApi', () => {
       );
 
       expect(result).toEqual(scanResult);
-    });
-
-    test('throws on non-OK response', async () => {
-      mockGetActiveServerConfig.mockResolvedValue(testConfig);
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 422,
-        text: () => Promise.resolve('Unprocessable Entity'),
-      });
-
-      await expect(
-        scanNutritionLabel('bad_image', 'image/jpeg')
-      ).rejects.toThrow('Server error: 422');
     });
   });
 

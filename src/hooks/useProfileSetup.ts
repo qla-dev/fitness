@@ -10,7 +10,6 @@ import {
 } from '../services/api/measurementsApi';
 import { fetchProfile } from '../services/api/profileApi';
 import { localApiFetch } from '../services/local/localApi';
-import { isLocalDataMode } from '../services/dataMode';
 import { getTodayDate } from '../utils/dateUtils';
 import { bmi, bmiCategory } from '../utils/bmi';
 import { MACRO_RINGS } from '../constants/macroRings';
@@ -104,12 +103,7 @@ export function useProfileSetup(enabled: boolean) {
           // kept in the wizard's own answers, so the tile stayed empty. A
           // changed age becomes the birth date that makes it true today.
           const age = Number(String(answers.age ?? '').trim());
-          if (
-            isLocalDataMode() &&
-            Number.isInteger(age) &&
-            age > 0 &&
-            String(age) !== data.age
-          ) {
+          if (Number.isInteger(age) && age > 0 && String(age) !== data.age) {
             const now = new Date();
             const birth = `${now.getFullYear() - age}-${String(
               now.getMonth() + 1
@@ -142,9 +136,7 @@ export function useProfileSetup(enabled: boolean) {
               weight,
               height,
             });
-          // Profile goal editing is currently local-only elsewhere in the app.
-          // Keep the same contract; server mode retains these questionnaire choices locally.
-          if (!single && isLocalDataMode()) {
+          if (!single) {
             const goals: Record<string, number> = {};
             for (const field of [
               'steps',

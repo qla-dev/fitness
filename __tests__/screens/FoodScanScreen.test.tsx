@@ -387,20 +387,17 @@ describe('FoodScanScreen', () => {
   });
 
   describe('Photo segment gating', () => {
-    it('shows the setup gate when AI is unconfigured (after switching to Photo)', async () => {
+    it('offers barcode scanning when AI has no configured provider', () => {
       mockUseActiveAiServiceSetting.mockReturnValue({
         data: null,
         isLoading: false,
       } as any);
       const screen = renderScreen();
-
-      fireEvent.press(screen.getByText('Photo'));
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/AI photo estimates aren.t set up/)
-        ).toBeTruthy();
-      });
+      expect(screen.getByTestId('camera-view').props.onBarcodeScanned).toEqual(
+        expect.any(Function)
+      );
+      expect(screen.queryByText('Photo')).toBeNull();
+      expect(screen.queryByText('Label')).toBeNull();
     });
 
     it('shows the gate via effect when initialMode=photo and AI is unconfigured', async () => {
@@ -570,28 +567,11 @@ describe('FoodScanScreen', () => {
     });
   });
 
-  describe('Active-AI refresh', () => {
-    it('refetches the active-AI setting when re-tapping the Photo segment', async () => {
-      const refetch = jest.fn();
-      mockUseActiveAiServiceSetting.mockReturnValue({
-        data: null,
-        isLoading: false,
-        refetch,
-      } as any);
-      const screen = renderScreen();
-
-      // Switch to Photo — gate appears.
-      fireEvent.press(screen.getByText('Photo'));
-      await waitFor(() => {
-        expect(
-          screen.getByText(/AI photo estimates aren.t set up/)
-        ).toBeTruthy();
-      });
-
-      // Re-tap Photo while still on Photo — should refetch.
-      fireEvent.press(screen.getByText('Photo'));
-      expect(refetch).toHaveBeenCalled();
-    });
+  it('checks AI availability independently of the selected scan tab', () => {
+    renderScreen();
+    expect(mockUseActiveAiServiceSetting).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: true })
+    );
   });
 
   describe('Photo library picker', () => {

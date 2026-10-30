@@ -417,11 +417,6 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
     extra: {
       ...config.extra,
       APP_VARIANT: environment,
-      // Local (AsyncStorage) is the shipping data mode for every variant. This
-      // used to fall back to 'server' whenever APP_VARIANT was not a dev one,
-      // so TestFlight/production builds silently ran against the backend while
-      // dev builds ran locally. Only FITNESS_DATA_MODE flips it now.
-      dataMode: process.env.FITNESS_DATA_MODE || 'local',
       // Whether the Maps key made it into this build, for `RouteMap` to decide
       // between the real map and its placeholder. It has to live here rather
       // than be read back from `android.config`, because `expo config --type

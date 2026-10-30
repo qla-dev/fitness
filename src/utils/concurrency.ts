@@ -12,7 +12,6 @@ export class TimeoutError extends Error {
 // of these budgets. (#1767)
 export const DEFAULT_API_TIMEOUT_MS = 30_000;
 export const CONNECTION_CHECK_TIMEOUT_MS = 10_000;
-export const UPLOAD_TIMEOUT_MS = 60_000;
 // LLM-backed endpoints: self-hosted Ollama can legitimately take this long on
 // a cold model load.
 export const AI_TIMEOUT_MS = 120_000;

@@ -9,14 +9,14 @@ import { fetchWithTimeout } from '../../utils/concurrency';
 import type { LocalRequest, LocalResult } from './request';
 
 /**
- * Provider catalogs for local data mode.
+ * Provider catalogs for the on-device diary.
  *
  * A fresh local database has no foods or exercises because qla.fit has
  * never shipped a bundled catalog — not in this package and not upstream. The
  * server keeps none either: it proxies keyless public APIs and gives every new
  * account a provider row per source (`create_default_external_data_providers`
  * in the server's 202511220110 migration). None of that needs a backend, so
- * local mode calls the same sources straight from the device.
+ * the app calls the same sources straight from the device.
  *
  * Only the two providers implemented here are seeded, so the picker never
  * offers a source that cannot answer. wger is deliberately absent: its importer

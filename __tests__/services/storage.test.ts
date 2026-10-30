@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import {
   saveServerConfig,
   getActiveServerConfig,
+  getActiveServerConfigId,
   getAllServerConfigs,
   setActiveServerConfig,
   deleteServerConfig,
@@ -81,8 +82,7 @@ describe('storage', () => {
     test('sets saved config as active automatically', async () => {
       await saveServerConfig(testConfig);
 
-      const activeConfig = await getActiveServerConfig();
-      expect(activeConfig).toEqual(testConfig);
+      expect(await getActiveServerConfigId()).toBe(testConfig.id);
     });
 
     test('recovers when AsyncStorage contains malformed JSON', async () => {
@@ -164,41 +164,16 @@ describe('storage', () => {
   });
 
   describe('getActiveServerConfig', () => {
-    const testConfig: ServerConfig = {
-      id: 'active-id',
-      url: 'https://example.com',
-      apiKey: 'test-key',
-    };
-
-    test('returns null when no active config ID exists', async () => {
-      const result = await getActiveServerConfig();
-
-      expect(result).toBeNull();
-    });
-
-    test("returns null when active ID doesn't match any config", async () => {
-      await saveServerConfig(testConfig);
-      await setActiveServerConfig('nonexistent-id');
-
-      const result = await getActiveServerConfig();
-
-      expect(result).toBeNull();
-    });
-
-    test('returns matching config when active ID exists', async () => {
-      await saveServerConfig(testConfig);
-
-      const result = await getActiveServerConfig();
-
-      expect(result).toEqual(testConfig);
-    });
-
-    test('throws on storage error', async () => {
-      jest
-        .spyOn(AsyncStorage, 'getItem')
-        .mockRejectedValueOnce(new Error('Storage error'));
-
-      await expect(getActiveServerConfig()).rejects.toThrow('Storage error');
+    test('does not expose saved legacy credentials to raw clients', async () => {
+      await saveServerConfig({
+        id: 'old',
+        url: 'https://example.com',
+        apiKey: 'secret',
+      });
+      expect(await getActiveServerConfig()).toBeNull();
+      await expect(getAllServerConfigs()).resolves.toEqual([
+        expect.objectContaining({ id: 'old' }),
+      ]);
     });
   });
 
@@ -346,8 +321,7 @@ describe('storage', () => {
 
       await setActiveServerConfig('my-config-id');
 
-      const activeConfig = await getActiveServerConfig();
-      expect(activeConfig).toEqual(config);
+      expect(await getActiveServerConfigId()).toBe(config.id);
     });
 
     test('throws on storage error', async () => {
@@ -419,8 +393,7 @@ describe('storage', () => {
 
       await deleteServerConfig('id-1');
 
-      const activeConfig = await getActiveServerConfig();
-      expect(activeConfig).toEqual(config2);
+      expect(await getActiveServerConfigId()).toBe(config2.id);
     });
 
     test('throws when setItem fails', async () => {
@@ -652,146 +625,16 @@ describe('storage', () => {
       );
     });
 
-    test('invalidates active config cache', async () => {
-      const config: ServerConfig = {
-        id: 'cache-test',
-        url: 'https://a.com',
-        apiKey: 'k',
-      };
-      await saveServerConfig(config);
-
-      // Prime the cache
-      await getActiveServerConfig();
-      const callsBefore = (AsyncStorage.getItem as jest.Mock).mock.calls.length;
-
-      await clearSessionToken('cache-test');
-
-      // Next call should hit storage again (cache was invalidated)
-      await getActiveServerConfig();
-      expect(
-        (AsyncStorage.getItem as jest.Mock).mock.calls.length
-      ).toBeGreaterThan(callsBefore);
-    });
-  });
-
-  describe('getActiveServerConfig cache', () => {
-    const configA: ServerConfig = {
-      id: 'a',
-      url: 'https://a.com',
-      apiKey: 'key-a',
-    };
-    const configB: ServerConfig = {
-      id: 'b',
-      url: 'https://b.com',
-      apiKey: 'key-b',
-    };
-
-    test('returns cached value without hitting storage again', async () => {
-      await saveServerConfig(configA);
-
-      await getActiveServerConfig();
-      const callsBefore = (AsyncStorage.getItem as jest.Mock).mock.calls.length;
-      const result = await getActiveServerConfig();
-
-      expect(result).toEqual(configA);
-      expect((AsyncStorage.getItem as jest.Mock).mock.calls.length).toBe(
-        callsBefore
-      );
-    });
-
-    test('caches null when no active config', async () => {
-      await getActiveServerConfig();
-      const callsBefore = (AsyncStorage.getItem as jest.Mock).mock.calls.length;
-      const result = await getActiveServerConfig();
-
-      expect(result).toBeNull();
-      expect((AsyncStorage.getItem as jest.Mock).mock.calls.length).toBe(
-        callsBefore
-      );
-    });
-
-    test('saveServerConfig invalidates cache', async () => {
-      await saveServerConfig(configA);
-      await getActiveServerConfig();
-
-      await saveServerConfig(configB);
-      const result = await getActiveServerConfig();
-
-      expect(result).toEqual(configB);
-    });
-
-    test('setActiveServerConfig invalidates cache', async () => {
-      await saveServerConfig(configA);
-      await saveServerConfig(configB);
-      await setActiveServerConfig(configA.id);
-      await getActiveServerConfig();
-
-      await setActiveServerConfig(configB.id);
-      const result = await getActiveServerConfig();
-
-      expect(result).toEqual(configB);
-    });
-
-    test('deleteServerConfig invalidates cache', async () => {
-      await saveServerConfig(configA);
-      await getActiveServerConfig();
-
-      await deleteServerConfig(configA.id);
-      const result = await getActiveServerConfig();
-
-      expect(result).toBeNull();
-    });
-
-    test('clearServerConfigCache forces fresh read', async () => {
-      await saveServerConfig(configA);
-      await getActiveServerConfig();
-
-      clearServerConfigCache();
-      const callsBefore = (AsyncStorage.getItem as jest.Mock).mock.calls.length;
-      await getActiveServerConfig();
-
-      expect(
-        (AsyncStorage.getItem as jest.Mock).mock.calls.length
-      ).toBeGreaterThan(callsBefore);
-    });
-
-    test('does not cache on error', async () => {
-      jest
-        .spyOn(AsyncStorage, 'getItem')
-        .mockRejectedValueOnce(new Error('Storage error'));
-      await expect(getActiveServerConfig()).rejects.toThrow('Storage error');
-
-      jest.restoreAllMocks();
-      jest.spyOn(console, 'error').mockImplementation(() => {});
-      await saveServerConfig(configA);
-      const result = await getActiveServerConfig();
-
-      expect(result).toEqual(configA);
-    });
-
-    test('does not cache null when getAllServerConfigs silently fails', async () => {
-      // Save a config so there is an active ID
-      await saveServerConfig(configA);
-      clearServerConfigCache();
-
-      // Make getAllServerConfigs fail silently (it swallows errors and returns [])
-      const original = AsyncStorage.getItem as jest.Mock;
-      const originalImpl = original.getMockImplementation();
-      original.mockImplementation(async (key: string) => {
-        // Return active ID normally, but fail on serverConfigs read
-        if (key === 'activeServerConfigId') return 'a';
-        if (key === 'serverConfigs') throw new Error('Transient failure');
-        return originalImpl ? originalImpl(key) : null;
+    test('removes the saved legacy token', async () => {
+      await saveServerConfig({
+        id: 'old',
+        url: 'https://example.com',
+        apiKey: '',
+        authType: 'session',
+        sessionToken: 'token',
       });
-
-      // Should return null (config not found) but NOT cache it
-      const result = await getActiveServerConfig();
-      expect(result).toBeNull();
-
-      // Restore storage, next call should retry and find the config
-      original.mockImplementation(originalImpl);
-      const retryResult = await getActiveServerConfig();
-      expect(retryResult).toEqual(configA);
+      await clearSessionToken('old');
+      expect((await getAllServerConfigs())[0].sessionToken).toBeUndefined();
     });
   });
 });

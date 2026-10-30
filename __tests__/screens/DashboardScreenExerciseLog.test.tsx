@@ -102,10 +102,6 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: jest.fn(() => false),
 }));
 
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => false,
-}));
-
 jest.mock('../../src/utils/nativeHeaderDatePicker', () => ({
   setNativeHeaderDatePickerOptions: jest.fn(),
   createNativeWorkoutsAction: (
@@ -149,7 +145,6 @@ jest.mock('../../src/components/DashboardActivityCard', () =>
 jest.mock('../../src/components/DashboardActivityDetails', () =>
   stub('activity-details')
 );
-jest.mock('../../src/components/FastingCard', () => stub('fasting-card'));
 jest.mock('../../src/components/FastingGoalReconciler', () =>
   stub('fasting-reconciler')
 );

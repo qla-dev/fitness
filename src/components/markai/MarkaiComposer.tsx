@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable, useUniwind } from 'uniwind';
 import { useTranslation } from 'react-i18next';
 import { MenuView } from '@expo/ui/community/menu';
-import { ScrollEdgeEffect } from '@bsky.app/expo-scroll-edge-effect';
+import BottomEdgeEffect from '../ui/BottomEdgeEffect';
 import Icon from '../Icon';
 import LiquidGlassSurface from '../LiquidGlassSurface';
 import { fireSelectionHaptic, fireSendHaptic } from '../../services/haptics';
@@ -123,12 +123,9 @@ export default function MarkaiComposer({
       style={[{ position: 'absolute', left: 0, right: 0 }, lift]}
       onLayout={(event) => onHeight(event.nativeEvent.layout.height)}
     >
-      {/* Marks the composer as sitting over the chat's bottom edge, so iOS 26
-          fades the messages under it (a plain View below iOS 26). It rides
-          inside the lifted view, so the effect follows the keyboard. */}
-      <ScrollEdgeEffect
-        edge="bottom"
-        effect="soft"
+      {/* The edge treatment rides with the composer and keyboard on every platform. */}
+      <BottomEdgeEffect
+        extendBottom={insets.bottom}
         style={{ paddingVertical: 8 }}
       >
         {/* Untinted glass reads as a pale grey slab on the true-black theme;
@@ -344,7 +341,7 @@ export default function MarkaiComposer({
             </View>
           </LiquidGlassSurface>
         </Animated.View>
-      </ScrollEdgeEffect>
+      </BottomEdgeEffect>
     </Animated.View>
   );
 }

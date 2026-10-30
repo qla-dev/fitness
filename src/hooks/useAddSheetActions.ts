@@ -183,8 +183,8 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
     navigateFromSheet('MealAdd', {});
   }, [navigateFromSheet]);
 
-  // Weekly plans live on the device, so they open in every data mode; the
-  // new-plan entry lands on the same screen, where a plan starts from the
+  // Weekly plans live on the device. The new-plan entry lands on the
+  // same screen, where a plan starts from the
   // food and kitchen questionnaire.
   const handleOpenMealPlans = useCallback(() => {
     navigateFromSheet('WeeklyPlans');
@@ -337,7 +337,7 @@ export function useAddSheetActions({ syncMutation }: AddSheetActionsArgs) {
   }, [getActiveDiaryDate, navigateFromSheet]);
 
   const handleAskMarkAI = useCallback(() => {
-    navigateFromSheet('Chat');
+    navigateFromSheet('MarkAI');
   }, [navigateFromSheet]);
 
   const handleOpenCycle = useCallback(() => {

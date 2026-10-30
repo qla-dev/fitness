@@ -12,9 +12,6 @@ import type { LocalRecord } from '../../src/services/local/database';
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
 }));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 
 const date = '2026-09-17';
 const request = <T = LocalRecord>(endpoint: string, body?: unknown) =>

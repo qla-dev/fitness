@@ -21,9 +21,6 @@ jest.mock('../../../src/services/api/exerciseApi', () => ({
 jest.mock('../../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
 }));
-jest.mock('../../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 jest.mock('../../../src/services/LogService', () => ({ addLog: jest.fn() }));
 jest.mock('../../../src/services/recording/database', () => ({
   loadRecording: jest.fn(),

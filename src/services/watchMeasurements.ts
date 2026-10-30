@@ -4,7 +4,6 @@ import {
 } from '../../modules/watch-link';
 import { queryClient } from '../hooks/queryClient';
 import { refreshHealthSyncCache } from '../hooks/refreshHealthSyncCache';
-import { isLocalDataMode } from './dataMode';
 import { localApiFetch } from './local/localApi';
 import { addLog } from './LogService';
 
@@ -13,8 +12,6 @@ export function subscribeWatchMeasurements() {
     void (async () => {
       let success = false;
       try {
-        if (!isLocalDataMode())
-          throw new Error('Watch measurements require local mode');
         await localApiFetch({
           endpoint: '/api/measurements/watch',
           method: 'POST',

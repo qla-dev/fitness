@@ -1,10 +1,4 @@
-import { apiFetch, normalizeUrl } from './apiClient';
-import { isLocalDataMode } from '../dataMode';
-import { ApiError } from './errors';
-import { getActiveServerConfig, proxyHeadersToRecord } from '../storage';
-import { getAuthHeaders, notifySessionExpired } from './authService';
-import { addLog } from '../LogService';
-import { UPLOAD_TIMEOUT_MS, fetchWithTimeout } from '../../utils/concurrency';
+import { apiFetch } from './apiClient';
 import type {
   Exercise,
   SuggestedExercisesResponse,
@@ -266,73 +260,19 @@ export const fetchExerciseById = async (id: string): Promise<Exercise> => {
   return transformExerciseRow(response);
 };
 
-/**
- * Creates a custom exercise. The server endpoint is multipart-only, so this
- * bypasses {@link apiFetch} (which always JSON-stringifies) and uses raw
- * fetch with FormData, mirroring the auth/proxy header injection pattern in
- * {@link healthDataApi}.
- */
+/** Creates a custom exercise in the diary. */
 export async function createExercise(
   payload: CreateExercisePayload
 ): Promise<Exercise> {
-  if (isLocalDataMode()) {
-    return transformExerciseRow(
-      await apiFetch<Record<string, unknown>>({
-        endpoint: '/api/exercises',
-        method: 'POST',
-        body: payload,
-        serviceName: 'Exercise API',
-        operation: 'create exercise',
-      })
-    );
-  }
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('Server configuration not found.');
-  const baseUrl = normalizeUrl(config.url);
-
-  const exerciseData = {
-    ...payload,
-    source: 'custom',
-    is_custom: true,
-    shared_with_public: false,
-  };
-
-  const form = new FormData();
-  form.append('exerciseData', JSON.stringify(exerciseData));
-
-  const response = await fetchWithTimeout(
-    `${baseUrl}/api/exercises/`,
-    {
+  return transformExerciseRow(
+    await apiFetch<Record<string, unknown>>({
+      endpoint: '/api/exercises',
       method: 'POST',
-      headers: {
-        ...proxyHeadersToRecord(config.proxyHeaders),
-        ...getAuthHeaders(config),
-        // Do NOT set Content-Type — fetch will add the multipart boundary.
-      },
-      body: form,
-    },
-    UPLOAD_TIMEOUT_MS
+      body: payload,
+      serviceName: 'Exercise API',
+      operation: 'create exercise',
+    })
   );
-
-  if (!response.ok) {
-    if (response.status === 401 && config.authType === 'session') {
-      notifySessionExpired(config.id);
-    }
-    const text = await response.text();
-    addLog('[Exercise API] Failed to create exercise', 'ERROR', [text]);
-    throw new ApiError(
-      `Server error: ${response.status} - ${text}`,
-      response.status,
-      text
-    );
-  }
-
-  const raw = await response.json();
-  addLog('[Exercise API] createExercise raw response', 'DEBUG', [
-    `images type=${Array.isArray(raw.images) ? 'array' : typeof raw.images}`,
-    `images value=${JSON.stringify(raw.images)}`,
-  ]);
-  return transformExerciseRow(raw);
 }
 
 export const createWorkout = async (
@@ -450,63 +390,20 @@ export const deleteExerciseEntry = async (id: string): Promise<void> => {
   });
 };
 
-/**
- * Updates a custom exercise. Like {@link createExercise} the server endpoint
- * is multipart-only, so this bypasses {@link apiFetch} and posts FormData.
- * Server COALESCEs nulls — omit a field to preserve it; pass `''` to clear
- * a text column.
- */
+/** Updates a custom exercise in the diary. */
 export async function updateExercise(
   id: string,
   payload: UpdateExercisePayload
 ): Promise<Exercise> {
-  if (isLocalDataMode()) {
-    return transformExerciseRow(
-      await apiFetch<Record<string, unknown>>({
-        endpoint: `/api/exercises/${id}`,
-        method: 'PUT',
-        body: payload,
-        serviceName: 'Exercise API',
-        operation: 'update exercise',
-      })
-    );
-  }
-  const config = await getActiveServerConfig();
-  if (!config) throw new Error('Server configuration not found.');
-  const baseUrl = normalizeUrl(config.url);
-
-  const form = new FormData();
-  form.append('exerciseData', JSON.stringify(payload));
-
-  const response = await fetchWithTimeout(
-    `${baseUrl}/api/exercises/${id}`,
-    {
+  return transformExerciseRow(
+    await apiFetch<Record<string, unknown>>({
+      endpoint: `/api/exercises/${id}`,
       method: 'PUT',
-      headers: {
-        ...proxyHeadersToRecord(config.proxyHeaders),
-        ...getAuthHeaders(config),
-      },
-      body: form,
-    },
-    UPLOAD_TIMEOUT_MS
+      body: payload,
+      serviceName: 'Exercise API',
+      operation: 'update exercise',
+    })
   );
-
-  if (!response.ok) {
-    if (response.status === 401 && config.authType === 'session') {
-      notifySessionExpired(config.id);
-    }
-    const text = await response.text();
-    addLog('[Exercise API] Failed to update exercise', 'ERROR', [text]);
-    throw new ApiError(
-      `Server error: ${response.status} - ${text}`,
-      response.status,
-      text
-    );
-  }
-
-  const raw = await response.json();
-  addLog('[Exercise API] Updated exercise', 'INFO', [String(id)]);
-  return transformExerciseRow(raw);
 }
 
 export const deleteExerciseFromLibrary = async (id: string): Promise<void> => {

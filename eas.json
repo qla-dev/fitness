@@ -7,7 +7,6 @@
     "development": {
       "env": {
         "APP_VARIANT": "development",
-        "FITNESS_DATA_MODE": "local",
         "EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE": "1"
       },
       "developmentClient": true,
@@ -15,15 +14,13 @@
     },
     "preview": {
       "env": {
-        "APP_VARIANT": "preview",
-        "FITNESS_DATA_MODE": "local"
+        "APP_VARIANT": "preview"
       },
       "distribution": "internal"
     },
     "production": {
       "env": {
-        "APP_VARIANT": "production",
-        "FITNESS_DATA_MODE": "local"
+        "APP_VARIANT": "production"
       },
       "android": {
         "buildType": "app-bundle"

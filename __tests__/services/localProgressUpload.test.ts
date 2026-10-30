@@ -12,9 +12,6 @@ import { getActiveServerConfig } from '../../src/services/storage';
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
 }));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 jest.mock('../../src/services/local/progressPhotoFiles', () => ({
   copyProgressPhoto: jest.fn(),
   removeProgressPhoto: jest.fn(),

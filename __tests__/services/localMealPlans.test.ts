@@ -5,9 +5,6 @@ import { resetLocalDatabaseCache } from '../../src/services/local/database';
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('crypto').randomUUID(),
 }));
-jest.mock('../../src/services/dataMode', () => ({
-  isLocalDataMode: () => true,
-}));
 
 const request = <T = any>(
   endpoint: string,
