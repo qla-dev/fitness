@@ -2,15 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
-import Animated, {
-  cancelAnimation,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  ZoomIn,
-} from 'react-native-reanimated';
+import Animated, { useReducedMotion, ZoomIn } from 'react-native-reanimated';
 import Icon from './Icon';
 import {
   linkSignInMethod,
@@ -32,6 +24,16 @@ import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 // row lines up with Email and Password under it.
 const TILE = 39;
 const GOOGLE_BORDER = '#747775';
+// Connect and Connected share one pill, so swapping them never moves the row.
+const PILL = {
+  height: 26,
+  paddingHorizontal: 10,
+  borderRadius: 13,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 4,
+} as const;
+const PILL_TEXT = { fontSize: 12, lineHeight: 16, fontWeight: '700' } as const;
 
 /**
  * One sign-in method on the Account screen.
@@ -41,8 +43,8 @@ const GOOGLE_BORDER = '#747775';
  * server refuses one that already has its own account). A linked method
  * shows the email its provider verified (or that Apple hides it) and a
  * Connected badge; tapping it offers to disconnect it while another method
- * remains, and to sign out. An unlinked tile breathes, and the badge pops in
- * with a success tick when it connects.
+ * remains, and to sign out. The badge pops in with a success tick when it
+ * connects.
  */
 export default function SignInMethodRow({
   provider,
@@ -85,18 +87,6 @@ export default function SignInMethodRow({
   }, [connected]);
 
   const reducedMotion = useReducedMotion();
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    pulse.value =
-      connected || reducedMotion
-        ? 0
-        : withRepeat(withTiming(1, { duration: 1600 }), -1, false);
-    return () => cancelAnimation(pulse);
-  }, [connected, reducedMotion, pulse]);
-  const halo = useAnimatedStyle(() => ({
-    opacity: 0.35 * (1 - pulse.value),
-    transform: [{ scale: 1 + pulse.value * 0.45 }],
-  }));
 
   if (!connected && !method.available) return null;
 
@@ -225,41 +215,17 @@ export default function SignInMethodRow({
         style={{
           width: TILE,
           height: TILE,
+          borderRadius: 12,
           alignItems: 'center',
           justifyContent: 'center',
+          ...tileStyle,
         }}
       >
-        {!connected ? (
-          <Animated.View
-            style={[
-              {
-                position: 'absolute',
-                width: TILE,
-                height: TILE,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: ink,
-              },
-              halo,
-            ]}
-          />
-        ) : null}
-        <View
-          style={{
-            width: TILE,
-            height: TILE,
-            borderRadius: 12,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...tileStyle,
-          }}
-        >
-          <Icon
-            name={provider === 'apple' ? 'apple-logo' : 'google-logo'}
-            size={22}
-            color={provider === 'apple' ? paper : '#1F1F1F'}
-          />
-        </View>
+        <Icon
+          name={provider === 'apple' ? 'apple-logo' : 'google-logo'}
+          size={22}
+          color={provider === 'apple' ? paper : '#1F1F1F'}
+        />
       </View>
       <View className="flex-1 min-w-0">
         <Text className="text-base font-semibold text-text-primary">
@@ -283,20 +249,16 @@ export default function SignInMethodRow({
       ) : connected ? (
         <Animated.View
           entering={reducedMotion ? undefined : ZoomIn.springify()}
-          className="flex-row items-center rounded-full px-2.5 py-1"
-          style={{ backgroundColor: successBg, gap: 4 }}
+          style={[PILL, { backgroundColor: successBg }]}
         >
           <Icon name="checkmark" size={12} color={success} />
-          <Text style={{ color: success, fontSize: 12, fontWeight: '700' }}>
+          <Text style={[PILL_TEXT, { color: success }]}>
             {t('account.connected', { defaultValue: 'Connected' })}
           </Text>
         </Animated.View>
       ) : (
-        <View
-          className="rounded-full px-3 py-1.5"
-          style={{ backgroundColor: ink }}
-        >
-          <Text style={{ color: paper, fontSize: 13, fontWeight: '700' }}>
+        <View style={[PILL, { backgroundColor: ink }]}>
+          <Text style={[PILL_TEXT, { color: paper }]}>
             {t('account.connect', { defaultValue: 'Connect' })}
           </Text>
         </View>
