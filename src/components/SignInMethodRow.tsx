@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Animated, {
@@ -18,8 +12,19 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import Icon from './Icon';
-import { signOutOnline, useOnlineAccount } from '../services/online/account';
-import { useAppleSignIn, useGoogleSignIn } from '../hooks/useAppleSignIn';
+import {
+  linkSignInMethod,
+  signInMethods,
+  signOutOnline,
+  unlinkSignInMethod,
+  useOnlineAccount,
+  type SignInProvider,
+} from '../services/online/account';
+import {
+  signInCancelled,
+  useAppleSignIn,
+  useGoogleSignIn,
+} from '../hooks/useAppleSignIn';
 import { queryClient } from '../hooks/queryClient';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 
@@ -28,26 +33,29 @@ import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
 const TILE = 39;
 const GOOGLE_BORDER = '#747775';
 
-type Provider = 'apple' | 'google';
-
 /**
  * One sign-in method on the Account screen.
  *
- * Signed out, every method the phone offers is listed: its tile breathes and
- * the row signs in directly, and the badge pops in with a success tick when
- * it lands. Signed in, only the method in use is listed, with the email the
- * provider verified (or that Apple hides it) and a Connected badge; tapping
- * it signs out after a confirmation. An account belongs to one method, so
- * the other is not offered while signed in: signing in with it would open a
- * different account.
+ * Signed out, the row signs in with that method. Signed in, a method not
+ * yet linked connects to the account, so either one opens it afterwards (the
+ * server refuses one that already has its own account). A linked method
+ * shows the email its provider verified (or that Apple hides it) and a
+ * Connected badge; tapping it offers to disconnect it while another method
+ * remains, and to sign out. An unlinked tile breathes, and the badge pops in
+ * with a success tick when it connects.
  */
-export default function SignInMethodRow({ provider }: { provider: Provider }) {
+export default function SignInMethodRow({
+  provider,
+}: {
+  provider: SignInProvider;
+}) {
   const { t } = useTranslation();
   const session = useOnlineAccount((s) => s.session);
   const apple = useAppleSignIn();
   const google = useGoogleSignIn();
   const method = provider === 'apple' ? apple : google;
-  const [signingOut, setSigningOut] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   // Black on white in light mode, white on black in dark: Apple's two button
   // styles, taken from the theme so the tile never disappears into the page.
   const [secondary, success, successBg, ink, paper] = useCSSVariable([
@@ -57,11 +65,16 @@ export default function SignInMethodRow({ provider }: { provider: Provider }) {
     '--color-text-primary',
     '--color-background',
   ]) as string[];
-  // A session saved before the server named the provider was an Apple one.
-  const signedInWith = session ? (session.user.sign_in?.provider ?? 'apple') : null;
-  const connected = signedInWith === provider;
-  const email = connected ? (session?.user.sign_in?.email ?? null) : null;
-  const privateEmail = connected && !!session?.user.sign_in?.private_email;
+  // A session saved before the server named its methods was an Apple one.
+  const listed = session ? signInMethods(session.user) : [];
+  const methods =
+    session && listed.length === 0
+      ? [{ provider: 'apple' as const, email: null, private_email: false }]
+      : listed;
+  const linked = methods.find((item) => item.provider === provider);
+  const connected = !!linked;
+  const email = linked?.email ?? null;
+  const privateEmail = !!linked?.private_email;
 
   // The success tick belongs to the moment of connecting, not to opening the
   // screen already connected.
@@ -85,7 +98,7 @@ export default function SignInMethodRow({ provider }: { provider: Provider }) {
     transform: [{ scale: 1 + pulse.value * 0.45 }],
   }));
 
-  if (signedInWith ? !connected : !method.available) return null;
+  if (!connected && !method.available) return null;
 
   const name =
     provider === 'apple'
@@ -103,41 +116,63 @@ export default function SignInMethodRow({ provider }: { provider: Provider }) {
     : t('account.appleConnectHint', {
         defaultValue: 'Sync across phones · 100 free AI coins',
       });
-  const busy = method.busy || signingOut;
+  const busy = method.busy || working;
 
-  const signOut = () =>
-    Alert.alert(
-      t('account.signOutTitle', {
-        defaultValue: 'Sign out of {{provider}}?',
-        provider: name,
-      }),
-      t('account.signOutBody', {
-        defaultValue:
-          'Your diary stays on this phone. Sign in again to sync it and use your AI coins.',
-      }),
-      [
-        {
-          text: t('common.cancel', { defaultValue: 'Cancel' }),
-          style: 'cancel',
-        },
-        {
-          text: t('online.signOut', { defaultValue: 'Sign out' }),
-          style: 'destructive',
-          onPress: () => {
-            setSigningOut(true);
-            void signOutOnline()
-              .then(() => queryClient.invalidateQueries())
-              .catch((error: unknown) =>
-                Alert.alert(
-                  t('common.error', { defaultValue: 'Error' }),
-                  error instanceof Error ? error.message : String(error)
-                )
-              )
-              .finally(() => setSigningOut(false));
-          },
-        },
-      ]
-    );
+  // Runs a link, unlink or sign-out, keeping the row busy meanwhile and its
+  // failure (a refused link, say) in the subtitle.
+  const work = (operation: () => Promise<unknown>) => {
+    setWorking(true);
+    setFailure(null);
+    void operation()
+      .catch((error: unknown) => {
+        if (!signInCancelled(error))
+          setFailure(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => setWorking(false));
+  };
+  const signOut = {
+    text: t('online.signOut', { defaultValue: 'Sign out' }),
+    style: 'destructive' as const,
+    onPress: () =>
+      work(() => signOutOnline().then(() => queryClient.invalidateQueries())),
+  };
+  const cancel = {
+    text: t('common.cancel', { defaultValue: 'Cancel' }),
+    style: 'cancel' as const,
+  };
+  const manage = () =>
+    methods.length > 1
+      ? Alert.alert(
+          name,
+          t('account.disconnectBody', {
+            defaultValue:
+              'Disconnect {{provider}} to stop signing in with it. Your other sign-in method keeps the account.',
+            provider: name,
+          }),
+          [
+            {
+              text: t('account.disconnectProvider', {
+                defaultValue: 'Disconnect {{provider}}',
+                provider: name,
+              }),
+              style: 'destructive',
+              onPress: () => work(() => unlinkSignInMethod(provider)),
+            },
+            signOut,
+            cancel,
+          ]
+        )
+      : Alert.alert(
+          t('account.signOutTitle', {
+            defaultValue: 'Sign out of {{provider}}?',
+            provider: name,
+          }),
+          t('account.signOutBody', {
+            defaultValue:
+              'Your diary stays on this phone. Sign in again to sync it and use your AI coins.',
+          }),
+          [cancel, signOut]
+        );
 
   const tileStyle =
     provider === 'apple'
@@ -165,13 +200,16 @@ export default function SignInMethodRow({ provider }: { provider: Provider }) {
       }
       accessibilityHint={
         connected
-          ? t('account.signOutHint', { defaultValue: 'Signs you out' })
+          ? t('account.manageHint', {
+              defaultValue: 'Disconnect this method or sign out',
+            })
           : undefined
       }
       disabled={busy}
       onPress={() => {
         fireSelectionHaptic();
-        if (connected) signOut();
+        if (connected) manage();
+        else if (session) work(() => linkSignInMethod(provider));
         else void method.signIn();
       }}
       className="flex-row items-center"
@@ -237,7 +275,7 @@ export default function SignInMethodRow({ provider }: { provider: Provider }) {
           style={{ color: secondary }}
           numberOfLines={1}
         >
-          {method.error ?? subtitle}
+          {failure ?? method.error ?? subtitle}
         </Text>
       </View>
       {busy ? (

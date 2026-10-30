@@ -11,7 +11,8 @@ import { syncOnline, useOnlineSync } from '../services/online/sync';
 import { queryClient } from './queryClient';
 import { addLog } from '../services/LogService';
 
-const cancelled = (failure: unknown) =>
+/** Whether a sign-in failed only because its sheet was dismissed. */
+export const signInCancelled = (failure: unknown) =>
   failure instanceof SignInCancelledError ||
   (!!failure &&
     typeof failure === 'object' &&
@@ -50,7 +51,7 @@ function useProviderSignIn(
         ]);
       });
     } catch (failure: unknown) {
-      if (!cancelled(failure))
+      if (!signInCancelled(failure))
         setError(failure instanceof Error ? failure.message : String(failure));
     } finally {
       setBusy(false);

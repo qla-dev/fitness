@@ -14,14 +14,23 @@ export type OnlineAccount = {
    * saved before the backend sent it.
    */
   free_messages?: { limit: number; used: number };
-  /** How this account signs in; the email is what the provider verified. */
-  sign_in?: {
-    provider: 'apple' | 'google';
-    email: string | null;
-    private_email: boolean;
-    connected_at?: string | null;
-  };
+  /** The first sign-in method; the email is what the provider verified. */
+  sign_in?: SignInMethod | null;
+  /** Every sign-in method linked to the account. Missing on older sessions. */
+  sign_in_methods?: SignInMethod[];
 };
+
+export type SignInProvider = 'apple' | 'google';
+export type SignInMethod = {
+  provider: SignInProvider;
+  email: string | null;
+  private_email: boolean;
+  connected_at?: string | null;
+};
+
+/** The account's linked methods, from either field the server has sent. */
+export const signInMethods = (user: OnlineAccount): SignInMethod[] =>
+  user.sign_in_methods ?? (user.sign_in ? [user.sign_in] : []);
 const SESSION_KEY = 'qla.online.session';
 const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || 'https://fit.qla.dev/endpoints/api'
@@ -116,7 +125,8 @@ export async function updateOnlineAccount(user: OnlineAccount): Promise<void> {
   useOnlineAccount.setState({ session });
 }
 
-export async function signInWithApple(): Promise<boolean> {
+/** Apple's identity token for a server challenge, and the name Apple shares. */
+async function appleCredential() {
   if (Platform.OS !== 'ios' || !(await AppleAuthentication.isAvailableAsync()))
     throw new Error('Apple sign-in is available on supported Apple devices.');
   const challenge = await onlineRequest<{ id: string; nonce: string }>(
@@ -133,15 +143,19 @@ export async function signInWithApple(): Promise<boolean> {
   });
   if (!credential.identityToken)
     throw new Error('Apple did not return an identity token.');
+  return {
+    identity_token: credential.identityToken,
+    challenge_id: challenge.id,
+    name: credential.fullName
+      ? AppleAuthentication.formatFullName(credential.fullName)
+      : null,
+  };
+}
+
+export async function signInWithApple(): Promise<boolean> {
   const result = await onlineRequest<Session & { registered: boolean }>(
     '/auth/apple',
-    {
-      identity_token: credential.identityToken,
-      challenge_id: challenge.id,
-      name: credential.fullName
-        ? AppleAuthentication.formatFullName(credential.fullName)
-        : null,
-    },
+    await appleCredential(),
     false
   );
   const session = { token: result.token, user: result.user };
@@ -180,8 +194,8 @@ export class SignInCancelledError extends Error {
   }
 }
 
-/** Signs in with Google; the backend verifies the ID token, as for Apple. */
-export async function signInWithGoogle(): Promise<boolean> {
+/** Google's ID token, after the account chooser. */
+async function googleIdToken(): Promise<string> {
   if (!googleSignInSupported())
     throw new Error('Google sign-in is not available in this build.');
   const { GoogleSignin, isSuccessResponse } = googleSignInModule();
@@ -196,15 +210,53 @@ export async function signInWithGoogle(): Promise<boolean> {
   if (!isSuccessResponse(response)) throw new SignInCancelledError();
   if (!response.data.idToken)
     throw new Error('Google did not return an ID token.');
+  return response.data.idToken;
+}
+
+/** Signs in with Google; the backend verifies the ID token, as for Apple. */
+export async function signInWithGoogle(): Promise<boolean> {
   const result = await onlineRequest<Session & { registered: boolean }>(
     '/auth/google',
-    { id_token: response.data.idToken },
+    { id_token: await googleIdToken() },
     false
   );
   const session = { token: result.token, user: result.user };
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
   useOnlineAccount.setState({ session });
   return result.registered;
+}
+
+/**
+ * Adds a sign-in method to the signed-in account, so either opens it. The
+ * server refuses one that already has its own account.
+ */
+export async function linkSignInMethod(
+  provider: SignInProvider
+): Promise<void> {
+  const body =
+    provider === 'apple'
+      ? await appleCredential()
+      : { id_token: await googleIdToken() };
+  await updateOnlineAccount(
+    await onlineRequest<OnlineAccount>(
+      `/account/sign-in-methods/${provider}`,
+      body
+    )
+  );
+}
+
+/** Removes a sign-in method; the server keeps the account's last one. */
+export async function unlinkSignInMethod(
+  provider: SignInProvider
+): Promise<void> {
+  await updateOnlineAccount(
+    await onlineRequest<OnlineAccount>(
+      `/account/sign-in-methods/${provider}`,
+      undefined,
+      true,
+      'DELETE'
+    )
+  );
 }
 
 export async function signOutOnline(): Promise<void> {

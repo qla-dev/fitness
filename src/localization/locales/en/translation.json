@@ -5201,7 +5201,9 @@
     "signOutBody": "Your diary stays on this phone. Sign in again to sync it and use your AI coins.",
     "providerConnected": "{{provider}}, connected. {{detail}}",
     "providerConnect": "Connect {{provider}}",
-    "signOutHint": "Signs you out"
+    "disconnectBody": "Disconnect {{provider}} to stop signing in with it. Your other sign-in method keeps the account.",
+    "disconnectProvider": "Disconnect {{provider}}",
+    "manageHint": "Disconnect this method or sign out"
   },
   "profile": {
     "username": "Username",
