@@ -27,7 +27,7 @@ export default function BottomEdgeEffect({
         pointerEvents="none"
         accessible={false}
         style={[
-          StyleSheet.absoluteFillObject,
+          StyleSheet.absoluteFill,
           {
             top: -32,
             bottom: -extendBottom,
