@@ -227,7 +227,7 @@ function WeeklyPlanContent({
                 accessibilityLabel={t('weeklyPlans.addDay', {
                   defaultValue: 'Add day to grocery list',
                 })}
-                hitSlop={8}
+                hitSlop={12}
                 onPress={() =>
                   openList(
                     plan,
@@ -239,10 +239,14 @@ function WeeklyPlanContent({
                     })
                   )
                 }
-                className="bg-accent-primary/10 rounded-full items-center justify-center"
-                style={{ width: 36, height: 36 }}
+                className="flex-row items-center gap-1"
               >
-                <Icon name="cart" size={18} color={accent} />
+                <Text className="text-sm font-semibold text-accent-primary">
+                  {t('weeklyPlans.addDayShort', {
+                    defaultValue: 'Add to list',
+                  })}
+                </Text>
+                <Icon name="chevron-forward" size={12} color={accent} />
               </Pressable>
             </View>
             {/* Each meal is laid out as the Tracker lays out a logged meal:
