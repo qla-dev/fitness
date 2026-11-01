@@ -15,11 +15,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Button from '../components/ui/Button';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  LinearTransition,
-} from 'react-native-reanimated';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import FadeView from '../components/FadeView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -42,8 +38,6 @@ import { getLocalizedMealLabel } from '../constants/meals';
 import {
   useMealTypes,
   usePreferences,
-  useServerConnection,
-  useCustomNutrients,
   useSetFoodEntryImages,
   useClearFoodEntryImage,
 } from '../hooks';
@@ -53,11 +47,7 @@ import { useUpdateFoodEntry } from '../hooks/useUpdateFoodEntry';
 import { useProfile } from '../hooks/useProfile';
 import type { UpdateFoodEntryPayload } from '../services/api/foodEntriesApi';
 import type { FoodFormData } from '../components/FoodForm';
-import {
-  toFormString,
-  parseOptional,
-  buildNutrientDisplayList,
-} from '../types/foodInfo';
+import { toFormString, parseOptional } from '../types/foodInfo';
 import { getNetCarbsValue } from '../utils/nutrientUtils';
 import type { FoodVariantDetail } from '../types/foods';
 import type { FoodEntry } from '../types/foodEntries';
@@ -66,7 +56,19 @@ import type {
   FoodUnitVariant,
 } from '../types/foodUnitVariants';
 import type { RootStackScreenProps } from '../types/navigation';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  HEADER_CONTENT_GAP,
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
+import EntryContextCard from '../components/EntryContextCard';
+import {
+  FoodNutrientBreakdown,
+  FoodNutritionHeader,
+} from '../components/FoodNutritionSummary';
+import { useQuery } from '@tanstack/react-query';
+import { goalsQueryKey } from '../hooks/queryKeys';
+import { fetchDailyGoals } from '../services/api/goalsApi';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   buildLocalUnitVariants,
@@ -80,14 +82,8 @@ import {
   nextQuantity,
 } from '../utils/foodDetails';
 import { DECIMAL_INPUT_REGEX, parseDecimalInput } from '../utils/numericInput';
-import VerifiedBadge from '../components/VerifiedBadge';
 
 type FoodEntryViewScreenProps = RootStackScreenProps<'FoodEntryView'>;
-
-const scaledValue = (value: number | undefined, entry: FoodEntry): number => {
-  if (value === undefined || !entry.serving_size) return 0;
-  return (value * entry.quantity) / entry.serving_size;
-};
 
 const foodEntryToUnitVariant = (entry: FoodEntry): FoodUnitVariant => ({
   id: entry.variant_id,
@@ -167,6 +163,7 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
   const isEntryImagePending = isSettingEntryImage || isClearingEntryImage;
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const { profile } = useProfile();
   const calendarRef = useRef<CalendarSheetRef>(null);
@@ -420,46 +417,6 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
     variants,
   ]);
 
-  // User-defined custom nutrients to surface alongside the standard "show more"
-  // rows — mirrors FoodNutritionSummary so the entry view matches the library
-  // food view. Values come from the entry/variant custom_nutrients snapshot and
-  // are scaled by servings via renderNutrientValue like every other row.
-  const { isConnected } = useServerConnection();
-  const { customNutrients: customNutrientDefs } = useCustomNutrients({
-    enabled: isConnected,
-  });
-  const customNutrientRows = useMemo(() => {
-    const rows: { label: string; value: number; unit: string }[] = [];
-    const seen = new Set<string>();
-    for (const def of customNutrientDefs) {
-      const rawValue = selectedCustomNutrients?.[def.name];
-      const value =
-        rawValue == null
-          ? 0
-          : typeof rawValue === 'number'
-            ? rawValue
-            : parseFloat(String(rawValue));
-      rows.push({
-        label: def.name,
-        value: isNaN(value) ? 0 : value,
-        unit: def.unit,
-      });
-      seen.add(def.name);
-    }
-    if (selectedCustomNutrients) {
-      for (const [name, rawValue] of Object.entries(selectedCustomNutrients)) {
-        if (seen.has(name)) continue;
-        const value =
-          typeof rawValue === 'number'
-            ? rawValue
-            : parseFloat(String(rawValue));
-        if (isNaN(value)) continue;
-        rows.push({ label: name, value, unit: '' });
-      }
-    }
-    return rows;
-  }, [customNutrientDefs, selectedCustomNutrients]);
-
   const displayValues = useMemo(() => {
     if (!adjustedValues) return activeVariant;
     return {
@@ -488,7 +445,6 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
   const quantity = parseDecimalInput(quantityText) || 0;
   const editServings =
     displayValues.servingSize > 0 ? quantity / displayValues.servingSize : 0;
-  const scaled = (value: number) => value * editServings;
   const servingSizeRef = useRef(displayValues.servingSize);
 
   const mealPickerOptions = mealTypes.map((mealType) => ({
@@ -816,52 +772,15 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
     },
   });
 
-  const [accentColor, textPrimary, proteinColor, carbsColor, fatColor] =
-    useCSSVariable([
-      '--color-accent-primary',
-      '--color-text-primary',
-      '--color-macro-protein',
-      '--color-macro-carbs',
-      '--color-macro-fat',
-    ]) as [string, string, string, string, string];
+  const textPrimary = useCSSVariable('--color-text-primary') as string;
 
   const { preferences } = usePreferences();
   const showNetCarbs = preferences?.show_net_carbs === true;
-
-  const viewCalories = Math.round(scaledValue(entry.calories, entry));
-  const viewProtein = Math.round(scaledValue(entry.protein, entry));
-  const viewCarbs = Math.round(scaledValue(entry.carbs, entry));
-  const viewFat = Math.round(scaledValue(entry.fat, entry));
-  const viewFiber = Math.round(scaledValue(entry.dietary_fiber, entry));
-
   // Per-mode gates: each mode reads from a different source (view = entry,
-  // edit = displayValues), so each needs its own fiber check. Without these
-  // the label could say "Net Carbs" while the value silently fell back to
-  // total carbs.
+  // edit = displayValues), so each needs its own fiber check.
   const viewUseNetCarbs = showNetCarbs && entry.dietary_fiber != null;
   const editUseNetCarbs = showNetCarbs && displayValues.fiber !== undefined;
-  const viewDisplayCarbs = viewUseNetCarbs
-    ? getNetCarbsValue(viewCarbs, viewFiber)
-    : viewCarbs;
-  const editDisplayCarbs = editUseNetCarbs
-    ? getNetCarbsValue(displayValues.carbs, displayValues.fiber)
-    : displayValues.carbs;
-  const viewCarbsLabel = viewUseNetCarbs
-    ? t('nutrients.netCarbs', { defaultValue: 'Net Carbs' })
-    : t('nutrients.carbs', { defaultValue: 'Carbs' });
-  const editCarbsLabel = editUseNetCarbs
-    ? t('nutrients.netCarbs', { defaultValue: 'Net Carbs' })
-    : t('nutrients.carbs', { defaultValue: 'Carbs' });
-
-  const viewProteinCals = viewProtein * 4;
-  const viewCarbsCals = viewDisplayCarbs * 4;
-  const viewFatCals = viewFat * 9;
-  const viewTotalMacroCals = viewProteinCals + viewCarbsCals + viewFatCals;
-
-  const editProteinCals = displayValues.protein * 4;
-  const editCarbsCals = editDisplayCarbs * 4;
-  const editFatCals = displayValues.fat * 9;
-  const editTotalMacroCals = editProteinCals + editCarbsCals + editFatCals;
+  const useNetCarbsInList = isEditing ? editUseNetCarbs : viewUseNetCarbs;
 
   const servings = entry.serving_size
     ? entry.quantity / entry.serving_size
@@ -881,58 +800,39 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
     }
   )}`;
 
-  const [showMoreNutrients, setShowMoreNutrients] = useState(false);
-  // Use the same per-mode gate the macro bar uses, and pass carbs raw —
-  // renderNutrientValue scales every other row the same way, so pre-scaling
-  // here would double-scale the displayed Total Carbs value.
-  const useNetCarbsInList = isEditing ? editUseNetCarbs : viewUseNetCarbs;
-  const { primary: primaryNutrients, additional: additionalNutrients } =
-    buildNutrientDisplayList(displayValues, {
-      showNetCarbs: useNetCarbsInList,
-      carbs: useNetCarbsInList ? displayValues.carbs : undefined,
-      t,
-    });
-  const hasAdditional =
-    additionalNutrients.length > 0 || customNutrientRows.length > 0;
-  const showAdditionalRows = showMoreNutrients && hasAdditional;
-  const renderNutrientValue = (value: number, unit: string) =>
-    isEditing
-      ? `${Math.round(scaled(value))}${unit}`
-      : `${Math.round(scaledValue(value, entry))}${unit}`;
-  const getLocalizedNutrientLabel = (label: string): string => {
-    switch (label) {
-      case 'Fiber':
-        return t('nutrients.fiber', { defaultValue: 'Fiber' });
-      case 'Sugars':
-        return t('nutrients.sugars', { defaultValue: 'Sugars' });
-      case 'Saturated Fat':
-        return t('nutrients.saturatedFatShort', { defaultValue: 'Sat. Fat' });
-      case 'Trans Fat':
-        return t('nutrients.transFat', { defaultValue: 'Trans Fat' });
-      case 'Cholesterol':
-        return t('nutrients.cholesterol', { defaultValue: 'Cholesterol' });
-      case 'Sodium':
-        return t('nutrients.sodium', { defaultValue: 'Sodium' });
-      case 'Potassium':
-        return t('nutrients.potassium', { defaultValue: 'Potassium' });
-      case 'Calcium':
-        return t('nutrients.calcium', { defaultValue: 'Calcium' });
-      case 'Iron':
-        return t('nutrients.iron', { defaultValue: 'Iron' });
-      case 'Vitamin A':
-        return t('nutrients.vitaminA', { defaultValue: 'Vitamin A' });
-      case 'Vitamin C':
-        return t('nutrients.vitaminC', { defaultValue: 'Vitamin C' });
-      case 'Total Carbs':
-        return t('nutrients.totalCarbs', { defaultValue: 'Total Carbs' });
-      default:
-        return label;
-    }
+  // The shared header and breakdown scale per-serving values by this many
+  // servings: the entry's own while viewing, the edited amount while editing.
+  const shownServings = isEditing
+    ? editServings
+    : entry.serving_size
+      ? entry.quantity / entry.serving_size
+      : 1;
+  const { data: goals, isLoading: isGoalsLoading } = useQuery({
+    queryKey: goalsQueryKey(normalizeDate(entry.entry_date)),
+    queryFn: () => fetchDailyGoals(normalizeDate(entry.entry_date)),
+    staleTime: 1000 * 60 * 5,
+  });
+  const carbsForGoal =
+    useNetCarbsInList && displayValues.fiber !== undefined
+      ? getNetCarbsValue(displayValues.carbs, displayValues.fiber)
+      : displayValues.carbs;
+  const goalPercent = (
+    value: number,
+    key: 'calories' | 'protein' | 'carbs' | 'fat' = 'calories'
+  ) => {
+    const goal = goals?.[key];
+    return goal ? Math.round(((value * shownServings) / goal) * 100) : null;
+  };
+  const startEditing = () => {
+    if (canEdit) updateEdit({ isEditing: true });
   };
 
   // View mode: back + owner-gated Edit. Edit mode: 'Done' (not 'Save') commits
   // the changes — the entry stays on screen, so Done reads as "finish editing".
   const header = useScreenHeader({
+    // The log sheet's header: transparent, with the name in the content.
+    variant: 'transparent',
+    nativeTitle: '',
     borderless: true,
     animateKey: isEditing ? 'edit' : 'view',
     left: { kind: 'back' },
@@ -971,29 +871,63 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerClassName="px-4 py-4 gap-4"
+        contentContainerClassName="px-4 gap-4"
+        // The transparent bar reserves no space, so the content starts below
+        // it by hand, as on the log sheet.
         contentContainerStyle={{
+          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
           paddingBottom: insets.bottom + 16 + activeWorkoutBarPadding,
         }}
       >
+        {/* The same header as the log sheet: name, brand, the calorie ring
+            and macro bars. While editing it opens the nutrition form. */}
         <Animated.View layout={LinearTransition.duration(300)}>
-          <View className="flex-row items-start gap-2">
-            <Text className="text-text-primary text-3xl font-bold flex-shrink">
-              {(isEditing && adjustedValues?.name) ||
+          <Pressable
+            onPress={isEditing ? navigateToNutritionForm : undefined}
+            disabled={!isEditing}
+            accessibilityRole={isEditing ? 'button' : undefined}
+            accessibilityLabel={
+              isEditing
+                ? t('foodEntryView.nutritionEditHint', {
+                    defaultValue: 'Opens nutrition editing',
+                  })
+                : undefined
+            }
+          >
+            <FoodNutritionHeader
+              name={
+                (isEditing && adjustedValues?.name) ||
                 entry.food_name ||
                 t('foodEntryView.unknownFood', {
                   defaultValue: 'Unknown food',
-                })}
-            </Text>
-            {entry.provider_verified ? (
-              <VerifiedBadge size="md" style={{ marginTop: 7 }} />
-            ) : null}
-          </View>
-          {((isEditing && adjustedValues?.brand) || entry.brand_name) && (
-            <Text className="text-text-muted mt-1 font-semibold">
-              {(isEditing && adjustedValues?.brand) || entry.brand_name}
-            </Text>
-          )}
+                })
+              }
+              brand={(isEditing && adjustedValues?.brand) || entry.brand_name}
+              values={displayValues}
+              servings={shownServings}
+              goalPercentages={{
+                calories: goalPercent(displayValues.calories),
+                protein: goalPercent(displayValues.protein, 'protein'),
+                carbs: goalPercent(carbsForGoal, 'carbs'),
+                fat: goalPercent(displayValues.fat, 'fat'),
+              }}
+              goalsLoading={isGoalsLoading}
+              showNetCarbs={useNetCarbsInList}
+              provider_verified={entry.provider_verified}
+            />
+            {isEditing && (
+              <FadeView>
+                <Text className="text-text-secondary text-xs text-center mt-2">
+                  {t('foodEntryView.tapToEditNutrition', {
+                    defaultValue: 'Tap to edit nutrition',
+                  })}
+                </Text>
+              </FadeView>
+            )}
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View layout={LinearTransition.duration(300)}>
           <View className="mt-4">
             <EntryImageOverride
               images={entry.images}
@@ -1097,385 +1031,84 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
           )}
         </Animated.View>
 
+        {/* The three facts the entry is filed under, as the log sheet shows
+            them. Viewing, a tap starts editing; editing, it opens the picker. */}
         <Animated.View
           layout={LinearTransition.duration(300)}
-          className="bg-surface rounded-xl p-4"
+          className="flex-row"
+          style={{ gap: 8 }}
         >
-          <Pressable
-            onPress={isEditing ? navigateToNutritionForm : undefined}
-            disabled={!isEditing}
-            accessibilityRole={isEditing ? 'button' : undefined}
-            accessibilityLabel={
-              isEditing
-                ? t('foodEntryView.nutritionEditHint', {
-                    defaultValue: 'Opens nutrition editing',
-                  })
-                : undefined
+          <EntryContextCard
+            label={t('common.date', { defaultValue: 'Date' })}
+            value={formatDateLabel(
+              isEditing ? selectedDate : normalizeDate(entry.entry_date),
+              t,
+              dateLocale
+            )}
+            onPress={() =>
+              isEditing ? calendarRef.current?.present() : startEditing()
             }
-          >
-            <Animated.View
-              layout={LinearTransition.duration(300)}
-              className="flex-row items-center"
-            >
-              <View className="flex-1 items-center pr-10">
-                <Text className="text-text-primary text-3xl font-medium">
-                  {isEditing
-                    ? Math.round(scaled(displayValues.calories))
-                    : viewCalories}
-                </Text>
-                <Text className="text-text-secondary text-base mt-1">
-                  {t('nutrients.calories', { defaultValue: 'Calories' })}
-                </Text>
-              </View>
-              <Animated.View
-                layout={LinearTransition.duration(300)}
-                className="flex-2 gap-3"
-              >
-                {(isEditing
-                  ? [
-                      {
-                        label: t('nutrients.protein', {
-                          defaultValue: 'Protein',
-                        }),
-                        value: displayValues.protein,
-                        color: proteinColor,
-                        calFactor: 4,
-                        totalCals: editTotalMacroCals,
-                        displayValue: Math.round(scaled(displayValues.protein)),
-                      },
-                      {
-                        label: editCarbsLabel,
-                        value: editDisplayCarbs,
-                        color: carbsColor,
-                        calFactor: 4,
-                        totalCals: editTotalMacroCals,
-                        displayValue: Math.round(scaled(editDisplayCarbs)),
-                      },
-                      {
-                        label: t('nutrients.fat', { defaultValue: 'Fat' }),
-                        value: displayValues.fat,
-                        color: fatColor,
-                        calFactor: 9,
-                        totalCals: editTotalMacroCals,
-                        displayValue: Math.round(scaled(displayValues.fat)),
-                      },
-                    ]
-                  : [
-                      {
-                        label: t('nutrients.protein', {
-                          defaultValue: 'Protein',
-                        }),
-                        value: viewProtein,
-                        color: proteinColor,
-                        calFactor: 4,
-                        totalCals: viewTotalMacroCals,
-                        displayValue: viewProtein,
-                      },
-                      {
-                        label: viewCarbsLabel,
-                        value: viewDisplayCarbs,
-                        color: carbsColor,
-                        calFactor: 4,
-                        totalCals: viewTotalMacroCals,
-                        displayValue: viewDisplayCarbs,
-                      },
-                      {
-                        label: t('nutrients.fat', { defaultValue: 'Fat' }),
-                        value: viewFat,
-                        color: fatColor,
-                        calFactor: 9,
-                        totalCals: viewTotalMacroCals,
-                        displayValue: viewFat,
-                      },
-                    ]
-                ).map((macro) => (
-                  <View key={macro.label} className="flex-row items-center">
-                    <Text className="text-text-secondary text-sm w-14">
-                      {macro.label}
-                    </Text>
-                    <View className="flex-1 h-2 rounded-full bg-progress-track overflow-hidden mx-2">
-                      {macro.totalCals > 0 && (
-                        <View
-                          className="h-full rounded-full"
-                          style={{
-                            backgroundColor: macro.color,
-                            width: `${Math.round(
-                              ((macro.value * macro.calFactor) /
-                                macro.totalCals) *
-                                100
-                            )}%`,
-                          }}
-                        />
-                      )}
-                    </View>
-                    <Text className="text-text-primary text-sm font-medium w-10 text-right">
-                      {macro.displayValue}g
-                    </Text>
-                  </View>
-                ))}
-              </Animated.View>
-              {isEditing && (
-                <FadeView>
-                  <Icon
-                    name="chevron-forward"
-                    size={16}
-                    color={textPrimary}
-                    style={{ marginLeft: 8 }}
-                  />
-                </FadeView>
-              )}
-            </Animated.View>
-            {isEditing && (
-              <FadeView>
-                <Text className="text-text-secondary text-xs text-center mt-4">
-                  {t('foodEntryView.tapToEditNutrition', {
-                    defaultValue: 'Tap to edit nutrition',
-                  })}
-                </Text>
-              </FadeView>
-            )}
-          </Pressable>
-        </Animated.View>
-
-        {(primaryNutrients.length > 0 || hasAdditional) && (
-          <Animated.View
-            layout={LinearTransition.duration(300)}
-            className="my-2 gap-2"
-          >
-            {(primaryNutrients.length > 0 || customNutrientRows.length > 0) && (
-              <View className="rounded-xl">
-                {primaryNutrients.map((nutrient, index) => {
-                  const isLastVisible =
-                    index === primaryNutrients.length - 1 &&
-                    !showAdditionalRows;
-                  return (
-                    <View
-                      key={nutrient.label}
-                      className={`flex-row justify-between py-1 ${
-                        !isLastVisible ? 'border-b border-border-subtle' : ''
-                      }`}
-                    >
-                      <Text className="text-text-secondary text-sm">
-                        {getLocalizedNutrientLabel(nutrient.label)}
-                      </Text>
-                      <Text className="text-text-primary text-sm">
-                        {renderNutrientValue(nutrient.value, nutrient.unit)}
-                      </Text>
-                    </View>
-                  );
-                })}
-                {showAdditionalRows && (
-                  <Animated.View
-                    entering={FadeIn.duration(250)}
-                    exiting={FadeOut.duration(150)}
-                    layout={LinearTransition.duration(250)}
-                  >
-                    {additionalNutrients.map((nutrient, index) => (
-                      <View
-                        key={nutrient.label}
-                        className={`flex-row justify-between py-1 ${
-                          index < additionalNutrients.length - 1 ||
-                          customNutrientRows.length > 0
-                            ? 'border-b border-border-subtle'
-                            : ''
-                        }`}
-                      >
-                        <Text className="text-text-secondary text-sm">
-                          {getLocalizedNutrientLabel(nutrient.label)}
-                        </Text>
-                        <Text className="text-text-primary text-sm">
-                          {renderNutrientValue(nutrient.value, nutrient.unit)}
-                        </Text>
-                      </View>
-                    ))}
-                    {customNutrientRows.map((nutrient, index) => (
-                      <View
-                        key={`custom-${nutrient.label}`}
-                        className={`flex-row justify-between py-1 ${
-                          index < customNutrientRows.length - 1
-                            ? 'border-b border-border-subtle'
-                            : ''
-                        }`}
-                      >
-                        <Text className="text-text-secondary text-sm">
-                          {getLocalizedNutrientLabel(nutrient.label)}
-                        </Text>
-                        <Text className="text-text-primary text-sm">
-                          {renderNutrientValue(nutrient.value, nutrient.unit)}
-                        </Text>
-                      </View>
-                    ))}
-                  </Animated.View>
-                )}
-              </View>
-            )}
-            {hasAdditional && (
-              <Animated.View layout={LinearTransition.duration(250)}>
-                <Button
-                  variant="ghost"
-                  onPress={() => setShowMoreNutrients((prev) => !prev)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  className="self-start py-0 px-0"
-                >
-                  <Text
-                    style={{ color: accentColor }}
-                    className="text-sm font-medium"
-                  >
-                    {showMoreNutrients
-                      ? t('foodNutrition.hideExtra', {
-                          defaultValue: 'Hide extra nutrients ▴',
-                        })
-                      : t('foodNutrition.showMore', {
-                          defaultValue: 'Show more nutrients ▾',
-                        })}
-                  </Text>
-                </Button>
-              </Animated.View>
-            )}
-          </Animated.View>
-        )}
-
-        <Animated.View
-          layout={LinearTransition.duration(300)}
-          className="mt-2 flex-row items-center"
-        >
-          <View className="flex-1 flex-row items-center">
-            <Text className="text-text-secondary text-base mr-2">
-              {t('common.date', { defaultValue: 'Date' })}
-            </Text>
-            {isEditing ? (
-              <TouchableOpacity
-                onPress={() => calendarRef.current?.present()}
-                activeOpacity={0.7}
-                className="flex-row items-center"
-                accessibilityRole="button"
-                accessibilityLabel={t('foodEntryView.dateSelectorHint', {
-                  defaultValue: 'Opens date selection',
-                })}
-              >
-                <Text className="text-text-primary text-base font-medium">
-                  {formatDateLabel(selectedDate, t, dateLocale)}
-                </Text>
-                <Icon
-                  name="chevron-down"
-                  size={12}
-                  color={textPrimary}
-                  style={{ marginLeft: 6 }}
-                  weight="medium"
+          />
+          <EntryContextCard
+            label={t('foodEntryView.time', { defaultValue: 'Time' })}
+            value={
+              (isEditing
+                ? formatTimeLabel(entryTime, preferences?.time_format)
+                : formatTimeLabel(
+                    entry.entry_time,
+                    preferences?.time_format
+                  )) ?? t('common.none', { defaultValue: 'None' })
+            }
+            onPress={() =>
+              isEditing ? timeSheetRef.current?.present() : startEditing()
+            }
+          />
+          {isEditing && selectedMealType ? (
+            <BottomSheetPicker
+              value={effectiveMealId!}
+              options={mealPickerOptions}
+              onSelect={(id) => updateEdit({ selectedMealId: id })}
+              title={t('foodEntryView.selectMeal', {
+                defaultValue: 'Select Meal',
+              })}
+              renderTrigger={({ onPress }) => (
+                <EntryContextCard
+                  label={t('foodEntryView.meal', { defaultValue: 'Meal' })}
+                  value={mealTypeLabel(selectedMealType)}
+                  onPress={onPress}
                 />
-              </TouchableOpacity>
-            ) : (
-              <Text className="text-text-primary text-base font-medium">
-                {formatDateLabel(
-                  normalizeDate(entry.entry_date),
-                  t,
-                  dateLocale
-                )}
-              </Text>
-            )}
-          </View>
-
-          <View className="flex-1 flex-row items-center">
-            <Text className="text-text-secondary text-base mr-2">
-              {t('foodEntryView.meal', { defaultValue: 'Meal' })}
-            </Text>
-            {isEditing && selectedMealType ? (
-              <BottomSheetPicker
-                value={effectiveMealId!}
-                options={mealPickerOptions}
-                onSelect={(id) => updateEdit({ selectedMealId: id })}
-                title={t('foodEntryView.selectMeal', {
-                  defaultValue: 'Select Meal',
-                })}
-                renderTrigger={({ onPress }) => (
-                  <TouchableOpacity
-                    onPress={onPress}
-                    activeOpacity={0.7}
-                    className="flex-row items-center"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('foodEntryView.mealSelectorHint', {
-                      defaultValue: 'Opens meal selection',
-                    })}
-                  >
-                    <Text className="text-text-primary text-base font-medium">
-                      {mealTypeLabel(selectedMealType)}
-                    </Text>
-                    <Icon
-                      name="chevron-down"
-                      size={12}
-                      color={textPrimary}
-                      style={{ marginLeft: 6 }}
-                      weight="medium"
-                    />
-                  </TouchableOpacity>
-                )}
-              />
-            ) : (
-              <Text className="text-text-primary text-base font-medium">
-                {entryMealTypeLabel}
-              </Text>
-            )}
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          layout={LinearTransition.duration(300)}
-          className="mt-2 flex-row items-center"
-        >
-          <Text className="text-text-secondary text-base mr-2">
-            {t('foodEntryView.time', { defaultValue: 'Time' })}
-          </Text>
-          {isEditing ? (
-            <>
-              <TouchableOpacity
-                onPress={() => timeSheetRef.current?.present()}
-                activeOpacity={0.7}
-                className="flex-row items-center"
-                accessibilityRole="button"
-                accessibilityLabel={t('foodEntryView.timeSelectorLabel', {
-                  defaultValue: 'Select time: {{time}}',
-                  time:
-                    formatTimeLabel(entryTime) ??
-                    t('common.none', { defaultValue: 'None' }),
-                })}
-              >
-                <Text className="text-text-primary text-base font-medium">
-                  {formatTimeLabel(entryTime) ??
-                    t('common.none', { defaultValue: 'None' })}
-                </Text>
-                <Icon
-                  name="chevron-down"
-                  size={12}
-                  color={textPrimary}
-                  style={{ marginLeft: 6 }}
-                  weight="medium"
-                />
-              </TouchableOpacity>
-              {entryTime !== '' && (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center ml-4"
-                  onPress={() => updateEdit({ entryTime: '' })}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('foodEntryView.clearTimeLabel', {
-                    defaultValue: 'Clear entry time',
-                  })}
-                >
-                  <Text className="text-text-link text-sm font-medium">
-                    {t('foodEntryView.clearTime', {
-                      defaultValue: 'Clear time',
-                    })}
-                  </Text>
-                </TouchableOpacity>
               )}
-            </>
+            />
           ) : (
-            <Text className="text-text-primary text-base font-medium">
-              {formatTimeLabel(entry.entry_time, preferences?.time_format) ??
-                t('common.none', { defaultValue: 'None' })}
-            </Text>
+            <EntryContextCard
+              label={t('foodEntryView.meal', { defaultValue: 'Meal' })}
+              value={entryMealTypeLabel}
+              onPress={startEditing}
+            />
           )}
         </Animated.View>
+        {isEditing && entryTime !== '' ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            className="self-start"
+            onPress={() => updateEdit({ entryTime: '' })}
+            accessibilityRole="button"
+            accessibilityLabel={t('foodEntryView.clearTimeLabel', {
+              defaultValue: 'Clear entry time',
+            })}
+          >
+            <Text className="text-text-link text-base font-medium">
+              {t('foodEntryView.clearTime', { defaultValue: 'Clear time' })}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <FoodNutrientBreakdown
+          values={displayValues}
+          servings={shownServings}
+          showNetCarbs={useNetCarbsInList}
+          customNutrients={selectedCustomNutrients}
+        />
 
         <Animated.View layout={LinearTransition.duration(300)} className="mt-3">
           {isEditing ? (
