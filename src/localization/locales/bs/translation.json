@@ -62,7 +62,7 @@
     "foods": "Hrana",
     "meals": "Obroci",
     "exercises": "Vježbe",
-    "diary": "Ishrana",
+    "diary": "Tracker",
     "dashboard": "Aktivnosti",
     "add": "Dodaj",
     "mealTypes": "Vrste obroka",
@@ -81,7 +81,70 @@
       "managedByIOS": "Upravlja iOS",
       "iosSettingsHint": "Promijenite jezik ove aplikacije u iOS postavkama",
       "openSettingsFailed": "Otvaranje iOS postavki nije uspjelo",
-      "iosSubtitle": "{{language}} · {{managedBy}}"
+      "iosSubtitle": "{{language}} · {{managedBy}}",
+      "italian": "Italiano",
+      "german": "Deutsch"
     }
+  },
+  "medications": {
+    "dose": {
+      "undo": "Poništi"
+    },
+    "trackingTitle": "Svaka doza na svom mjestu. Zaustavi kad god želiš; tvoja lista ostaje ovdje.",
+    "trackingOffTitle": "Lijekovi nisu na tvom Trackeru. Pokreni praćenje da ih vratiš.",
+    "stopTitle": "Zaustaviti praćenje lijekova?",
+    "stopMessage": "Lijekovi nestaju iz Trackera. Tvoji lijekovi i zabilježene doze ostaju sačuvani, a praćenje možeš ponovo pokrenuti odavde."
+  },
+  "featureFacts": {
+    "heading": "Dobro je znati",
+    "cycle": {
+      "cover1Title": "Više od menstruacije",
+      "cover1Body": "Ciklus prolazi kroz četiri faze: menstrualnu, folikularnu, ovulaciju i lutealnu. Energija, san, apetit i raspoloženje mogu se mijenjati u svakoj od njih, pa ti znanje o tome gdje se nalaziš pomaže da ostatak dana ima više smisla.",
+      "cover2Title": "Preciznije sa svakim ciklusom",
+      "cover2Body": "Predviđanja nastaju iz ciklusa koje bilježiš. Označi kada svaka menstruacija počinje i završava, i procjene sljedeće menstruacije i plodnih dana sve će se više približavati tvom ritmu.",
+      "aboutTitle": "O praćenju ciklusa",
+      "aboutBody": "Kod odraslih su uobičajeni ciklusi od 21 do 35 dana, a stres, putovanja, bolest ili promjena rutine mogu ih pomjeriti za nekoliko dana. Predviđanja su procjene, a ne kontracepcija. Razgovaraj s ljekarom ako menstruacija izostane tri mjeseca ili duže, ili ako su krvarenje ili bol mnogo jači nego inače."
+    },
+    "medications": {
+      "cover1Title": "Rutina je najbolji podsjetnik",
+      "cover1Body": "Doze vezane za nešto što već radiš, poput doručka ili pranja zuba, one su koje se uzmu. Zabilježi svaku dozu kada je uzmeš i dan će pokazati šta je urađeno, a šta je još na redu.",
+      "cover2Title": "Doze po potrebi se također računaju",
+      "cover2Body": "Bilježenje lijekova protiv bolova i drugih lijekova koje uzimaš po potrebi pokazuje koliko često posežeš za njima. Zapis od nekoliko sedmica koristan je za sljedeći pregled.",
+      "aboutTitle": "O praćenju lijekova",
+      "aboutBody": "Lijekovi bilježe doze koje uneseš i podsjećaju te na rasporede koje postaviš. Ne provjeravaju doze ni interakcije. Slijedi upute ljekara ili farmaceuta i pitaj ih prije nego što udvostručiš dozu nakon propuštene."
+    }
+  },
+  "medicationSetup": {
+    "doseUnit": {
+      "pill": "pilula",
+      "tablet": "tableta",
+      "capsule": "kapsula",
+      "ml": "ml",
+      "patch": "flaster",
+      "puff": "udah",
+      "drop": "kap",
+      "spray": "sprej",
+      "application": "nanošenje",
+      "suppository": "čepić"
+    },
+    "typeHeading": "Koji je oblik?",
+    "doseHeading": "Koliko po dozi?",
+    "suggestSource": "Prijedlozi iz Nacionalne medicinske biblioteke SAD-a",
+    "scheduleHeading": "Kada ga uzimaš?",
+    "scheduleHint": "Postavi raspored za podsjetnike ili preskoči da dozu bilježiš po potrebi.",
+    "adjustSchedule": "Podesi raspored"
+  },
+  "tracking": {
+    "stop": "Zaustavi praćenje",
+    "start": "Pokreni praćenje",
+    "settings": "Postavke praćenja"
+  },
+  "cycleHub": {
+    "trackingTitle": "Tvoj ritam, po tvojim pravilima. Pauziraj kad god želiš i nastavi iz Profila.",
+    "stopTitle": "Zaustaviti praćenje ciklusa?",
+    "stopMessage": "Praćenje ciklusa se isključuje i nestaje iz Trackera. Zabilježeni dani ostaju sačuvani, a praćenje možeš ponovo uključiti u Profilu pod Ciklus i trudnoća."
+  },
+  "diary": {
+    "title": "Tracker"
   }
 }

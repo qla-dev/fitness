@@ -15,3 +15,10 @@
 "widget.a11y.kcal" = "%@ kcal";
 "widget.search_food" = "Wyszukaj produkt";
 "widget.scan_barcode" = "Skanuj kod kreskowy";
+"widget.activity.name" = "Aktywność";
+"widget.activity.description" = "Dzisiejsze pierścienie Ruch, Ćwiczenia i Kroki.";
+"widget.move" = "Ruch";
+"widget.exercise" = "Ćwiczenia";
+"widget.steps" = "Kroki";
+"widget.min" = "min";
+"widget.grams_left" = "pozostało %@ g";

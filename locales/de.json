@@ -1,0 +1,11 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "qla.fit braucht Zugriff auf deine Kamera, um Barcodes und Etiketten von Lebensmitteln zu scannen.",
+    "NSHealthShareUsageDescription": "qla.fit liest Health-Daten (z. B. Aktivität, Trainings und Körpermaße), um sie in der App anzuzeigen und mit deinem selbst gehosteten qla.fit-Server zu synchronisieren.",
+    "NSHealthUpdateUsageDescription": "qla.fit schreibt die Ernährung und Flüssigkeitszufuhr, die du in der App erfasst, in Apple Health, damit beide synchron bleiben.",
+    "NSLocalNetworkUsageDescription": "qla.fit verbindet sich mit selbst gehosteten Servern in deinem lokalen Netzwerk.",
+    "NSBluetoothAlwaysUsageDescription": "qla.fit nutzt Bluetooth, um sich mit Fitness-Sensoren wie Herzfrequenzgurten zu verbinden.",
+    "NSLocationWhenInUseUsageDescription": "qla.fit nutzt deinen Standort, um deine Läufe und Radtouren aufzuzeichnen und zu messen.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "qla.fit nutzt deinen Standort, um deine Route weiter aufzuzeichnen, während die App im Hintergrund läuft."
+  }
+}

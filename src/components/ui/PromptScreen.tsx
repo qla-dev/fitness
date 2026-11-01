@@ -1,5 +1,5 @@
 import React, { useState, type ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -16,6 +16,7 @@ import {
   type HeaderItem,
 } from '../../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
+import NativeHeaderScrollView from './NativeHeaderScrollView';
 
 /**
  * The app's one-decision screen: a title, a line of explanation, one control,
@@ -188,13 +189,9 @@ function PromptScreenContent({
         // is the automatic one, as on the Tracker: iOS sizes its edge effect
         // from that inset, so a bar height added as padding left the blur a
         // thin band at the sheet's top that had faded by the title row.
-        <ScrollView
+        <NativeHeaderScrollView
           ref={edgeEffectRef}
           className="flex-1"
-          contentInsetAdjustmentBehavior={
-            usesNativeHeader ? 'automatic' : 'never'
-          }
-          automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
           scrollEventThrottle={16}
           onScroll={(event) => {
             // The heading's bottom in content coordinates, against the bar's
@@ -222,7 +219,7 @@ function PromptScreenContent({
               {footnote}
             </Text>
           ) : null}
-        </ScrollView>
+        </NativeHeaderScrollView>
       ) : (
         <>
           {/* No scroll view to take the inset here, so the heading pads

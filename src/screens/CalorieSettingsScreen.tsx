@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
@@ -32,6 +32,7 @@ import {
   type CalorieSafetyFloorMode,
   type GoalMode,
 } from '@workspace/shared';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type CalorieSettingsScreenProps = RootStackScreenProps<'CalorieSettings'>;
 
@@ -481,16 +482,13 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {/* Mode */}
         <BottomSheetPicker
@@ -870,7 +868,7 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
             )}
           </Animated.View>
         </Animated.View>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

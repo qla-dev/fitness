@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useQueryClient } from '@tanstack/react-query';
 import Icon from '../components/Icon';
+import { SEARCH_INPUT_STYLE } from '../components/LibrarySearchBar';
 import SafeImage from '../components/SafeImage';
 import SegmentedControl from '../components/SegmentedControl';
 import {
@@ -167,7 +168,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
       return;
     // Default the provider once the list loads; guarded by a ref tracking an
     // explicit user selection, which keeps this from moving to a render-time derive.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setSelectedProvider(providers[0].id);
   }, [providers, selectedProvider]);
 
@@ -387,7 +388,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
   const renderSearchBar = () => (
     <View className="px-4 py-2">
       <View
-        className="flex-row items-center bg-raised rounded-lg px-3 py-2.5"
+        className="flex-row items-center bg-raised rounded-lg px-3 py-2"
         style={{
           borderWidth: 1,
           borderColor: isSearchFocused ? accentColor : borderSubtle,
@@ -397,7 +398,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
         <View className="flex-1 ml-2">
           <TextInput
             className="text-text-primary"
-            style={{ fontSize: 16, padding: 0, includeFontPadding: false }}
+            style={SEARCH_INPUT_STYLE}
             placeholder={t('exerciseSearch.search.placeholder', {
               defaultValue: 'Search exercises...',
             })}

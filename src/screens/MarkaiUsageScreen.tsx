@@ -13,7 +13,7 @@ import { COIN_PRODUCTS } from '../services/purchases/products';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /** Matches fitness.markai_free_daily, for a session saved before the backend sent it. */
-const DEFAULT_FREE_DAILY = 10;
+const DEFAULT_FREE_DAILY = 5;
 
 /**
  * MarkAI usage, opened from the history header: today's free messages and the

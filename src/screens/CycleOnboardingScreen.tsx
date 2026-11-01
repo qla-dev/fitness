@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import Toast from 'react-native-toast-message';
@@ -35,6 +35,7 @@ import {
   CYCLE_CONDITIONS,
   type CycleMode,
 } from '@workspace/shared';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type CycleOnboardingScreenProps = RootStackScreenProps<'CycleOnboarding'>;
 
@@ -300,15 +301,12 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 100,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {step === 1 && (
           <View className="gap-4">
@@ -526,7 +524,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
             )}
           </View>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       {/* Navigation Buttons for step-wise */}
       {step < 4 && (

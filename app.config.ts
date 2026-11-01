@@ -253,7 +253,7 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // The flat artwork: a single composed square with the brand's black
       // ground baked in, which is the opposite of what a .icon document's
       // transparent layers expect.
-      icon: './assets/icons/logo-v3.jpg',
+      icon: './assets/icons/logo-v4.png',
     },
     android: {
       // Same as ios: keep app.json's versionCode from autoIncrement.
@@ -261,13 +261,13 @@ export default ({ config }: ConfigContext): Partial<ExpoConfig> => {
       package: isDev ? DEV_PACKAGE : PROD_PACKAGE,
       permissions: androidPermissions,
       adaptiveIcon: {
-        // One flat artwork feeds every icon surface: the same opaque square
-        // with the brand's black ground baked in, carrying no alpha channel
+        // The same flat artwork as iOS: an opaque square with the brand's
+        // black ground baked in, carrying no alpha channel
         // (the App Store rejects an icon that has one, even fully opaque).
-        // The launcher mask crops the outer third of this foreground, which
-        // the mark's own margin absorbs; the background repaints the same
-        // black so the cropped edge cannot show through.
-        foregroundImage: './assets/icons/logo-v3.jpg',
+        // The launcher mask crops the outer third of this foreground, so the
+        // adaptive copy sets the arches inside the safe zone; the background
+        // repaints the same black so the cropped edge cannot show through.
+        foregroundImage: './assets/icons/logo-v4-adaptive.png',
         backgroundColor: '#000000',
       },
       // Google Maps (Run or Ride route map) needs an API key in the manifest;

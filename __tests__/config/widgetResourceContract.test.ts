@@ -97,6 +97,12 @@ const REQUIRED_KEYS = [
   'widget_preview_grams_protein',
   'widget_preview_grams_carbs',
   'widget_preview_grams_fat',
+  'qlafit_activity_widget_name',
+  'qlafit_activity_widget_description',
+  'widget_move',
+  'widget_exercise',
+  'widget_steps',
+  'widget_grams_left',
 ];
 
 // Keys that existed only for the removed resize/responsive experiment layouts.
@@ -126,13 +132,29 @@ const KOTLIN_TEMPLATES = [
   'MacroWidget.kt.tmpl',
   'CalorieWidgetReceiver.kt.tmpl',
   'MacroWidgetReceiver.kt.tmpl',
+  'ActivityWidget.kt.tmpl',
+  'ActivityWidgetReceiver.kt.tmpl',
   'CalorieWidgetModule.kt.tmpl',
   'WidgetLocale.kt.tmpl',
+];
+
+/** The Glance compositions, each rendering one widget. */
+const WIDGET_COMPOSITIONS = [
+  'CalorieWidget.kt.tmpl',
+  'MacroWidget.kt.tmpl',
+  'ActivityWidget.kt.tmpl',
+];
+
+const WIDGET_RECEIVER_TEMPLATES = [
+  'CalorieWidgetReceiver.kt.tmpl',
+  'MacroWidgetReceiver.kt.tmpl',
+  'ActivityWidgetReceiver.kt.tmpl',
 ];
 
 const WIDGET_INFO_XMLS = [
   'qlafit_calorie_widget_info.xml',
   'qlafit_macro_widget_info.xml',
+  'qlafit_activity_widget_info.xml',
 ];
 
 describe('Android widget localization contract', () => {
@@ -188,14 +210,22 @@ describe('Android widget localization contract', () => {
       // the native widget validator and the placeholder tests below.
     });
 
-    it('keeps the two widget names distinct in every shipped locale', () => {
+    it('keeps the widget names distinct in every shipped locale', () => {
+      const en = new Map(
+        readWidgetStringResources().map((r) => [r.name, r.value])
+      );
       for (const locale of SHIPPED_WIDGET_LOCALES) {
         const strings = new Map(
           readWidgetStringResources(locale).map((r) => [r.name, r.value])
         );
-        expect(strings.get('qlafit_calorie_widget_name')).not.toBe(
-          strings.get('qlafit_macro_widget_name')
-        );
+        // A locale without its own name falls back to the English one.
+        const name = (key: string) => strings.get(key) || en.get(key);
+        const names = [
+          name('qlafit_calorie_widget_name'),
+          name('qlafit_macro_widget_name'),
+          name('qlafit_activity_widget_name'),
+        ];
+        expect(new Set(names).size).toBe(names.length);
       }
     });
 
@@ -203,7 +233,11 @@ describe('Android widget localization contract', () => {
       const en = new Map(
         readWidgetStringResources().map((r) => [r.name, r.value])
       );
-      const placeholderKeys = ['widget_kcal_left', 'widget_grams'];
+      const placeholderKeys = [
+        'widget_kcal_left',
+        'widget_grams',
+        'widget_grams_left',
+      ];
       for (const locale of SHIPPED_WIDGET_LOCALES) {
         if (locale === SOURCE_LOCALE) continue;
         const target = new Map(
@@ -310,7 +344,7 @@ describe('Android widget localization contract', () => {
       expect(helper).not.toContain('String.format(Locale.US');
       expect(helper).not.toContain('%,d');
 
-      for (const template of ['CalorieWidget.kt.tmpl', 'MacroWidget.kt.tmpl']) {
+      for (const template of WIDGET_COMPOSITIONS) {
         const src = fs.readFileSync(path.join(KOTLIN_ROOT, template), 'utf8');
         expect(src).toMatch(/formatWidgetInt\(/);
         expect(src).not.toContain('String.format(Locale.US');
@@ -363,22 +397,33 @@ describe('Android widget localization contract', () => {
       expect(moduleSrc).toMatch(
         /getGlanceIds\(MacroWidget::class\.java\)\.forEach/
       );
+      expect(moduleSrc).toMatch(
+        /getGlanceIds\(ActivityWidget::class\.java\)\.forEach/
+      );
+      expect(moduleSrc).toMatch(/fun setActivitySnapshot\(/);
+      expect(moduleSrc).toMatch(/fun reloadActivityWidget\(/);
       expect(moduleSrc).not.toMatch(/getGlanceIds\([^)]*\)\[0\]/);
       expect(moduleSrc).toMatch(/catch \(e: CancellationException\)/);
       expect(moduleSrc).toMatch(/var firstFailure: Exception\?/);
     });
 
     it('keeps the midnight refresh mechanism with distinct request codes', () => {
-      const calorieReceiver = fs.readFileSync(
-        path.join(KOTLIN_ROOT, 'CalorieWidgetReceiver.kt.tmpl'),
-        'utf8'
+      const receivers = WIDGET_RECEIVER_TEMPLATES.map((template) =>
+        fs.readFileSync(path.join(KOTLIN_ROOT, template), 'utf8')
       );
-      const macroReceiver = fs.readFileSync(
-        path.join(KOTLIN_ROOT, 'MacroWidgetReceiver.kt.tmpl'),
-        'utf8'
+      const requestCodes = receivers.map(
+        (src) =>
+          /getBroadcast\(context, (\w+), intent, flags\)/.exec(src)?.[1] ?? ''
       );
+      const resolved = requestCodes.map((code, index) =>
+        /^\d+$/.test(code)
+          ? code
+          : (new RegExp(`${code} = (\\d+)`).exec(receivers[index])?.[1] ?? '')
+      );
+      expect(resolved.every((code) => code !== '')).toBe(true);
+      expect(new Set(resolved).size).toBe(resolved.length);
 
-      for (const src of [calorieReceiver, macroReceiver]) {
+      for (const src of receivers) {
         expect(src).toMatch(/ACTION_MIDNIGHT_REFRESH/);
         expect(src).toMatch(/updateAll\(context\)/);
         expect(src).toMatch(/scheduleMidnightRefresh\(context\)/);
@@ -391,10 +436,7 @@ describe('Android widget localization contract', () => {
       // Out-of-app App Language changes (Android Settings) must refresh the
       // widgets without the app foregrounding. Both receivers react to the
       // manifest-registered LOCALE_CHANGED broadcast and call updateAll.
-      for (const template of [
-        'CalorieWidgetReceiver.kt.tmpl',
-        'MacroWidgetReceiver.kt.tmpl',
-      ]) {
+      for (const template of WIDGET_RECEIVER_TEMPLATES) {
         const src = fs.readFileSync(path.join(KOTLIN_ROOT, template), 'utf8');
         expect(src).toMatch(/Intent\.ACTION_LOCALE_CHANGED/);
         expect(src).toMatch(/glanceAppWidget\.updateAll\(context\)/);
@@ -429,7 +471,7 @@ describe('Android widget localization contract', () => {
       }
     });
 
-    it('keeps the classic provider footprints (calorie 110x40 2x1, macro 110x110 2x2)', () => {
+    it('keeps the provider footprints (calorie 110x40 2x1, macro and activity 110x110 2x2)', () => {
       const calorie = fs.readFileSync(
         path.join(RES_ROOT, 'xml', 'qlafit_calorie_widget_info.xml'),
         'utf8'
@@ -445,14 +487,20 @@ describe('Android widget localization contract', () => {
       expect(calorie).toMatch(/android:targetCellWidth="2"/);
       expect(calorie).toMatch(/android:targetCellHeight="1"/);
 
-      // Macro: classic 2x2 footprint.
-      expect(macro).toMatch(/android:minWidth="110dp"/);
-      expect(macro).toMatch(/android:minHeight="110dp"/);
-      expect(macro).toMatch(/android:targetCellWidth="2"/);
-      expect(macro).toMatch(/android:targetCellHeight="2"/);
+      // Macro and activity: 2x2 footprint.
+      const activity = fs.readFileSync(
+        path.join(RES_ROOT, 'xml', 'qlafit_activity_widget_info.xml'),
+        'utf8'
+      );
+      for (const square of [macro, activity]) {
+        expect(square).toMatch(/android:minWidth="110dp"/);
+        expect(square).toMatch(/android:minHeight="110dp"/);
+        expect(square).toMatch(/android:targetCellWidth="2"/);
+        expect(square).toMatch(/android:targetCellHeight="2"/);
+      }
     });
 
-    it('registers both widget receivers for APPWIDGET_UPDATE and LOCALE_CHANGED', () => {
+    it('registers every widget receiver for APPWIDGET_UPDATE and LOCALE_CHANGED', () => {
       // The config plugin declares the receiver intent-filter in the manifest.
       // LOCALE_CHANGED is an explicit exemption from the Android 8+ implicit
       // broadcast limits and covers per-app locale changes, so widgets can
@@ -468,6 +516,14 @@ describe('Android widget localization contract', () => {
       expect(pluginSrc).toMatch(/'android:exported': 'false'/);
       expect(pluginSrc).toMatch(/for \(const receiver of WIDGET_RECEIVERS\)/);
       expect(pluginSrc).not.toMatch(/'android:exported': 'true'/);
+      for (const receiver of [
+        'CalorieWidgetReceiver',
+        'MacroWidgetReceiver',
+        'ActivityWidgetReceiver',
+      ]) {
+        expect(pluginSrc).toContain(`\${WIDGET_PACKAGE}.${receiver}`);
+      }
+      expect(pluginSrc).toContain('@xml/qlafit_activity_widget_info');
     });
 
     it('restores the classic macro size mode (single 200x200 responsive size)', () => {
@@ -483,7 +539,7 @@ describe('Android widget localization contract', () => {
     });
 
     it('never uses SizeMode.Exact, LocalSize.current or size-driven logic in the Glance widgets', () => {
-      for (const template of ['CalorieWidget.kt.tmpl', 'MacroWidget.kt.tmpl']) {
+      for (const template of WIDGET_COMPOSITIONS) {
         const src = fs.readFileSync(path.join(KOTLIN_ROOT, template), 'utf8');
         expect(src).not.toMatch(/import androidx\.glance\.LocalSize/);
         expect(src).not.toMatch(/LocalSize\.current/);
@@ -496,50 +552,78 @@ describe('Android widget localization contract', () => {
       }
     });
 
-    it('keeps the classic calorie composition (one-line heading, progress, actions)', () => {
+    it('draws the calorie arcs with the remaining line and the actions', () => {
       const src = fs.readFileSync(
         path.join(KOTLIN_ROOT, 'CalorieWidget.kt.tmpl'),
         'utf8'
       );
-      // Classic structure: 12dp padding, one-line bold 18sp heading, 8dp gap +
-      // 8dp progress, flexible spacer, then the 32dp action row with 24dp
-      // icons and a 24dp divider.
-      expect(src).toMatch(/\.padding\(12\.dp\)/);
-      expect(src).toMatch(/fontSize = 18\.sp/);
+      // Eaten (outer) and burned (inner) arcs, as on the Tracker's card.
+      expect(src).toMatch(/WidgetGraphics\.calorieArcs\(/);
+      expect(src).toMatch(/burnedProgress/);
+      expect(src).toMatch(/optionalDouble\("burnGoal"\)/);
+      // One-line localized remaining figure under the arcs.
+      expect(src).toMatch(/R\.string\.widget_kcal_left\b/);
       expect(src).toMatch(/maxLines = 1/);
-      expect(src).toMatch(/\.height\(8\.dp\)/);
-      expect(src).toMatch(/GlanceModifier\.defaultWeight\(\)/);
-      expect(src).toMatch(/\.height\(32\.dp\)/);
-      expect(src).toMatch(/\.size\(24\.dp\)/);
-      expect(src).toMatch(/\.height\(24\.dp\)/);
-      // Actions are always part of the classic default; no height-based hiding.
+      expect(src).toMatch(/\.padding\(12\.dp\)/);
+      // The search/scan shortcuts stay part of the widget.
       expect(src).toMatch(/R\.drawable\.ic_widget_search/);
       expect(src).toMatch(/R\.drawable\.ic_widget_scan/);
+      expect(src).not.toMatch(/LinearProgressIndicator/);
     });
 
-    it('keeps the classic macro composition (centered content block, inline rows, actions)', () => {
+    it('draws the macros as goal rings with the kcal header and actions', () => {
       const src = fs.readFileSync(
         path.join(KOTLIN_ROOT, 'MacroWidget.kt.tmpl'),
         'utf8'
       );
-      // Classic container strategy: Box centers a CONTENT-SIZED column.
+      // Box centers a content-sized column.
       expect(src).toMatch(/contentAlignment = Alignment\.Center/);
       expect(src).toMatch(
         /Column\(modifier = GlanceModifier\.fillMaxWidth\(\)\)/
       );
-      expect(src).not.toMatch(
-        /Column\(modifier = GlanceModifier\.fillMaxSize\(\)\)/
-      );
-      // The kcal header and all macro rows are always rendered.
       expect(src).toMatch(/CalorieHeader\(/);
-      expect(src).toMatch(/MacroRows\(/);
-      // Rows stay inline: colored dot + label + value on one line.
-      expect(src).toMatch(/R\.string\.widget_grams/);
-      // The action row is always rendered in the classic footprint.
+      expect(src).toMatch(/MacroRings\(/);
+      expect(src).toMatch(/WidgetGraphics\.ring\(/);
+      expect(src).toMatch(/R\.string\.widget_grams\b/);
+      expect(src).toMatch(/R\.string\.widget_grams_left/);
       expect(src).toMatch(/R\.drawable\.ic_widget_search/);
       expect(src).toMatch(/R\.drawable\.ic_widget_scan/);
       expect(src).toMatch(/\.height\(40\.dp\)/);
-      expect(src).not.toMatch(/if \(showActions\)/);
+      expect(src).not.toMatch(/LinearProgressIndicator/);
+    });
+
+    it('draws the activity rings with a localized figure per ring', () => {
+      const src = fs.readFileSync(
+        path.join(KOTLIN_ROOT, 'ActivityWidget.kt.tmpl'),
+        'utf8'
+      );
+      expect(src).toMatch(/WidgetGraphics\.activityRings\(/);
+      for (const ref of ['widget_move', 'widget_exercise', 'widget_steps']) {
+        expect(src).toMatch(new RegExp(`R\\.string\\.${ref}`));
+      }
+      expect(src).toMatch(/ActivityWidgetReceiver\.PREFS_KEY_SNAPSHOT/);
+    });
+
+    it('keeps the ring and arc drawing in one shared helper with the app colours', () => {
+      const graphics = fs.readFileSync(
+        path.join(KOTLIN_ROOT, 'WidgetGraphics.kt'),
+        'utf8'
+      );
+      // ACTIVITY_RING_COLORS and the light/dark macro tokens from global.css.
+      for (const hex of [
+        'FF375F',
+        'A8EF00',
+        '00D8EB',
+        '7AD680',
+        '89C88D',
+        'AD74E7',
+        'B388DD',
+        'F6B151',
+        'E3AE63',
+      ]) {
+        expect(graphics).toContain(hex);
+      }
+      expect(graphics).toMatch(/UI_MODE_NIGHT_YES/);
     });
   });
 
@@ -651,10 +735,7 @@ describe('Android widget localization contract', () => {
     });
 
     it('refreshes the broadcast locale payload before LOCALE_CHANGED updateAll', () => {
-      for (const receiver of [
-        'CalorieWidgetReceiver.kt.tmpl',
-        'MacroWidgetReceiver.kt.tmpl',
-      ]) {
+      for (const receiver of WIDGET_RECEIVER_TEMPLATES) {
         const src = fs.readFileSync(path.join(KOTLIN_ROOT, receiver), 'utf8');
         const refreshIndex = src.indexOf(
           'refreshEffectiveRenderLocaleFromBroadcast(context, intent)'
@@ -749,8 +830,8 @@ describe('Android widget localization contract', () => {
       );
     });
 
-    it('makes both active widget compositions observe the locale revision state', () => {
-      for (const template of ['CalorieWidget.kt.tmpl', 'MacroWidget.kt.tmpl']) {
+    it('makes every active widget composition observe the locale revision state', () => {
+      for (const template of WIDGET_COMPOSITIONS) {
         const src = fs.readFileSync(path.join(KOTLIN_ROOT, template), 'utf8');
         expect(src).toMatch(/currentState<Preferences>\(\)/);
         expect(src).toMatch(
@@ -776,6 +857,13 @@ describe('Android widget localization contract', () => {
 
       expect(calorieInfo).toContain('@string/qlafit_widget_description');
       expect(macroInfo).toContain('@string/qlafit_macro_widget_description');
+      const activityInfo = fs.readFileSync(
+        path.join(RES_ROOT, 'xml', 'qlafit_activity_widget_info.xml'),
+        'utf8'
+      );
+      expect(activityInfo).toContain(
+        '@string/qlafit_activity_widget_description'
+      );
     });
   });
 
@@ -784,6 +872,7 @@ describe('Android widget localization contract', () => {
       for (const layout of [
         'qlafit_widget_initial_layout.xml',
         'qlafit_macro_widget_initial_layout.xml',
+        'qlafit_activity_widget_initial_layout.xml',
       ]) {
         const src = fs.readFileSync(
           path.join(RES_ROOT, 'layout', layout),
@@ -815,39 +904,57 @@ describe('Android widget localization contract', () => {
       expect(macroLayout).toContain('@string/widget_preview_grams_protein');
     });
 
-    it('calorie preview mirrors the classic one-line heading', () => {
+    it('calorie preview shows the arcs, the remaining line and the actions', () => {
       const calorieLayout = fs.readFileSync(
         path.join(RES_ROOT, 'layout', 'qlafit_widget_initial_layout.xml'),
         'utf8'
       );
-      // Classic one-line heading, not the two-line caption/value split.
+      expect(calorieLayout).toContain('@drawable/ic_widget_preview_arcs');
       expect(calorieLayout).toContain('@string/widget_preview_calories_left');
       expect(calorieLayout).not.toContain('@string/widget_kcal_left_caption');
       expect(calorieLayout).not.toContain(
         '@string/widget_preview_calories_value'
       );
-      // Progress + action row present like the classic default.
       expect(calorieLayout).toContain('@string/widget_search_food');
       expect(calorieLayout).toContain('@string/widget_scan_barcode');
     });
 
-    it('macro preview mirrors the classic one-line header and inline rows', () => {
+    it('macro preview shows each macro as a ring with its grams inside', () => {
       const macroLayout = fs.readFileSync(
         path.join(RES_ROOT, 'layout', 'qlafit_macro_widget_initial_layout.xml'),
         'utf8'
       );
-      // One-line kcal header (no caption/value split).
       expect(macroLayout).toContain('@string/widget_preview_macros_left');
       expect(macroLayout).not.toContain('@string/widget_kcal_left_caption');
       expect(macroLayout).not.toContain('@string/widget_preview_macros_value');
-      // Inline rows: label and gram value live in the SAME row.
-      const carbsIndex = macroLayout.indexOf('@string/widget_carbs');
-      const gramsCarbsIndex = macroLayout.indexOf(
-        '@string/widget_preview_grams_carbs'
+      for (const macro of ['protein', 'carbs', 'fat']) {
+        const ringIndex = macroLayout.indexOf(
+          `@drawable/ic_widget_preview_ring_${macro}`
+        );
+        const gramsIndex = macroLayout.indexOf(
+          `@string/widget_preview_grams_${macro}`
+        );
+        const labelIndex = macroLayout.indexOf(`@string/widget_${macro}"`);
+        expect(ringIndex).toBeGreaterThan(-1);
+        expect(gramsIndex).toBeGreaterThan(ringIndex);
+        expect(labelIndex).toBeGreaterThan(gramsIndex);
+        expect(labelIndex - ringIndex).toBeLessThan(1200);
+      }
+    });
+
+    it('activity preview shows the rings and their names', () => {
+      const activityLayout = fs.readFileSync(
+        path.join(
+          RES_ROOT,
+          'layout',
+          'qlafit_activity_widget_initial_layout.xml'
+        ),
+        'utf8'
       );
-      expect(carbsIndex).toBeGreaterThan(-1);
-      expect(gramsCarbsIndex).toBeGreaterThan(carbsIndex);
-      expect(gramsCarbsIndex - carbsIndex).toBeLessThan(900);
+      expect(activityLayout).toContain('@drawable/ic_widget_preview_rings');
+      for (const ref of ['widget_move', 'widget_exercise', 'widget_steps']) {
+        expect(activityLayout).toContain(`@string/${ref}`);
+      }
     });
   });
 });

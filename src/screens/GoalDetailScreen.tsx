@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActivityMetricChart from '../components/ActivityMetricChart';
@@ -51,6 +51,7 @@ import { CHART_PLOT_HEIGHT } from '../constants/charts';
 import { RANGE_DAYS } from '../types/healthTrends';
 import type { HealthTrendDateRange } from '../types/healthTrends';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type GoalDetailScreenProps = RootStackScreenProps<'GoalDetail'>;
 type IconName = React.ComponentProps<typeof Icon>['name'];
@@ -538,15 +539,11 @@ export default function GoalDetailScreen({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         className="flex-1"
         // No horizontal padding: the card below runs edge to edge, so the
         // padding belongs to the blocks inside it rather than to the page.
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
         showsVerticalScrollIndicator={false}
       >
         {/* One surface, edge to edge: the picker, the number it changes and the
@@ -726,7 +723,7 @@ export default function GoalDetailScreen({
           distanceUnit={distanceUnit}
         />
         <GoalApps metric={metric} title={title} />
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 }

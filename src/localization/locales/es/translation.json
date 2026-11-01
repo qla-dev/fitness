@@ -11,7 +11,9 @@
       "managedByIOS": "Gestionado por iOS",
       "iosSettingsHint": "Cambia el idioma de esta app en los Ajustes de iOS",
       "openSettingsFailed": "No se pudieron abrir los Ajustes de iOS",
-      "iosSubtitle": "{{language}} · {{managedBy}}"
+      "iosSubtitle": "{{language}} · {{managedBy}}",
+      "italian": "Italiano",
+      "german": "Deutsch"
     },
     "app": "Ajustes de la app",
     "lastSynced": "Última sincronización {{time}}",
@@ -133,7 +135,7 @@
     "foods": "Alimentos",
     "meals": "Comidas",
     "exercises": "Ejercicios",
-    "diary": "Diario",
+    "diary": "Tracker",
     "details": "Detalles",
     "dashboard": "Panel",
     "add": "Añadir",
@@ -148,7 +150,7 @@
     "loadFailed": "No se pudo cargar el diario",
     "checkConnection": "Comprueba tu conexión e inténtalo de nuevo.",
     "retry": "Reintentar",
-    "title": "Diario",
+    "title": "Tracker",
     "addFood": "Añadir alimento",
     "emptyDay": "No hay entradas registradas para este día"
   },
@@ -2127,7 +2129,8 @@
       "failedRemoveDose": "No se pudo quitar la toma de {{name}}",
       "failedUnmark": "No se pudo desmarcar {{name}}",
       "failedUpdate": "No se pudo actualizar {{name}}",
-      "failedLog": "No se pudo registrar {{name}}"
+      "failedLog": "No se pudo registrar {{name}}",
+      "undo": "Deshacer"
     },
     "card": {
       "title": "Medicación",
@@ -2198,7 +2201,11 @@
     "inactiveCount_other": "Inactivos ({{count}})",
     "mealRelation": {
       "awayFromMeals": "Lejos de las comidas"
-    }
+    },
+    "trackingTitle": "Cada dosis en su sitio. Detén el seguimiento cuando quieras; tu lista se queda aquí.",
+    "trackingOffTitle": "Los medicamentos no están en tu Tracker. Empieza a registrar para recuperarlos.",
+    "stopTitle": "¿Dejar de registrar medicamentos?",
+    "stopMessage": "Los medicamentos salen de tu Tracker. Tus medicamentos y dosis registradas se conservan, y puedes volver a registrarlos desde aquí."
   },
   "pregnancy": {
     "prompt": {
@@ -2661,7 +2668,10 @@
       "day": "Día {{day}}",
       "dayCycle_one": "Ciclo de {{count}} día",
       "dayCycle_other": "Ciclo de {{count}} días"
-    }
+    },
+    "trackingTitle": "Tu ritmo, a tu manera. Pausa cuando quieras y retómalo desde Perfil.",
+    "stopTitle": "¿Dejar de registrar el ciclo?",
+    "stopMessage": "El seguimiento del ciclo se desactiva y sale de tu Tracker. Tus días registrados se conservan y puedes volver a activarlo en Perfil, en Ciclo y embarazo."
   },
   "cycleLog": {
     "saved": "Guardado",
@@ -4512,5 +4522,49 @@
   },
   "foodEntryMeal": {
     "failed": "No se pudo añadir la comida"
+  },
+  "featureFacts": {
+    "heading": "Bueno saber",
+    "cycle": {
+      "cover1Title": "Más que tu periodo",
+      "cover1Body": "Un ciclo pasa por cuatro fases: menstrual, folicular, ovulación y lútea. La energía, el sueño, el apetito y el estado de ánimo pueden cambiar en cada una, así que saber en qué punto estás ayuda a entender el resto del día.",
+      "cover2Title": "Más precisas con cada ciclo",
+      "cover2Body": "Las predicciones salen de los ciclos que registras. Marca cuándo empieza y termina cada periodo, y las estimaciones de tu próximo periodo y de tu ventana fértil se ajustarán cada vez más a tu propio ritmo.",
+      "aboutTitle": "Sobre el seguimiento del ciclo",
+      "aboutBody": "En adultas son habituales los ciclos de entre 21 y 35 días, y el estrés, los viajes, una enfermedad o un cambio de rutina pueden adelantarlos o retrasarlos varios días. Las predicciones son estimaciones, no un método anticonceptivo. Consulta con un profesional sanitario si el periodo desaparece durante tres meses o más, o si el sangrado o el dolor son mucho más intensos de lo habitual."
+    },
+    "medications": {
+      "cover1Title": "La rutina es el mejor recordatorio",
+      "cover1Body": "Las dosis ligadas a algo que ya haces, como desayunar o lavarte los dientes, son las que se toman. Registra cada dosis al tomarla y el día mostrará lo que ya está hecho y lo que falta.",
+      "cover2Title": "Las dosis a demanda también cuentan",
+      "cover2Body": "Registrar los analgésicos y otros medicamentos que tomas a demanda muestra con qué frecuencia recurres a ellos. Unas semanas de ese registro son útiles para tu próxima consulta.",
+      "aboutTitle": "Sobre el seguimiento de medicamentos",
+      "aboutBody": "Medicamentos guarda las dosis que registras y te recuerda los horarios que configuras. No comprueba dosis ni interacciones. Sigue las indicaciones de tu médico o farmacéutico, y pregúntales antes de duplicar una dosis tras olvidar una."
+    }
+  },
+  "medicationSetup": {
+    "doseUnit": {
+      "pill": "pastilla",
+      "tablet": "comprimido",
+      "capsule": "cápsula",
+      "ml": "ml",
+      "patch": "parche",
+      "puff": "inhalación",
+      "drop": "gota",
+      "spray": "pulverización",
+      "application": "aplicación",
+      "suppository": "supositorio"
+    },
+    "typeHeading": "¿Qué forma tiene?",
+    "doseHeading": "¿Cuánto por dosis?",
+    "suggestSource": "Sugerencias de la Biblioteca Nacional de Medicina de EE. UU.",
+    "scheduleHeading": "¿Cuándo lo tomas?",
+    "scheduleHint": "Configura un horario para recibir recordatorios, u omite este paso para registrar dosis a demanda.",
+    "adjustSchedule": "Ajustar horario"
+  },
+  "tracking": {
+    "stop": "Dejar de registrar",
+    "start": "Empezar a registrar",
+    "settings": "Ajustes de seguimiento"
   }
 }

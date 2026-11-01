@@ -8,6 +8,7 @@ import { addLog } from '../services/LogService';
 
 const WIDGET_KIND = 'widget';
 const MACRO_WIDGET_KIND = 'macroWidget';
+const ACTIVITY_WIDGET_KIND = 'activityWidget';
 
 /**
  * The exact state the WidgetKit layer was last fully synced to. Dedupe only
@@ -77,6 +78,15 @@ export function useIOSWidgetLanguageRefresh(): void {
       } catch (error) {
         addLog(
           `[useIOSWidgetLanguageRefresh] Macro widget reload failed: ${error}`,
+          'ERROR'
+        );
+        fullyApplied = false;
+      }
+      try {
+        ExtensionStorage.reloadWidget(ACTIVITY_WIDGET_KIND);
+      } catch (error) {
+        addLog(
+          `[useIOSWidgetLanguageRefresh] Activity widget reload failed: ${error}`,
           'ERROR'
         );
         fullyApplied = false;

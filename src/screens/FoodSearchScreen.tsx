@@ -18,6 +18,7 @@ import Button from '../components/ui/Button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
+import { SEARCH_INPUT_STYLE } from '../components/LibrarySearchBar';
 import AnchoredMenu, {
   AnchorRect,
   measureAnchoredMenuTrigger,
@@ -186,7 +187,9 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
 
   // Seeded when the Add tab's field was submitted: the query was typed there,
   // so this screen opens on its results rather than on an empty box.
-  const [searchText, setSearchText] = useState(route.params?.initialQuery ?? '');
+  const [searchText, setSearchText] = useState(
+    route.params?.initialQuery ?? ''
+  );
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loadingFoodId, setLoadingFoodId] = useState<string | null>(null);
 
@@ -1078,7 +1081,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
       )}
 
       <View
-        className="flex-1 flex-row items-center bg-raised rounded-lg px-3 py-2.5"
+        className="flex-1 flex-row items-center bg-raised rounded-lg px-3 py-2"
         style={{
           borderWidth: 1,
           borderColor: isSearchFocused ? accentColor : 'transparent',
@@ -1095,7 +1098,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
         <View className="flex-1 ml-2">
           <TextInput
             className="text-text-primary"
-            style={{ fontSize: 16, padding: 0, includeFontPadding: false }}
+            style={SEARCH_INPUT_STYLE}
             placeholder={t('foodSearch.search.placeholder', {
               defaultValue: 'Search foods...',
             })}

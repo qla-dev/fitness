@@ -17,6 +17,60 @@ export interface AndroidCalorieSnapshot {
   remaining: number;
   goal: number;
   progress: number;
+  /** Eaten, for the outer arc's label. Absent in snapshots written before the arc redesign. */
+  food?: number;
+  /** Burned, the inner arc. */
+  burned?: number;
+  /** The Move goal the inner (burned) arc fills against, as the Tracker's card does. */
+  burnGoal?: number;
+}
+
+/**
+ * The Activity rings widget (Move / Exercise / Steps), on both platforms: iOS
+ * reads it from the app group as `activitySnapshot`, Android through
+ * `setActivitySnapshot`. `steps` is absent when no step count is known — the
+ * ring then reads as empty, the way the Dashboard draws a zero.
+ */
+export interface WidgetActivitySnapshot {
+  date: string;
+  move: number;
+  moveGoal: number;
+  exercise: number;
+  exerciseGoal: number;
+  steps?: number;
+  stepsGoal: number;
+}
+
+const finiteOrZero = (value: number | null | undefined) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+/**
+ * The same three figures the Dashboard's Activity Rings card draws. Steps come
+ * from the health provider rather than the summary, so the caller passes them;
+ * without one, the summary's hourly breakdown stands in.
+ */
+export function buildWidgetActivitySnapshot(
+  summary: DailySummary,
+  steps?: number | null
+): WidgetActivitySnapshot {
+  const resolvedSteps =
+    typeof steps === 'number' && Number.isFinite(steps)
+      ? steps
+      : summary.hourlySteps && summary.hourlySteps.length > 0
+        ? summary.hourlySteps.reduce(
+            (total, value) => total + finiteOrZero(value),
+            0
+          )
+        : undefined;
+  return {
+    date: summary.date,
+    move: finiteOrZero(summary.activeCalories + summary.otherExerciseCalories),
+    moveGoal: finiteOrZero(summary.exerciseCaloriesGoal),
+    exercise: finiteOrZero(summary.exerciseMinutes),
+    exerciseGoal: finiteOrZero(summary.exerciseMinutesGoal),
+    ...(resolvedSteps === undefined ? {} : { steps: resolvedSteps }),
+    stepsGoal: finiteOrZero(summary.goals?.steps),
+  };
 }
 
 export interface AndroidMacroSnapshot {
@@ -31,9 +85,13 @@ export interface AndroidMacroSnapshot {
   fatGoal: number;
 }
 
-export function buildAndroidWidgetSnapshots(summary: DailySummary): {
+export function buildAndroidWidgetSnapshots(
+  summary: DailySummary,
+  steps?: number | null
+): {
   calorie?: AndroidCalorieSnapshot;
   macro: AndroidMacroSnapshot;
+  activity: WidgetActivitySnapshot;
 } {
   const balance = summary.calorieBalance;
   const calorie = balance
@@ -45,6 +103,9 @@ export function buildAndroidWidgetSnapshots(summary: DailySummary): {
           balance.goal > 0
             ? Math.max(0, Math.min(1, balance.progress / 100))
             : 0,
+        food: balance.eaten,
+        burned: balance.burned,
+        burnGoal: summary.exerciseCaloriesGoal,
       }
     : undefined;
 
@@ -61,6 +122,7 @@ export function buildAndroidWidgetSnapshots(summary: DailySummary): {
       carbsGoal: summary.carbs.goal,
       fatGoal: summary.fat.goal,
     },
+    activity: buildWidgetActivitySnapshot(summary, steps),
   };
 }
 
@@ -91,6 +153,16 @@ export async function pushAndroidMacroSnapshot(
   await CalorieWidgetBridge.reloadMacroWidget();
 }
 
+export async function pushAndroidActivitySnapshot(
+  snapshot: WidgetActivitySnapshot,
+  lastUpdated = Math.floor(Date.now() / 1000)
+): Promise<void> {
+  await CalorieWidgetBridge.setActivitySnapshot(
+    serializeWidgetPayload(snapshot, lastUpdated)
+  );
+  await CalorieWidgetBridge.reloadActivityWidget();
+}
+
 export async function refreshAndroidWidgetsFromServer(): Promise<void> {
   const timezone = await ensureTimezoneBootstrapped({ throwOnFailure: true });
   if (!timezone) {
@@ -107,6 +179,7 @@ export async function refreshAndroidWidgetsFromServer(): Promise<void> {
     updates.push(pushAndroidCalorieSnapshot(snapshots.calorie, lastUpdated));
   }
   updates.push(pushAndroidMacroSnapshot(snapshots.macro, lastUpdated));
+  updates.push(pushAndroidActivitySnapshot(snapshots.activity, lastUpdated));
 
   const results = await Promise.allSettled(updates);
   const firstFailure = results.find(

@@ -185,6 +185,9 @@ jest.mock('../../src/stores/activeWorkoutStore', () => ({
   useActiveWorkoutStore: { getState: () => ({ sessionId: null }) },
 }));
 
+// Cycle and medications cards query on their own; the Tracker only places them.
+jest.mock('../../src/components/CycleCard', () => () => null);
+jest.mock('../../src/components/MedicationsCard', () => () => null);
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: jest.fn(() => 0),
 }));

@@ -53,6 +53,7 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import type { Exercise } from '../types/exercise';
 import type { RootStackScreenProps } from '../types/navigation';
 import { localizeExerciseTaxonomyValue } from '../localization/exerciseTaxonomy';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ExerciseDetailScreenProps = RootStackScreenProps<'ExerciseDetail'>;
 
@@ -546,14 +547,11 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
       >
         {header}
 
-        <ScrollView
+        <NativeHeaderScrollView
           showsVerticalScrollIndicator={false}
           ref={scrollRef}
           className="flex-1"
           // The transparent bar reserves no space; iOS insets the content.
-          contentInsetAdjustmentBehavior={
-            usesNativeHeader ? 'automatic' : 'never'
-          }
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingTop: 16,
@@ -868,7 +866,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
               )}
             </>
           )}
-        </ScrollView>
+        </NativeHeaderScrollView>
       </View>
     </GestureDetector>
   );

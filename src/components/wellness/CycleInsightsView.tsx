@@ -265,7 +265,7 @@ const CycleInsightsView: React.FC = () => {
           })}
         </Text>
         {forecastEntries.length === 0 ? (
-          <Text className="text-text-secondary text-sm italic text-center py-4">
+          <Text className="text-text-secondary text-sm text-center py-4">
             {t('cycleInsights.forecastHint', {
               defaultValue:
                 'Log symptoms across a couple of cycles to forecast upcoming days.',

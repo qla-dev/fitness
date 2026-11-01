@@ -2,13 +2,7 @@ import React from 'react';
 import AppLogo from '../components/AppLogo';
 import AppWordmark from '../components/AppWordmark';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
 import { useCSSVariable } from 'uniwind';
@@ -18,6 +12,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type AboutScreenProps = RootStackScreenProps<'About'>;
 
@@ -159,16 +154,13 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           gap: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <View className="bg-surface rounded-2xl px-5 py-7 items-center">
           <AppLogo size={88} style={{ marginBottom: 16 }} />
@@ -267,7 +259,7 @@ const AboutScreen: React.FC<AboutScreenProps> = () => {
             year: new Date().getFullYear(),
           })}
         </Text>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

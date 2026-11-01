@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { Text, TouchableOpacity, View, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import Toast from 'react-native-toast-message';
@@ -29,6 +29,7 @@ import type { RootStackScreenProps } from '../types/navigation';
 import { useScreenHeader, type HeaderItem } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { formatLocalizedNumber } from '../localization';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type MealDetailScreenProps = RootStackScreenProps<'MealDetail'>;
 
@@ -333,16 +334,13 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
     const foodCount = meal.foods.length;
 
     return (
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1 bg-background"
         contentContainerClassName="px-4 py-4 gap-4"
         contentContainerStyle={{
           paddingBottom: insets.bottom + activeWorkoutBarPadding + 16,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : undefined
-        }
       >
         <View className="gap-2">
           <SegmentedControl
@@ -537,7 +535,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({
               : t('mealDetail.deleteMeal', { defaultValue: 'Delete Meal' })}
           </Button>
         ) : null}
-      </ScrollView>
+      </NativeHeaderScrollView>
     );
   };
 

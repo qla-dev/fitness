@@ -144,7 +144,6 @@ describe('MedicationsCard', () => {
     const screen = setupCard([buildMedication()]);
 
     expect(screen.getByText('Lisinopril')).toBeTruthy();
-    expect(screen.getByText('8:00 AM')).toBeTruthy();
     expect(
       screen.getByText('8:00 AM · Pill · 1 tablet', { exact: false })
     ).toBeTruthy();
@@ -196,10 +195,12 @@ describe('MedicationsCard', () => {
     expect(names).toEqual(['Morning Med', 'Evening Med']);
   });
 
-  it('toggles a dose from the circle', () => {
+  it('undoes a logged dose from its pill', () => {
+    mockEntryForDue.mockReturnValue({ status: 'taken' });
     const screen = setupCard([buildMedication()]);
 
-    fireEvent.press(screen.getByLabelText('Mark Lisinopril taken'));
+    expect(screen.getByText('Taken')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Unmark Lisinopril'));
     expect(mockToggleTaken).toHaveBeenCalledWith(
       expect.objectContaining({
         medication: expect.objectContaining({ id: 'med-1' }),
@@ -217,7 +218,7 @@ describe('MedicationsCard', () => {
     ).toBeTruthy();
   });
 
-  it('logs PRN medications from the circle and the Log button', () => {
+  it('logs PRN medications from the Log button', () => {
     const med = buildMedication({
       id: 'med-prn',
       name: 'Ibuprofen',
@@ -240,10 +241,10 @@ describe('MedicationsCard', () => {
     });
   });
 
-  it('navigates to the medications list from the header link', () => {
+  it('navigates to the medications list from the section link', () => {
     const screen = setupCard([buildMedication()]);
 
-    fireEvent.press(screen.getByText('View all'));
+    fireEvent.press(screen.getByText('More'));
     expect(mockNavigate).toHaveBeenCalledWith('MedicationsList');
   });
 

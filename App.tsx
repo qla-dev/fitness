@@ -1076,15 +1076,6 @@ function AppContent() {
 }
 
 function SafeAreaToast() {
-  const insets = useSafeAreaInsets();
-  // Flush with the safe area rather than 5 below it: the toast sits closest
-  // to the status bar of anything on screen, and the gap read as a misalignment
-  // against the header beside it.
-  // Swipe-to-dismiss lives in the toast itself (Gesture Handler); the
-  // library's own PanResponder is off so the two never fight over a drag.
-  const toast = (
-    <Toast config={toastConfig} topOffset={insets.top} swipeable={false} />
-  );
   // On iOS a plain Toast renders in the normal view tree, so it appears *under*
   // native modals (rename dialogs, form sheets, anchored menus). A
   // FullWindowOverlay hoists it above every window — matching how the app's
@@ -1092,17 +1083,36 @@ function SafeAreaToast() {
   // this problem, and FullWindowOverlay is a no-op there.
   // The overlay is its own native root, outside the app's
   // GestureHandlerRootView, so gestures inside it need a root of their own.
+  // It also gets its own SafeAreaProvider: a provider reports insets against
+  // its own frame, and the app's could read a short top inset on the fallback
+  // (Liquid Glass off) layout, which parked the toast over the status bar.
+  // The overlay spans the whole window, so the inset measured in it is the
+  // window's.
   return Platform.OS === 'ios' ? (
     <FullWindowOverlay>
-      <GestureHandlerRootView
+      <SafeAreaProvider
         style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
         pointerEvents="box-none"
       >
-        {toast}
-      </GestureHandlerRootView>
+        <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
+          <InsetToast />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     </FullWindowOverlay>
   ) : (
-    toast
+    <InsetToast />
+  );
+}
+
+function InsetToast() {
+  const insets = useSafeAreaInsets();
+  // Flush with the safe area rather than 5 below it: the toast sits closest
+  // to the status bar of anything on screen, and the gap read as a misalignment
+  // against the header beside it.
+  // Swipe-to-dismiss lives in the toast itself (Gesture Handler); the
+  // library's own PanResponder is off so the two never fight over a drag.
+  return (
+    <Toast config={toastConfig} topOffset={insets.top} swipeable={false} />
   );
 }
 

@@ -462,7 +462,16 @@ export type RootStackParamList = {
   MedicationsList: undefined;
   MedicationDetail: { medicationId: string };
   MedicationForm: { medicationId?: string };
-  MedicationScheduleForm: { medicationId: string; scheduleId?: string };
+  /**
+   * Without a medicationId the form is a draft for a medication still being
+   * added: Save hands the schedule back to the questionnaire instead.
+   */
+  MedicationScheduleForm: {
+    medicationId?: string;
+    scheduleId?: string;
+    /** The draft's dose unit, which a saved medication supplies itself. */
+    doseUnit?: string;
+  };
 };
 
 declare global {

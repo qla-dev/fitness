@@ -35,6 +35,11 @@ const WIDGET_RECEIVERS = [
     label: '@string/qlafit_macro_widget_name',
     provider: '@xml/qlafit_macro_widget_info',
   },
+  {
+    name: `${WIDGET_PACKAGE}.ActivityWidgetReceiver`,
+    label: '@string/qlafit_activity_widget_name',
+    provider: '@xml/qlafit_activity_widget_info',
+  },
 ];
 
 const TEMPLATE_SUFFIX = '.tmpl';

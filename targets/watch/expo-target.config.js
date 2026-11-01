@@ -64,7 +64,7 @@ module.exports = () => {
     name: 'qlafitWatch',
     displayName: 'qla.fitWatch',
     bundleIdentifier: `${companionBundleIdentifier}.watchkitapp`,
-    icon: '../../assets/icons/logo-v3.jpg',
+    icon: '../../assets/icons/logo-v4.png',
     deploymentTarget: '10.0',
     frameworks: ['HealthKit', 'WatchConnectivity'],
     entitlements: {

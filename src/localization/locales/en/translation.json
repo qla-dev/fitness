@@ -99,7 +99,9 @@
       "managedByIOS": "Managed by iOS",
       "iosSettingsHint": "Change this app's language in iOS Settings",
       "openSettingsFailed": "Could not open iOS Settings",
-      "iosSubtitle": "{{language}} · {{managedBy}}"
+      "iosSubtitle": "{{language}} · {{managedBy}}",
+      "italian": "Italiano",
+      "german": "Deutsch"
     },
     "lastSynced": "Last synced {{time}}",
     "addServer": "Tap to add a server",
@@ -1238,7 +1240,8 @@
       "failedRemoveDose": "Failed to remove {{name}} dose",
       "failedUnmark": "Failed to unmark {{name}}",
       "failedUpdate": "Failed to update {{name}}",
-      "failedLog": "Failed to log {{name}}"
+      "failedLog": "Failed to log {{name}}",
+      "undo": "Undo"
     },
     "card": {
       "title": "Medications",
@@ -1309,7 +1312,11 @@
     "inactiveCount_other": "Inactive ({{count}})",
     "mealRelation": {
       "awayFromMeals": "Away from meals"
-    }
+    },
+    "trackingTitle": "Every dose in its place. Stop any time; your list stays here.",
+    "trackingOffTitle": "Medications are off your Tracker. Start tracking to bring them back.",
+    "stopTitle": "Stop medication tracking?",
+    "stopMessage": "Medications leave your Tracker. Your medications and logged doses are kept, and you can start tracking again from here."
   },
   "scheduleSummary": {
     "daily": "Daily",
@@ -4979,7 +4986,10 @@
       "day": "Day {{day}}",
       "dayCycle_one": "{{count}}-day cycle",
       "dayCycle_other": "{{count}}-day cycle"
-    }
+    },
+    "trackingTitle": "Your rhythm, on your terms. Pause any time and pick it up again from Profile.",
+    "stopTitle": "Stop cycle tracking?",
+    "stopMessage": "Cycle tracking turns off and leaves your Tracker. Your logged days are kept, and you can turn it back on in Profile under Cycle & Pregnancy."
   },
   "workoutPresetLibrary": {
     "configure": "Configure your server connection in Settings to view your workout programs."
@@ -6437,7 +6447,7 @@
     "capMetrics": "METRICS",
     "capMetricsValue": "Explained",
     "chooseBundle": "CHOOSE A BUNDLE",
-    "bundleIntro": "A one-time purchase, no subscription. Your 10 free messages a day are used first.",
+    "bundleIntro": "A one-time purchase, no subscription. Your 5 free messages a day are used first.",
     "bestValue": "BEST VALUE",
     "oneTimeShort": "one-time",
     "messageUnit_one": "message",
@@ -6469,8 +6479,8 @@
     "freeTitle": "You've used today's free messages",
     "creditsTitle": "You're out of credits",
     "taskTitle": "Not enough credits for this",
-    "freeBody": "The free plan includes 10 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.",
-    "creditsBody": "Your MarkAI credits are used up. Buy more to keep chatting, or wait for 10 free messages {{when}}.",
+    "freeBody": "The free plan includes 5 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.",
+    "creditsBody": "Your MarkAI credits are used up. Buy more to keep chatting, or wait for 5 free messages {{when}}.",
     "taskBody": "A full macro plan uses 10 credits. Buy more to run it.",
     "seeUsage": "See usage",
     "renewsToday": "today at {{time}}",
@@ -6480,16 +6490,56 @@
     "nameHeading": "What is it called?",
     "nameHint": "The name on the package, so you recognise it later.",
     "namePlaceholder": "Enter the medication name",
-    "typeHeading": "What form does it come in?",
+    "typeHeading": "What form is it?",
     "typeHint": "Pick the closest one.",
     "strengthHeading": "How strong is it?",
     "strengthHint": "The amount of active ingredient, like 10 mg.",
     "strengthPlaceholder": "Enter the strength",
-    "doseHeading": "How much do you take at a time?",
+    "doseHeading": "How much per dose?",
     "doseHint": "For example 1 tablet or 5 ml.",
     "dosePlaceholder": "Enter the dose",
     "detailsHeading": "Anything else to note?",
     "detailsHint": "All optional. You can add these later.",
-    "notesPlaceholder": "Add a note"
+    "notesPlaceholder": "Add a note",
+    "doseUnit": {
+      "pill": "pill",
+      "tablet": "tablet",
+      "capsule": "capsule",
+      "ml": "ml",
+      "patch": "patch",
+      "puff": "puff",
+      "drop": "drop",
+      "spray": "spray",
+      "application": "application",
+      "suppository": "suppository"
+    },
+    "suggestSource": "Suggestions from the U.S. National Library of Medicine",
+    "scheduleHeading": "When do you take it?",
+    "scheduleHint": "Set a schedule for reminders, or skip to log doses as needed.",
+    "adjustSchedule": "Adjust schedule"
+  },
+  "featureFacts": {
+    "heading": "Good to know",
+    "cycle": {
+      "cover1Title": "More than your period",
+      "cover1Body": "A cycle moves through four phases: menstrual, follicular, ovulation and luteal. Energy, sleep, appetite and mood can shift with each one, so knowing where you are helps the rest of your day make sense.",
+      "cover2Title": "Sharper with every cycle",
+      "cover2Body": "Predictions come from the cycles you log. Mark when each period starts and ends, and the estimates for your next period and fertile window settle closer to your own rhythm.",
+      "aboutTitle": "About cycle tracking",
+      "aboutBody": "Cycles between 21 and 35 days are common in adults, and stress, travel, illness or a change in routine can move one by days. Predictions are estimates, not contraception. Talk to a clinician if periods stop for three months or more, or bleeding or pain is much heavier than usual."
+    },
+    "medications": {
+      "cover1Title": "Routine is the best reminder",
+      "cover1Body": "Doses tied to something you already do, like breakfast or brushing your teeth, are the ones that get taken. Log each dose as you take it and the day shows what is done and what is still due.",
+      "cover2Title": "As-needed doses count too",
+      "cover2Body": "Logging pain relief and other as-needed medicines shows how often you reach for them. A few weeks of that record is useful to bring to your next appointment.",
+      "aboutTitle": "About medication tracking",
+      "aboutBody": "Medications records the doses you log and reminds you of the schedules you set. It does not check doses or interactions. Follow your prescriber or pharmacist, and ask them before doubling up after a missed dose."
+    }
+  },
+  "tracking": {
+    "stop": "Stop tracking",
+    "start": "Start tracking",
+    "settings": "Tracking settings"
   }
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the calorie arcs: eaten (outer) and burned (inner). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="95dp"
+    android:viewportWidth="160"
+    android:viewportHeight="95">
+    <path
+        android:pathData="M7.5,80 A72.5,72.5 0 0,1 152.5,80"
+        android:strokeColor="#FFE5E9F1"
+        android:strokeWidth="15"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M7.5,80 A72.5,72.5 0 0,1 152.5,80"
+        android:strokeColor="#FF5087F7"
+        android:strokeWidth="15"
+        android:strokeLineCap="round"
+        android:trimPathEnd="0.62" />
+    <path
+        android:pathData="M28.5,80 A51.5,51.5 0 0,1 131.5,80"
+        android:strokeColor="#FFE5E9F1"
+        android:strokeWidth="15"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M28.5,80 A51.5,51.5 0 0,1 131.5,80"
+        android:strokeColor="#FFFF375F"
+        android:strokeWidth="15"
+        android:strokeLineCap="round"
+        android:trimPathEnd="0.45" />
+</vector>

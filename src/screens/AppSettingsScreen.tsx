@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Linking, Platform, View, ScrollView } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
@@ -22,6 +22,7 @@ import {
   SHIPPED_LOCALES,
   type LanguagePreference,
 } from '../localization';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type AppSettingsScreenProps = RootStackScreenProps<'AppSettings'>;
 
@@ -124,15 +125,12 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {/* Appearance opens its own screen, like every other choice with more
             to say than a value: each option carries a line explaining it,
@@ -252,7 +250,7 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
             <Switch value={soundsEnabled} onValueChange={setSoundsEnabled} />
           }
         />
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

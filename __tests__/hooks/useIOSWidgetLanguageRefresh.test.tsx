@@ -109,13 +109,14 @@ describe('useIOSWidgetLanguageRefresh', () => {
     if (osSpy) osSpy.restore();
   });
 
-  it('reloads both widget timelines on mount when i18n is already initialized', async () => {
+  it('reloads every widget timeline on mount when i18n is already initialized', async () => {
     renderHook(() => useIOSWidgetLanguageRefresh());
     await flushSync();
 
     expect(mockReload).toHaveBeenCalledWith('widget');
     expect(mockReload).toHaveBeenCalledWith('macroWidget');
-    expect(mockReload).toHaveBeenCalledTimes(2);
+    expect(mockReload).toHaveBeenCalledWith('activityWidget');
+    expect(mockReload).toHaveBeenCalledTimes(3);
   });
 
   it('waits for the initialized event when mounted before i18n init', async () => {
@@ -143,37 +144,37 @@ describe('useIOSWidgetLanguageRefresh', () => {
     expect(mockReload).not.toHaveBeenCalled();
   });
 
-  it('reloads both timelines when languageChanged carries a real EN -> PL change', async () => {
+  it('reloads every timeline when languageChanged carries a real EN -> PL change', async () => {
     renderHook(() => useIOSWidgetLanguageRefresh());
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(2);
+    expect(mockReload).toHaveBeenCalledTimes(3);
 
     resolvedLanguage = 'pl';
     languageListeners[0]('pl');
     await flushSync();
 
-    expect(mockReload).toHaveBeenCalledTimes(4);
-    expect(mockReload).toHaveBeenLastCalledWith('macroWidget');
+    expect(mockReload).toHaveBeenCalledTimes(6);
+    expect(mockReload).toHaveBeenLastCalledWith('activityWidget');
   });
 
   it('dedupes an identical effective language', async () => {
     renderHook(() => useIOSWidgetLanguageRefresh());
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(2);
+    expect(mockReload).toHaveBeenCalledTimes(3);
 
     // Same effective language: the signal is deduped, no reload storm.
     languageListeners[0]('en');
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(2);
+    expect(mockReload).toHaveBeenCalledTimes(3);
 
     resolvedLanguage = 'pl';
     languageListeners[0]('pl');
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
 
     languageListeners[0]('pl');
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
   });
 
   it('attempts both reloads independently when one timeline fails', async () => {
@@ -197,7 +198,7 @@ describe('useIOSWidgetLanguageRefresh', () => {
     languageListeners[0]('pl');
     await flushSync();
 
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
   });
 
   it('retries the flow when the macro widget reload fails', async () => {
@@ -220,7 +221,7 @@ describe('useIOSWidgetLanguageRefresh', () => {
     languageListeners[0]('pl');
     await flushSync();
 
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
   });
 
   it('retries on the next signal after a failure (state stays unapplied)', async () => {
@@ -234,17 +235,17 @@ describe('useIOSWidgetLanguageRefresh', () => {
     renderHook(() => useIOSWidgetLanguageRefresh());
     await flushSync();
 
-    expect(mockAddLog).toHaveBeenCalledTimes(2);
+    expect(mockAddLog).toHaveBeenCalledTimes(3);
     // Failure: state not marked applied, so an identical-language signal still retries.
     languageListeners[0]('en');
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
   });
 
   it('serializes rapid signals so the newest effective language wins', async () => {
     renderHook(() => useIOSWidgetLanguageRefresh());
     await flushSync();
-    expect(mockReload).toHaveBeenCalledTimes(2);
+    expect(mockReload).toHaveBeenCalledTimes(3);
 
     // Fire several signals without waiting between them. Each queued run
     // recomputes the effective language at execution time, so only the final
@@ -255,6 +256,6 @@ describe('useIOSWidgetLanguageRefresh', () => {
     languageListeners[0]('pl');
     await flushSync();
 
-    expect(mockReload).toHaveBeenCalledTimes(4);
+    expect(mockReload).toHaveBeenCalledTimes(6);
   });
 });

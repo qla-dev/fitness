@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { hasAccountPassword } from '../services/accountPassword';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { profileLinkLabel } from '../utils/profileLink';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type AccountScreenProps = RootStackScreenProps<'Account'>;
 
@@ -93,17 +94,13 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
           paddingBottom: insets.bottom + 24,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
       >
         <SettingsRowGroup>
           <SettingsRow
@@ -175,7 +172,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation }) => {
             }
           />
         </SettingsRowGroup>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

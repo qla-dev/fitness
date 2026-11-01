@@ -5,6 +5,12 @@ export type LocaleMetadata = {
   intlLocale: string;
   displayNameKey: string;
   defaultDisplayName: string;
+  /**
+   * Other languages this locale stands in for when the device asks for them:
+   * Bosnian serves Croatian and Serbian, which read the same in the app.
+   * Only consulted when no registered locale matches the tag itself.
+   */
+  aliases?: string[];
 };
 
 type ManifestLocaleKey = keyof typeof manifest.locales;
@@ -50,7 +56,7 @@ export function normalizeLocaleFromRegistry(
   );
   if (exact) return exact[0];
 
-  return (
+  const family =
     entries
       .filter(([key, metadata]) =>
         [key, metadata.intlLocale].some((tag) =>
@@ -61,7 +67,17 @@ export function normalizeLocaleFromRegistry(
         (a, b) =>
           Math.max(b[0].length, b[1].intlLocale.length) -
           Math.max(a[0].length, a[1].intlLocale.length)
-      )[0]?.[0] ?? null
+      )[0]?.[0] ?? null;
+  if (family) return family;
+
+  // hr-HR, sr-Latn-RS, sr-Cyrl…: a language served by another locale.
+  return (
+    entries.find(([, metadata]) =>
+      (metadata.aliases ?? []).some((alias) => {
+        const tag = canonicalizeLocaleTag(alias);
+        return input === tag || input.startsWith(`${tag}-`);
+      })
+    )?.[0] ?? null
   );
 }
 

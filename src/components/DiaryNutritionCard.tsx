@@ -30,7 +30,6 @@ import MacroRingGauge from './MacroRingGauge';
 import ArcGauge, { arcGaugeHeight } from './ArcGauge';
 import ValueSkeleton from './ValueSkeleton';
 import { formatLocalizedNumber } from '../localization';
-import { MOVE_COLOR } from '../constants/activityGoals';
 import { SCREEN_GUTTER } from '../constants/layout';
 import { useIsFocusedWhenNavigable } from '../hooks/useIsFocusedWhenNavigable';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -291,12 +290,16 @@ export default function DiaryNutritionCard({
     fireSelectionHaptic();
     setMacrosVisible((visible) => !visible);
   };
-  const [trackColor, calorieColor, textMuted, ...macroColors] = useCSSVariable([
-    '--color-progress-track',
-    '--color-accent-primary',
-    '--color-text-muted',
-    ...MACRO_RINGS.map((spec) => spec.colorVar),
-  ]) as string[];
+  // Burned is drawn in the text colour rather than Move's red: beside the blue
+  // eaten arc it reads as the second half of one gauge, not as a warning.
+  const [trackColor, calorieColor, textMuted, burnedColor, ...macroColors] =
+    useCSSVariable([
+      '--color-progress-track',
+      '--color-accent-primary',
+      '--color-text-muted',
+      '--color-text-primary',
+      ...MACRO_RINGS.map((spec) => spec.colorVar),
+    ]) as string[];
 
   const eaten = summary.caloriesConsumed;
   const burned = summary.caloriesBurned;
@@ -437,7 +440,7 @@ export default function DiaryNutritionCard({
               progress={share(burned, burnGoal)}
               size={innerArc}
               strokeWidth={MAIN_STROKE}
-              color={MOVE_COLOR}
+              color={burnedColor}
               trackColor={trackColor}
             />
           </View>
@@ -509,7 +512,7 @@ export default function DiaryNutritionCard({
           icon="flame"
           label={t('diaryNutrition.burned', { defaultValue: 'Burned' })}
           value={burned}
-          color={MOVE_COLOR}
+          color={burnedColor}
           loading={loading}
         />
       </View>

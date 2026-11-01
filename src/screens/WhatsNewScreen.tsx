@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -12,6 +12,7 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { getTodayDate } from '../utils/dateUtils';
 import { canUseLiquidGlass } from '../utils/liquidGlass';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type WhatsNewScreenProps = RootStackScreenProps<'WhatsNew'>;
 
@@ -707,15 +708,12 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 16 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {features.map((feature) => (
           <CoverFact
@@ -727,7 +725,7 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
             cta={feature.cta}
           />
         ))}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

@@ -11,6 +11,7 @@ type ScreenProps = RootStackScreenProps<'MedicationsList'>;
 jest.mock('../../src/hooks/useMedications', () => ({
   useMedications: jest.fn(),
   useCreateMedication: () => ({ mutateAsync: jest.fn() }),
+  useCreateMedicationSchedule: () => ({ mutateAsync: jest.fn() }),
 }));
 
 jest.mock('../../src/components/Icon', () => {

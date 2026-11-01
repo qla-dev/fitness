@@ -5,7 +5,11 @@ import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
-import { useCreateMedication, useMedications } from '../hooks/useMedications';
+import {
+  useCreateMedication,
+  useCreateMedicationSchedule,
+  useMedications,
+} from '../hooks/useMedications';
 import {
   isSetupWizardOpen,
   openSetupWizardSession,
@@ -13,15 +17,20 @@ import {
 import {
   MEDICATION_SETUP_INITIAL,
   medicationFromAnswers,
+  scheduleFromAnswers,
   medicationSteps,
 } from '../constants/medicationSteps';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
+import { trackingMenu } from '../utils/trackingMenu';
+import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import Icon from '../components/Icon';
+import FeatureFacts from '../components/FeatureFacts';
 import MedicalDisclaimer from '../components/MedicalDisclaimer';
 import MedicationRow from '../components/medications/MedicationRow';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { Medication } from '@workspace/shared';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type MedicationsListScreenProps = RootStackScreenProps<'MedicationsList'>;
 
@@ -41,6 +50,12 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
 
   const { data: medications, isLoading, isError, refetch } = useMedications();
   const createMedication = useCreateMedication();
+  const createSchedule = useCreateMedicationSchedule();
+  // Whether medications show on the Tracker: what "Stop tracking" turns off.
+  const tracking = useAppPreferencesStore((s) => s.medicationsCardVisible);
+  const setTracking = useAppPreferencesStore(
+    (s) => s.setMedicationsCardVisible
+  );
 
   // A new medication is asked for as a questionnaire in the setup wizard;
   // it is created once, from the review page, never from an early close.
@@ -57,9 +72,17 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
       onSave: async (answers, _done, finished) => {
         if (!finished) return;
         const medication = await createMedication.mutateAsync(
-          medicationFromAnswers(answers)
+          medicationFromAnswers(answers, t)
         );
         created = medication.id;
+        const schedule = scheduleFromAnswers(answers);
+        if (schedule)
+          await createSchedule.mutateAsync({
+            medicationId: medication.id,
+            body: schedule,
+          });
+        // A new medication is a reason to track again.
+        setTracking(true);
       },
       onClose: () => {
         if (created)
@@ -67,7 +90,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
       },
     });
     navigation.navigate('SetupWizard');
-  }, [createMedication, navigation, t]);
+  }, [createMedication, createSchedule, navigation, setTracking, t]);
 
   const { active, inactive } = useMemo(() => {
     const meds = medications ?? [];
@@ -87,17 +110,46 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
     variant: 'transparent',
     title: t('medications.title', { defaultValue: 'Medications' }),
     left: { kind: 'back' },
-    right: {
-      kind: 'icon',
-      sfSymbol: 'plus',
-      ionicon: 'add-outline',
-      role: 'primary',
-      onPress: addMedication,
-      accessibilityLabel: t('medications.addMedication', {
-        defaultValue: 'Add medication',
+    right: [
+      trackingMenu({
+        t,
+        identifier: 'medications-list-tracking',
+        title: tracking
+          ? t('medications.trackingTitle', {
+              defaultValue:
+                'Every dose in its place. Stop any time; your list stays here.',
+            })
+          : t('medications.trackingOffTitle', {
+              defaultValue:
+                'Medications are off your Tracker. Start tracking to bring them back.',
+            }),
+        tracking,
+        confirmTitle: t('medications.stopTitle', {
+          defaultValue: 'Stop medication tracking?',
+        }),
+        confirmMessage: t('medications.stopMessage', {
+          defaultValue:
+            'Medications leave your Tracker. Your medications and logged doses are kept, and you can start tracking again from here.',
+        }),
+        onStop: () => {
+          setTracking(false);
+          navigation.goBack();
+        },
+        onStart: () => setTracking(true),
       }),
-      identifier: 'medications-list-add',
-    },
+      {
+        kind: 'icon',
+        sfSymbol: 'plus',
+        ionicon: 'add-outline',
+        role: 'primary',
+        separated: true,
+        onPress: addMedication,
+        accessibilityLabel: t('medications.addMedication', {
+          defaultValue: 'Add medication',
+        }),
+        identifier: 'medications-list-add',
+      },
+    ],
   });
 
   const renderMedItem = ({ item }: { item: Medication }) => (
@@ -146,29 +198,42 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
           </TouchableOpacity>
         </View>
       ) : active.length === 0 && inactive.length === 0 ? (
-        <View className="flex-1 items-center justify-center p-8">
-          <Icon name="medication" size={48} color={iconDecorative} />
-          <Text className="text-text-muted text-lg mt-4 text-center">
-            {t('medications.noMedications', {
-              defaultValue: 'No medications yet',
-            })}
-          </Text>
-          <Text className="text-text-muted text-sm mt-2 text-center">
-            {t('medications.emptyDescription', {
-              defaultValue: 'Add your first medication to start tracking.',
-            })}
-          </Text>
-          <TouchableOpacity
-            className="mt-4 bg-accent-primary px-6 py-3 rounded-xl"
-            onPress={addMedication}
-          >
-            <Text className="text-white font-semibold">
-              {t('medications.addMedicationTitle', {
-                defaultValue: 'Add Medication',
+        // Scrolls like the list, so the facts under the empty state are
+        // reachable on a short screen.
+        <NativeHeaderScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
+          }}
+        >
+          <View className="items-center p-8">
+            <Icon name="medication" size={48} color={iconDecorative} />
+            <Text className="text-text-muted text-lg mt-4 text-center">
+              {t('medications.noMedications', {
+                defaultValue: 'No medications yet',
               })}
             </Text>
-          </TouchableOpacity>
-        </View>
+            <Text className="text-text-muted text-sm mt-2 text-center">
+              {t('medications.emptyDescription', {
+                defaultValue: 'Add your first medication to start tracking.',
+              })}
+            </Text>
+            <TouchableOpacity
+              className="mt-4 bg-accent-primary px-6 py-3 rounded-xl"
+              onPress={addMedication}
+            >
+              <Text className="text-white font-semibold">
+                {t('medications.addMedicationTitle', {
+                  defaultValue: 'Add Medication',
+                })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <FeatureFacts feature="medications" className="px-4" />
+          <View className="px-4">
+            <MedicalDisclaimer />
+          </View>
+        </NativeHeaderScrollView>
       ) : (
         <SectionList
           showsVerticalScrollIndicator={false}
@@ -204,9 +269,12 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
             ) : null
           }
           ListFooterComponent={
-            <View className="px-4 pt-6">
-              <MedicalDisclaimer />
-            </View>
+            <>
+              <FeatureFacts feature="medications" className="px-4" />
+              <View className="px-4">
+                <MedicalDisclaimer />
+              </View>
+            </>
           }
           contentContainerStyle={{
             paddingTop: 8,
@@ -215,6 +283,7 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
           contentInsetAdjustmentBehavior={
             usesNativeHeader ? 'automatic' : 'never'
           }
+          automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
           refreshControl={
             <HapticRefreshControl
               refreshing={refreshing}

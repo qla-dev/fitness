@@ -15,3 +15,10 @@
 "widget.a11y.kcal" = "%@ kcal";
 "widget.search_food" = "Search food";
 "widget.scan_barcode" = "Scan barcode";
+"widget.activity.name" = "Activity";
+"widget.activity.description" = "Today's Move, Exercise and Steps rings.";
+"widget.move" = "Move";
+"widget.exercise" = "Exercise";
+"widget.steps" = "Steps";
+"widget.min" = "min";
+"widget.grams_left" = "%@ g left";

@@ -7,8 +7,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
+import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
 import FooterCTA, { footerCtaKeyboardTrim } from '../components/ui/FooterCTA';
 import PillInput from '../components/ui/PillInput';
+import FieldSuggestions from '../components/FieldSuggestions';
 import FlashOverlay from '../components/ui/FlashOverlay';
 import Icon from '../components/Icon';
 import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
@@ -32,7 +37,12 @@ import {
   type SetupStep,
 } from '../services/setupWizardSession';
 import type { SetupAnswers } from '../services/personalSetup';
-import type { RootStackScreenProps } from '../types/navigation';
+import type { NavigationProp } from '@react-navigation/native';
+import type {
+  RootStackParamList,
+  RootStackScreenProps,
+} from '../types/navigation';
+import Button from '../components/ui/Button';
 
 function isFieldValid(field: SetupField, answers: SetupAnswers) {
   const value = answers[field.id];
@@ -66,10 +76,23 @@ function fieldSuggestion(field: SetupField, answers: SetupAnswers) {
 // progress bar to title, title to its supporting line.
 const WIZARD_GAP = 12;
 
-export default function SetupWizardScreen({
+export default function SetupWizardScreen(
+  props: RootStackScreenProps<'SetupWizard'>
+) {
+  // Ties the scroll view to the footer, so with Liquid Glass the action sits
+  // over the scroll edge effect instead of a filled band.
+  return (
+    <ScrollEdgeEffectProvider>
+      <SetupWizardContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+function SetupWizardContent({
   navigation,
 }: RootStackScreenProps<'SetupWizard'>) {
   const { t } = useTranslation();
+  const edgeEffectRef = useScrollEdgeEffectRef();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   // GoalEdit's height for the bar (see useModalTopPadding).
@@ -201,8 +224,10 @@ export default function SetupWizardScreen({
   const close = () => {
     leaving.current = true;
     clearSetupWizardSession(session);
-    session?.onClose();
+    // Leave first: onClose may navigate (a new medication opens its detail),
+    // and a goBack after that pops the new screen instead of the wizard.
     navigation.goBack();
+    session?.onClose();
   };
 
   const persist = async (
@@ -274,12 +299,24 @@ export default function SetupWizardScreen({
         resolve();
       }
     });
+  // A step answered on another screen leaves its answers behind; they are
+  // picked up here, on the way back.
+  const takeAction = () => {
+    const taken = step?.action?.take?.();
+    if (taken) setAnswers((a) => ({ ...a, ...taken }));
+  };
   const takeOfferedRef = useRef(takeOffered);
+  const takeActionRef = useRef(takeAction);
   useEffect(() => {
     takeOfferedRef.current = takeOffered;
+    takeActionRef.current = takeAction;
   });
   useEffect(
-    () => navigation.addListener('focus', () => takeOfferedRef.current()),
+    () =>
+      navigation.addListener('focus', () => {
+        takeOfferedRef.current();
+        takeActionRef.current();
+      }),
     [navigation]
   );
 
@@ -398,6 +435,7 @@ export default function SetupWizardScreen({
       >
         {header}
         <KeyboardAwareScrollView
+          ref={edgeEffectRef}
           showsVerticalScrollIndicator={false}
           // No automatic inset: the header accessory above already carries the
           // offset the transparent bar does not reserve. Asking for it here too
@@ -440,11 +478,13 @@ export default function SetupWizardScreen({
                   'Review your choices. You can change them any time.',
               })}
           </Text>
-          {step
-            ? fields.map((field) => (
+          {step ? (
+            <View className={step.row ? 'flex-row gap-3' : undefined}>
+              {fields.map((field) => (
                 <View
                   key={field.id}
                   className={field.options ? 'mb-6' : 'mb-2'}
+                  style={step.row ? { flex: field.flex ?? 1 } : undefined}
                 >
                   {field.options ? (
                     <View className="flex-row flex-wrap gap-2">
@@ -537,6 +577,24 @@ export default function SetupWizardScreen({
                       editable={!busy}
                     />
                   )}
+                  {field.suggest && !field.options ? (
+                    <FieldSuggestions
+                      query={
+                        typeof answers[field.id] === 'string'
+                          ? (answers[field.id] as string)
+                          : ''
+                      }
+                      suggest={field.suggest}
+                      source={field.suggestSource}
+                      onPick={(suggestion) =>
+                        setAnswers((a) => ({
+                          ...a,
+                          ...suggestion.answers,
+                          [field.id]: suggestion.value,
+                        }))
+                      }
+                    />
+                  ) : null}
                   {/* One paragraph under the input, each assist a sentence
                       whose link opens MarkAI: help offered, not two more
                       buttons competing with Continue. */}
@@ -568,41 +626,66 @@ export default function SetupWizardScreen({
                     </Text>
                   ) : null}
                 </View>
-              ))
-            : allSteps
-                .flatMap((s) => visibleFields(s, answers))
-                .map((field) => {
-                  const value = answers[field.id];
-                  const values = Array.isArray(value)
-                    ? value
-                    : value
-                      ? [value]
-                      : [];
-                  return (
-                    <View
-                      key={field.id}
-                      className="bg-surface rounded-2xl p-4 mb-2"
-                    >
-                      <Text className="text-text-secondary text-sm">
-                        {field.label}
-                      </Text>
-                      <Text className="text-text-primary text-lg">
-                        {values.length
-                          ? values
-                              .map((v) => {
-                                const option = field.options?.find(
-                                  (o) => o.value === v
-                                );
-                                if (option) return option.label;
-                                const unit = fieldUnit(field, answers);
-                                return unit ? `${v} ${unit}` : v;
-                              })
-                              .join(', ')
-                          : t('setup.skipped', { defaultValue: 'Skipped' })}
-                      </Text>
-                    </View>
-                  );
-                })}
+              ))}
+              {step.action ? (
+                <View className="gap-3">
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => {
+                      fireSelectionHaptic();
+                      step.action?.open(
+                        navigation as unknown as NavigationProp<RootStackParamList>,
+                        answers
+                      );
+                    }}
+                  >
+                    {step.action.label}
+                  </Button>
+                  {step.action.summary?.(answers) ? (
+                    <Text className="text-text-secondary text-base px-1">
+                      {step.action.summary(answers)}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            allSteps
+              .flatMap((s) => visibleFields(s, answers))
+              .map((field) => {
+                const value = answers[field.id];
+                const values = Array.isArray(value)
+                  ? value
+                  : value
+                    ? [value]
+                    : [];
+                return (
+                  <View
+                    key={field.id}
+                    className="bg-surface rounded-2xl p-4 mb-2"
+                  >
+                    <Text className="text-text-secondary text-sm">
+                      {field.label}
+                    </Text>
+                    <Text className="text-text-primary text-lg">
+                      {values.length
+                        ? values
+                            .map((v) => {
+                              const option = field.options?.find(
+                                (o) => o.value === v
+                              );
+                              if (option) return option.label;
+                              const unit = fieldUnit(field, answers);
+                              return unit ? `${v} ${unit}` : v;
+                            })
+                            .join(', ')
+                        : t('setup.skipped', { defaultValue: 'Skipped' })}
+                    </Text>
+                  </View>
+                );
+              })
+          )}
           {error && (
             <Text accessibilityRole="alert" className="text-icon-danger">
               {t('setup.saveError', {
@@ -615,6 +698,7 @@ export default function SetupWizardScreen({
         <FooterCTA
           absolute
           glass
+          edgeEffect
           loading={busy}
           disabled={!valid}
           onHeightChange={setFooterHeight}

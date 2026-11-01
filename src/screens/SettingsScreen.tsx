@@ -7,14 +7,7 @@ import {
 } from '../services/online/account';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  Platform,
-  Share,
-} from 'react-native';
+import { View, Text, ActivityIndicator, Platform, Share } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { profileQueryKey } from '../hooks/queryKeys';
 import { fetchProfile } from '../services/api/profileApi';
@@ -46,6 +39,7 @@ import Constants from 'expo-constants';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type SettingsScreenProps = RootStackScreenProps<'Profile'>;
 
@@ -213,7 +207,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1 bg-background"
         style={{ flex: 1 }}
@@ -227,10 +221,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
           setShowHeaderTitle(offset > 16);
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
       >
         <View className={usesNativeHeader ? 'px-4' : 'flex-1 px-4 pt-4'}>
           <ProfileSummary enabled={isConnected} />
@@ -438,7 +428,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               )}
           </SectionErrorBoundary>
         </View>
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       <FitPassConnectSheet ref={fitPassSheet} />
       <PrivacyPolicyModal

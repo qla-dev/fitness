@@ -6,7 +6,6 @@ import {
   Linking,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -40,7 +39,6 @@ import { useSyncHealthData } from '../hooks';
 import { openHealthConnectSettings } from 'react-native-health-connect';
 import { useSyncTimeRangeOptions } from '../hooks/useSyncTimeRangeOptions';
 import { useHealthMetricToggles } from '../hooks/useHealthMetricToggles';
-import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   initHealthConnect,
   loadHealthPreference,
@@ -78,6 +76,7 @@ import { addLog } from '../services/LogService';
 import { formatLocalizedNumber } from '../localization';
 import { useSyncProgress } from '../hooks/useSyncProgress';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 /**
  * Health app's apps-and-sources list, where a user turns an app's read access
@@ -157,7 +156,6 @@ export default function AppleHealthCheckScreen({
 }: RootStackScreenProps<'AppleHealthCheck'>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const usesNativeHeader = useNativeIOSHeadersActive();
   // GoalEdit's height for the bar (see useModalTopPadding).
   const modalTopPadding = useModalTopPadding();
   const [accentColor, textSecondary] = useCSSVariable([
@@ -524,12 +522,9 @@ export default function AppleHealthCheckScreen({
       style={{ paddingTop: modalTopPadding }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <View className="items-center mb-4">
           <HealthHeroIcon />
@@ -824,7 +819,7 @@ export default function AppleHealthCheckScreen({
             )}
           />
         </View>
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       <DateRangeSheet
         ref={dateRangeSheetRef}

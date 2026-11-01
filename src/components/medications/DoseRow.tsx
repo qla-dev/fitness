@@ -36,8 +36,12 @@ export type DoseRowProps = (ScheduledDoseRowProps | PrnDoseRowProps) & {
   onPress?: () => void;
 };
 
+/** The diary's Log pill, the one every meal card carries. */
+const PILL_CLASS = 'bg-accent-primary/10 rounded-full px-4 py-1.5';
+const PILL_TEXT_CLASS = 'text-sm font-bold text-accent-primary';
+
 /**
- * Centers its content over an invisible copy of the pending-state
+ * Right-aligns its content over an invisible copy of the pending-state
  * Take/Skip pair (same labels, padding, and font), so every actions
  * column keeps that width and rows don't shift between states.
  */
@@ -46,20 +50,20 @@ const SizedActionColumn: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <View className="items-center justify-center">
-      <View className="flex-row items-center opacity-0" aria-hidden>
-        <View className="rounded-full px-3 py-1">
-          <Text className="text-sm font-semibold">
+    <View className="items-end justify-center">
+      <View className="flex-row items-center gap-2 opacity-0" aria-hidden>
+        <View className={PILL_CLASS}>
+          <Text className={PILL_TEXT_CLASS}>
             {t('medications.dose.log', { defaultValue: 'Log' })}
           </Text>
         </View>
-        <View className="rounded-full px-3 py-1 ml-1">
-          <Text className="text-sm font-semibold">
+        <View className={PILL_CLASS}>
+          <Text className={PILL_TEXT_CLASS}>
             {t('medications.dose.skip', { defaultValue: 'Skip' })}
           </Text>
         </View>
       </View>
-      <View className="absolute inset-0 items-center justify-center">
+      <View className="absolute inset-0 items-end justify-center">
         {children}
       </View>
     </View>
@@ -76,13 +80,11 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
   const { t } = useTranslation();
   const { title, time, subtitle, onPress } = props;
 
-  const [iconSuccess, iconDecorative, iconDanger, accentPrimary] =
-    useCSSVariable([
-      '--color-icon-success',
-      '--color-icon-decorative',
-      '--color-icon-danger',
-      '--color-accent-primary',
-    ]) as [string, string, string, string];
+  const [iconSuccess, iconDecorative, iconDanger] = useCSSVariable([
+    '--color-icon-success',
+    '--color-icon-decorative',
+    '--color-icon-danger',
+  ]) as [string, string, string];
 
   const completed = props.kind === 'scheduled' && props.status !== 'pending';
   const showTime = time != null && time !== '';
@@ -131,12 +133,9 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
             hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
             activeOpacity={0.6}
             accessibilityRole="button"
-            className="rounded-full px-3 py-1 bg-raised"
+            className={PILL_CLASS}
           >
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: accentPrimary }}
-            >
+            <Text className={PILL_TEXT_CLASS}>
               {t('medications.dose.log', { defaultValue: 'Log' })}
             </Text>
           </TouchableOpacity>
@@ -145,7 +144,7 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
     }
     if (props.status === 'pending') {
       return (
-        <View className="flex-row items-center">
+        <View className="flex-row items-center gap-2">
           <TouchableOpacity
             onPress={props.onTake}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -155,12 +154,9 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
               defaultValue: 'Log {{title}} as taken',
               title,
             })}
-            className="rounded-full px-3 py-1 bg-raised"
+            className={PILL_CLASS}
           >
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: accentPrimary }}
-            >
+            <Text className={PILL_TEXT_CLASS}>
               {t('medications.dose.log', { defaultValue: 'Log' })}
             </Text>
           </TouchableOpacity>
@@ -173,9 +169,9 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
               defaultValue: 'Skip {{title}}',
               title,
             })}
-            className="rounded-full px-3 py-1 ml-1 bg-raised"
+            className={PILL_CLASS}
           >
-            <Text className="text-sm font-semibold text-accent-primary">
+            <Text className={PILL_TEXT_CLASS}>
               {t('medications.dose.skip', { defaultValue: 'Skip' })}
             </Text>
           </TouchableOpacity>
@@ -195,7 +191,7 @@ const DoseRow: React.FC<DoseRowProps> = (props) => {
 
   return (
     <Pressable
-      className="py-2 px-1 flex-row items-center bg-surface"
+      className="py-2 flex-row items-center bg-surface"
       onPress={onPress}
       disabled={onPress == null}
     >

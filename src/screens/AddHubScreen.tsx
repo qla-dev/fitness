@@ -40,7 +40,6 @@ import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useTabPress } from '../hooks/useTabPress';
 import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
-import { useCycleMode } from '../hooks';
 import { fireSelectionHaptic } from '../services/haptics';
 import {
   clearRecentSearches,
@@ -59,6 +58,7 @@ import {
 import { formatLocalizedNumber } from '../localization';
 import type { FoodInfoItem } from '../types/foodInfo';
 import type { RootStackParamList } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 /** The height every row on this screen shares, drawn or built. */
 const ROW_HEIGHT = 56;
@@ -164,16 +164,6 @@ export default function AddHubScreen() {
     },
     [navigation, query]
   );
-  const {
-    enabled: cycleEnabled,
-    mode: cycleMode,
-    discreetMode: cycleDiscreet,
-  } = useCycleMode();
-  const cycleLabel = cycleDiscreet
-    ? t('addSheet.wellness', { defaultValue: 'Wellness' })
-    : cycleMode === 'pregnant' || cycleMode === 'postpartum'
-      ? t('addSheet.logPregnancyEntry', { defaultValue: 'Log Pregnancy Entry' })
-      : t('addSheet.logCycle', { defaultValue: 'Log Cycle' });
 
   // The landing's own shortcut: what you logged last, without searching for
   // it again. The same list the focused state shows, capped shorter because
@@ -325,9 +315,9 @@ export default function AddHubScreen() {
       : t('addHub.freeLeft', {
           defaultValue: '{{left}}/{{limit}}',
           left: formatLocalizedNumber(
-            Math.max(0, (freeMessages?.limit ?? 10) - (freeMessages?.used ?? 0))
+            Math.max(0, (freeMessages?.limit ?? 5) - (freeMessages?.used ?? 0))
           ),
-          limit: formatLocalizedNumber(freeMessages?.limit ?? 10),
+          limit: formatLocalizedNumber(freeMessages?.limit ?? 5),
         });
   const headline: HeadlineAction[] = [
     {
@@ -403,22 +393,6 @@ export default function AddHubScreen() {
       label: t('addHub.newMealPlan', { defaultValue: 'Create meal plan' }),
       icon: 'add-circle',
       onPress: actions.newMealPlan,
-    },
-    ...(!cycleEnabled
-      ? []
-      : [
-          {
-            key: 'cycle',
-            label: cycleLabel,
-            icon: 'wellness-filled' as IconName,
-            onPress: actions.openCycle,
-          },
-        ]),
-    {
-      key: 'sync',
-      label: t('addSheet.syncHealth', { defaultValue: 'Sync Health Data' }),
-      icon: 'sync',
-      onPress: actions.syncHealthData,
     },
   ];
 
@@ -501,7 +475,7 @@ export default function AddHubScreen() {
   // Searching used to push FoodSearch, which meant the field you had just
   // focused was replaced by another one on another screen.
   const content = (
-    <ScrollView
+    <NativeHeaderScrollView
       ref={scrollRef}
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
@@ -514,7 +488,6 @@ export default function AddHubScreen() {
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      contentInsetAdjustmentBehavior={usesNativeTabs ? 'automatic' : 'never'}
       contentContainerStyle={{
         paddingHorizontal: 16,
         paddingBottom:
@@ -574,7 +547,7 @@ export default function AddHubScreen() {
           ) : null}
         </>
       )}
-    </ScrollView>
+    </NativeHeaderScrollView>
   );
 
   // No wrapper on the native path: the screen-level scroll edge effect is

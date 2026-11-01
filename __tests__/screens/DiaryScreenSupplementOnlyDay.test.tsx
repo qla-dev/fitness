@@ -34,7 +34,6 @@ jest.mock('../../src/hooks/useMeasurementHistory', () => ({
   useMeasurementHistory: () => ({ history: undefined, isLoading: false }),
 }));
 
-
 // This suite is about supplement-driven emptiness, so sleep is settled and empty. Without
 // the mock the real query stays pending against the test client, and the screen's loading
 // gate would hide the day these cases are asserting on.
@@ -99,9 +98,15 @@ jest.mock('@react-navigation/native', () => ({
 // render no QueryClientProvider, so it is stubbed out.
 jest.mock('../../src/components/RingCalendarSheet', () => {
   const { View } = require('react-native');
-  return { __esModule: true, default: () => <View testID="ring-calendar-sheet" /> };
+  return {
+    __esModule: true,
+    default: () => <View testID="ring-calendar-sheet" />,
+  };
 });
 
+// Cycle and medications cards query on their own; the Tracker only places them.
+jest.mock('../../src/components/CycleCard', () => () => null);
+jest.mock('../../src/components/MedicationsCard', () => () => null);
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
   useActiveWorkoutBarPadding: () => 0,
 }));

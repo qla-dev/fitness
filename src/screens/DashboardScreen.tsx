@@ -28,7 +28,6 @@ import { useWatchDashboardSync } from '../hooks/useWatchDashboardSync';
 import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
-import CycleCard from '../components/CycleCard';
 import TabHeader from '../components/TabHeader';
 import DashboardActivityCard from '../components/DashboardActivityCard';
 import type { ActivityGoalKey } from '../constants/activityGoals';
@@ -36,12 +35,9 @@ import { emptyDailySummary } from '../services/dailySummaryService';
 import DashboardActivityDetails from '../components/DashboardActivityDetails';
 import CompactActivityCard from '../components/CompactActivityCard';
 import Icon from '../components/Icon';
-import MedicationsCard from '../components/MedicationsCard';
-import ProgressPhotosCard from '../components/ProgressPhotosCard';
 import StatusView from '../components/StatusView';
 import {
   fastingRootQueryKey,
-  medicationsRootQueryKey,
   useCustomNutrients,
   useDailySummary,
   useMeasurements,
@@ -252,20 +248,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   });
 
   // Widgets only ever publish real numbers, never the placeholder day.
-  useWidgetSync(loadedSummary);
+  useWidgetSync(loadedSummary, measurements?.steps);
 
   const accentColor = useCSSVariable('--color-accent-primary') as string;
 
   const [refreshing, setRefreshing] = useState(false);
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding();
-  const cycleCardVisible = useAppPreferencesStore((s) => s.cycleCardVisible);
   const askMarkAIVisible = useAppPreferencesStore((s) => s.askMarkAIVisible);
-  const medicationsCardVisible = useAppPreferencesStore(
-    (s) => s.medicationsCardVisible
-  );
-  const progressPhotosCardVisible = useAppPreferencesStore(
-    (s) => s.progressPhotosCardVisible
-  );
 
   useLayoutEffect(() => {
     syncNativeHeaderDatePicker();
@@ -287,8 +276,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       refetchNutrientPrefs(),
       // Refresh any fasting detail queries left in the cache.
       queryClient.invalidateQueries({ queryKey: fastingRootQueryKey }),
-      // MedicationsCard owns its own queries.
-      queryClient.invalidateQueries({ queryKey: medicationsRootQueryKey }),
     ]);
     setRefreshing(false);
   }, [
@@ -441,14 +428,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           stepsGoal={summary.goals.steps}
           onOpenGoal={openGoal}
         />
-
-        {cycleCardVisible && <CycleCard navigation={navigation} />}
-
-        {medicationsCardVisible && <MedicationsCard navigation={navigation} />}
-
-        {progressPhotosCardVisible && (
-          <ProgressPhotosCard navigation={navigation} date={selectedDate} />
-        )}
 
         {/* The day's logged workouts and activities, last on the screen.
             This is the same card the Diary used to carry, with the same

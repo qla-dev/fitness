@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   type NativeSyntheticEvent,
   type TextInputFocusEventData,
   type TextInputProps,
 } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
+import { fireSelectionHaptic } from '../services/haptics';
 
 interface StepperDraftOptions {
   /** Committed value, shown whenever the field is not mid-edit. */
@@ -145,45 +146,71 @@ function StepperInput({
   buttonWidth,
   inputWidth: inputWidthProp,
 }: StepperInputProps) {
-  const [accentColor, borderSubtle] = useCSSVariable([
+  const [accentColor, fillColor, buttonColor, inkColor] = useCSSVariable([
     '--color-accent-primary',
-    '--color-border-subtle',
-  ]) as [string, string];
+    '--color-background',
+    '--color-raised',
+    '--color-text-primary',
+  ]) as [string, string, string, string];
   const [isFocused, setIsFocused] = useState(false);
 
   const size = height ?? (compact ? 32 : 40);
   const inputWidth = inputWidthProp ?? (compact ? 48 : 56);
-  const segmentWidth = buttonWidth ?? size;
-  const iconSize = compact ? 18 : 20;
-  const fontSize = compact ? 16 : 20;
+  // The round buttons sit inside the pill with a 2pt rim all round.
+  const rim = 2;
+  const buttonSize = size - rim * 2;
+  const segmentWidth = Math.max(buttonSize, (buttonWidth ?? size) - rim * 2);
+  const iconSize = compact ? 16 : 18;
+  const fontSize = compact ? 16 : 18;
 
-  const borderColor = isFocused ? accentColor : borderSubtle;
   const {
     onFocus: externalOnFocus,
     onBlur: externalOnBlur,
     ...restInputProps
   } = inputProps ?? {};
 
+  const step = (
+    icon: 'add' | 'remove',
+    onPress: () => void,
+    label: string | undefined
+  ) => (
+    <Pressable
+      onPress={() => {
+        fireSelectionHaptic();
+        onPress();
+      }}
+      hitSlop={4}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({
+        width: segmentWidth,
+        height: buttonSize,
+        borderRadius: buttonSize / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: buttonColor,
+        opacity: pressed ? 0.6 : 1,
+        transform: [{ scale: pressed ? 0.92 : 1 }],
+      })}
+    >
+      <Icon name={icon} size={iconSize} color={inkColor} />
+    </Pressable>
+  );
+
+  // A pill with round − and + and the value between them: the same control
+  // Hideya's rules use, so a stepper reads as one object rather than three
+  // bordered boxes. The pill outlines in the accent only while typing.
   return (
     <View
-      className="flex-row items-center bg-raised rounded-lg overflow-hidden"
-      style={{ borderWidth: 1, borderColor }}
+      className="flex-row items-center rounded-full"
+      style={{
+        backgroundColor: fillColor,
+        padding: rim,
+        borderWidth: 1,
+        borderColor: isFocused ? accentColor : 'transparent',
+      }}
     >
-      <TouchableOpacity
-        onPress={onDecrement}
-        style={{
-          width: segmentWidth,
-          height: size,
-          borderRightWidth: 1,
-          borderRightColor: borderColor,
-        }}
-        className="items-center justify-center"
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabels?.decrement}
-      >
-        <Icon name="remove" size={iconSize} color={accentColor} />
-      </TouchableOpacity>
+      {step('remove', onDecrement, accessibilityLabels?.decrement)}
       <InputComponent
         ref={inputRef}
         value={value}
@@ -200,32 +227,20 @@ function StepperInput({
         keyboardType={keyboardType}
         placeholder={placeholder}
         selectTextOnFocus={selectTextOnFocus}
-        className="text-text-primary text-base text-center"
+        className="text-text-primary text-center"
         style={{
           width: inputWidth,
-          height: size,
+          height: buttonSize,
           fontSize,
           lineHeight: fontSize + 2,
+          fontWeight: '700',
+          fontVariant: ['tabular-nums'],
           padding: 0,
         }}
         accessibilityLabel={accessibilityLabels?.input}
         {...restInputProps}
       />
-      <TouchableOpacity
-        onPress={onIncrement}
-        style={{
-          width: segmentWidth,
-          height: size,
-          borderLeftWidth: 1,
-          borderLeftColor: borderColor,
-        }}
-        className="items-center justify-center"
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabels?.increment}
-      >
-        <Icon name="add" size={iconSize} color={accentColor} />
-      </TouchableOpacity>
+      {step('add', onIncrement, accessibilityLabels?.increment)}
     </View>
   );
 }

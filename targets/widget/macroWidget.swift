@@ -6,6 +6,10 @@ struct MacroSnapshot {
     let carbsGrams: Double
     let fatGrams: Double
     let caloriesConsumed: Double
+    /// Each macro's goal; 0 when unset or when an older snapshot lacks it.
+    var proteinGoal: Double = 0
+    var carbsGoal: Double = 0
+    var fatGoal: Double = 0
     let lastUpdated: Date?
 
     var proteinKcal: Double { proteinGrams * 4 }
@@ -26,6 +30,9 @@ private struct MacroSnapshotPayload: Decodable {
     let carbs: Double?
     let fat: Double?
     let calories: Double?
+    let proteinGoal: Double?
+    let carbsGoal: Double?
+    let fatGoal: Double?
     let lastUpdated: Double?
 }
 
@@ -45,6 +52,9 @@ private func loadMacroSnapshot() -> MacroSnapshot {
         carbsGrams: payload.carbs ?? 0,
         fatGrams: payload.fat ?? 0,
         caloriesConsumed: payload.calories ?? 0,
+        proteinGoal: payload.proteinGoal ?? 0,
+        carbsGoal: payload.carbsGoal ?? 0,
+        fatGoal: payload.fatGoal ?? 0,
         lastUpdated: payload.lastUpdated.map { Date(timeIntervalSince1970: $0) }
     )
 }
@@ -77,75 +87,127 @@ struct MacroProvider: TimelineProvider {
     }
 }
 
-private enum MacroPalette {
-    static let protein = Color(red: 0.965, green: 0.694, blue: 0.318)
-    static let carbs   = Color(red: 0.484, green: 0.840, blue: 0.503)
-    static let fat     = Color(red: 0.430, green: 0.797, blue: 0.913)
-}
+private enum MacroKind: CaseIterable {
+    case protein, carbs, fat
 
-private struct MacroRing: View {
-    let snapshot: MacroSnapshot
-    let size: CGFloat
-    let strokeWidth: CGFloat
-
-    private static let segmentGap: Double = 0.006
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(
-                    Color.secondary.opacity(0.2),
-                    style: StrokeStyle(lineWidth: strokeWidth)
-                )
-
-            if snapshot.hasData && snapshot.macroKcalTotal > 0 {
-                let total = snapshot.macroKcalTotal
-                let proteinFrac = snapshot.proteinKcal / total
-                let carbsFrac = snapshot.carbsKcal / total
-                let fatFrac = snapshot.fatKcal / total
-
-                segment(
-                    start: 0,
-                    length: proteinFrac,
-                    color: MacroPalette.protein
-                )
-                segment(
-                    start: proteinFrac,
-                    length: carbsFrac,
-                    color: MacroPalette.carbs
-                )
-                segment(
-                    start: proteinFrac + carbsFrac,
-                    length: fatFrac,
-                    color: MacroPalette.fat
-                )
-            }
+    /// Resolved through literal keys so the widget key contract can find them.
+    var label: String {
+        switch self {
+        case .protein: return localizedWidgetString("widget.protein")
+        case .carbs: return localizedWidgetString("widget.carbs")
+        case .fat: return localizedWidgetString("widget.fat")
         }
-        .frame(width: size, height: size)
     }
 
-    @ViewBuilder
-    private func segment(start: Double, length: Double, color: Color) -> some View {
-        let gap = Self.segmentGap
-        let from = CGFloat(start + gap / 2)
-        let to = CGFloat(start + max(0, length - gap / 2))
-        if to > from {
-            Circle()
-                .trim(from: from, to: to)
-                .stroke(
-                    color,
-                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .butt)
-                )
-                .rotationEffect(.degrees(-90))
+    var color: Color {
+        switch self {
+        case .protein: return WidgetPalette.protein
+        case .carbs: return WidgetPalette.carbs
+        case .fat: return WidgetPalette.fat
         }
     }
 }
 
-private struct MacroRingWithLabel: View {
+private extension MacroSnapshot {
+    func grams(_ kind: MacroKind) -> Double {
+        switch kind {
+        case .protein: return proteinGrams
+        case .carbs: return carbsGrams
+        case .fat: return fatGrams
+        }
+    }
+
+    func goal(_ kind: MacroKind) -> Double {
+        switch kind {
+        case .protein: return proteinGoal
+        case .carbs: return carbsGoal
+        case .fat: return fatGoal
+        }
+    }
+
+    /// Progress toward the macro's own goal, as the Tracker's nutrient rings
+    /// fill. A snapshot without goals (written before they were sent, or a
+    /// macro with no goal set) falls back to the macro's share of the day's
+    /// macro calories, so the ring still carries a signal.
+    func progress(_ kind: MacroKind) -> Double {
+        let target = goal(kind)
+        if target > 0 { return ratio(grams(kind), of: target) }
+        guard macroKcalTotal > 0 else { return 0 }
+        let kcal: Double
+        switch kind {
+        case .protein: kcal = proteinKcal
+        case .carbs: kcal = carbsKcal
+        case .fat: kcal = fatKcal
+        }
+        return clampedProgress(kcal / macroKcalTotal)
+    }
+}
+
+/// One nutrient as the Tracker draws it: a ring in its colour with what has
+/// been eaten inside, its name under it, and what is left under that.
+private struct MacroRingItem: View {
+    let kind: MacroKind
     let snapshot: MacroSnapshot
     let ringSize: CGFloat
-    let strokeWidth: CGFloat
-    let numberFontSize: CGFloat
+    let lineWidth: CGFloat
+    let valueFontSize: CGFloat
+    var showsRemaining: Bool = true
+
+    private var gramsText: String {
+        String(
+            format: localizedWidgetString("widget.grams"),
+            localizedNumberString(snapshot.grams(kind))
+        )
+    }
+
+    private var remainingText: String? {
+        let goal = snapshot.goal(kind)
+        guard goal > 0 else { return nil }
+        return String(
+            format: localizedWidgetString("widget.grams_left"),
+            localizedNumberString(max(0, goal - snapshot.grams(kind)))
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 3) {
+            WidgetRing(
+                progress: snapshot.progress(kind),
+                color: kind.color,
+                trackColor: WidgetPalette.track,
+                lineWidth: lineWidth
+            )
+            .frame(width: ringSize, height: ringSize)
+            .overlay {
+                Text(gramsText)
+                    .font(.system(size: valueFontSize, weight: .bold, design: .rounded))
+                    .foregroundStyle(WidgetPalette.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, lineWidth + 2)
+            }
+            Text(kind.label)
+                .font(.system(size: max(10, valueFontSize * 0.85), weight: .semibold))
+                .foregroundStyle(kind.color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            if showsRemaining {
+                Text(remainingText ?? " ")
+                    .font(.system(size: max(9, valueFontSize * 0.75)))
+                    .foregroundStyle(WidgetPalette.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The day's calories above the rings, as a figure rather than another gauge.
+private struct MacroCalorieHeader: View {
+    let snapshot: MacroSnapshot
+    let fontSize: CGFloat
 
     private var centerText: String {
         guard snapshot.hasData else { return "-" }
@@ -153,60 +215,27 @@ private struct MacroRingWithLabel: View {
     }
 
     var body: some View {
-        MacroRing(snapshot: snapshot, size: ringSize, strokeWidth: strokeWidth)
-            .overlay(
-                VStack(spacing: 0) {
-                    Text(centerText)
-                        .font(.system(size: numberFontSize, weight: .bold, design: .rounded))
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                    Text(localizedWidgetString("widget.kcal"))
-                        .font(.system(size: numberFontSize * 0.58))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, strokeWidth)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                    String(
-                        format: localizedWidgetString("widget.a11y.kcal"),
-                        centerText
-                    )
-                )
-            )
-    }
-}
-
-private struct MacroRow: View {
-    let label: String
-    let grams: Double
-    let color: Color
-
-    private var valueText: String {
-        String(
-            format: localizedWidgetString("widget.grams"),
-            localizedNumberString(grams)
-        )
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: "fork.knife")
+                .font(.system(size: fontSize * 0.6, weight: .semibold))
+                .foregroundStyle(WidgetPalette.eaten)
+            Text(centerText)
+                .font(.system(size: fontSize, weight: .bold, design: .rounded))
+                .foregroundStyle(WidgetPalette.eaten)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Spacer(minLength: 0)
-            Text(valueText)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundStyle(.primary)
+            Text(localizedWidgetString("widget.kcal"))
+                .font(.system(size: fontSize * 0.6, weight: .medium))
+                .foregroundStyle(WidgetPalette.textSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            String(
+                format: localizedWidgetString("widget.a11y.kcal"),
+                centerText
+            )
+        )
     }
 }
 
@@ -231,65 +260,56 @@ struct macroWidgetEntryView: View {
     }
 
     private var smallBody: some View {
-        VStack(spacing: 8) {
-            MacroRingWithLabel(
-                snapshot: entry.snapshot,
-                ringSize: 80,
-                strokeWidth: 8,
-                numberFontSize: 18
-            )
-            VStack(spacing: 3) {
-                MacroRow(label: localizedWidgetString("widget.protein"), grams: entry.snapshot.proteinGrams, color: MacroPalette.protein)
-                MacroRow(label: localizedWidgetString("widget.carbs"), grams: entry.snapshot.carbsGrams, color: MacroPalette.carbs)
-                MacroRow(label: localizedWidgetString("widget.fat"), grams: entry.snapshot.fatGrams, color: MacroPalette.fat)
+        GeometryReader { geo in
+            let ringSize = max(30, min(42, (geo.size.width - 12) / 3))
+            VStack(alignment: .leading, spacing: 10) {
+                MacroCalorieHeader(snapshot: entry.snapshot, fontSize: 22)
+                Spacer(minLength: 0)
+                HStack(alignment: .top, spacing: 4) {
+                    ForEach(MacroKind.allCases, id: \.self) { kind in
+                        MacroRingItem(
+                            kind: kind,
+                            snapshot: entry.snapshot,
+                            ringSize: ringSize,
+                            lineWidth: 5,
+                            valueFontSize: 10,
+                            showsRemaining: false
+                        )
+                    }
+                }
+                Spacer(minLength: 0)
             }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var mediumBody: some View {
         GeometryReader { geo in
             let isCompact = geo.size.width < 310
-            let ringSize: CGFloat = isCompact ? 82 : 95
-            let hSpacing: CGFloat = isCompact ? 14 : 28
-            let buttonColumnWidth: CGFloat = isCompact ? 26 : 32
+            let ringSize: CGFloat = min(isCompact ? 56 : 62, geo.size.height - 62)
 
-            HStack(spacing: hSpacing) {
-                MacroRingWithLabel(
-                    snapshot: entry.snapshot,
-                    ringSize: ringSize,
-                    strokeWidth: 7,
-                    numberFontSize: isCompact ? 18 : 20
-                )
-
-                VStack(alignment: .leading, spacing: 20) {
-                    MacroRow(label: localizedWidgetString("widget.protein"), grams: entry.snapshot.proteinGrams, color: MacroPalette.protein)
-                    MacroRow(label: localizedWidgetString("widget.carbs"), grams: entry.snapshot.carbsGrams, color: MacroPalette.carbs)
-                    MacroRow(label: localizedWidgetString("widget.fat"), grams: entry.snapshot.fatGrams, color: MacroPalette.fat)
+            HStack(spacing: isCompact ? 8 : 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    MacroCalorieHeader(snapshot: entry.snapshot, fontSize: 17)
+                    HStack(alignment: .top, spacing: isCompact ? 2 : 6) {
+                        ForEach(MacroKind.allCases, id: \.self) { kind in
+                            MacroRingItem(
+                                kind: kind,
+                                snapshot: entry.snapshot,
+                                ringSize: ringSize,
+                                lineWidth: 7,
+                                valueFontSize: 13
+                            )
+                        }
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.25))
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
+                WidgetVerticalDivider()
 
-                VStack(spacing: 16) {
-                    ActionButton(
-                        icon: "magnifyingglass",
-                        destination: URL(string: "sparkyfitnessmobile://search")!,
-                        accessibilityLabel: localizedWidgetString("widget.search_food")
-                    )
-                    ActionButton(
-                        icon: "barcode.viewfinder",
-                        destination: URL(string: "sparkyfitnessmobile://scan")!,
-                        accessibilityLabel: localizedWidgetString("widget.scan_barcode")
-                    )
-                }
-                .frame(width: buttonColumnWidth)
-                .frame(maxHeight: .infinity)
+                WidgetActionColumn()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }
@@ -300,7 +320,7 @@ struct macroWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MacroProvider()) { entry in
             macroWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetSurfaceBackground()
         }
         .configurationDisplayName("widget.macro.name")
         .description("widget.macro.description")
@@ -314,7 +334,7 @@ struct macroWidget: Widget {
     } timeline: {
         MacroEntry(
             date: .now,
-            snapshot: MacroSnapshot(proteinGrams: 92, carbsGrams: 180, fatGrams: 55, caloriesConsumed: 1540, lastUpdated: .now)
+            snapshot: MacroSnapshot(proteinGrams: 92, carbsGrams: 180, fatGrams: 55, caloriesConsumed: 1540, proteinGoal: 150, carbsGoal: 200, fatGoal: 65, lastUpdated: .now)
         )
         MacroEntry(date: .now, snapshot: .empty)
     }
@@ -324,7 +344,7 @@ struct macroWidget: Widget {
     } timeline: {
         MacroEntry(
             date: .now,
-            snapshot: MacroSnapshot(proteinGrams: 92, carbsGrams: 180, fatGrams: 55, caloriesConsumed: 1540, lastUpdated: .now)
+            snapshot: MacroSnapshot(proteinGrams: 92, carbsGrams: 180, fatGrams: 55, caloriesConsumed: 1540, proteinGoal: 150, carbsGoal: 200, fatGoal: 65, lastUpdated: .now)
         )
         MacroEntry(date: .now, snapshot: .empty)
     }

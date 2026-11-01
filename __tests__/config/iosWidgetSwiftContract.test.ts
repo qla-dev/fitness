@@ -77,6 +77,14 @@ describe('iOS WidgetKit Swift contract', () => {
         /configurationDisplayName\("widget\.macro\.name"\)/
       );
       expect(macro).toMatch(/\.description\("widget\.macro\.description"\)/);
+
+      const activity = readSwift('activityWidget.swift');
+      expect(activity).toMatch(
+        /configurationDisplayName\("widget\.activity\.name"\)/
+      );
+      expect(activity).toMatch(
+        /\.description\("widget\.activity\.description"\)/
+      );
     });
   });
 
@@ -114,6 +122,13 @@ describe('iOS WidgetKit Swift contract', () => {
       expect(readSwift('macroWidget.swift')).toContain(
         'let kind: String = "macroWidget"'
       );
+      expect(readSwift('activityWidget.swift')).toContain(
+        'let kind: String = "activityWidget"'
+      );
+      const bundle = readSwift('index.swift');
+      for (const widget of ['widget()', 'macroWidget()', 'activityWidget()']) {
+        expect(bundle).toContain(widget);
+      }
     });
 
     it('reloads both kinds by the same identifiers used by the JS bridge', () => {
@@ -123,6 +138,7 @@ describe('iOS WidgetKit Swift contract', () => {
       );
       expect(js).toContain("const WIDGET_KIND = 'widget'");
       expect(js).toContain("const MACRO_WIDGET_KIND = 'macroWidget'");
+      expect(js).toContain("const ACTIVITY_WIDGET_KIND = 'activityWidget'");
 
       const sync = fs.readFileSync(
         path.join(__dirname, '../../src/hooks/useWidgetSync.ts'),
@@ -130,10 +146,21 @@ describe('iOS WidgetKit Swift contract', () => {
       );
       expect(sync).toContain("const WIDGET_KIND = 'widget'");
       expect(sync).toContain("const MACRO_WIDGET_KIND = 'macroWidget'");
+      expect(sync).toContain("const ACTIVITY_WIDGET_KIND = 'activityWidget'");
+      expect(sync).toContain(
+        "const ACTIVITY_SNAPSHOT_KEY = 'activitySnapshot'"
+      );
+      expect(readSwift('activityWidget.swift')).toContain(
+        'defaults.data(forKey: "activitySnapshot")'
+      );
     });
 
     it('keeps the timeline refresh cadence (15 minutes and midnight)', () => {
-      for (const file of ['widgets.swift', 'macroWidget.swift']) {
+      for (const file of [
+        'widgets.swift',
+        'macroWidget.swift',
+        'activityWidget.swift',
+      ]) {
         const src = readSwift(file);
         expect(src).toContain('byAdding: .minute, value: 15');
         expect(src).toContain(
@@ -170,19 +197,25 @@ describe('iOS WidgetKit Swift contract', () => {
 
   describe('icon-only action accessibility', () => {
     it('exposes localized accessibility labels on both icon-only action buttons', () => {
+      // The shortcut column is shared by the calorie and macro widgets.
+      const style = readSwift('WidgetStyle.swift');
+      expect(style).toMatch(
+        /accessibilityLabel: localizedWidgetString\("widget\.search_food"\)/
+      );
+      expect(style).toMatch(
+        /accessibilityLabel: localizedWidgetString\("widget\.scan_barcode"\)/
+      );
       for (const file of ['widgets.swift', 'macroWidget.swift']) {
-        const src = readSwift(file);
-        expect(src).toMatch(
-          /accessibilityLabel: localizedWidgetString\("widget\.search_food"\)/
-        );
-        expect(src).toMatch(
-          /accessibilityLabel: localizedWidgetString\("widget\.scan_barcode"\)/
-        );
+        expect(readSwift(file)).toContain('WidgetActionColumn()');
       }
     });
 
     it('does not rely on SF Symbol names for user-facing accessibility', () => {
-      for (const file of ['widgets.swift', 'macroWidget.swift']) {
+      for (const file of [
+        'widgets.swift',
+        'macroWidget.swift',
+        'WidgetStyle.swift',
+      ]) {
         const src = readSwift(file);
         expect(src).not.toMatch(/accessibilityLabel: "magnifyingglass"/);
         expect(src).not.toMatch(/accessibilityLabel: "barcode\.viewfinder"/);

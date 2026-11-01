@@ -4,13 +4,17 @@
  */
 import type { SupportedLanguage } from './localeRegistry';
 import locale_bsTranslation from './locales/bs/translation.json';
+import locale_deTranslation from './locales/de/translation.json';
 import locale_enTranslation from './locales/en/translation.json';
 import locale_esTranslation from './locales/es/translation.json';
+import locale_itTranslation from './locales/it/translation.json';
 import locale_plTranslation from './locales/pl/translation.json';
 
 export const RESOURCE_MAP = {
   "bs": { translation: locale_bsTranslation },
+  "de": { translation: locale_deTranslation },
   "en": { translation: locale_enTranslation },
   "es": { translation: locale_esTranslation },
+  "it": { translation: locale_itTranslation },
   "pl": { translation: locale_plTranslation },
 } satisfies Record<SupportedLanguage, { translation: object }>;

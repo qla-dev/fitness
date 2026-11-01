@@ -1,7 +1,7 @@
 import type { RecordZone } from '@workspace/shared';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import Hypnogram from '../components/Hypnogram';
@@ -21,6 +21,7 @@ import {
   formatSleepDuration,
   resolveSleepZone,
 } from '../utils/sleepDay';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type Props = RootStackScreenProps<'SleepDetail'>;
 
@@ -194,7 +195,7 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
     }
 
     return (
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={({ nativeEvent }) => {
@@ -202,22 +203,18 @@ const SleepDetailScreen: React.FC<Props> = ({ route }) => {
             nativeEvent.contentOffset.y + nativeEvent.contentInset.top;
           setShowHeaderTitle(offset > 48);
         }}
-        automaticallyAdjustsScrollIndicatorInsets={usesNativeHeader}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <SleepDetailTitle entryDate={entry.entry_date} />
         <SleepDetailHeader entry={entry} zone={zone} />
         <Hypnogram stages={stages} zone={zone} />
         <SleepStagesBreakdown entry={entry} />
         <SleepBiometrics entry={entry} />
-      </ScrollView>
+      </NativeHeaderScrollView>
     );
   };
 

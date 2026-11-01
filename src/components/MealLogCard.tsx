@@ -23,8 +23,24 @@ export interface MealLogCardProps {
    * button makes explicit. Omit and neither is rendered.
    */
   onOpen?: () => void;
+  /**
+   * Leaves out the trailing "…" button, so only the row opens the item. For
+   * a card whose actions already fill the row (a medication's dose pills).
+   */
+  hideOverflow?: boolean;
   /** Adds food to this meal. The card's one accented action. */
   onLog?: () => void;
+  /** A second line under the label, e.g. a medication's time and dose. */
+  subtitle?: string;
+  /** Replaces the Log button's label and its accessibility label. */
+  logLabel?: string;
+  logAccessibilityLabel?: string;
+  /** A second pill before Log, in the same style (a dose's Skip). */
+  secondaryAction?: {
+    label: string;
+    accessibilityLabel: string;
+    onPress: () => void;
+  };
   /** The logged entries, rendered under the header. */
   children?: React.ReactNode;
 }
@@ -43,11 +59,23 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
   badge,
   onOpen,
   onLog,
+  hideOverflow = false,
+  subtitle,
+  logLabel,
+  logAccessibilityLabel,
+  secondaryAction,
   children,
 }) => {
   const { t } = useTranslation();
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
   const hasItems = React.Children.toArray(children).length > 0;
+  // The row and the "…" open the same thing, with the same tick.
+  const open = onOpen
+    ? () => {
+        fireSelectionHaptic();
+        onOpen();
+      }
+    : undefined;
 
   const header = (
     <>
@@ -56,12 +84,29 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
           the settings rows: a meal is the name of a card, not a heading over
           the screen, and a size larger made the meals shout over everything
           they sit between. */}
-      <Text
-        className="text-base font-semibold text-text-primary flex-1"
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
+      {subtitle ? (
+        <View className="flex-1">
+          <Text
+            className="text-base font-semibold text-text-primary"
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+          <Text
+            className="text-sm text-text-secondary mt-0.5"
+            numberOfLines={1}
+          >
+            {subtitle}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          className="text-base font-semibold text-text-primary flex-1"
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      )}
     </>
   );
 
@@ -73,7 +118,7 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
       >
         {onOpen ? (
           <Pressable
-            onPress={onOpen}
+            onPress={open}
             className="flex-row gap-2 items-center flex-1"
             accessibilityRole="button"
             accessibilityLabel={t('foodSummary.nutritionBreakdown', {
@@ -86,12 +131,19 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
         ) : (
           <View className="flex-row gap-2 items-center flex-1">{header}</View>
         )}
+        {badge ? (
+          <View className="bg-accent-primary/5 rounded-full px-4 py-1.5">
+            <Text className="text-sm font-bold text-accent-primary">
+              {badge}
+            </Text>
+          </View>
+        ) : null}
         {/* The overflow button and the row behind it go to the same place: the
             row is the shortcut, this is the affordance that says so out loud.
             It replaces the chevron that used to sit here. */}
-        {onOpen ? (
+        {onOpen && !hideOverflow ? (
           <Pressable
-            onPress={onOpen}
+            onPress={open}
             accessibilityRole="button"
             accessibilityLabel={t('foodSummary.mealOptions', {
               defaultValue: 'More options for {{label}}',
@@ -103,12 +155,20 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
             <Icon name="ellipsis-horizontal" size={18} color={accentPrimary} />
           </Pressable>
         ) : null}
-        {badge ? (
-          <View className="bg-accent-primary/5 rounded-full px-4 py-1.5">
+        {secondaryAction ? (
+          <Pressable
+            onPress={() => {
+              fireSelectionHaptic();
+              secondaryAction.onPress();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={secondaryAction.accessibilityLabel}
+            className="bg-accent-primary/10 rounded-full px-4 py-1.5"
+          >
             <Text className="text-sm font-bold text-accent-primary">
-              {badge}
+              {secondaryAction.label}
             </Text>
-          </View>
+          </Pressable>
         ) : null}
         {onLog ? (
           <Pressable
@@ -117,14 +177,17 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
               onLog();
             }}
             accessibilityRole="button"
-            accessibilityLabel={t('foodSummary.logMeal', {
-              defaultValue: 'Log food to {{label}}',
-              label,
-            })}
+            accessibilityLabel={
+              logAccessibilityLabel ??
+              t('foodSummary.logMeal', {
+                defaultValue: 'Log food to {{label}}',
+                label,
+              })
+            }
             className="bg-accent-primary/10 rounded-full px-4 py-1.5"
           >
             <Text className="text-sm font-bold text-accent-primary">
-              {t('foodSummary.log', { defaultValue: 'Log' })}
+              {logLabel ?? t('foodSummary.log', { defaultValue: 'Log' })}
             </Text>
           </Pressable>
         ) : null}

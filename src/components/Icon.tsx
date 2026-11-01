@@ -197,6 +197,22 @@ const ICON_MAP = {
   wellness: { sf: 'leaf', ion: 'leaf-outline' },
   'wellness-filled': { sf: 'leaf.fill', ion: 'leaf' },
   medication: { sf: 'pills', ion: 'medkit-outline' },
+  // One per medication form, for the form picker.
+  'med-pill': { sf: 'pill', ion: 'medical-outline' },
+  'med-tablet': { sf: 'pills', ion: 'ellipse-outline' },
+  'med-capsule': { sf: 'capsule', ion: 'tablet-portrait-outline' },
+  'med-liquid': { sf: 'drop', ion: 'water-outline' },
+  'med-injection': { sf: 'syringe', ion: 'medkit-outline' },
+  'med-patch': { sf: 'bandage', ion: 'bandage-outline' },
+  'med-inhaler': { sf: 'lungs', ion: 'cloud-outline' },
+  'med-drops': { sf: 'eyedropper', ion: 'eyedrop-outline' },
+  'med-nasal-spray': { sf: 'nose', ion: 'sparkles-outline' },
+  'med-cream': { sf: 'hands.and.sparkles', ion: 'hand-left-outline' },
+  'med-suppository': { sf: 'capsule.portrait', ion: 'egg-outline' },
+  'med-other': {
+    sf: 'ellipsis.circle',
+    ion: 'ellipsis-horizontal-circle-outline',
+  },
   calendar: { sf: 'calendar', ion: 'calendar-outline' },
 
   // Sleep

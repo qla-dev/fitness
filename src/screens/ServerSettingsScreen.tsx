@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   Pressable,
   Alert,
@@ -38,6 +37,7 @@ import {
   serverConnectionQueryKey,
 } from '../hooks/queryKeys';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ServerSettingsScreenProps = RootStackScreenProps<'ServerSettings'>;
 
@@ -330,15 +330,12 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {activeConfig && (
           <>
@@ -489,7 +486,7 @@ const ServerSettingsScreen: React.FC<ServerSettingsScreenProps> = ({
             {t('auth.addServer', { defaultValue: 'Add Server' })}
           </Text>
         </Button>
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       <ServerConfigModal
         visible={unifiedModalVisible}

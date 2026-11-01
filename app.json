@@ -4,7 +4,7 @@
     "slug": "fitness",
     "scheme": "sparkyfitnessmobile",
     "orientation": "portrait",
-    "icon": "./assets/icons/logo-v3.jpg",
+    "icon": "./assets/icons/logo-v4.png",
     "userInterfaceStyle": "automatic",
     "plugins": [
       [
@@ -44,7 +44,7 @@
         {
           "backgroundColor": "#000000",
           "imageWidth": 200,
-          "image": "./assets/icons/logo-v3.jpg"
+          "image": "./assets/icons/logo-v4.png"
         }
       ],
       [

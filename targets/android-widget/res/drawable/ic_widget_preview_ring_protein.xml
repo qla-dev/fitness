@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of one nutrient ring. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="52dp"
+    android:height="52dp"
+    android:viewportWidth="52"
+    android:viewportHeight="52">
+    <path
+        android:pathData="M26,3 A23,23 0 1,1 26,49 A23,23 0 1,1 26,3"
+        android:strokeColor="#FFE5E9F1"
+        android:strokeWidth="6" />
+    <path
+        android:pathData="M26,3 A23,23 0 1,1 26,49 A23,23 0 1,1 26,3"
+        android:strokeColor="#FF7AD680"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:trimPathEnd="0.61" />
+</vector>

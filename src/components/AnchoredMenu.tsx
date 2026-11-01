@@ -26,6 +26,10 @@ export type AnchoredMenuItem = {
   selected?: boolean;
   /** Renders as a non-interactive uppercase group label above option rows. */
   isGroupLabel?: boolean;
+  /** Renders as a non-interactive line of copy, as a menu's title. */
+  isNote?: boolean;
+  /** Red label, for an action that removes or turns something off. */
+  destructive?: boolean;
   onPress?: () => void;
 };
 
@@ -73,6 +77,7 @@ const AnchoredMenu: React.FC<Props> = ({
   const accentColor = String(useCSSVariable('--color-accent-primary'));
   const textPrimary = String(useCSSVariable('--color-text-primary'));
   const textMuted = String(useCSSVariable('--color-text-muted'));
+  const danger = String(useCSSVariable('--color-icon-danger'));
 
   if (!visible || !anchor) return null;
 
@@ -132,7 +137,13 @@ const AnchoredMenu: React.FC<Props> = ({
             style={{ transformOrigin: isLeftHalf ? 'top left' : 'top right' }}
           >
             {items.map((item, index) =>
-              item.isGroupLabel ? (
+              item.isNote ? (
+                <View key={item.key} className="px-4 pt-3 pb-2">
+                  <Text className="text-sm" style={{ color: textMuted }}>
+                    {item.label}
+                  </Text>
+                </View>
+              ) : item.isGroupLabel ? (
                 <View
                   key={item.key}
                   className={`px-4 pt-2.5 pb-1 ${
@@ -154,7 +165,9 @@ const AnchoredMenu: React.FC<Props> = ({
                     item.onPress?.();
                   }}
                   className={`flex-row items-center gap-3 px-4 py-3 ${
-                    index > 0 && !items[index - 1]?.isGroupLabel
+                    index > 0 &&
+                    !items[index - 1]?.isGroupLabel &&
+                    !items[index - 1]?.isNote
                       ? 'border-t border-border-subtle'
                       : ''
                   }`}
@@ -171,7 +184,7 @@ const AnchoredMenu: React.FC<Props> = ({
                   ) : null}
                   <Text
                     className="text-base font-medium flex-1"
-                    style={{ color: textPrimary }}
+                    style={{ color: item.destructive ? danger : textPrimary }}
                   >
                     {item.label}
                   </Text>

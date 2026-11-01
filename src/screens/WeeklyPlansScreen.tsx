@@ -47,7 +47,7 @@ import type { MealPlanTemplate } from '../types/mealPlans';
 import type { RootStackScreenProps } from '../types/navigation';
 
 /** Matches `meal_plan_coins` in the backend config. */
-export const MEAL_PLAN_COINS = 3;
+export const MEAL_PLAN_COINS = 10;
 
 /**
  * The user's weekly meal plans: a card per plan with the active one marked,
@@ -392,7 +392,9 @@ export default function WeeklyPlansScreen({
             className="gap-3"
             onLayout={(event) => {
               const { width } = event.nativeEvent.layout;
-              setColumnWidth((current) => (current === width ? current : width));
+              setColumnWidth((current) =>
+                current === width ? current : width
+              );
             }}
           >
             <Text className="text-text-primary text-xl font-bold">

@@ -65,7 +65,7 @@ jest.mock('../../src/services/haptics', () => ({
 beforeEach(() => jest.clearAllMocks());
 
 test.each([true, false])(
-  'offers health sync and MarkAI without an account (native tabs: %s)',
+  'offers MarkAI without an account, and no health sync row (native tabs: %s)',
   (nativeTabs) => {
     mockUseNativeTabs.mockReturnValue(nativeTabs);
     const screen = render(
@@ -78,8 +78,9 @@ test.each([true, false])(
         <AddHubScreen />
       </SafeAreaProvider>
     );
-    fireEvent.press(screen.getByText('Sync Health Data'));
-    expect(mockActions.syncHealthData).toHaveBeenCalledTimes(1);
+    // Health sync and cycle logging live on their own screens now.
+    expect(screen.queryByText('Sync Health Data')).toBeNull();
+    expect(screen.queryByText('Log Cycle')).toBeNull();
     fireEvent.press(screen.getByText('MarkAI'));
     expect(mockNavigation.navigate).toHaveBeenCalledWith('MarkAI');
   }

@@ -677,6 +677,8 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
     // button would otherwise occupy. The drill-in still needs that slot for
     // back, so there the filter stays on the right.
     left: isTabRoot ? filterItem : { kind: 'back' },
+    // At the tab root the corner buttons line up with every other tab's.
+    edge: isTabRoot ? 'tab' : undefined,
     right: isTabRoot
       ? [
           {

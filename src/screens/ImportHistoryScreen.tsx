@@ -6,13 +6,7 @@ import React, {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
+import { View, Text, ActivityIndicator, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 
@@ -32,6 +26,7 @@ import type { BackfillOutcome } from '../services/backfillService';
 import type { RootStackScreenProps } from '../types/navigation';
 import Icon, { type IconName } from '../components/Icon';
 import { useCSSVariable } from 'uniwind';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ImportHistoryScreenProps = RootStackScreenProps<'ImportHistory'>;
 
@@ -371,15 +366,12 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {status === 'loading' && (
           <View className="py-12 items-center">
@@ -707,7 +699,7 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
             )}
           </View>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

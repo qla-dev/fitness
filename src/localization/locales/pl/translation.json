@@ -10,7 +10,7 @@
     "close": "Zamknij",
     "cancel": "Anuluj",
     "continue": "Kontynuuj",
-    "retry": "Ponów",
+    "retry": "Spróbuj ponownie",
     "details": "Szczegóły",
     "error": "Błąd",
     "delete": "Usuń",
@@ -63,8 +63,7 @@
     "selectOption": "Wybierz opcję",
     "requestTimedOut": "Przekroczono limit czasu żądania. Sprawdź połączenie z serwerem.",
     "nextStep": "Następny krok",
-    "notNow": "Później",
-    "retry": "Spróbuj ponownie"
+    "notNow": "Później"
   },
   "settings": {
     "app": "Ustawienia aplikacji",
@@ -79,7 +78,9 @@
       "managedByIOS": "Zarządzane przez iOS",
       "iosSettingsHint": "Zmień język tej aplikacji w Ustawieniach iOS",
       "openSettingsFailed": "Nie udało się otworzyć Ustawień iOS",
-      "iosSubtitle": "{{language}} · {{managedBy}}"
+      "iosSubtitle": "{{language}} · {{managedBy}}",
+      "italian": "Italiano",
+      "german": "Deutsch"
     },
     "lastSynced": "Ostatnia synchronizacja: {{time}}",
     "addServer": "Dotknij, aby dodać serwer",
@@ -139,7 +140,7 @@
     "foods": "Produkty spożywcze",
     "meals": "Posiłki",
     "exercises": "Ćwiczenia",
-    "diary": "Dziennik",
+    "diary": "Tracker",
     "details": "Szczegóły",
     "dashboard": "Pulpit",
     "add": "Dodaj",
@@ -961,7 +962,7 @@
     "loadFailed": "Nie udało się wczytać dziennika",
     "checkConnection": "Sprawdź połączenie i spróbuj ponownie.",
     "retry": "Ponów",
-    "title": "Dziennik",
+    "title": "Tracker",
     "addFood": "Dodaj produkt",
     "emptyDay": "Brak wpisów z tego dnia"
   },
@@ -1113,7 +1114,8 @@
       "failedRemoveDose": "Nie udało się usunąć dawki leku {{name}}",
       "failedUnmark": "Nie udało się cofnąć oznaczenia {{name}}",
       "failedUpdate": "Nie udało się zaktualizować {{name}}",
-      "failedLog": "Nie udało się zapisać {{name}}"
+      "failedLog": "Nie udało się zapisać {{name}}",
+      "undo": "Cofnij"
     },
     "card": {
       "title": "Leki",
@@ -1194,7 +1196,11 @@
     "inactiveCount_other": "Nieaktywnego ({{count}})",
     "mealRelation": {
       "awayFromMeals": "Z dala od posiłków"
-    }
+    },
+    "trackingTitle": "Każda dawka na swoim miejscu. Zakończ w każdej chwili; lista zostaje tutaj.",
+    "trackingOffTitle": "Leki nie są widoczne w Trackerze. Rozpocznij śledzenie, aby je przywrócić.",
+    "stopTitle": "Zakończyć śledzenie leków?",
+    "stopMessage": "Leki znikną z Trackera. Twoje leki i zapisane dawki zostaną zachowane, a śledzenie możesz wznowić tutaj."
   },
   "scheduleSummary": {
     "daily": "Codziennie",
@@ -4692,7 +4698,10 @@
       "dayCycle_few": "{{count}}-dniowe cykle",
       "dayCycle_many": "{{count}}-dniowy cykl",
       "dayCycle_other": "{{count}}-dniowy cykl"
-    }
+    },
+    "trackingTitle": "Twój rytm, na twoich zasadach. Wstrzymaj w każdej chwili i wróć do tego w Profilu.",
+    "stopTitle": "Zakończyć śledzenie cyklu?",
+    "stopMessage": "Śledzenie cyklu zostanie wyłączone i zniknie z Trackera. Zapisane dni zostaną zachowane, a śledzenie możesz włączyć ponownie w Profilu w sekcji Cykl i ciąża."
   },
   "workoutPresetLibrary": {
     "configure": "Skonfiguruj połączenie z serwerem w Ustawieniach, aby wyświetlić szablony treningów."
@@ -4788,5 +4797,49 @@
     "percentUnit": "%",
     "bpmUnit": "bpm",
     "quality": "Jakość snu"
+  },
+  "featureFacts": {
+    "heading": "Warto wiedzieć",
+    "cycle": {
+      "cover1Title": "Więcej niż miesiączka",
+      "cover1Body": "Cykl przechodzi przez cztery fazy: menstruacyjną, folikularną, owulację i lutealną. Energia, sen, apetyt i nastrój mogą się zmieniać w każdej z nich, więc wiedza o tym, gdzie jesteś, pomaga zrozumieć resztę dnia.",
+      "cover2Title": "Coraz trafniej z każdym cyklem",
+      "cover2Body": "Prognozy powstają z cykli, które zapisujesz. Zaznaczaj początek i koniec każdej miesiączki, a przewidywania kolejnej miesiączki i okna płodnego coraz lepiej dopasują się do twojego rytmu.",
+      "aboutTitle": "O śledzeniu cyklu",
+      "aboutBody": "U dorosłych typowe są cykle trwające od 21 do 35 dni, a stres, podróże, choroba lub zmiana rutyny mogą przesunąć cykl o kilka dni. Prognozy są szacunkami, a nie antykoncepcją. Porozmawiaj z lekarzem, jeśli miesiączka nie pojawia się przez trzy miesiące lub dłużej albo krwawienie lub ból są znacznie silniejsze niż zwykle."
+    },
+    "medications": {
+      "cover1Title": "Rutyna to najlepsze przypomnienie",
+      "cover1Body": "Dawki powiązane z czymś, co już robisz, na przykład ze śniadaniem lub myciem zębów, są przyjmowane najczęściej. Zapisuj każdą dawkę, gdy ją przyjmujesz, a dzień pokaże, co zrobione, a co jeszcze przed tobą.",
+      "cover2Title": "Dawki doraźne też się liczą",
+      "cover2Body": "Zapisywanie leków przeciwbólowych i innych leków przyjmowanych doraźnie pokazuje, jak często po nie sięgasz. Zapis z kilku tygodni warto zabrać na następną wizytę.",
+      "aboutTitle": "O śledzeniu leków",
+      "aboutBody": "Leki zapisują dawki, które odnotujesz, i przypominają o ustawionych harmonogramach. Nie sprawdzają dawek ani interakcji. Stosuj się do zaleceń lekarza lub farmaceuty i zapytaj ich, zanim przyjmiesz podwójną dawkę po pominięciu."
+    }
+  },
+  "medicationSetup": {
+    "doseUnit": {
+      "pill": "pigułka",
+      "tablet": "tabletka",
+      "capsule": "kapsułka",
+      "ml": "ml",
+      "patch": "plaster",
+      "puff": "wdech",
+      "drop": "kropla",
+      "spray": "dawka aerozolu",
+      "application": "aplikacja",
+      "suppository": "czopek"
+    },
+    "typeHeading": "Jaka to postać?",
+    "doseHeading": "Ile na dawkę?",
+    "suggestSource": "Podpowiedzi z amerykańskiej Narodowej Biblioteki Medycznej",
+    "scheduleHeading": "Kiedy to przyjmujesz?",
+    "scheduleHint": "Ustaw harmonogram przypomnień lub pomiń, aby zapisywać dawki doraźnie.",
+    "adjustSchedule": "Dostosuj harmonogram"
+  },
+  "tracking": {
+    "stop": "Zakończ śledzenie",
+    "start": "Rozpocznij śledzenie",
+    "settings": "Ustawienia śledzenia"
   }
 }

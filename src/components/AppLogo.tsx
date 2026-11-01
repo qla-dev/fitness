@@ -9,23 +9,25 @@ import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
  * on About and Onboarding purely because those screens each held their own
  * `require`.
  *
- * `assets/icons/logo-v3.jpg` is the two figures on the brand's black ground.
+ * `assets/icons/logo-v4.png` is the Tracker's two calorie arches — the blue
+ * eaten arc over the white burned arc — closed into faint full rings, with
+ * MarkAI's sparkles at their centre, on the brand's black ground. The previous
+ * mark, `logo-v3.jpg`, stays in the folder.
  * The splash paints the same black as its own background and displays
  * the same image, so the launch screen and this mark are the same
  * artwork rather than two files that have to be kept in step.
  *
  * The ground is black rather than themed, because the mark is drawn for black
- * — the white figure disappears on a light surface. The rounded clip is the
+ * — the white arch disappears on a light surface. The rounded clip is the
  * platform's own icon radius (iOS's superellipse is ~22.4% of the side), which
  * is what makes the square read as an app mark instead of a pasted-in square.
  */
 /** The mark's ground, shared by the splash and the Android adaptive icon. */
 export const BRAND_GROUND = '#000000';
 /**
- * The accent figure's colour. The artwork arrived in an unrelated cyan; the
- * asset is generated with this instead so the mark's second figure is the same
- * blue the app accents everything else with (`--color-accent-primary` on bare
- * `:root`). Change the token and this asset has to be regenerated with it.
+ * The outer arch's and the sparkles' colour: the same blue the app accents
+ * everything else with (`--color-accent-primary` on bare `:root`). Change the
+ * token and this asset has to be regenerated with it.
  */
 export const BRAND_ACCENT = '#5087F7';
 
@@ -49,7 +51,7 @@ const AppLogo: React.FC<{
     ]}
   >
     <Image
-      source={require('../../assets/icons/logo-v3.jpg')}
+      source={require('../../assets/icons/logo-v4.png')}
       style={{ width: size, height: size }}
       resizeMode="contain"
       accessibilityIgnoresInvertColors

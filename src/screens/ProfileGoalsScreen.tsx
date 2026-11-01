@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 
@@ -23,6 +23,7 @@ import {
 } from '../constants/profileGoals';
 import { getTodayDate } from '../utils/dateUtils';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ProfileGoalsScreenProps = RootStackScreenProps<'ProfileGoals'>;
 
@@ -78,15 +79,12 @@ const ProfileGoalsScreen: React.FC<ProfileGoalsScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <Text className="text-text-secondary text-sm mb-4">
           {t('profile.goalsHelp', {
@@ -122,7 +120,7 @@ const ProfileGoalsScreen: React.FC<ProfileGoalsScreenProps> = ({
             </SettingsRowGroup>
           ))
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

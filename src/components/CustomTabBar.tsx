@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   View,
+  Pressable,
   TouchableOpacity,
   Text,
   Platform,
@@ -122,8 +123,12 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
           const iconName = TAB_ICONS[route.name];
           const tintColor = isFocused ? tabActive : tabInactive;
 
+          // Pressable, not TouchableOpacity: the first tap on a tab mounts its
+          // screen and holds the JS thread, and the opacity fade could not
+          // animate back until it finished, so the tab sat at 20% opacity.
+          // The selected pill is the feedback, as on the native tab bar.
           return (
-            <TouchableOpacity
+            <Pressable
               key={route.key}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : undefined}
@@ -153,7 +158,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               >
                 {label}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>

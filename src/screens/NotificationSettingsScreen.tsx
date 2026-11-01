@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
@@ -19,6 +19,7 @@ import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type NotificationSettingsScreenProps =
   RootStackScreenProps<'NotificationSettings'>;
@@ -105,15 +106,12 @@ const NotificationSettingsScreen: React.FC<
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <SettingsRow
           title={t('notificationSettings.allow', {
@@ -256,7 +254,7 @@ const NotificationSettingsScreen: React.FC<
             )}
           </SettingsRowGroup>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

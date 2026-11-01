@@ -79,6 +79,32 @@ class CalorieWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun setActivitySnapshot(json: String, promise: Promise) {
+        val ctx = reactApplicationContext
+        moduleScope.launch {
+            try {
+                val prefs = ctx.getSharedPreferences(
+                    ActivityWidgetReceiver.PREFS_NAME,
+                    Context.MODE_PRIVATE,
+                )
+                if (!prefs.edit().putString(ActivityWidgetReceiver.PREFS_KEY_SNAPSHOT, json).commit()) {
+                    throw IllegalStateException("Failed to persist activity widget snapshot")
+                }
+
+                val manager = GlanceAppWidgetManager(ctx)
+                manager.getGlanceIds(ActivityWidget::class.java).forEach { id ->
+                    updateAppWidgetState(ctx, id) { state ->
+                        state[ActivityWidget.SNAPSHOT_STATE_KEY] = json
+                    }
+                }
+                promise.resolve(null)
+            } catch (e: Exception) {
+                promise.reject("E_WRITE_FAILED", e)
+            }
+        }
+    }
+
+    @ReactMethod
     fun prepareWidgetLocale(
         preference: String,
         effectiveLanguage: String,
@@ -98,6 +124,9 @@ class CalorieWidgetModule(reactContext: ReactApplicationContext) :
                     WidgetLocale.bumpLocaleRenderRevision(ctx, id)
                 }
                 manager.getGlanceIds(MacroWidget::class.java).forEach { id ->
+                    WidgetLocale.bumpLocaleRenderRevision(ctx, id)
+                }
+                manager.getGlanceIds(ActivityWidget::class.java).forEach { id ->
                     WidgetLocale.bumpLocaleRenderRevision(ctx, id)
                 }
 
@@ -166,6 +195,41 @@ class CalorieWidgetModule(reactContext: ReactApplicationContext) :
                     promise.reject(
                         "E_RELOAD_FAILED",
                         RuntimeException("$failures macro widget instance(s) failed to update", firstFailure),
+                    )
+                } else {
+                    promise.resolve(null)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                promise.reject("E_RELOAD_FAILED", e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun reloadActivityWidget(promise: Promise) {
+        val ctx = reactApplicationContext
+        moduleScope.launch {
+            try {
+                val manager = GlanceAppWidgetManager(ctx)
+                val widget = ActivityWidget()
+                var failures = 0
+                var firstFailure: Exception? = null
+                manager.getGlanceIds(ActivityWidget::class.java).forEach { id ->
+                    try {
+                        widget.update(ctx, id)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        failures++
+                        if (firstFailure == null) firstFailure = e
+                    }
+                }
+                if (failures > 0) {
+                    promise.reject(
+                        "E_RELOAD_FAILED",
+                        RuntimeException("$failures activity widget instance(s) failed to update", firstFailure),
                     )
                 } else {
                     promise.resolve(null)

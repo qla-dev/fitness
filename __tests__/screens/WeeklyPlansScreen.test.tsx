@@ -103,7 +103,7 @@ it('opens the questionnaire, then plans only after confirming the coins', async 
   jest.mocked(createWeeklyPlan).mockResolvedValue({ ...plan, id: 'p2' } as any);
   const alert = jest.spyOn(Alert, 'alert');
   const screen = renderScreen();
-  fireEvent.press(await screen.findByText('Create meal plan · 3 coins'));
+  fireEvent.press(await screen.findByText('Create meal plan · 10 coins'));
   expect(navigation.navigate).toHaveBeenCalledWith('SetupWizard');
 
   const session = getSetupWizardSession()!;

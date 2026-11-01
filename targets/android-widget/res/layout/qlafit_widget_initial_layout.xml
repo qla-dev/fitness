@@ -2,82 +2,67 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#FFFFFFFF"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="#FFF9FAFB"
     android:padding="12dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/widget_preview_calories_left"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#FF1F1F1F"
-        android:maxLines="1" />
-
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        android:background="#1F000000">
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_widget_preview_arcs" />
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="25"
-            android:text=""
-            android:background="#FF6B5A9B" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="75"
-            android:text="" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/widget_preview_calories_left"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FF5087F7"
+            android:maxLines="1" />
     </LinearLayout>
 
     <TextView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:text="" />
+        android:layout_width="1dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="4dp"
+        android:text=""
+        android:background="#FFE1E5EA" />
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_width="32dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="32dp"
-            android:layout_weight="1">
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="4dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_widget_search"
+            android:tint="#FF5087F7"
+            android:contentDescription="@string/widget_search_food" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_widget_search"
-                android:contentDescription="@string/widget_search_food" />
-        </FrameLayout>
-
-        <TextView
-            android:layout_width="1dp"
-            android:layout_height="24dp"
-            android:text=""
-            android:background="#1F000000" />
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="32dp"
-            android:layout_weight="1">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_widget_scan"
-                android:contentDescription="@string/widget_scan_barcode" />
-        </FrameLayout>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="4dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_widget_scan"
+            android:tint="#FF5087F7"
+            android:contentDescription="@string/widget_scan_barcode" />
     </LinearLayout>
 </LinearLayout>

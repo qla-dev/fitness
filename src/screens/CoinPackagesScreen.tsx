@@ -131,7 +131,7 @@ export default function CoinPackagesScreen({
           <Text className="text-text-muted text-xs mx-1 mb-3">
             {t('coins.bundleIntro', {
               defaultValue:
-                'A one-time purchase, no subscription. Your 10 free messages a day are used first.',
+                'A one-time purchase, no subscription. Your 5 free messages a day are used first.',
             })}
           </Text>
           <View className="flex-row gap-2" accessibilityRole="radiogroup">

@@ -7,11 +7,20 @@ struct CalorieSnapshot {
     let goal: Double
     let remaining: Double
     let progress: Double
+    /// The Move goal burned fills against; 0 when an older snapshot lacks it.
+    var burnGoal: Double = 0
     let lastUpdated: Date?
 
     static let empty = CalorieSnapshot(food: 0, burned: 0, goal: 0, remaining: 0, progress: 0, lastUpdated: nil)
 
     var hasData: Bool { goal > 0 || food > 0 || burned > 0 }
+
+    /// The inner arc. Without a Move goal it shares the calorie goal's scale,
+    /// so a snapshot written before the arcs still draws something sensible.
+    var burnedProgress: Double {
+        if burnGoal > 0 { return ratio(burned, of: burnGoal) }
+        return ratio(burned, of: goal)
+    }
 }
 
 private struct CalorieSnapshotPayload: Decodable {
@@ -21,6 +30,7 @@ private struct CalorieSnapshotPayload: Decodable {
     let goal: Double?
     let remaining: Double?
     let progress: Double?
+    let burnGoal: Double?
     let lastUpdated: Double?
 }
 
@@ -51,7 +61,8 @@ private func snapshot(from payload: CalorieSnapshotPayload) -> CalorieSnapshot {
         burned: payload.burned ?? 0,
         goal: goal,
         remaining: remaining,
-        progress: payload.progress ?? fallbackProgress(goal: goal, remaining: remaining),
+        progress: clampedProgress(payload.progress ?? fallbackProgress(goal: goal, remaining: remaining)),
+        burnGoal: payload.burnGoal ?? 0,
         lastUpdated: payload.lastUpdated.map { Date(timeIntervalSince1970: $0) }
     )
 }
@@ -84,106 +95,79 @@ struct Provider: TimelineProvider {
     }
 }
 
-private struct CalorieRing: View {
-    let progress: Double
-    let size: CGFloat
-    let strokeWidth: CGFloat
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(
-                    Color.secondary.opacity(0.2),
-                    style: StrokeStyle(lineWidth: strokeWidth)
-                )
-            Circle()
-                .trim(from: 0, to: CGFloat(progress))
-                .stroke(
-                    Color("AccentColor"),
-                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-private struct RingWithLabel: View {
+/// The figure in the arcs' opening: what is left of the day's allowance.
+private struct CalorieArcBlock: View {
     let snapshot: CalorieSnapshot
-    let ringSize: CGFloat
-    let strokeWidth: CGFloat
+    let arcSize: CGFloat
+    let lineWidth: CGFloat
     let numberFontSize: CGFloat
 
     private var remainingText: String {
         guard snapshot.hasData else { return "-" }
-        return localizedNumberString(snapshot.remaining)
+        return localizedNumberString(max(0, snapshot.remaining))
     }
 
     var body: some View {
-        CalorieRing(progress: snapshot.progress, size: ringSize, strokeWidth: strokeWidth)
-            .overlay(
-                VStack(spacing: 0) {
-                    Text(remainingText)
-                        .font(.system(size: numberFontSize, weight: .bold, design: .rounded))
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                    Text(localizedWidgetString("widget.kcal_left"))
-                        .font(.system(size: numberFontSize * 0.58))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, strokeWidth)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                    String(
-                        format: localizedWidgetString("widget.a11y.kcal_left"),
-                        remainingText
-                    )
-                )
+        VStack(spacing: 1) {
+            CalorieArcs(
+                size: arcSize,
+                lineWidth: lineWidth,
+                eatenProgress: snapshot.progress,
+                burnedProgress: snapshot.burnedProgress
             )
-    }
-}
-
-private struct StatBlock: View {
-    let label: String
-    let value: Double
-
-    private var valueText: String {
-        localizedNumberString(value)
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Spacer(minLength: 0)
-            Text(valueText)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundStyle(.primary)
+            .overlay(alignment: .bottom) {
+                Text(remainingText)
+                    .font(.system(size: numberFontSize, weight: .bold, design: .rounded))
+                    .foregroundStyle(WidgetPalette.eaten)
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .frame(maxWidth: arcSize * 0.5)
+            }
+            Text(localizedWidgetString("widget.kcal_left"))
+                .font(.system(size: max(10, numberFontSize * 0.45), weight: .medium))
+                .foregroundStyle(WidgetPalette.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            String(
+                format: localizedWidgetString("widget.a11y.kcal_left"),
+                remainingText
+            )
+        )
     }
 }
 
-struct ActionButton: View {
+/// One of the figures beside the arcs, as the nutrition card labels them:
+/// a small mark and name, the number in the arc's own colour.
+private struct CalorieFigure: View {
     let icon: String
-    let destination: URL
-    let accessibilityLabel: String
+    let label: String
+    let value: Double
+    let color: Color
+    var alignment: HorizontalAlignment = .leading
+    var valueFontSize: CGFloat = 17
 
     var body: some View {
-        Link(destination: destination) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Color("AccentColor"))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
+        VStack(alignment: alignment, spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: valueFontSize * 0.55, weight: .semibold))
+                    .foregroundStyle(color)
+                Text(label)
+                    .font(.system(size: max(10, valueFontSize * 0.65)))
+                    .foregroundStyle(WidgetPalette.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            Text(localizedNumberString(value))
+                .font(.system(size: valueFontSize, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -200,6 +184,12 @@ struct widgetEntryView: View {
             switch family {
             case .systemSmall:
                 smallBody
+            case .accessoryCircular:
+                circularBody
+            case .accessoryRectangular:
+                rectangularBody
+            case .accessoryInline:
+                inlineBody
             default:
                 mediumBody
             }
@@ -207,66 +197,141 @@ struct widgetEntryView: View {
         .widgetURL(dashboardURL)
     }
 
-    private var smallBody: some View {
-        VStack(spacing: 8) {
-            RingWithLabel(
-                snapshot: entry.snapshot,
-                ringSize: 80,
-                strokeWidth: 8,
-                numberFontSize: 18
-            )
-            VStack(spacing: 3) {
-                StatBlock(label: localizedWidgetString("widget.food"), value: entry.snapshot.food)
-                StatBlock(label: localizedWidgetString("widget.burned"), value: entry.snapshot.burned)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private var remainingText: String {
+        guard entry.snapshot.hasData else { return "-" }
+        return localizedNumberString(max(0, entry.snapshot.remaining))
     }
 
+    /// The arcs across the top, Food and Burned under their ends.
+    private var smallBody: some View {
+        GeometryReader { geo in
+            let arcSize = max(60, min(geo.size.width, (geo.size.height - 52) * 1.8))
+            VStack(spacing: 6) {
+                CalorieArcBlock(
+                    snapshot: entry.snapshot,
+                    arcSize: arcSize,
+                    lineWidth: max(8, arcSize * 0.085),
+                    numberFontSize: arcSize * 0.19
+                )
+                HStack(alignment: .bottom) {
+                    CalorieFigure(
+                        icon: "fork.knife",
+                        label: localizedWidgetString("widget.food"),
+                        value: entry.snapshot.food,
+                        color: WidgetPalette.eaten,
+                        valueFontSize: 15
+                    )
+                    Spacer(minLength: 4)
+                    CalorieFigure(
+                        icon: "flame.fill",
+                        label: localizedWidgetString("widget.burned"),
+                        value: entry.snapshot.burned,
+                        color: WidgetPalette.move,
+                        alignment: .trailing,
+                        valueFontSize: 15
+                    )
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+
+    /// The nutrition card's row: arcs with the figure in their opening, the
+    /// day's numbers beside them, and the logging shortcuts.
     private var mediumBody: some View {
         GeometryReader { geo in
             let isCompact = geo.size.width < 310
-            let ringSize: CGFloat = isCompact ? 82 : 95
-            let hSpacing: CGFloat = isCompact ? 14 : 28
-            let buttonColumnWidth: CGFloat = isCompact ? 26 : 32
+            let arcSize = max(80, min(isCompact ? 128 : 146, (geo.size.height - 20) * 1.7))
 
-            HStack(spacing: hSpacing) {
-                RingWithLabel(
+            HStack(spacing: isCompact ? 10 : 16) {
+                CalorieArcBlock(
                     snapshot: entry.snapshot,
-                    ringSize: ringSize,
-                    strokeWidth: 7,
-                    numberFontSize: isCompact ? 18 : 20
+                    arcSize: arcSize,
+                    lineWidth: isCompact ? 10 : 11,
+                    numberFontSize: isCompact ? 24 : 28
                 )
 
-                VStack(alignment: .leading, spacing: 20) {
-                    StatBlock(label: localizedWidgetString("widget.goal"), value: entry.snapshot.goal)
-                    StatBlock(label: localizedWidgetString("widget.food"), value: entry.snapshot.food)
-                    StatBlock(label: localizedWidgetString("widget.burned"), value: entry.snapshot.burned)
+                VStack(alignment: .leading, spacing: 7) {
+                    CalorieFigure(
+                        icon: "fork.knife",
+                        label: localizedWidgetString("widget.food"),
+                        value: entry.snapshot.food,
+                        color: WidgetPalette.eaten,
+                        valueFontSize: 16
+                    )
+                    CalorieFigure(
+                        icon: "flame.fill",
+                        label: localizedWidgetString("widget.burned"),
+                        value: entry.snapshot.burned,
+                        color: WidgetPalette.move,
+                        valueFontSize: 16
+                    )
+                    CalorieFigure(
+                        icon: "target",
+                        label: localizedWidgetString("widget.goal"),
+                        value: entry.snapshot.goal,
+                        color: WidgetPalette.textPrimary,
+                        valueFontSize: 16
+                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.25))
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
+                WidgetVerticalDivider()
 
-                VStack(spacing: 16) {
-                    ActionButton(
-                        icon: "magnifyingglass",
-                        destination: URL(string: "sparkyfitnessmobile://search")!,
-                        accessibilityLabel: localizedWidgetString("widget.search_food")
-                    )
-                    ActionButton(
-                        icon: "barcode.viewfinder",
-                        destination: URL(string: "sparkyfitnessmobile://scan")!,
-                        accessibilityLabel: localizedWidgetString("widget.scan_barcode")
-                    )
-                }
-                .frame(width: buttonColumnWidth)
-                .frame(maxHeight: .infinity)
+                WidgetActionColumn()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
+    }
+
+    /// Lock Screen: the system gauge is the same open-bottomed arc.
+    private var circularBody: some View {
+        Gauge(value: entry.snapshot.progress) {
+            Image(systemName: "fork.knife")
+        } currentValueLabel: {
+            Text(remainingText)
+                .minimumScaleFactor(0.5)
+        }
+        .gaugeStyle(.accessoryCircular)
+        .widgetAccentable()
+        .accessibilityLabel(
+            String(format: localizedWidgetString("widget.a11y.kcal_left"), remainingText)
+        )
+    }
+
+    private var rectangularBody: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(remainingText)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .widgetAccentable()
+                Text(localizedWidgetString("widget.kcal_left"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Gauge(value: entry.snapshot.progress) {
+                EmptyView()
+            }
+            .gaugeStyle(.accessoryLinearCapacity)
+            .widgetAccentable()
+            HStack(spacing: 8) {
+                Label(localizedNumberString(entry.snapshot.food), systemImage: "fork.knife")
+                Label(localizedNumberString(entry.snapshot.burned), systemImage: "flame.fill")
+            }
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var inlineBody: some View {
+        Label(
+            String(format: localizedWidgetString("widget.a11y.kcal_left"), remainingText),
+            systemImage: "fork.knife"
+        )
     }
 }
 
@@ -276,11 +341,17 @@ struct widget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             widgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetSurfaceBackground()
         }
         .configurationDisplayName("widget.calorie.name")
         .description("widget.calorie.description")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .accessoryCircular,
+            .accessoryRectangular,
+            .accessoryInline,
+        ])
     }
 }
 
@@ -290,7 +361,7 @@ struct widget: Widget {
     } timeline: {
         SimpleEntry(
             date: .now,
-            snapshot: CalorieSnapshot(food: 1540, burned: 255, goal: 3055, remaining: 1515, progress: 0.5, lastUpdated: .now)
+            snapshot: CalorieSnapshot(food: 1540, burned: 255, goal: 3055, remaining: 1515, progress: 0.5, burnGoal: 500, lastUpdated: .now)
         )
         SimpleEntry(date: .now, snapshot: .empty)
     }
@@ -300,8 +371,17 @@ struct widget: Widget {
     } timeline: {
         SimpleEntry(
             date: .now,
-            snapshot: CalorieSnapshot(food: 1540, burned: 255, goal: 3055, remaining: 1515, progress: 0.5, lastUpdated: .now)
+            snapshot: CalorieSnapshot(food: 1540, burned: 255, goal: 3055, remaining: 1515, progress: 0.5, burnGoal: 500, lastUpdated: .now)
         )
         SimpleEntry(date: .now, snapshot: .empty)
+    }
+
+    #Preview(as: .accessoryRectangular) {
+        widget()
+    } timeline: {
+        SimpleEntry(
+            date: .now,
+            snapshot: CalorieSnapshot(food: 1540, burned: 255, goal: 3055, remaining: 1515, progress: 0.5, burnGoal: 500, lastUpdated: .now)
+        )
     }
 #endif

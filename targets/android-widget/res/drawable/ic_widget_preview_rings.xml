@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the Activity Rings: Move, Exercise, Steps. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="144dp"
+    android:height="144dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+    <path android:pathData="M72,11 A61,61 0 1,1 72,133 A61,61 0 1,1 72,11" android:strokeColor="#FFFF375F" android:strokeAlpha="0.18" android:strokeWidth="12" />
+    <path android:pathData="M72,11 A61,61 0 1,1 72,133 A61,61 0 1,1 72,11" android:strokeColor="#FFFF375F" android:strokeWidth="12" android:strokeLineCap="round" android:trimPathEnd="0.64" />
+    <path android:pathData="M72,27 A45,45 0 1,1 72,117 A45,45 0 1,1 72,27" android:strokeColor="#FFA8EF00" android:strokeAlpha="0.18" android:strokeWidth="12" />
+    <path android:pathData="M72,27 A45,45 0 1,1 72,117 A45,45 0 1,1 72,27" android:strokeColor="#FFA8EF00" android:strokeWidth="12" android:strokeLineCap="round" android:trimPathEnd="0.6" />
+    <path android:pathData="M72,43 A29,29 0 1,1 72,101 A29,29 0 1,1 72,43" android:strokeColor="#FF00D8EB" android:strokeAlpha="0.18" android:strokeWidth="12" />
+    <path android:pathData="M72,43 A29,29 0 1,1 72,101 A29,29 0 1,1 72,43" android:strokeColor="#FF00D8EB" android:strokeWidth="12" android:strokeLineCap="round" android:trimPathEnd="0.62" />
+</vector>

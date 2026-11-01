@@ -26,6 +26,8 @@ import RingCalendarSheet, {
   type RingCalendarSheetRef,
 } from '../components/RingCalendarSheet';
 import PhotoDayCapture from '../components/PhotoDayCapture';
+import CycleCard from '../components/CycleCard';
+import MedicationsCard from '../components/MedicationsCard';
 import TabHeader from '../components/TabHeader';
 import DiaryNutritionCard from '../components/DiaryNutritionCard';
 import FoodSummary from '../components/FoodSummary';
@@ -60,6 +62,7 @@ import { useSleepDay } from '../hooks/useSleepDay';
 import { useSleepComparison } from '../hooks/useSleepComparison';
 import { CARD_GAP, SCREEN_GUTTER } from '../constants/layout';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
+import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useDiaryDateStore } from '../stores/diaryDateStore';
 import type { FoodEntry } from '../types/foodEntries';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
@@ -295,6 +298,11 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const manualCustomMeasurements = useMemo(
     () => (customMeasurements ?? []).filter((e) => isManualSource(e.source)),
     [customMeasurements]
+  );
+
+  const cycleCardVisible = useAppPreferencesStore((s) => s.cycleCardVisible);
+  const medicationsCardVisible = useAppPreferencesStore(
+    (s) => s.medicationsCardVisible
   );
 
   const [refreshing, setRefreshing] = useState(false);
@@ -560,6 +568,10 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           weight={measurements?.weight ?? null}
         />
         <NapsCard naps={naps} day={selectedDate} navigation={navigation} />
+        {/* Last on the Tracker, each under a section title of its own: habits
+            tracked day to day, moved here from Activities. */}
+        {cycleCardVisible && <CycleCard navigation={navigation} />}
+        {medicationsCardVisible && <MedicationsCard navigation={navigation} />}
       </ScrollView>
     );
   };
@@ -601,6 +613,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
           title={t('diary.title', { defaultValue: 'Tracker' })}
           selectedDate={selectedDate}
           onDatePress={openCalendar}
+          onWorkoutsPress={startWorkout}
           onProfilePress={() => navigation.navigate('Profile')}
         />
       ) : (

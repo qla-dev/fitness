@@ -24,7 +24,25 @@
       "languageCode": "bs",
       "intlLocale": "bs-BA",
       "displayNameKey": "settings.language.bosnian",
-      "defaultDisplayName": "Bosanski"
+      "defaultDisplayName": "Bosanski",
+      "aliases": [
+        "hr",
+        "sr",
+        "sh",
+        "cnr"
+      ]
+    },
+    "it": {
+      "languageCode": "it",
+      "intlLocale": "it-IT",
+      "displayNameKey": "settings.language.italian",
+      "defaultDisplayName": "Italiano"
+    },
+    "de": {
+      "languageCode": "de",
+      "intlLocale": "de-DE",
+      "displayNameKey": "settings.language.german",
+      "defaultDisplayName": "Deutsch"
     }
   }
 }

@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +17,7 @@ import type {
 import { formatLocalizedNumber } from '../localization';
 import { listTotal } from '../services/online/prices';
 import { planMoney } from '../services/weeklyPlans';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
   const { t } = useTranslation();
@@ -63,9 +58,8 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
       style={{ paddingTop: native ? 0 : insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior={native ? 'automatic' : 'never'}
         contentContainerStyle={{
           padding: 20,
           paddingBottom: insets.bottom + padding + 30,
@@ -134,7 +128,10 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
                     <Text className="text-text-secondary">{list.store}</Text>
                     {listTotal(list) !== null ? (
                       <Text className="text-text-primary font-semibold mt-1">
-                        {planMoney(listTotal(list) ?? 0, list.currency ?? 'EUR')}
+                        {planMoney(
+                          listTotal(list) ?? 0,
+                          list.currency ?? 'EUR'
+                        )}
                       </Text>
                     ) : null}
                     <Text className="text-accent-primary mt-3">
@@ -163,18 +160,14 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
                 })}
               </Text>
             )}
-            <Button
-              variant="outline"
-              className="mt-4"
-              onPress={newList}
-            >
+            <Button variant="outline" className="mt-4" onPress={newList}>
               {t('groceries.blankList', {
                 defaultValue: 'Create a blank list',
               })}
             </Button>
           </>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 }

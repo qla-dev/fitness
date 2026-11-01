@@ -150,7 +150,6 @@ jest.mock('../../src/components/FastingGoalReconciler', () =>
 );
 jest.mock('../../src/components/CycleCard', () => stub('cycle-card'));
 jest.mock('../../src/components/MedicationsCard', () => stub('medications'));
-jest.mock('../../src/components/ProgressPhotosCard', () => stub('photos-card'));
 jest.mock('../../src/components/StatusView', () => stub('status-view'));
 
 // The subject of this suite: a probe standing in for ExerciseSummary that

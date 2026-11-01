@@ -15,3 +15,10 @@
 "widget.a11y.kcal" = "%@ kcal";
 "widget.search_food" = "Buscar comida";
 "widget.scan_barcode" = "Escanear código";
+"widget.activity.name" = "Actividad";
+"widget.activity.description" = "Tus anillos de Moverse, Ejercicio y Pasos de hoy.";
+"widget.move" = "Moverse";
+"widget.exercise" = "Ejercicio";
+"widget.steps" = "Pasos";
+"widget.min" = "min";
+"widget.grams_left" = "quedan %@ g";

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
@@ -35,6 +34,7 @@ import { getActiveServerConfig } from '../services/storage';
 import { getAppLocale } from '../localization';
 
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type PasskeySettingsScreenProps = RootStackScreenProps<'PasskeySettings'>;
 
@@ -301,15 +301,12 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
     >
       {header}
 
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         {!isSessionAuth ? (
           <View className="bg-surface rounded-xl p-6 items-center border border-border-subtle">
@@ -433,7 +430,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
             </Text>
           </>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       {/* Name Passkey Modal */}
       <Modal

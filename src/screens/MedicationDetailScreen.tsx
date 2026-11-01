@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { useCSSVariable } from 'uniwind';
@@ -36,6 +36,7 @@ import {
 import type { MedicationEntry } from '@workspace/shared';
 import { doseSlotStatus } from '../utils/medications';
 import { addLog } from '../services/LogService';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type MedicationDetailScreenProps = RootStackScreenProps<'MedicationDetail'>;
 
@@ -209,35 +210,42 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
           </Text>
         </View>
       ) : (
-        <ScrollView
+        <NativeHeaderScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             padding: 16,
             paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
           }}
-          contentInsetAdjustmentBehavior={
-            usesNativeHeader ? 'automatic' : 'never'
-          }
         >
           <View className="bg-surface rounded-xl p-4 mb-3">
-            <Text className="text-2xl font-bold text-text-primary">
-              {med.name}
-            </Text>
-            {contextLine !== '' && (
-              <Text className="text-sm text-text-secondary mt-0.5">
-                {contextLine}
-              </Text>
-            )}
-            {doseLabel != null && (
-              <Text className="text-lg font-semibold text-text-primary mt-2">
-                {doseLabel}
-              </Text>
-            )}
-            {strengthLabel != null && (
-              <Text className="text-sm text-text-secondary mt-0.5">
-                {strengthLabel}
-              </Text>
-            )}
+            {/* The dose sits level with the name, on the right, rather than
+                stacked under it. */}
+            <View className="flex-row items-start gap-3">
+              <View className="flex-1">
+                <Text className="text-2xl font-bold text-text-primary">
+                  {med.name}
+                </Text>
+                {contextLine !== '' && (
+                  <Text className="text-sm text-text-secondary mt-0.5">
+                    {contextLine}
+                  </Text>
+                )}
+              </View>
+              {doseLabel != null || strengthLabel != null ? (
+                <View className="items-end" style={{ maxWidth: '50%' }}>
+                  {doseLabel != null && (
+                    <Text className="text-lg font-semibold text-text-primary text-right">
+                      {doseLabel}
+                    </Text>
+                  )}
+                  {strengthLabel != null && (
+                    <Text className="text-sm text-text-secondary mt-0.5 text-right">
+                      {strengthLabel}
+                    </Text>
+                  )}
+                </View>
+              ) : null}
+            </View>
             {!med.is_active && (
               <View className="self-start mt-2">
                 <Text className="text-base font-bold text-text-muted">
@@ -293,7 +301,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
                   {todayPrnDoses.map((dose) => (
                     <View
                       key={dose.id}
-                      className="flex-row items-center justify-between py-2 ml-9"
+                      className="flex-row items-center justify-between py-2"
                     >
                       <View className="flex-1">
                         <Text className="text-base text-text-primary">
@@ -461,7 +469,7 @@ const MedicationDetailScreen: React.FC<MedicationDetailScreenProps> = ({
               })}
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </NativeHeaderScrollView>
       )}
     </View>
   );

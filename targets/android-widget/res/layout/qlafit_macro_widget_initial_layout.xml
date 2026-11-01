@@ -4,185 +4,140 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:background="#FFFFFFFF"
+    android:background="#FFF9FAFB"
     android:padding="14dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/widget_preview_macros_left"
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="#FF1F1F1F"
+        android:textColor="#FF5087F7"
         android:maxLines="1" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="10dp"
-        android:text="" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="#FFF6B151"
-            android:text="" />
-
-        <TextView
-            android:layout_width="8dp"
-            android:layout_height="1dp"
-            android:text="" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/widget_protein"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_preview_grams_protein"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
-    </LinearLayout>
+            <FrameLayout
+                android:layout_width="52dp"
+                android:layout_height="52dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:orientation="horizontal"
-        android:background="#FFE2E4EB">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_widget_preview_ring_protein" />
 
-        <TextView
-            android:layout_width="72dp"
-            android:layout_height="match_parent"
-            android:background="#FFF6B151"
-            android:text="" />
-    </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/widget_preview_grams_protein"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF0F1729"
+                    android:maxLines="1" />
+            </FrameLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="7dp"
-        android:text="" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="@string/widget_protein"
+                android:textSize="11sp"
+                android:textColor="#FF7AD680"
+                android:maxLines="1" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="#FF7BD680"
-            android:text="" />
-
-        <TextView
-            android:layout_width="8dp"
-            android:layout_height="1dp"
-            android:text="" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/widget_carbs"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_preview_grams_carbs"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
-    </LinearLayout>
+            <FrameLayout
+                android:layout_width="52dp"
+                android:layout_height="52dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:orientation="horizontal"
-        android:background="#FFE2E4EB">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_widget_preview_ring_carbs" />
 
-        <TextView
-            android:layout_width="154dp"
-            android:layout_height="match_parent"
-            android:background="#FF7BD680"
-            android:text="" />
-    </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/widget_preview_grams_carbs"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF0F1729"
+                    android:maxLines="1" />
+            </FrameLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="7dp"
-        android:text="" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="@string/widget_carbs"
+                android:textSize="11sp"
+                android:textColor="#FFAD74E7"
+                android:maxLines="1" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="#FF6DCBE9"
-            android:text="" />
-
-        <TextView
-            android:layout_width="8dp"
-            android:layout_height="1dp"
-            android:text="" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/widget_fat"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_preview_grams_fat"
-            android:textSize="14sp"
-            android:textColor="#FF1F1F1F"
-            android:maxLines="1" />
+            <FrameLayout
+                android:layout_width="52dp"
+                android:layout_height="52dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_widget_preview_ring_fat" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/widget_preview_grams_fat"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF0F1729"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="@string/widget_fat"
+                android:textSize="11sp"
+                android:textColor="#FFF6B151"
+                android:maxLines="1" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:orientation="horizontal"
-        android:background="#FFE2E4EB">
-
-        <TextView
-            android:layout_width="78dp"
-            android:layout_height="match_parent"
-            android:background="#FF6DCBE9"
-            android:text="" />
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="14dp"
-        android:text="" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal"
         android:gravity="center">
 
@@ -190,22 +145,24 @@
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
+            android:padding="8dp"
             android:src="@drawable/ic_widget_search"
-            android:tint="#FF3B82F6"
+            android:tint="#FF5087F7"
             android:contentDescription="@string/widget_search_food" />
 
         <TextView
             android:layout_width="1dp"
-            android:layout_height="48dp"
-            android:background="#FFE2E4EB"
+            android:layout_height="24dp"
+            android:background="#FFE1E5EA"
             android:text="" />
 
         <ImageView
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
+            android:padding="8dp"
             android:src="@drawable/ic_widget_scan"
-            android:tint="#FF3B82F6"
+            android:tint="#FF5087F7"
             android:contentDescription="@string/widget_scan_barcode" />
     </LinearLayout>
 </LinearLayout>

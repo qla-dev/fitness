@@ -25,6 +25,7 @@ import { useProgramExerciseLookup } from '../hooks/useProgramExerciseLookup';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ExerciseProgramScreenProps = RootStackScreenProps<'ExerciseProgram'>;
 
@@ -179,16 +180,13 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         onScroll={(event) => setScrollOffset(event.nativeEvent.contentOffset.y)}
         scrollEventThrottle={100}
         contentContainerStyle={{
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <View className="flex-row items-stretch px-4 pt-4 pb-5">
           <View className="mr-4">
@@ -438,7 +436,7 @@ const ExerciseProgramScreen: React.FC<ExerciseProgramScreenProps> = ({
             ))}
           </View>
         </View>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

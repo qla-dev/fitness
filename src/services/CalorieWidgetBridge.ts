@@ -10,12 +10,14 @@ export type WidgetEffectiveLanguage = SupportedLanguage;
 interface CalorieWidgetNativeModule {
   setCalorieSnapshot(json: string): Promise<void>;
   setMacroSnapshot(json: string): Promise<void>;
+  setActivitySnapshot(json: string): Promise<void>;
   prepareWidgetLocale(
     preference: WidgetLocalePreference,
     effectiveLanguage: WidgetEffectiveLanguage
   ): Promise<void>;
   reloadWidget(): Promise<void>;
   reloadMacroWidget(): Promise<void>;
+  reloadActivityWidget(): Promise<void>;
 }
 
 const nativeModule: CalorieWidgetNativeModule | undefined =
@@ -39,6 +41,16 @@ export const CalorieWidgetBridge = {
   async reloadMacroWidget(): Promise<void> {
     if (!nativeModule) return;
     await nativeModule.reloadMacroWidget();
+  },
+  // The activity methods arrived with the rings redesign; a JS bundle newer
+  // than the installed native build finds them missing and skips the widget.
+  async setActivitySnapshot(json: string): Promise<void> {
+    if (typeof nativeModule?.setActivitySnapshot !== 'function') return;
+    await nativeModule.setActivitySnapshot(json);
+  },
+  async reloadActivityWidget(): Promise<void> {
+    if (typeof nativeModule?.reloadActivityWidget !== 'function') return;
+    await nativeModule.reloadActivityWidget();
   },
   /**
    * Commits the user preference and effective render language atomically before

@@ -71,13 +71,13 @@ export default function MarkaiLimitNotice({
     kind === 'free'
       ? t('markaiLimit.freeBody', {
           defaultValue:
-            'The free plan includes 10 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.',
+            'The free plan includes 5 MarkAI messages a day. They come back {{when}}, or buy credits to keep chatting now.',
           when,
         })
       : kind === 'credits'
         ? t('markaiLimit.creditsBody', {
             defaultValue:
-              'Your MarkAI credits are used up. Buy more to keep chatting, or wait for 10 free messages {{when}}.',
+              'Your MarkAI credits are used up. Buy more to keep chatting, or wait for 5 free messages {{when}}.',
             when,
           })
         : t('markaiLimit.taskBody', {

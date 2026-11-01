@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -16,6 +16,7 @@ import {
   type ThemePreference,
 } from '../services/themeService';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ProfileThemeScreenProps = RootStackScreenProps<'ProfileTheme'>;
 
@@ -87,15 +88,12 @@ const ProfileThemeScreen: React.FC<ProfileThemeScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <SettingsRowGroup>
           {options.map((option) => (
@@ -118,7 +116,7 @@ const ProfileThemeScreen: React.FC<ProfileThemeScreenProps> = ({
             />
           ))}
         </SettingsRowGroup>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

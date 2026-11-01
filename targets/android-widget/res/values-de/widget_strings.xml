@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qlafit_calorie_widget_name">Kalorien</string>
+    <string name="qlafit_widget_description">Tägliche Kalorienübersicht mit Schnellzugriffen zum Hinzufügen</string>
+    <string name="qlafit_macro_widget_name">Makros</string>
+    <string name="qlafit_macro_widget_description">Protein, Kohlenhydrate und Fett von heute mit Schnellzugriffen zum Hinzufügen</string>
+    <string name="widget_kcal_left">%1$s kcal übrig</string>
+    <string name="widget_kcal_left_empty">- kcal übrig</string>
+    <string name="widget_grams">%1$s g</string>
+    <string name="widget_protein">Protein</string>
+    <string name="widget_carbs">Kohlenhydrate</string>
+    <string name="widget_fat">Fett</string>
+    <string name="widget_search_food">Essen suchen</string>
+    <string name="widget_scan_barcode">Barcode scannen</string>
+    <string name="widget_preview_calories_left">1.650 kcal übrig</string>
+    <string name="widget_preview_macros_left">1.024 kcal übrig</string>
+    <string name="widget_preview_grams_protein">51 g</string>
+    <string name="widget_preview_grams_carbs">136 g</string>
+    <string name="widget_preview_grams_fat">32 g</string>
+    <string name="qlafit_activity_widget_name">Aktivität</string>
+    <string name="qlafit_activity_widget_description">Deine Ringe für Bewegen, Trainieren und Schritte von heute</string>
+    <string name="widget_move">Bewegen</string>
+    <string name="widget_exercise">Trainieren</string>
+    <string name="widget_steps">Schritte</string>
+    <string name="widget_grams_left">noch %1$s g</string>
+</resources>

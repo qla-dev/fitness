@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 
@@ -9,6 +9,7 @@ import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type ProfilePremiumScreenProps = RootStackScreenProps<'ProfilePremium'>;
 
@@ -44,15 +45,12 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <View className="items-center py-6">
           <Icon name="sparkles" size={44} color={accent} />
@@ -92,7 +90,7 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
               'Preview only. Plans and purchases are not available yet.',
           })}
         </Text>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

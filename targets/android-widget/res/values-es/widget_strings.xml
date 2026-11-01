@@ -17,4 +17,10 @@
     <string name="widget_preview_grams_protein">51 g</string>
     <string name="widget_preview_grams_carbs">136 g</string>
     <string name="widget_preview_grams_fat">32 g</string>
+    <string name="qlafit_activity_widget_name">Actividad</string>
+    <string name="qlafit_activity_widget_description">Tus anillos de Moverse, Ejercicio y Pasos de hoy</string>
+    <string name="widget_move">Moverse</string>
+    <string name="widget_exercise">Ejercicio</string>
+    <string name="widget_steps">Pasos</string>
+    <string name="widget_grams_left">quedan %1$s g</string>
 </resources>

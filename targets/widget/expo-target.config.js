@@ -49,7 +49,7 @@ module.exports = (config) => {
     bundleIdentifier: isDev
       ? `${DEV_BUNDLE_IDENTIFIER}.widget`
       : `${PROD_BUNDLE_IDENTIFIER}.widget`,
-    icon: '../../assets/icons/logo-v3.jpg',
+    icon: '../../assets/icons/logo-v4.png',
     entitlements: {
       'com.apple.security.application-groups': [appGroup],
     },

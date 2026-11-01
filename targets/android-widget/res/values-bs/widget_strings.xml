@@ -17,4 +17,10 @@
     <string name="widget_preview_grams_protein">51 g</string>
     <string name="widget_preview_grams_carbs">136 g</string>
     <string name="widget_preview_grams_fat">32 g</string>
+    <string name="qlafit_activity_widget_name">Aktivnost</string>
+    <string name="qlafit_activity_widget_description">Današnji prstenovi kretanja, vježbanja i koraka</string>
+    <string name="widget_move">Kretanje</string>
+    <string name="widget_exercise">Vježbanje</string>
+    <string name="widget_steps">Koraci</string>
+    <string name="widget_grams_left">preostalo %1$s g</string>
 </resources>

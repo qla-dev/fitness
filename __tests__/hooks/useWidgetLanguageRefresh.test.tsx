@@ -12,6 +12,7 @@ jest.mock('../../src/services/CalorieWidgetBridge', () => ({
     prepareWidgetLocale: jest.fn(() => Promise.resolve()),
     reloadWidget: jest.fn(() => Promise.resolve()),
     reloadMacroWidget: jest.fn(() => Promise.resolve()),
+    reloadActivityWidget: jest.fn(() => Promise.resolve()),
   },
 }));
 
@@ -23,6 +24,8 @@ const mockPrepareWidgetLocale =
   CalorieWidgetBridge.prepareWidgetLocale as jest.Mock;
 const mockReload = CalorieWidgetBridge.reloadWidget as jest.Mock;
 const mockReloadMacro = CalorieWidgetBridge.reloadMacroWidget as jest.Mock;
+const mockReloadActivity =
+  CalorieWidgetBridge.reloadActivityWidget as jest.Mock;
 const mockAddLog = addLog as jest.MockedFunction<typeof addLog>;
 
 type I18nEventListener = (lng?: string) => void;
@@ -45,6 +48,7 @@ describe('useWidgetLanguageRefresh', () => {
     mockPrepareWidgetLocale.mockReset().mockResolvedValue(undefined);
     mockReload.mockReset().mockResolvedValue(undefined);
     mockReloadMacro.mockReset().mockResolvedValue(undefined);
+    mockReloadActivity.mockReset().mockResolvedValue(undefined);
     languageListeners = [];
     resolvedLanguage = 'en';
     useAppPreferencesStore.setState({ languagePreference: 'system' });
@@ -75,7 +79,7 @@ describe('useWidgetLanguageRefresh', () => {
     useAppPreferencesStore.setState({ languagePreference: preference });
   };
 
-  it('prepares the effective PL render locale before both reloads', async () => {
+  it('prepares the effective PL render locale before every reload', async () => {
     setPreference('pl');
     resolvedLanguage = 'pl';
     renderHook(() => useWidgetLanguageRefresh());
@@ -84,6 +88,10 @@ describe('useWidgetLanguageRefresh', () => {
     expect(mockPrepareWidgetLocale).toHaveBeenCalledWith('pl', 'pl');
     expect(mockReload).toHaveBeenCalledTimes(1);
     expect(mockReloadMacro).toHaveBeenCalledTimes(1);
+    expect(mockReloadActivity).toHaveBeenCalledTimes(1);
+    expect(mockPrepareWidgetLocale.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReloadActivity.mock.invocationCallOrder[0]
+    );
     expect(mockPrepareWidgetLocale.mock.invocationCallOrder[0]).toBeLessThan(
       mockReload.mock.invocationCallOrder[0]
     );
@@ -180,6 +188,24 @@ describe('useWidgetLanguageRefresh', () => {
     expect(mockReloadMacro).toHaveBeenCalledTimes(2);
   });
 
+  it('retries after an activity widget failure', async () => {
+    setPreference('pl');
+    resolvedLanguage = 'pl';
+    mockReloadActivity.mockRejectedValueOnce(new Error('activity failed'));
+    renderHook(() => useWidgetLanguageRefresh());
+    await flushSync();
+
+    expect(mockAddLog).toHaveBeenCalledWith(
+      '[useWidgetLanguageRefresh] Activity widget reload failed',
+      'ERROR'
+    );
+
+    languageListeners[0]('pl');
+    await flushSync();
+    expect(mockPrepareWidgetLocale).toHaveBeenCalledTimes(2);
+    expect(mockReloadActivity).toHaveBeenCalledTimes(2);
+  });
+
   it('serializes rapid signals and uses the latest effective language', async () => {
     setPreference('pl');
     resolvedLanguage = 'pl';
@@ -203,5 +229,6 @@ describe('useWidgetLanguageRefresh', () => {
     expect(mockPrepareWidgetLocale).not.toHaveBeenCalled();
     expect(mockReload).not.toHaveBeenCalled();
     expect(mockReloadMacro).not.toHaveBeenCalled();
+    expect(mockReloadActivity).not.toHaveBeenCalled();
   });
 });

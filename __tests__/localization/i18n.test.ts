@@ -36,7 +36,7 @@ describe('normalizeLanguage', () => {
 
   it('maps everything else to en', () => {
     expect(normalizeLanguage('en')).toBe('en');
-    expect(normalizeLanguage('de')).toBe('en');
+    expect(normalizeLanguage('fr')).toBe('en');
     expect(normalizeLanguage(null)).toBe('en');
     expect(normalizeLanguage(undefined)).toBe('en');
   });
@@ -83,11 +83,11 @@ describe('getDeviceLanguage', () => {
     expect(getDeviceLanguage()).toBe('en');
   });
 
-  it('returns en for unsupported device locale (de-DE)', () => {
+  it('returns en for unsupported device locale (fr-FR)', () => {
     (getLocales as jest.Mock).mockReturnValue([
       {
-        languageCode: 'de',
-        languageTag: 'de-DE',
+        languageCode: 'fr',
+        languageTag: 'fr-FR',
         regionCode: 'DE',
         textDirection: 'ltr',
       },
@@ -109,8 +109,8 @@ describe('getDeviceLanguage', () => {
 });
 
 describe('SUPPORTED_LANGUAGES', () => {
-  it('includes en, pl, es and bs', () => {
-    expect(SUPPORTED_LANGUAGES).toEqual(['en', 'pl', 'es', 'bs']);
+  it('includes en, pl, es, bs, it and de', () => {
+    expect(SUPPORTED_LANGUAGES).toEqual(['en', 'pl', 'es', 'bs', 'it', 'de']);
   });
 });
 

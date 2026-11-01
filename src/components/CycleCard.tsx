@@ -2,8 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { View, Text, Pressable } from 'react-native';
-import { useCSSVariable } from 'uniwind';
-import Icon from './Icon';
+import SectionIntro from './SectionIntro';
 import { useCycleSettings } from '../hooks/useCycleSettings';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 import {
@@ -17,7 +16,8 @@ import { babyWeek } from '@workspace/shared';
 import WombScene from './wellness/pregnancy/WombScene';
 import { localizeBabyWeek } from '../utils/pregnancyContentLocalization';
 import { formatLocalizedNumber } from '../localization';
-import CycleRing from './wellness/CycleRing';
+import CycleBeads from './wellness/CycleBeads';
+import { fireSelectionHaptic } from '../services/haptics';
 import { useWellnessTokens } from './wellness/theme/wellnessTokens';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -25,7 +25,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 
 type CycleCardNavigation = CompositeNavigationProp<
-  BottomTabNavigationProp<TabParamList, 'Dashboard'>,
+  BottomTabNavigationProp<TabParamList, 'Diary'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
@@ -66,7 +66,7 @@ function getModeTitle(
   }
 }
 
-export interface CycleRingContentInfo {
+interface CycleRingContentInfo {
   day: number;
   phase: string;
   avgCycleLength: number;
@@ -78,19 +78,16 @@ export interface CycleRingContentInfo {
   daysLate: number;
 }
 
-// Cycle-state card body (title, phase readout, ring, disclosure chevron) for
-// the non-discreet cycle layout. Exported so DevTools can render a fake-data
-// gallery of every phase.
-export const CycleCardRingContent: React.FC<{
-  title: string;
+// Cycle-state card body (phase readout and ring) for the
+// non-discreet cycle layout. The title is the section intro above the card.
+const CycleCardRingContent: React.FC<{
   info: CycleRingContentInfo;
-}> = ({ title, info }) => {
+}> = ({ info }) => {
   const { t, i18n: translationI18n } = useTranslation();
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
   const tokens = useWellnessTokens();
-  const [textAccent] = useCSSVariable(['--color-accent-primary']) as [string];
   const phaseName = (() => {
     switch (info.phase) {
       case 'menstrual':
@@ -114,14 +111,24 @@ export const CycleCardRingContent: React.FC<{
     }
   })();
   const phaseColor = getPhaseColor(info.phase, tokens);
+  // Days from today to a cycle day, wrapping into the next cycle once passed.
+  const daysUntil = (
+    target: number | null,
+    { day, avgCycleLength }: CycleRingContentInfo
+  ): string | null => {
+    if (!target || day <= 0) return null;
+    const count =
+      target >= day
+        ? target - day
+        : Math.max(avgCycleLength, 14) - day + target;
+    return t('cycleCard.inDays', { defaultValue: 'in {{count}}d', count });
+  };
 
   return (
     <View className="flex-row items-center gap-3">
-      {/* Details on Left: stretched to the ring's height so the title sits
-          at the card top; the phase block centers in the space below it */}
+      {/* Details on Left: stretched to the ring's height so the phase block
+          centers beside it */}
       <View className="flex-1 self-stretch">
-        <Text className="text-md font-bold text-text-secondary">{title}</Text>
-
         <View className="flex-1 justify-center">
           <Text
             className="text-base font-semibold"
@@ -145,28 +152,83 @@ export const CycleCardRingContent: React.FC<{
               })}
             </Text>
           ) : null}
+
+          {/* What is coming, as two small countdowns in their phase colours. */}
+          {info.day > 0 && (
+            <View className="flex-row mt-3" style={{ gap: 14 }}>
+              {[
+                {
+                  key: 'fertile',
+                  color: getPhaseColor('fertile', tokens),
+                  label: t('cycleCard.fertile', { defaultValue: 'Fertile' }),
+                  value:
+                    info.fertileStartDay &&
+                    info.fertileEndDay &&
+                    info.day >= info.fertileStartDay &&
+                    info.day <= info.fertileEndDay
+                      ? t('cycleCard.now', { defaultValue: 'Now' })
+                      : daysUntil(info.fertileStartDay, info),
+                },
+                {
+                  key: 'ovulation',
+                  color: getPhaseColor('ovulation', tokens),
+                  label: t('cycleCard.ovulation', {
+                    defaultValue: 'Ovulation',
+                  }),
+                  value:
+                    info.ovulationDay === info.day
+                      ? t('cycleCard.today', { defaultValue: 'Today' })
+                      : daysUntil(info.ovulationDay, info),
+                },
+              ].map((stat) =>
+                stat.value ? (
+                  <View
+                    key={stat.key}
+                    accessible
+                    accessibilityLabel={`${stat.label} ${stat.value}`}
+                  >
+                    <View className="flex-row items-center" style={{ gap: 5 }}>
+                      <View
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 4,
+                          backgroundColor: stat.color,
+                        }}
+                      />
+                      <Text className="text-xs text-text-secondary">
+                        {stat.label}
+                      </Text>
+                    </View>
+                    <Text
+                      className="text-base font-bold"
+                      style={{ color: stat.color }}
+                    >
+                      {stat.value}
+                    </Text>
+                  </View>
+                ) : null
+              )}
+            </View>
+          )}
         </View>
       </View>
 
-      {/* Visual Cycle Ring Chart on Right */}
-      <CycleRing
+      {/* The cycle as a bracelet of day beads on the right */}
+      <CycleBeads
         cycleDay={info.day > 0 ? info.day : null}
         cycleLength={info.avgCycleLength}
         periodLength={info.avgPeriodLength}
         fertileStartDay={info.fertileStartDay}
         fertileEndDay={info.fertileEndDay}
         ovulationDay={info.ovulationDay}
-        centerLabel=""
         centerValue={
           info.day > 0
             ? t('cycleCard.day', { defaultValue: 'Day {{day}}', day: info.day })
             : t('cycleCard.active', { defaultValue: 'Active' })
         }
-        centerSub=""
         size={98}
-        strokeWidth={7.5}
       />
-      <Icon name="chevron-forward" size={18} color={textAccent} />
     </View>
   );
 };
@@ -176,9 +238,6 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const { discreetMode } = useDiscreetMode();
   const tokens = useWellnessTokens();
-  const [accentPrimary] = useCSSVariable(['--color-accent-primary']) as [
-    string,
-  ];
 
   // Pregnancy details (unconditional hook calls)
   const isPregnant = settings?.mode === 'pregnant';
@@ -202,46 +261,46 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
 
   const isSetup = !!settings.onboarded_at && !!settings.enabled;
   const title = getModeTitle(t, settings.mode, discreetMode);
-  // The cycle-ring state renders its own title so the ring can span the full
-  // card height; every other state keeps the shared header row.
-  const showsRingLayout = !discreetMode && !isPregnant && !!cycleInfo;
+  // The Tracker's section title over the card, with the same "More" link the
+  // meals and photos carry; the whole card still opens the same place.
+  const intro = (onPress: () => void) => (
+    <SectionIntro
+      testID="cycle-intro"
+      subtitle={title}
+      actionLabel={t('measurements.more', { defaultValue: 'More' })}
+      onPress={onPress}
+    />
+  );
 
   if (!isSetup) {
+    const openSetup = () => {
+      fireSelectionHaptic();
+      navigation.navigate('CycleOnboarding');
+    };
     return (
-      <Pressable
-        className="bg-surface rounded-xl p-4 mb-3"
-        onPress={() => navigation.navigate('CycleOnboarding')}
-        accessibilityRole="button"
-        accessibilityLabel={t('cycleCard.setupA11y', {
-          defaultValue: 'Set up cycle and pregnancy tracking',
-        })}
-      >
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-md font-bold text-text-secondary">{title}</Text>
-          <View className="flex-row items-center">
-            <Text className="text-md text-accent-primary font-medium">
-              {t('cycleCard.setUp', { defaultValue: 'Set Up' })}
-            </Text>
-            <Icon
-              name="chevron-forward"
-              size={14}
-              color={accentPrimary}
-              style={{ marginLeft: 2 }}
-            />
-          </View>
-        </View>
-
-        <Text className="text-sm text-text-secondary mt-1">
-          {discreetMode
-            ? t('cycleCard.discreetDescription', {
-                defaultValue: 'Track your wellness parameters and predictions.',
-              })
-            : t('cycleCard.description', {
-                defaultValue:
-                  'Track cycle phases, predictions, symptoms, and pregnancy milestones.',
-              })}
-        </Text>
-      </Pressable>
+      <>
+        {intro(openSetup)}
+        <Pressable
+          className="bg-surface rounded-xl p-4"
+          onPress={openSetup}
+          accessibilityRole="button"
+          accessibilityLabel={t('cycleCard.setupA11y', {
+            defaultValue: 'Set up cycle and pregnancy tracking',
+          })}
+        >
+          <Text className="text-sm text-text-secondary">
+            {discreetMode
+              ? t('cycleCard.discreetDescription', {
+                  defaultValue:
+                    'Track your wellness parameters and predictions.',
+                })
+              : t('cycleCard.description', {
+                  defaultValue:
+                    'Track cycle phases, predictions, symptoms, and pregnancy milestones.',
+                })}
+          </Text>
+        </Pressable>
+      </>
     );
   }
 
@@ -251,7 +310,7 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
       const activeDay =
         cycleInfo?.day && cycleInfo.day > 0 ? cycleInfo.day : null;
       return (
-        <View className="mt-1 flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between">
           <Text className="text-base font-semibold text-text-primary">
             {activeDay
               ? t('cycleCard.day', {
@@ -272,7 +331,7 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
       if (ga) {
         const localized = localizeBabyWeek(ga.week, t);
         return (
-          <View className="flex-row items-center gap-3 mt-2">
+          <View className="flex-row items-center gap-3">
             {baby && <WombScene scene={baby.wombScene} size={72} />}
             <View className="flex-1">
               <Text className="text-base font-bold text-text-primary">
@@ -328,7 +387,7 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
         );
       }
       return (
-        <View className="mt-1">
+        <View>
           <Text className="text-base font-semibold text-text-primary">
             {t('cycleCard.pregnancyActive', {
               defaultValue: 'Pregnancy Tracking Active',
@@ -344,11 +403,11 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
     }
 
     if (cycleInfo) {
-      return <CycleCardRingContent title={title} info={cycleInfo} />;
+      return <CycleCardRingContent info={cycleInfo} />;
     }
 
     return (
-      <View className="mt-1">
+      <View>
         <Text className="text-base font-semibold text-text-primary capitalize">
           {getModeTitle(t, settings.mode, discreetMode)}
         </Text>
@@ -361,35 +420,24 @@ const CycleCard: React.FC<CycleCardProps> = ({ navigation }) => {
     );
   };
 
+  const openHub = () => {
+    fireSelectionHaptic();
+    navigation.navigate('CycleHub');
+  };
   return (
-    <Pressable
-      className="bg-surface rounded-xl p-4 mb-3"
-      onPress={() => navigation.navigate('CycleHub')}
-      accessibilityRole="button"
-      accessibilityLabel={t('cycleCard.hubA11y', {
-        defaultValue: 'Open cycle and pregnancy tracking hub',
-      })}
-    >
-      {!showsRingLayout && (
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-md font-bold text-text-secondary">{title}</Text>
-
-          <View className="flex-row items-center">
-            <Text className="text-md text-accent-primary font-medium">
-              {t('cycleCard.hub', { defaultValue: 'Hub' })}
-            </Text>
-            <Icon
-              name="chevron-forward"
-              size={14}
-              color={accentPrimary}
-              style={{ marginLeft: 2 }}
-            />
-          </View>
-        </View>
-      )}
-
-      {renderCardContent()}
-    </Pressable>
+    <>
+      {intro(openHub)}
+      <Pressable
+        className="bg-surface rounded-xl p-4"
+        onPress={openHub}
+        accessibilityRole="button"
+        accessibilityLabel={t('cycleCard.hubA11y', {
+          defaultValue: 'Open cycle and pregnancy tracking hub',
+        })}
+      >
+        {renderCardContent()}
+      </Pressable>
+    </>
   );
 };
 

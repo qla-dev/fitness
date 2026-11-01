@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as Sharing from 'expo-sharing';
@@ -30,6 +30,7 @@ import {
   type CycleMode,
 } from '@workspace/shared';
 import { getExport } from '../services/api/cycleApi';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type CycleSettingsScreenProps = RootStackScreenProps<'CycleSettings'>;
 
@@ -368,16 +369,13 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingTop: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <SettingsRowGroup>
           <SettingsRow
@@ -612,7 +610,7 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
             </SettingsRowGroup>
           </>
         )}
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

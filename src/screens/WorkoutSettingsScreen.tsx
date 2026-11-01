@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import RestPeriodSheet, {
@@ -14,6 +14,7 @@ import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import type { RootStackScreenProps } from '../types/navigation';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type WorkoutSettingsScreenProps = RootStackScreenProps<'WorkoutSettings'>;
 
@@ -54,15 +55,12 @@ const WorkoutSettingsScreen: React.FC<WorkoutSettingsScreenProps> = () => {
       style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
     >
       {header}
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
-        contentInsetAdjustmentBehavior={
-          usesNativeHeader ? 'automatic' : 'never'
-        }
       >
         <SettingsRow
           title={t('workoutSettings.defaultRest', {
@@ -125,7 +123,7 @@ const WorkoutSettingsScreen: React.FC<WorkoutSettingsScreenProps> = () => {
             />
           }
         />
-      </ScrollView>
+      </NativeHeaderScrollView>
 
       <RestPeriodSheet ref={restSheetRef} onChange={setDefaultRestSec} />
     </View>

@@ -5,6 +5,24 @@ import Icon from './Icon';
 import LiquidGlassSurface from './LiquidGlassSurface';
 import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 
+/**
+ * The borderless search field's text box. iOS sizes a padding-free
+ * single-line TextInput to the font's line box, which is shorter than the
+ * glyphs' ascent plus descent, so the placeholder sat low and its descenders
+ * were clipped. A fixed height lets UITextField centre the text in room it
+ * actually fits in. Centred by the font's metrics, lowercase text still read
+ * low beside the search glyph, so the bottom padding lifts it 1pt. Shared by
+ * every search row that draws its own field.
+ */
+export const SEARCH_INPUT_STYLE = {
+  fontSize: 16,
+  height: 23,
+  paddingTop: 0,
+  paddingBottom: 2,
+  paddingHorizontal: 0,
+  includeFontPadding: false,
+} as const;
+
 interface LibrarySearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
@@ -51,7 +69,7 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
 
   const field = (
     <View
-      className={`flex-row items-center rounded-lg px-3 py-2.5${
+      className={`flex-row items-center rounded-lg px-3 py-2${
         usesGlass ? '' : ' bg-raised'
       }`}
       style={{
@@ -71,7 +89,7 @@ const LibrarySearchBar: React.FC<LibrarySearchBarProps> = ({
       <View className="flex-1 ml-2">
         <TextInput
           className="text-text-primary"
-          style={{ fontSize: 16, padding: 0, includeFontPadding: false }}
+          style={SEARCH_INPUT_STYLE}
           placeholder={placeholder}
           placeholderTextColor={textMuted}
           value={value}

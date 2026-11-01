@@ -92,6 +92,8 @@ export type HeaderMenuAction = {
   icon?: IconName;
   /** Single-choice option row: checkmark when active, on both paths. */
   selected?: boolean;
+  /** Red, for an action that removes or turns something off. */
+  destructive?: boolean;
   onPress: () => void;
 };
 
@@ -179,6 +181,10 @@ export type HeaderItem =
       sfSymbol?: string;
       ionicon?: string;
       items: HeaderMenuEntry[];
+      /** A line of copy at the top of the menu, above its items. */
+      title?: string;
+      /** Own Liquid Glass capsule, as on an `icon` item; see there. */
+      separated?: boolean;
       /** Accent dot on the trigger marking a non-default selection. */
       showsBadge?: boolean;
       badgeValue?: string;
@@ -406,7 +412,17 @@ export interface ScreenHeaderConfig {
    * left alone: the system bar paints its own material behind its items.
    */
   appearance?: 'dark';
+  /**
+   * `tab`: the custom bar's side padding matches `TabHeader` (8), so a tab
+   * root drawn through this hook keeps its corner buttons where every other
+   * tab has them. Pushed screens keep the wider stack inset.
+   */
+  edge?: 'tab';
 }
+
+/** Side padding of the custom bar: the stack default, or TabHeader's. */
+const BAR_EDGE_INSET = 16;
+const TAB_BAR_EDGE_INSET = 8;
 
 interface HeaderColors {
   defaultColor: string;
@@ -583,6 +599,7 @@ function toAnchoredMenuItems(
           label: action.label,
           icon: action.icon,
           selected: action.selected,
+          destructive: action.destructive,
           onPress: action.onPress,
         });
       });
@@ -592,6 +609,7 @@ function toAnchoredMenuItems(
         label: entry.label,
         icon: entry.icon,
         selected: entry.selected,
+        destructive: entry.destructive,
         onPress: entry.onPress,
       });
     }
@@ -612,6 +630,7 @@ function toNativeMenuAction(
     ...(action.selected !== undefined
       ? { state: action.selected ? ('on' as const) : ('off' as const) }
       : {}),
+    ...(action.destructive ? { destructive: true } : {}),
     onPress,
   };
 }
@@ -649,6 +668,8 @@ function buildNativeMenuItem(
       ? createNativeHeaderAccentBadge(accentColor, item.badgeValue ?? '•')
       : undefined,
     menuItems,
+    title: item.title,
+    separated: item.separated,
   });
 }
 
@@ -894,7 +915,9 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     nativeOptions,
     animateKey,
     appearance,
+    edge,
   } = config;
+  const edgeInset = edge === 'tab' ? TAB_BAR_EDGE_INSET : BAR_EDGE_INSET;
   const rightItems = toRightArray(right);
   // Forced-dark screens need white actions on both native and custom bars.
   const customColors: HeaderColors =
@@ -979,6 +1002,8 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     item.kind === 'menu'
       ? {
           sfSymbol: item.sfSymbol,
+          title: item.title,
+          separated: !!item.separated,
           showsBadge: !!item.showsBadge,
           badgeValue: item.kind === 'menu' ? item.badgeValue : undefined,
           accessibilityLabel: item.accessibilityLabel,
@@ -992,12 +1017,14 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
                     label: a.label,
                     selected: a.selected ?? null,
                     sfSymbol: a.sfSymbol,
+                    destructive: !!a.destructive,
                   })),
                 }
               : {
                   label: entry.label,
                   selected: entry.selected ?? null,
                   sfSymbol: entry.sfSymbol,
+                  destructive: !!entry.destructive,
                 }
           ),
         }
@@ -1197,7 +1224,18 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
       anchor={openMenu?.anchor ?? null}
       items={
         openMenu && openMenuItem
-          ? toAnchoredMenuItems(openMenuItem.items, openMenu.id)
+          ? [
+              ...(openMenuItem.title
+                ? [
+                    {
+                      key: `${openMenu.id}~title`,
+                      label: openMenuItem.title,
+                      isNote: true,
+                    },
+                  ]
+                : []),
+              ...toAnchoredMenuItems(openMenuItem.items, openMenu.id),
+            ]
           : []
       }
       onClose={() => setOpenMenu(null)}
@@ -1224,8 +1262,9 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     <View
       // No bottom hairline: only some screens passed `borderless`, so the
       // line came and went between screens; the bar now never draws one.
-      className="px-4 py-3"
+      className="py-3"
       style={{
+        paddingHorizontal: edgeInset,
         position: 'relative',
         flexDirection: 'row',
         alignItems: 'center',
@@ -1264,8 +1303,8 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
         pointerEvents="box-none"
         style={{
           position: 'absolute',
-          left: 16 + titleSideInset,
-          right: 16 + titleSideInset,
+          left: edgeInset + titleSideInset,
+          right: edgeInset + titleSideInset,
           top: 0,
           bottom: 0,
           alignItems: 'center',

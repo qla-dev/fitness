@@ -18,7 +18,6 @@ import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -26,8 +25,10 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -44,11 +45,11 @@ import java.time.format.DateTimeFormatter
 import org.json.JSONObject
 
 /**
- * Classic base composition, unchanged from the pre-localization calorie widget
- * (22415819): one-line localized kcal heading, 8dp progress bar, and the
- * 32dp search/scan action row, with a flexible spacer between progress and
- * actions. Only strings, accessibility labels and number formatting follow the
- * app/system language; geometry, footprint and behavior are untouched.
+ * The Tracker's nutrition arcs in the classic 2x1 footprint: eaten (outer,
+ * against the calorie goal) and burned (inner, against the Move goal) as
+ * nested domes, the localized remaining-calories line under them, and the search /
+ * scan shortcuts beside them. Strings, accessibility labels and numbers follow
+ * the app/system language.
  */
 class CalorieWidget : GlanceAppWidget() {
 
@@ -76,17 +77,31 @@ class CalorieWidget : GlanceAppWidget() {
         val widgetContext = WidgetLocale.localizedContext(context)
 
         val remainingText: String
-        val progress: Float
+        val eatenProgress: Float
+        val burnedProgress: Float
         if (snapshot == null) {
             remainingText = widgetContext.getString(R.string.widget_kcal_left_empty)
-            progress = 0f
+            eatenProgress = 0f
+            burnedProgress = 0f
         } else {
             remainingText = widgetContext.getString(
                 R.string.widget_kcal_left,
-                formatInt(widgetContext, snapshot.remaining),
+                formatInt(widgetContext, snapshot.remaining.coerceAtLeast(0.0)),
             )
-            progress = snapshot.progress.coerceIn(0.0, 1.0).toFloat()
+            eatenProgress = snapshot.progress.coerceIn(0.0, 1.0).toFloat()
+            burnedProgress = snapshot.burnedProgress
         }
+
+        val arcs = WidgetGraphics.calorieArcs(
+            context = context,
+            widthDp = 160f,
+            strokeDp = 15f,
+            eatenProgress = eatenProgress,
+            burnedProgress = burnedProgress,
+            eatenColor = WidgetInk.eaten(context),
+            burnedColor = WidgetInk.MOVE,
+            trackColor = WidgetInk.track(context),
+        )
 
         val openAppIntent = Intent(Intent.ACTION_VIEW, Uri.parse("sparkyfitnessmobile://"))
             .setPackage(context.packageName)
@@ -100,68 +115,81 @@ class CalorieWidget : GlanceAppWidget() {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.surface)
+                .background(WidgetPalette.surface)
                 .appWidgetBackgroundCornerRadius()
                 .padding(12.dp)
                 .clickable(actionStartActivity(openAppIntent)),
         ) {
-            Column(modifier = GlanceModifier.fillMaxSize()) {
-                Text(
-                    text = remainingText,
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    maxLines = 1,
-                    modifier = GlanceModifier.fillMaxWidth(),
-                )
-                Spacer(modifier = GlanceModifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = progress,
+            Row(
+                modifier = GlanceModifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
                     modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .height(8.dp),
-                    color = GlanceTheme.colors.primary,
-                    backgroundColor = GlanceTheme.colors.surfaceVariant,
-                )
-                Spacer(modifier = GlanceModifier.defaultWeight())
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
+                        .defaultWeight()
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Image(
+                        provider = ImageProvider(arcs),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = GlanceModifier
+                            .defaultWeight()
+                            .fillMaxWidth(),
+                    )
+                    Spacer(modifier = GlanceModifier.height(2.dp))
+                    Text(
+                        text = remainingText,
+                        style = TextStyle(
+                            color = WidgetPalette.eaten,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        maxLines = 1,
+                    )
+                }
+                Spacer(modifier = GlanceModifier.width(8.dp))
+                Box(
+                    modifier = GlanceModifier
+                        .width(1.dp)
+                        .height(24.dp)
+                        .background(WidgetPalette.divider),
+                ) {}
+                Spacer(modifier = GlanceModifier.width(4.dp))
+                Column(
+                    modifier = GlanceModifier
+                        .width(32.dp)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         modifier = GlanceModifier
                             .defaultWeight()
-                            .height(32.dp)
+                            .fillMaxWidth()
                             .clickable(actionStartActivity(searchIntent)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
                             provider = ImageProvider(R.drawable.ic_widget_search),
                             contentDescription = searchFoodLabel,
-                            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
-                            modifier = GlanceModifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(WidgetPalette.eaten),
+                            modifier = GlanceModifier.size(22.dp),
                         )
                     }
                     Box(
                         modifier = GlanceModifier
-                            .width(1.dp)
-                            .height(24.dp)
-                            .background(GlanceTheme.colors.surfaceVariant),
-                    ) {}
-                    Box(
-                        modifier = GlanceModifier
                             .defaultWeight()
-                            .height(32.dp)
+                            .fillMaxWidth()
                             .clickable(actionStartActivity(scanIntent)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
                             provider = ImageProvider(R.drawable.ic_widget_scan),
                             contentDescription = scanBarcodeLabel,
-                            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
-                            modifier = GlanceModifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(WidgetPalette.eaten),
+                            modifier = GlanceModifier.size(22.dp),
                         )
                     }
                 }
@@ -174,8 +202,22 @@ class CalorieWidget : GlanceAppWidget() {
         val remaining: Double,
         val goal: Double,
         val progress: Double,
+        val food: Double?,
+        val burned: Double?,
+        val burnGoal: Double?,
         val lastUpdated: Long,
-    )
+    ) {
+        /**
+         * The inner arc: burned against the Move goal, as on the Tracker. A
+         * snapshot from before the arcs carries neither, and draws empty.
+         */
+        val burnedProgress: Float
+            get() {
+                val value = burned ?: return 0f
+                val target = burnGoal?.takeIf { it > 0.0 } ?: goal
+                return widgetRatio(value, target)
+            }
+    }
 
     private fun loadSnapshot(context: Context): CalorieSnapshot? {
         val prefs = context.getSharedPreferences(
@@ -196,11 +238,21 @@ class CalorieWidget : GlanceAppWidget() {
                 remaining = obj.optDouble("remaining", 0.0),
                 goal = obj.optDouble("goal", 0.0),
                 progress = obj.optDouble("progress", 0.0),
+                food = obj.optionalDouble("food"),
+                burned = obj.optionalDouble("burned"),
+                burnGoal = obj.optionalDouble("burnGoal"),
                 lastUpdated = obj.optLong("lastUpdated", 0L),
             )
         } catch (e: Exception) {
             null
         }
+    }
+
+    /** Absent, JSON null and non-finite all read as "not supplied". */
+    private fun JSONObject.optionalDouble(name: String): Double? {
+        if (!has(name) || isNull(name)) return null
+        val value = optDouble(name, Double.NaN)
+        return if (value.isFinite()) value else null
     }
 
     private fun isToday(date: String): Boolean {

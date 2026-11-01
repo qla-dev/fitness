@@ -1,9 +1,26 @@
+import type { NavigationProp } from '@react-navigation/native';
 import type { SetupAnswers } from './personalSetup';
+import type { RootStackParamList } from '../types/navigation';
 import type { IconName } from '../components/Icon';
 import type { FlashMeter, FlashStat } from '../components/ui/FlashOverlay';
 import type { MacroGlyph } from '../constants/macroRings';
 
 export type SetupOption = { value: string; label: string; icon?: IconName };
+
+/**
+ * A match offered under a text field while it is typed. Picking it sets the
+ * field to `value` and merges `answers` into later questions (a medication's
+ * form, say).
+ */
+export type SetupSuggestion = {
+  label: string;
+  value: string;
+  answers?: SetupAnswers;
+};
+export type SetupSuggester = (
+  query: string,
+  signal: AbortSignal
+) => Promise<SetupSuggestion[]>;
 
 export interface SetupField {
   id: string;
@@ -42,6 +59,12 @@ export interface SetupField {
    * `offerSetupAnswer` and fills the field for review.
    */
   assists?: SetupAssist[];
+  /** Share of the row this input takes on a `row` step; 1 by default. */
+  flex?: number;
+  /** Matches for a text field as it is typed, listed under the input. */
+  suggest?: SetupSuggester;
+  /** Where `suggest` gets its matches, credited under the list. */
+  suggestSource?: string;
 }
 
 /** Stands in for an assist's link inside its translated sentence. */
@@ -75,6 +98,29 @@ export interface SetupStep {
    * answered when the wizard opened; see `firstRound`.
    */
   required?: boolean;
+  /**
+   * Lays the step's inputs out side by side rather than stacked, for parts
+   * of one answer such as a strength and its unit.
+   */
+  row?: boolean;
+  /**
+   * A step answered on another screen rather than in inputs: a button that
+   * opens it, what it hands back when the wizard regains focus, and a line
+   * saying what is set. Usually paired with no fields, and never required.
+   */
+  action?: SetupStepAction;
+}
+
+export interface SetupStepAction {
+  label: string;
+  open: (
+    navigation: NavigationProp<RootStackParamList>,
+    answers: SetupAnswers
+  ) => void;
+  /** Answers the other screen left behind, taken once on return. */
+  take?: () => SetupAnswers | null;
+  /** What is set so far, under the button; nothing while unset. */
+  summary?: (answers: SetupAnswers) => string | undefined;
 }
 
 /** What the full-screen flash shows once the first round is answered. */

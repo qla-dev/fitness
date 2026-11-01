@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, ScrollView } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
@@ -10,15 +10,18 @@ import { useCycleHistory } from '../hooks/useCycleHistory';
 import { useCycleLogsRange } from '../hooks/useCycleLogs';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
+import { trackingMenu } from '../utils/trackingMenu';
 import type { RootStackScreenProps } from '../types/navigation';
 
+import FeatureFacts from '../components/FeatureFacts';
 import MedicalDisclaimer from '../components/MedicalDisclaimer';
 import SegmentedControl from '../components/SegmentedControl';
 import StatusView from '../components/StatusView';
 import CycleCalendarGrid from '../components/wellness/CycleCalendarGrid';
 import CycleHistoryList from '../components/wellness/CycleHistoryList';
 import CycleInsightsView from '../components/wellness/CycleInsightsView';
-import CycleRing from '../components/wellness/CycleRing';
+import CycleHubSummary from '../components/wellness/CycleHubSummary';
+import { fireSelectionHaptic } from '../services/haptics';
 import CycleAlerts from '../components/wellness/CycleAlerts';
 import FertilityCard from '../components/wellness/ttc/FertilityCard';
 import PregnancyOverviewView from '../components/wellness/pregnancy/PregnancyOverviewView';
@@ -27,6 +30,7 @@ import { buildCycleAlerts } from '@workspace/shared';
 import { getTodayDate, addDays } from '../utils/dateUtils';
 import { getPhaseDisplayName } from '../utils/cycleDisplayUtils';
 import { useCyclePredictionData } from '../hooks/useCyclePredictionData';
+import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type CycleHubScreenProps = RootStackScreenProps<'CycleHub'>;
 
@@ -41,7 +45,11 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
     isLoading: isModeLoading,
     onboardedAt,
   } = useCycleMode();
-  const { settings, isLoading: isSettingsLoading } = useCycleSettings();
+  const {
+    settings,
+    isLoading: isSettingsLoading,
+    updateSettings,
+  } = useCycleSettings();
   const { discreetMode } = useDiscreetMode();
 
   // Redirect to Onboarding if not enabled or not onboarded
@@ -140,20 +148,54 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
       ? t('cycleHub.pregnancyHub', { defaultValue: 'Pregnancy Hub' })
       : t('cycleHub.cycleHub', { defaultValue: 'Cycle Hub' });
 
+  // The goal screen's header: transparent, the title held in the bar, and
+  // everything under it scrolling, the segmented control included.
   const header = useScreenHeader({
+    variant: 'transparent',
     title: hubTitle,
     nativeTitle: hubTitle,
     left: { kind: 'back' },
-    right: {
-      kind: 'icon',
-      ionicon: 'add-outline',
-      sfSymbol: 'plus',
-      role: 'primary',
-      accessibilityLabel: t('cycleHub.logEntry', { defaultValue: 'Log Entry' }),
-      onPress: () =>
-        navigation.navigate('CycleLogModal', { date: selectedDate }),
-    },
+    right: [
+      trackingMenu({
+        t,
+        identifier: 'cycle-hub-tracking',
+        title: t('cycleHub.trackingTitle', {
+          defaultValue:
+            'Your rhythm, on your terms. Pause any time and pick it up again from Profile.',
+        }),
+        tracking: true,
+        confirmTitle: t('cycleHub.stopTitle', {
+          defaultValue: 'Stop cycle tracking?',
+        }),
+        confirmMessage: t('cycleHub.stopMessage', {
+          defaultValue:
+            'Cycle tracking turns off and leaves your Tracker. Your logged days are kept, and you can turn it back on in Profile under Cycle & Pregnancy.',
+        }),
+        // The same switch as Profile's Cycle & Pregnancy toggle.
+        onStop: () => {
+          updateSettings({ enabled: false });
+          navigation.goBack();
+        },
+      }),
+      {
+        kind: 'icon',
+        ionicon: 'add-outline',
+        sfSymbol: 'plus',
+        role: 'primary',
+        separated: true,
+        accessibilityLabel: t('cycleHub.logEntry', {
+          defaultValue: 'Log Entry',
+        }),
+        onPress: () =>
+          navigation.navigate('CycleLogModal', { date: selectedDate }),
+      },
+    ],
   });
+
+  // The copy is about cycles, so it stays out of pregnancy mode, and out of
+  // discreet mode, which keeps cycle wording off the screen.
+  const showsFacts =
+    currentTab === 'overview' && mode !== 'pregnant' && !discreetMode;
 
   if (isLoading || !settings) {
     return <StatusView loading className="bg-background" />;
@@ -166,33 +208,31 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
     >
       {header}
 
-      {/* Header Bar with Segmented Control */}
-      <View className="px-4 py-2 bg-background z-10 border-b border-border-subtle">
-        <SegmentedControl
-          segments={[
-            {
-              key: 'overview',
-              label: t('cycleHub.overview', { defaultValue: 'Overview' }),
-            },
-            middleTab,
-            {
-              key: 'history',
-              label: t('cycleHub.history', { defaultValue: 'History' }),
-            },
-          ]}
-          activeKey={currentTab}
-          onSelect={setActiveTab}
-        />
-      </View>
-
-      <ScrollView
+      <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
-          paddingTop: 12,
+          paddingTop: 8,
           paddingBottom: insets.bottom + 80,
         }}
       >
+        <View className="mb-3">
+          <SegmentedControl
+            segments={[
+              {
+                key: 'overview',
+                label: t('cycleHub.overview', { defaultValue: 'Overview' }),
+              },
+              middleTab,
+              {
+                key: 'history',
+                label: t('cycleHub.history', { defaultValue: 'History' }),
+              },
+            ]}
+            activeKey={currentTab}
+            onSelect={setActiveTab}
+          />
+        </View>
         {currentTab === 'overview' && (
           <View className="gap-3">
             {/* Pregnancy Overview or Cycle Overview */}
@@ -200,34 +240,27 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
               <PregnancyOverviewView section="overview" />
             ) : (
               <>
-                {/* Cycle Ring Visualisation */}
-                <View className="items-center py-4 bg-surface rounded-xl border-0">
-                  <CycleRing
+                {/* The day-bead bracelet with countdowns beside it. A tap
+                    gives a light tick, so the bracelet feels like an object
+                    in the hand rather than a picture of one. */}
+                <Pressable
+                  className="p-4 bg-surface rounded-xl border-0"
+                  onPress={fireSelectionHaptic}
+                  accessibilityRole="summary"
+                >
+                  <CycleHubSummary
                     cycleDay={dayStats.cycleDay}
                     cycleLength={cycleStats.avgCycleLength}
                     periodLength={cycleStats.avgPeriodLength}
                     fertileStartDay={ringMarkers.fertileStartDay}
                     fertileEndDay={ringMarkers.fertileEndDay}
                     ovulationDay={ringMarkers.ovulationDay}
-                    centerLabel={activeSegmentLabel}
-                    centerValue={
-                      dayStats.cycleDay !== null
-                        ? t('cycleHub.ring.day', {
-                            defaultValue: 'Day {{day}}',
-                            day: dayStats.cycleDay,
-                          })
-                        : '—'
-                    }
-                    centerSub={
-                      discreetMode
-                        ? undefined
-                        : t('cycleHub.ring.dayCycle', {
-                            defaultValue: '{{count}}-day cycle',
-                            count: cycleStats.avgCycleLength,
-                          })
-                    }
+                    phase={dayStats.phase}
+                    phaseLabel={activeSegmentLabel}
+                    daysLate={sharedPrediction?.daysLate ?? 0}
+                    discreet={discreetMode}
                   />
-                </View>
+                </Pressable>
 
                 {/* Cycle Alerts */}
                 {alerts.length > 0 && (
@@ -247,6 +280,8 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
             )}
           </View>
         )}
+
+        {showsFacts && <FeatureFacts feature="cycle" />}
 
         {currentTab === 'trends' && (
           <View className="gap-3">
@@ -277,10 +312,11 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        <View className="mt-6 px-2">
+        {/* The About card above already carries its own bottom margin. */}
+        <View className={`${showsFacts ? 'mt-0' : 'mt-6'} px-2`}>
           <MedicalDisclaimer />
         </View>
-      </ScrollView>
+      </NativeHeaderScrollView>
     </View>
   );
 };

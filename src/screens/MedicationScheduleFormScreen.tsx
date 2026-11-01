@@ -43,6 +43,7 @@ import type {
 } from '@workspace/shared';
 import { getTodayDate, formatDateLabel } from '../utils/dateUtils';
 import { addLog } from '../services/LogService';
+import { offerMedicationScheduleDraft } from '../services/medicationScheduleDraft';
 import type { RootStackScreenProps } from '../types/navigation';
 import { scheduleTypeLabel } from '../utils/medicationLocalization';
 import { SCHEDULE_TYPES } from '../types/medications';
@@ -169,12 +170,17 @@ const MedicationScheduleFormScreen: React.FC<
   const dateLocale = translationI18n.language.startsWith('pl')
     ? 'pl-PL'
     : 'en-US';
-  const { medicationId, scheduleId } = route.params;
+  const { medicationId, scheduleId, doseUnit: draftDoseUnit } = route.params;
   const isEditing = !!scheduleId;
+  // No medication yet: the questionnaire is still adding it.
+  const isDraft = !medicationId;
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
-  const { data: med, isLoading } = useMedicationDetail(medicationId);
+  const { data: med, isLoading } = useMedicationDetail(medicationId ?? '', {
+    enabled: !isDraft,
+  });
+  const doseUnit = med?.dose_unit ?? draftDoseUnit;
   const existing = useMemo(
     () => med?.schedules?.find((s) => s.id === scheduleId),
     [med, scheduleId]
@@ -399,6 +405,11 @@ const MedicationScheduleFormScreen: React.FC<
     }
 
     const body = buildPayload();
+    if (!medicationId) {
+      offerMedicationScheduleDraft(body);
+      navigation.goBack();
+      return;
+    }
     if (isEditing && scheduleId) {
       updateScheduleMutation.mutate(
         { id: scheduleId, medicationId, body },
@@ -444,7 +455,7 @@ const MedicationScheduleFormScreen: React.FC<
   ]);
 
   const handleDelete = useCallback(() => {
-    if (!isEditing || !scheduleId || !existing) return;
+    if (!isEditing || !scheduleId || !existing || !medicationId) return;
     Alert.alert(
       t('medications.schedule.deleteTitle', {
         defaultValue: 'Delete Schedule',
@@ -818,10 +829,10 @@ const MedicationScheduleFormScreen: React.FC<
         <SettingsRowGroup>
           <SettingsRow
             title={
-              med?.dose_unit
+              doseUnit
                 ? t('medications.schedule.doseOverride', {
                     defaultValue: 'Dose override ({{unit}})',
-                    unit: med.dose_unit,
+                    unit: doseUnit,
                   })
                 : t('medications.schedule.doseOverridePlain', {
                     defaultValue: 'Dose override',

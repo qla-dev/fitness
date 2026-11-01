@@ -1,0 +1,222 @@
+package com.qlafit.widget
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.currentState
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
+import {{APPLICATION_ID}}.R
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import kotlin.math.roundToLong
+import org.json.JSONObject
+
+/**
+ * The Dashboard's Activity Rings in a fixed 2x2 footprint: Move, Exercise and
+ * Steps as concentric rings in their own colours, with today's figure for each
+ * beneath. Strings and numbers follow the app/system language.
+ */
+class ActivityWidget : GlanceAppWidget() {
+
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val fallbackSnapshot = loadSnapshot(context)
+        provideContent {
+            GlanceTheme {
+                WidgetContent(context = context, fallbackSnapshot = fallbackSnapshot)
+            }
+        }
+    }
+
+    @Composable
+    private fun WidgetContent(context: Context, fallbackSnapshot: ActivitySnapshot?) {
+        val state = currentState<Preferences>()
+        // Observe the dedicated revision so an active Glance session recomposes
+        // after a language-only invalidation.
+        currentState(WidgetLocale.LOCALE_RENDER_REVISION_STATE_KEY)
+        val snapshot = parseSnapshot(state[SNAPSHOT_STATE_KEY]) ?: fallbackSnapshot
+
+        val widgetContext = WidgetLocale.localizedContext(context)
+
+        val rings = WidgetGraphics.activityRings(
+            context = context,
+            sizeDp = 120f,
+            move = widgetRatio(snapshot?.move ?: 0.0, snapshot?.moveGoal ?: 0.0),
+            exercise = widgetRatio(snapshot?.exercise ?: 0.0, snapshot?.exerciseGoal ?: 0.0),
+            steps = widgetRatio(snapshot?.steps ?: 0.0, snapshot?.stepsGoal ?: 0.0),
+        )
+
+        val openAppIntent = Intent(Intent.ACTION_VIEW, Uri.parse("sparkyfitnessmobile://"))
+            .setPackage(context.packageName)
+
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetPalette.surface)
+                .appWidgetBackgroundCornerRadius()
+                .padding(12.dp)
+                .clickable(actionStartActivity(openAppIntent)),
+        ) {
+            Column(
+                modifier = GlanceModifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(
+                    provider = ImageProvider(rings),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = GlanceModifier
+                        .defaultWeight()
+                        .fillMaxWidth(),
+                )
+                Spacer(modifier = GlanceModifier.height(6.dp))
+                Row(modifier = GlanceModifier.fillMaxWidth()) {
+                    Figure(
+                        context = widgetContext,
+                        value = snapshot?.move ?: 0.0,
+                        label = widgetContext.getString(R.string.widget_move),
+                        color = WidgetPalette.move,
+                        modifier = GlanceModifier.defaultWeight(),
+                    )
+                    Figure(
+                        context = widgetContext,
+                        value = snapshot?.exercise ?: 0.0,
+                        label = widgetContext.getString(R.string.widget_exercise),
+                        color = WidgetPalette.exercise,
+                        modifier = GlanceModifier.defaultWeight(),
+                    )
+                    Figure(
+                        context = widgetContext,
+                        value = snapshot?.steps ?: 0.0,
+                        label = widgetContext.getString(R.string.widget_steps),
+                        color = WidgetPalette.steps,
+                        modifier = GlanceModifier.defaultWeight(),
+                    )
+                }
+            }
+        }
+    }
+
+    /** One ring's figure, in its colour, over its name. */
+    @Composable
+    private fun Figure(
+        context: Context,
+        value: Double,
+        label: String,
+        color: ColorProvider,
+        modifier: GlanceModifier,
+    ) {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = formatWidgetInt(context, value.roundToLong()),
+                style = TextStyle(
+                    color = color,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                maxLines = 1,
+            )
+            Text(
+                text = label,
+                style = TextStyle(
+                    color = WidgetPalette.textSecondary,
+                    fontSize = 10.sp,
+                ),
+                maxLines = 1,
+            )
+        }
+    }
+
+    private data class ActivitySnapshot(
+        val date: String,
+        val move: Double,
+        val moveGoal: Double,
+        val exercise: Double,
+        val exerciseGoal: Double,
+        val steps: Double,
+        val stepsGoal: Double,
+        val lastUpdated: Long,
+    )
+
+    private fun loadSnapshot(context: Context): ActivitySnapshot? {
+        val prefs = context.getSharedPreferences(
+            ActivityWidgetReceiver.PREFS_NAME,
+            Context.MODE_PRIVATE,
+        )
+        return parseSnapshot(prefs.getString(ActivityWidgetReceiver.PREFS_KEY_SNAPSHOT, null))
+    }
+
+    private fun parseSnapshot(json: String?): ActivitySnapshot? {
+        if (json == null) return null
+        return try {
+            val obj = JSONObject(json)
+            val date = obj.optString("date", "")
+            if (!isToday(date)) return null
+            ActivitySnapshot(
+                date = date,
+                move = obj.safeDouble("move"),
+                moveGoal = obj.safeDouble("moveGoal"),
+                exercise = obj.safeDouble("exercise"),
+                exerciseGoal = obj.safeDouble("exerciseGoal"),
+                // Absent when no step count is known: the ring reads empty.
+                steps = obj.safeDouble("steps"),
+                stepsGoal = obj.safeDouble("stepsGoal"),
+                lastUpdated = obj.optLong("lastUpdated", 0L),
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun JSONObject.safeDouble(name: String): Double {
+        val value = optDouble(name, 0.0)
+        return if (value.isFinite()) value else 0.0
+    }
+
+    private fun isToday(date: String): Boolean {
+        if (date.isBlank()) return false
+        return try {
+            val parsed = LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
+            parsed == LocalDate.now()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    companion object {
+        val SNAPSHOT_STATE_KEY = stringPreferencesKey(ActivityWidgetReceiver.PREFS_KEY_SNAPSHOT)
+    }
+}

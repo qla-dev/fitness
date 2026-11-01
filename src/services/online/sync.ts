@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { AppState } from 'react-native';
 import { queryClient } from '../../hooks/queryClient';
 import { localTransaction, markLocalDatabaseDirty } from '../local/database';
+import { dedupeMealTypes } from '../local/mealTypeDedupe';
 import {
   onlineRequest,
   useOnlineAccount,
@@ -106,6 +107,8 @@ async function performSync() {
           ];
         }
       }
+      // Both installs seeded their own default meal types; keep one of each.
+      dedupeMealTypes(db.tables);
       db.onlineSync = {
         accountId: account.id,
         baseline: remote.tables,
@@ -155,6 +158,9 @@ async function performSync() {
         remote.tables,
         protectedKeys
       );
+      // Another, older install may still push its own copies; fold them in.
+      // The removals go up as deletions on the next sync.
+      dedupeMealTypes(db.tables);
       const baseline = { ...remote.tables };
       for (const name of SYNC_COLLECTIONS) {
         baseline[name] = [

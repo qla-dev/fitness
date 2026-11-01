@@ -54,6 +54,8 @@ jest.mock('../../src/services/CalorieWidgetBridge', () => ({
     reloadWidget: jest.fn(() => Promise.resolve()),
     setMacroSnapshot: jest.fn(() => Promise.resolve()),
     reloadMacroWidget: jest.fn(() => Promise.resolve()),
+    setActivitySnapshot: jest.fn(() => Promise.resolve()),
+    reloadActivityWidget: jest.fn(() => Promise.resolve()),
     isAvailable: true,
   },
 }));
@@ -69,6 +71,10 @@ const androidReload = CalorieWidgetBridge.reloadWidget as jest.Mock;
 const androidSetMacroSnapshot =
   CalorieWidgetBridge.setMacroSnapshot as jest.Mock;
 const androidReloadMacro = CalorieWidgetBridge.reloadMacroWidget as jest.Mock;
+const androidSetActivitySnapshot =
+  CalorieWidgetBridge.setActivitySnapshot as jest.Mock;
+const androidReloadActivity =
+  CalorieWidgetBridge.reloadActivityWidget as jest.Mock;
 
 const flushWidgetPush = async () => {
   await Promise.resolve();
@@ -109,6 +115,7 @@ const makeSummary = (overrides: Partial<DailySummary> = {}): DailySummary => ({
     exerciseSource: 'active',
     tdeeProjection: null,
   },
+  goals: { steps: 10000 } as DailySummary['goals'],
   ...overrides,
 });
 
@@ -122,18 +129,34 @@ describe('useWidgetSync', () => {
     androidReload.mockReset().mockResolvedValue(undefined);
     androidSetMacroSnapshot.mockReset().mockResolvedValue(undefined);
     androidReloadMacro.mockReset().mockResolvedValue(undefined);
+    androidSetActivitySnapshot.mockReset().mockResolvedValue(undefined);
+    androidReloadActivity.mockReset().mockResolvedValue(undefined);
     Object.defineProperty(Platform, 'OS', {
       get: () => 'ios',
       configurable: true,
     });
   });
 
-  it('writes both snapshots and reloads both widgets when calorieBalance + macros present', () => {
-    renderHook(() => useWidgetSync(makeSummary()));
+  it('writes every snapshot and reloads every widget when calorieBalance + macros present', () => {
+    renderHook(() => useWidgetSync(makeSummary(), 6240));
 
     const keys = setMock.mock.calls.map((call) => call[0]);
     expect(keys).toContain('calorieSnapshot');
     expect(keys).toContain('macroSnapshot');
+    expect(keys).toContain('activitySnapshot');
+
+    const calorieCall = setMock.mock.calls.find(
+      (call) => call[0] === 'calorieSnapshot'
+    );
+    expect(calorieCall?.[1]).toMatchObject({
+      food: 1540,
+      burned: 200,
+      goal: 2000,
+      remaining: 460,
+      progress: 0.77,
+      // The inner arc fills burned against the Move goal.
+      burnGoal: 300,
+    });
 
     const macroCall = setMock.mock.calls.find(
       (call) => call[0] === 'macroSnapshot'
@@ -143,14 +166,50 @@ describe('useWidgetSync', () => {
       carbs: 180,
       fat: 55,
       calories: 1540,
+      // Each ring fills toward its own goal, as on the Tracker.
+      proteinGoal: 150,
+      carbsGoal: 200,
+      fatGoal: 65,
     });
+
+    const activityCall = setMock.mock.calls.find(
+      (call) => call[0] === 'activitySnapshot'
+    );
+    expect(activityCall?.[1]).toMatchObject({
+      date: getTodayDate(),
+      move: 200,
+      moveGoal: 300,
+      exercise: 30,
+      exerciseGoal: 30,
+      steps: 6240,
+      stepsGoal: 10000,
+    });
+    expect(typeof activityCall?.[1].lastUpdated).toBe('number');
 
     const reloadedKinds = reloadMock.mock.calls.map((call) => call[0]);
     expect(reloadedKinds).toEqual(
-      expect.arrayContaining(['widget', 'macroWidget'])
+      expect.arrayContaining(['widget', 'macroWidget', 'activityWidget'])
     );
-    expect(reloadedKinds).toHaveLength(2);
+    expect(reloadedKinds).toHaveLength(3);
     expect(mockAddLog).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the hourly step breakdown, and omits steps when none is known', () => {
+    renderHook(() =>
+      useWidgetSync(makeSummary({ hourlySteps: [1000, 250, 0] }))
+    );
+    const fromHourly = setMock.mock.calls.find(
+      (call) => call[0] === 'activitySnapshot'
+    );
+    expect(fromHourly?.[1]).toMatchObject({ steps: 1250 });
+
+    setMock.mockReset();
+    renderHook(() => useWidgetSync(makeSummary()));
+    const unknown = setMock.mock.calls.find(
+      (call) => call[0] === 'activitySnapshot'
+    );
+    expect(unknown?.[1]).not.toHaveProperty('steps');
+    expect(unknown?.[1]).toMatchObject({ stepsGoal: 10000 });
   });
 
   it('writes only the macro snapshot when calorieBalance is undefined', () => {
@@ -160,10 +219,10 @@ describe('useWidgetSync', () => {
     renderHook(() => useWidgetSync(summary));
 
     const keys = setMock.mock.calls.map((call) => call[0]);
-    expect(keys).toEqual(['macroSnapshot']);
+    expect(keys).toEqual(['macroSnapshot', 'activitySnapshot']);
 
     const reloadedKinds = reloadMock.mock.calls.map((call) => call[0]);
-    expect(reloadedKinds).toEqual(['macroWidget']);
+    expect(reloadedKinds).toEqual(['macroWidget', 'activityWidget']);
     expect(mockAddLog).not.toHaveBeenCalled();
   });
 
@@ -180,7 +239,7 @@ describe('useWidgetSync', () => {
       configurable: true,
     });
 
-    renderHook(() => useWidgetSync(makeSummary()));
+    renderHook(() => useWidgetSync(makeSummary(), 6240));
 
     // iOS path must not run
     expect(setMock).not.toHaveBeenCalled();
@@ -196,8 +255,26 @@ describe('useWidgetSync', () => {
       remaining: 460,
       goal: 2000,
       progress: 0.77,
+      food: 1540,
+      burned: 200,
+      burnGoal: 300,
     });
     expect(androidReload).toHaveBeenCalledTimes(1);
+
+    expect(androidSetActivitySnapshot).toHaveBeenCalledTimes(1);
+    const activityPayload = JSON.parse(
+      androidSetActivitySnapshot.mock.calls[0][0] as string
+    );
+    expect(activityPayload).toMatchObject({
+      date: getTodayDate(),
+      move: 200,
+      moveGoal: 300,
+      exercise: 30,
+      exerciseGoal: 30,
+      steps: 6240,
+      stepsGoal: 10000,
+    });
+    expect(androidReloadActivity).toHaveBeenCalledTimes(1);
 
     expect(androidSetMacroSnapshot).toHaveBeenCalledTimes(1);
     const [macroPayloadJson] = androidSetMacroSnapshot.mock.calls[0];
@@ -271,6 +348,57 @@ describe('useWidgetSync', () => {
     expect(androidReload).toHaveBeenCalledTimes(1);
     expect(androidSetMacroSnapshot).toHaveBeenCalledTimes(1);
     expect(androidReloadMacro).toHaveBeenCalledTimes(1);
+    expect(androidSetActivitySnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-pushes only the Android activity snapshot when the step count changes', async () => {
+    Object.defineProperty(Platform, 'OS', {
+      get: () => 'android',
+      configurable: true,
+    });
+    const summary = makeSummary();
+
+    const { rerender } = renderHook(
+      ({ steps }) => useWidgetSync(summary, steps),
+      { initialProps: { steps: 6000 as number | null } }
+    );
+    await flushWidgetPush();
+
+    rerender({ steps: 6500 });
+    await flushWidgetPush();
+
+    expect(androidSetActivitySnapshot).toHaveBeenCalledTimes(2);
+    expect(androidReloadActivity).toHaveBeenCalledTimes(2);
+    expect(
+      JSON.parse(androidSetActivitySnapshot.mock.calls[1][0] as string)
+    ).toMatchObject({ steps: 6500 });
+    expect(androidSetSnapshot).toHaveBeenCalledTimes(1);
+    expect(androidSetMacroSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries the Android activity push after a failure', async () => {
+    Object.defineProperty(Platform, 'OS', {
+      get: () => 'android',
+      configurable: true,
+    });
+    androidSetActivitySnapshot.mockRejectedValueOnce(
+      new Error('activity failed')
+    );
+
+    const { rerender } = renderHook(({ summary }) => useWidgetSync(summary), {
+      initialProps: { summary: makeSummary() },
+    });
+    await flushWidgetPush();
+
+    rerender({ summary: makeSummary() });
+    await flushWidgetPush();
+
+    expect(androidSetActivitySnapshot).toHaveBeenCalledTimes(2);
+    expect(androidReloadActivity).toHaveBeenCalledTimes(1);
+    expect(mockAddLog).toHaveBeenCalledWith(
+      expect.stringContaining('Android activity widget push failed'),
+      'ERROR'
+    );
   });
 
   it('pushes Android snapshot again when rendered calorie fields change', async () => {

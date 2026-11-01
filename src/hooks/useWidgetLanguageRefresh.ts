@@ -66,9 +66,10 @@ export function useWidgetLanguageRefresh(): void {
       const results = await Promise.allSettled([
         CalorieWidgetBridge.reloadWidget(),
         CalorieWidgetBridge.reloadMacroWidget(),
+        CalorieWidgetBridge.reloadActivityWidget(),
       ]);
 
-      const [calorieResult, macroResult] = results;
+      const [calorieResult, macroResult, activityResult] = results;
       let fullyApplied = true;
       if (calorieResult.status === 'rejected') {
         void addLog(
@@ -80,6 +81,13 @@ export function useWidgetLanguageRefresh(): void {
       if (macroResult.status === 'rejected') {
         void addLog(
           '[useWidgetLanguageRefresh] Macro widget reload failed',
+          'ERROR'
+        );
+        fullyApplied = false;
+      }
+      if (activityResult.status === 'rejected') {
+        void addLog(
+          '[useWidgetLanguageRefresh] Activity widget reload failed',
           'ERROR'
         );
         fullyApplied = false;

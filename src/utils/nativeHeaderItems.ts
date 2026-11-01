@@ -104,9 +104,15 @@ export function createNativeHeaderMenuButtonItem({
   identifier,
   accessibilityLabel,
   badge,
+  title,
+  separated = false,
 }: {
   sfSymbol: string;
   menuItems: NativeStackHeaderItemMenu['menu']['items'];
+  /** The menu's own title line, above its items. */
+  title?: string;
+  /** Own glass capsule rather than one shared with the next item. */
+  separated?: boolean;
   tintColor: string;
   identifier: string;
   accessibilityLabel: string;
@@ -120,12 +126,12 @@ export function createNativeHeaderMenuButtonItem({
     tintColor,
     accessibilityLabel,
     identifier,
-    sharesBackground: true,
+    sharesBackground: !separated,
     // Keep the raw badge field for the native runtime, while mirroring it
     // as `badge` in the test/runtime descriptor expected by our header
     // contract helpers.
     badge,
-    menu: { items: menuItems },
+    menu: { ...(title ? { title } : {}), items: menuItems },
   };
 }
 

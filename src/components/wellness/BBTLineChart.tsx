@@ -121,8 +121,8 @@ const BBTLineChart: React.FC<BBTLineChartProps> = ({ data, isLoading }) => {
 
   if (!hasData) {
     return (
-      <View className="h-44 justify-center items-center bg-raised rounded-2xl border border-dashed border-border-subtle p-4">
-        <Text className="text-text-secondary text-xs text-center italic">
+      <View className="h-44 justify-center items-center bg-surface rounded-xl p-4">
+        <Text className="text-text-secondary text-sm text-center">
           {t('charts.bbt.empty', {
             defaultValue: 'Log daily temperature logs to view your BBT chart.',
           })}

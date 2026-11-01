@@ -149,7 +149,7 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
       {isLoading ? (
         <ActivityIndicator color={accentColor} />
       ) : photos.length === 0 ? (
-        <Text className="text-text-secondary text-xs italic py-2">
+        <Text className="text-text-secondary text-xs py-2">
           {t('bumpPhotos.empty', {
             defaultValue:
               'Capture your first bump photo to start a weekly journal.',
