@@ -937,7 +937,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         {headerChildren}
-        <View className="bg-surface rounded-xl p-4 gap-4">
+        <View className="gap-4">
           {/* Food info */}
           {renderTextField(
             t('foodForm.foodName', { defaultValue: 'Food Name' }),
