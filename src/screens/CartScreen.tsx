@@ -18,8 +18,25 @@ import { formatLocalizedNumber } from '../localization';
 import { listTotal } from '../services/online/prices';
 import { planMoney } from '../services/weeklyPlans';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
+import FooterCTA from '../components/ui/FooterCTA';
+import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
 
-export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
+export default function CartScreen(props: RootStackScreenProps<'Cart'>) {
+  // Ties the scroll view to the footer, so with Liquid Glass the action sits
+  // over the scroll edge effect instead of a filled band.
+  return (
+    <ScrollEdgeEffectProvider>
+      <CartContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+function CartContent({ route }: RootStackScreenProps<'Cart'>) {
+  const edgeEffectRef = useScrollEdgeEffectRef();
+  const [footerHeight, setFooterHeight] = useState(88);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const native = useNativeIOSHeadersActive();
@@ -46,11 +63,6 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
     variant: 'transparent',
     title: t('cart.title', { defaultValue: 'Meals' }),
     left: { kind: 'back' },
-    right: {
-      kind: 'primary',
-      label: t('groceries.newList', { defaultValue: 'New list' }),
-      onPress: newList,
-    },
   });
   return (
     <View
@@ -59,10 +71,12 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
     >
       {header}
       <NativeHeaderScrollView
+        ref={edgeEffectRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          padding: 20,
-          paddingBottom: insets.bottom + padding + 30,
+          // No top padding: the header carries the gap above the content.
+          paddingHorizontal: 20,
+          paddingBottom: footerHeight + padding + 12,
         }}
       >
         {setup.isLoading ? (
@@ -73,7 +87,8 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
           </Button>
         ) : (
           <>
-            <View className="bg-surface rounded-3xl p-6 mb-6">
+            {/* On the screen itself, not in a card. */}
+            <View className="mb-6">
               <Text className="text-accent-primary font-semibold mb-2">
                 {t('groceries.eyebrow', {
                   defaultValue: 'YOUR KITCHEN, YOUR WEEK',
@@ -160,14 +175,19 @@ export default function CartScreen({ route }: RootStackScreenProps<'Cart'>) {
                 })}
               </Text>
             )}
-            <Button variant="outline" className="mt-4" onPress={newList}>
-              {t('groceries.blankList', {
-                defaultValue: 'Create a blank list',
-              })}
-            </Button>
           </>
         )}
       </NativeHeaderScrollView>
+      {/* A new list is the screen's one action, pinned like every other
+          screen's footer action. */}
+      <FooterCTA
+        absolute
+        glass
+        edgeEffect
+        onHeightChange={setFooterHeight}
+        label={t('groceries.newList', { defaultValue: 'New list' })}
+        onPress={newList}
+      />
     </View>
   );
 }
