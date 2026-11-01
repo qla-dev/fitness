@@ -377,7 +377,7 @@ export const shareHealthDiagnosticReport = async (): Promise<void> => {
 
   try {
     file.create();
-    file.write(JSON.stringify(report, null, 2));
+    await file.write(JSON.stringify(report, null, 2));
     await Sharing.shareAsync(file.uri, {
       mimeType: 'application/json',
       UTI: 'public.json',

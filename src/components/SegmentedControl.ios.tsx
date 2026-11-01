@@ -56,6 +56,7 @@ export default function SegmentedControl<T extends string>({
     // scrolling back. A control inline in content never wants that padding.
     <Host
       style={{ height: SEGMENTED_CONTROL_HEIGHT[size] }}
+      alignment="center"
       ignoreSafeArea="all"
     >
       <Picker<T>

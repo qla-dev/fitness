@@ -602,6 +602,15 @@ describe('healthDiagnosticService', () => {
       expect(fileName).toContain('health-diagnostic-android');
     });
 
+    it('does not share an incomplete report when the asynchronous write fails', async () => {
+      mockFileInstance.write.mockRejectedValueOnce(new Error('Disk full'));
+
+      await expect(shareHealthDiagnosticReport()).rejects.toThrow('Disk full');
+
+      expect(Sharing.shareAsync).not.toHaveBeenCalled();
+      expect(mockFileInstance.delete).toHaveBeenCalledTimes(1);
+    });
+
     it('cleans up temp file after sharing', async () => {
       await shareHealthDiagnosticReport();
       expect(mockFileInstance.delete).toHaveBeenCalledTimes(1);

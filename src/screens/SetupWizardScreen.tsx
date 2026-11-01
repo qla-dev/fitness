@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  Keyboard,
+  Pressable,
+  Text,
+  type TextInputInstance,
+  View,
+} from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardProvider,
@@ -150,7 +156,7 @@ function SetupWizardContent({
       (total, field) => total + answerValues(answers, field.id).length,
       0
     );
-  const inputRefs = useRef<Record<string, TextInput | null>>({});
+  const inputRefs = useRef<Record<string, TextInputInstance | null>>({});
   // Measured so the scroll content clears the footer and a focused input is
   // kept this far above the keyboard, i.e. above the footer riding on it.
   const [footerHeight, setFooterHeight] = useState(88);

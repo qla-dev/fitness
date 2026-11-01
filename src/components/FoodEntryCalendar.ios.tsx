@@ -27,7 +27,7 @@ const FoodEntryCalendar = forwardRef<
       ref={sheet}
       title={t('common.date', { defaultValue: 'Date' })}
     >
-      <Host style={{ height: 360, width: '100%' }}>
+      <Host style={{ height: 360, width: '100%' }} alignment="center">
         <DatePicker
           selection={new Date(year, month - 1, day, 12)}
           displayedComponents={['date']}

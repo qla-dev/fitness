@@ -6,10 +6,10 @@ import {
   Alert,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   InputAccessoryView,
   Platform,
+  type TextInputInstance,
 } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useCSSVariable } from 'uniwind';
@@ -89,9 +89,9 @@ function EditableSetRow({
       : ('weight' as const);
 
   const setKey = `${exerciseClientId}:${setClientId}`;
-  const weightInputRef = useRef<TextInput>(null);
-  const repsInputRef = useRef<TextInput>(null);
-  const durationInputRef = useRef<TextInput>(null);
+  const weightInputRef = useRef<TextInputInstance>(null);
+  const repsInputRef = useRef<TextInputInstance>(null);
+  const durationInputRef = useRef<TextInputInstance>(null);
 
   const handleActivateWeight = useCallback(() => {
     onActivateSet(setKey, 'weight');

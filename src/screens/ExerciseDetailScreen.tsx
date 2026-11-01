@@ -1,6 +1,12 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  type ScrollViewInstance,
+} from 'react-native';
 import { CommonActions, StackActions } from '@react-navigation/native';
 import {
   Directions,
@@ -260,7 +266,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<TabKey>('summary');
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   // The image carousel renders on both Summary and How to, so it remounts at
   // page 0 on tab switches; reset the dot index with it.

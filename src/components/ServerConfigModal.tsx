@@ -10,7 +10,8 @@ import {
   Platform,
   LayoutAnimation,
   Alert,
-  type TextInput,
+  type ScrollViewInstance,
+  type TextInputInstance,
 } from 'react-native';
 import Button from './ui/Button';
 import { useCSSVariable } from 'uniwind';
@@ -90,9 +91,9 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
   }));
 
   // Form state
-  const scrollViewRef = useRef<ScrollView>(null);
-  const serverUrlInputRef = useRef<TextInput>(null);
-  const apiKeyInputRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
+  const serverUrlInputRef = useRef<TextInputInstance>(null);
+  const apiKeyInputRef = useRef<TextInputInstance>(null);
   const [serverUrl, setServerUrl] = useState('');
   const [isServerUrlFocused, setIsServerUrlFocused] = useState(false);
   const [authSettings, setAuthSettings] = useState<AuthSettings | null>(null);
@@ -1108,7 +1109,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-      showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
           className="bg-black/50"
           contentContainerClassName="justify-center items-center p-6"

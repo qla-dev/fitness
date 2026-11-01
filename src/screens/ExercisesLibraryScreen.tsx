@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  type ScrollViewInstance,
 } from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -175,7 +176,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
    * the program shelves at the tab root, the exercise list in the copy pushed
    * from Library — so only one of these is ever mounted.
    */
-  const storeRef = useRef<ScrollView>(null);
+  const storeRef = useRef<ScrollViewInstance>(null);
   // Re-tapping the active tab returns to the top, like every other tab. Inert
   // in the pushed copy of this screen, which is not a tab root.
   const { scrollToTop, onScroll, onScrollBeginDrag } = useScrollTopOffset();
@@ -548,7 +549,7 @@ const ExercisesLibraryScreen: React.FC<ExercisesLibraryScreenProps> = ({
           return renderRow({ item: row.exercise, isLast: row.isLast });
         }}
         ListHeaderComponent={
-          searchText.trim().length > 0 ? null : (
+          searchText.trim().length > 0 ? undefined : (
             <>
               <View className="px-4 pt-6 pb-2">
                 <Text className="text-lg font-bold text-text-primary">

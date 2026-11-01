@@ -1,5 +1,5 @@
 diff --git a/android/src/main/java/expo/modules/maps/GoogleMapsView.kt b/android/src/main/java/expo/modules/maps/GoogleMapsView.kt
-index 82450b6ab008ef190cbc499d987ffbc774309c82..b24882d1c062bcd4a654cb4fcfc86bc89243f3e3 100644
+index 41fb7ad..35ea0b9 100644
 --- a/android/src/main/java/expo/modules/maps/GoogleMapsView.kt
 +++ b/android/src/main/java/expo/modules/maps/GoogleMapsView.kt
 @@ -228,9 +228,11 @@ class GoogleMapsView(context: Context, appContext: AppContext) :
@@ -16,7 +16,7 @@ index 82450b6ab008ef190cbc499d987ffbc774309c82..b24882d1c062bcd4a654cb4fcfc86bc8
          )
        )
      }
-@@ -369,8 +371,11 @@ class GoogleMapsView(context: Context, appContext: AppContext) :
+@@ -376,8 +378,11 @@ class GoogleMapsView(context: Context, appContext: AppContext) :
        ?: props.userLocation.value.coordinates?.toLatLng()
        ?: return
  
@@ -29,9 +29,9 @@ index 82450b6ab008ef190cbc499d987ffbc774309c82..b24882d1c062bcd4a654cb4fcfc86bc8
 +    )
  
      // When Int.MAX_VALUE is provided as durationMs, the default animation duration will be used.
-     cameraState.animate(cameraUpdate, config?.duration ?: Int.MAX_VALUE)
+     if (duration == 0) {
 diff --git a/android/src/main/java/expo/modules/maps/Records.kt b/android/src/main/java/expo/modules/maps/Records.kt
-index 15854606398ea84a49d9eef55750eab4102aa174..f146579ec135fe40ac1404ffbb0e6a50567d9656 100644
+index 1585460..f146579 100644
 --- a/android/src/main/java/expo/modules/maps/Records.kt
 +++ b/android/src/main/java/expo/modules/maps/Records.kt
 @@ -26,6 +26,12 @@ data class SetCameraPositionConfig(
@@ -63,7 +63,7 @@ index 15854606398ea84a49d9eef55750eab4102aa174..f146579ec135fe40ac1404ffbb0e6a50
  
  @OptimizedRecord
 diff --git a/build/shared.types.d.ts b/build/shared.types.d.ts
-index 3a32344e3ef9b4c174c2878f01773fa912a61beb..239cb60bb9203e53ea4193a92e8c0e7d6df942d4 100644
+index 3b4ef1a..5ec47e9 100644
 --- a/build/shared.types.d.ts
 +++ b/build/shared.types.d.ts
 @@ -10,6 +10,8 @@ export type Coordinates = {
@@ -76,7 +76,7 @@ index 3a32344e3ef9b4c174c2878f01773fa912a61beb..239cb60bb9203e53ea4193a92e8c0e7d
       * The middle point of the camera.
       */
 diff --git a/ios/MapRecords.swift b/ios/MapRecords.swift
-index 7cab76612a78a83ae93f2611e727cf5529acdb55..f89cd1ad1905f8a423300e2f24a01e2f81d9a92f 100644
+index 5089ee7..7a38cf5 100644
 --- a/ios/MapRecords.swift
 +++ b/ios/MapRecords.swift
 @@ -41,10 +41,13 @@ struct MapMarker: Identifiable, Record {
@@ -94,7 +94,7 @@ index 7cab76612a78a83ae93f2611e727cf5529acdb55..f89cd1ad1905f8a423300e2f24a01e2f
  }
  
 diff --git a/ios/MapUtils.swift b/ios/MapUtils.swift
-index b1bdee1319481da0c1c13eea2ab767eb52bea86d..46e46873a0c414a6deb06995969407896805ee69 100644
+index b1bdee1..46e4687 100644
 --- a/ios/MapUtils.swift
 +++ b/ios/MapUtils.swift
 @@ -7,6 +7,12 @@ func convertToMapCamera(position: CameraPosition) -> MapCameraPosition {
@@ -111,7 +111,7 @@ index b1bdee1319481da0c1c13eea2ab767eb52bea86d..46e46873a0c414a6deb0699596940789
  }
  
 diff --git a/src/shared.types.ts b/src/shared.types.ts
-index ce531a92279fde5776b013f96b80cc4d257c5540..b5bacc02e213f8bf16d2358ded28407f53f5ec88 100644
+index bc7b6df..002d983 100644
 --- a/src/shared.types.ts
 +++ b/src/shared.types.ts
 @@ -13,6 +13,8 @@ export type Coordinates = {

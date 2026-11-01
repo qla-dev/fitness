@@ -8,10 +8,10 @@ import {
 import {
   Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
@@ -144,7 +144,7 @@ export default function AddHubScreen() {
   // The native field, so the cards that mean "find something" can put the
   // cursor in it rather than opening another screen with another field.
   const searchBar = useRef<SearchBarCommands>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const { scrollToTop, onScroll, onScrollBeginDrag } = useScrollTopOffset();
   // Re-tapping the active tab returns to the top, like every other tab.
   useTabPress(navigation, () => scrollToTop(scrollRef.current));

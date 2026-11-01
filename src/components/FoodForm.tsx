@@ -4,12 +4,12 @@ import {
   Alert,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  type TextInputInstance,
 } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import BottomSheetPicker from './BottomSheetPicker';
@@ -312,24 +312,24 @@ const FoodForm: React.FC<FoodFormProps> = ({
   };
 
   const fieldRefs = {
-    name: useRef<TextInput>(null),
-    brand: useRef<TextInput>(null),
-    servingSize: useRef<TextInput>(null),
-    calories: useRef<TextInput>(null),
-    protein: useRef<TextInput>(null),
-    fat: useRef<TextInput>(null),
-    carbs: useRef<TextInput>(null),
-    fiber: useRef<TextInput>(null),
-    saturatedFat: useRef<TextInput>(null),
-    transFat: useRef<TextInput>(null),
-    sodium: useRef<TextInput>(null),
-    sugars: useRef<TextInput>(null),
-    potassium: useRef<TextInput>(null),
-    cholesterol: useRef<TextInput>(null),
-    calcium: useRef<TextInput>(null),
-    iron: useRef<TextInput>(null),
-    vitaminA: useRef<TextInput>(null),
-    vitaminC: useRef<TextInput>(null),
+    name: useRef<TextInputInstance>(null),
+    brand: useRef<TextInputInstance>(null),
+    servingSize: useRef<TextInputInstance>(null),
+    calories: useRef<TextInputInstance>(null),
+    protein: useRef<TextInputInstance>(null),
+    fat: useRef<TextInputInstance>(null),
+    carbs: useRef<TextInputInstance>(null),
+    fiber: useRef<TextInputInstance>(null),
+    saturatedFat: useRef<TextInputInstance>(null),
+    transFat: useRef<TextInputInstance>(null),
+    sodium: useRef<TextInputInstance>(null),
+    sugars: useRef<TextInputInstance>(null),
+    potassium: useRef<TextInputInstance>(null),
+    cholesterol: useRef<TextInputInstance>(null),
+    calcium: useRef<TextInputInstance>(null),
+    iron: useRef<TextInputInstance>(null),
+    vitaminA: useRef<TextInputInstance>(null),
+    vitaminC: useRef<TextInputInstance>(null),
   };
 
   const focusField = (field: keyof typeof fieldRefs) => {

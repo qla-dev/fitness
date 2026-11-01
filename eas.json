@@ -10,13 +10,19 @@
         "EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE": "1"
       },
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "image": "macos-tahoe-26.6-xcode-27.1"
+      }
     },
     "preview": {
       "env": {
         "APP_VARIANT": "preview"
       },
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "image": "macos-tahoe-26.6-xcode-27.1"
+      }
     },
     "production": {
       "env": {
@@ -26,7 +32,8 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "resourceClass": "medium"
+        "resourceClass": "medium",
+        "image": "macos-tahoe-26.6-xcode-27.1"
       }
     }
   },

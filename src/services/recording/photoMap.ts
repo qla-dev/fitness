@@ -106,7 +106,7 @@ async function tileUri(z: number, x: number, y: number): Promise<string> {
         }
       );
       if (!response.ok) throw new Error('Map unavailable');
-      file.write(new Uint8Array(await response.arrayBuffer()));
+      await file.write(new Uint8Array(await response.arrayBuffer()));
       return file.uri;
     } finally {
       clearTimeout(timeout);

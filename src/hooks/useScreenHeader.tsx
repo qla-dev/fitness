@@ -1,4 +1,9 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Animated as RNAnimated,
@@ -7,11 +12,13 @@ import {
   Pressable,
   Text,
   View,
+  type ViewInstance,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SymbolView } from 'expo-symbols';
 import { useCSSVariable } from 'uniwind';
 import { useNavigation } from '@react-navigation/native';
+import { HeaderHeightContext } from '@react-navigation/elements';
 import { useAnimatedHeaderHeight } from '@react-navigation/native-stack';
 import { createDuplicatePressGuard } from '../utils/duplicatePress';
 import { fireBackPressHaptic } from '../utils/backNavigationHaptic';
@@ -258,34 +265,14 @@ export function useModalTopPadding(): number {
  * that has to pad its content by hand — a `KeyboardAwareScrollView`, say,
  * which ignores `contentInsetAdjustmentBehavior`.
  *
- * Only valid inside a native stack screen. The first value is read straight
- * off the animated node so the content does not start at zero and jump once
- * the listener fires.
+ * Read from the stack's header-height state rather than the animated value:
+ * on React Native 0.88 that value is driven natively and never reports the
+ * measured bar back to JS listeners, so it stayed at the stack's estimate and
+ * the content sat under the taller Liquid Glass bar. Outside a native stack
+ * screen — a test, a preview, a sheet — there is no bar to clear: zero.
  */
 export function useNativeHeaderOffset(): number {
-  // `useAnimatedHeaderHeight` throws outside a native stack screen. A screen
-  // rendered on its own — a test, a preview, a sheet — has no bar to clear, so
-  // the answer there is zero rather than a crash. The call itself is
-  // unconditional; only its failure is handled.
-  let animated: ReturnType<typeof useAnimatedHeaderHeight> | null = null;
-  try {
-    // The call runs on every render — only its failure is caught — so hook
-    // order is unchanged. The rule cannot see that through the try.
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    animated = useAnimatedHeaderHeight();
-  } catch {
-    animated = null;
-  }
-  const [height, setHeight] = useState(() => {
-    const node = animated as unknown as { __getValue?: () => number } | null;
-    return typeof node?.__getValue === 'function' ? node.__getValue() : 0;
-  });
-  useEffect(() => {
-    if (!animated) return;
-    const id = animated.addListener(({ value }) => setHeight(value));
-    return () => animated.removeListener(id);
-  }, [animated]);
-  return height;
+  return useContext(HeaderHeightContext) ?? 0;
 }
 
 function NativeHeaderAccessory({
@@ -896,7 +883,7 @@ export function useScreenHeader(config: ScreenHeaderConfig): React.ReactNode {
     id: string;
     anchor: AnchorRect;
   } | null>(null);
-  const menuTriggerRefs = useRef<Record<string, View | null>>({});
+  const menuTriggerRefs = useRef<Record<string, ViewInstance | null>>({});
 
   // How wide the side cells are, so the title can stop short of them. See the
   // note on the title layer below for why this is measured rather than flexed.

@@ -45,8 +45,10 @@ function addComposeCompilerClasspath(
     );
   }
 
+  // SDK 58 writes this as a conditional on `android.kotlinVersion`:
+  // classpath(kotlinVersion ? "...kotlin-gradle-plugin:$kotlinVersion" : '...kotlin-gradle-plugin')
   const anchor = src.match(
-    /(classpath\(['"]org\.jetbrains\.kotlin:kotlin-gradle-plugin['"]\))/
+    /classpath\([^\n]*org\.jetbrains\.kotlin:kotlin-gradle-plugin[^\n]*\)/
   );
   if (!anchor || anchor.index === undefined) {
     throw new Error(

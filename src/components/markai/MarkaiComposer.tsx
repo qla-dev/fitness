@@ -7,6 +7,7 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputInstance,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -86,7 +87,7 @@ export default function MarkaiComposer({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const keyboard = useChatKeyboard();
-  const input = useRef<TextInput>(null);
+  const input = useRef<TextInputInstance>(null);
   const isDark = useUniwind().theme === 'dark';
   const [foreground, muted, accent, raised] = useCSSVariable([
     '--color-text-primary',

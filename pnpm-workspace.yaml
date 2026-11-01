@@ -4,7 +4,7 @@ packages:
 packageExtensions:
   "@kingstinct/react-native-healthkit@13":
     dependencies:
-      "@expo/config-plugins": "^55.0.0"
+      "@expo/config-plugins": "^58.0.0"
   # uniwind's metro plugin does `require("metro/private/DeltaBundler/Graph")` and
   # `require("metro-cache/private/stores/FileStore")` but doesn't declare those as deps.
   # Inject them so pnpm puts them in uniwind's resolution scope.
@@ -35,4 +35,4 @@ minimumReleaseAgeExclude: []
 patchedDependencies:
   "react-native-health-connect@3.5.3": "patches/react-native-health-connect@3.5.3.patch"
   "@bacons/apple-targets@4.0.6": "patches/@bacons__apple-targets@4.0.6.patch"
-  "expo-maps@57.0.2": "patches/expo-maps.patch"
+  "expo-maps@58.0.11": "patches/expo-maps.patch"

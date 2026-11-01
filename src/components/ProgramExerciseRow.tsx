@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
+  type ViewInstance,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
@@ -35,7 +36,7 @@ export default function ProgramExerciseRow({
   color,
 }: Props) {
   const { t } = useTranslation();
-  const row = useRef<View>(null);
+  const row = useRef<ViewInstance>(null);
   const { height: windowHeight } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
   const [image, setImage] = useState<string | null>(null);

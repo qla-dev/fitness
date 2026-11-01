@@ -751,7 +751,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
           renderItem={renderExternalExerciseItem}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="pb-safe-or-4"
-          ListFooterComponent={renderOnlineFooter()}
+          ListFooterComponent={renderOnlineFooter() ?? undefined}
         />
       </View>
     );

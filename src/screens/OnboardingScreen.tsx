@@ -9,6 +9,7 @@ import {
   Pressable,
   LayoutAnimation,
   Keyboard,
+  type TextInputInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -121,8 +122,8 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [isServerUrlFocused, setIsServerUrlFocused] = useState(false);
   const [isApiKeyFocused, setIsApiKeyFocused] = useState(false);
   const scrollViewRef = useRef<KeyboardAwareScrollViewRef>(null);
-  const serverUrlInputRef = useRef<TextInput>(null);
-  const apiKeyInputRef = useRef<TextInput>(null);
+  const serverUrlInputRef = useRef<TextInputInstance>(null);
+  const apiKeyInputRef = useRef<TextInputInstance>(null);
 
   // Page changes unmount the focused input without firing onBlur, which would
   // leave a stale focus flag suppressing the URL echo and keeping the focused

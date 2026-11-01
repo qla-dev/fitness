@@ -1,10 +1,17 @@
-// jsdom doesn't expose TextEncoder/TextDecoder globally, but Expo SDK 55's "winter"
-// runtime lazily installs URL/URLSearchParams via whatwg-url-minimum, which requires them.
+// Expo's winter runtime needs TextEncoder/TextDecoder when lazily installing
+// URL/URLSearchParams. Keep them available in the native Jest environment.
 const { TextEncoder, TextDecoder } = require('util');
 if (typeof globalThis.TextEncoder === 'undefined')
   globalThis.TextEncoder = TextEncoder;
 if (typeof globalThis.TextDecoder === 'undefined')
   globalThis.TextDecoder = TextDecoder;
+
+// React Native's preset defines performance.now as jest.fn(Date.now), so any
+// jest.resetAllMocks() turns it into a function returning undefined. React's
+// scheduler reads the clock through it and then only flushes updates made
+// outside act() once they expire, five seconds later. A plain function keeps
+// the clock working; tests can still jest.spyOn(performance, 'now').
+globalThis.performance.now = () => Date.now();
 
 // Deterministic expo-localization: tests read the device language through
 // getLocales(). The localization suite overrides the return value per test;

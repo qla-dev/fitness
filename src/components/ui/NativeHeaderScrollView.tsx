@@ -4,6 +4,7 @@ import {
   StyleSheet,
   type ScrollViewProps,
   type ViewStyle,
+  type ScrollViewInstance,
 } from 'react-native';
 import { useNativeHeaderOffset } from '../../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
@@ -18,7 +19,7 @@ import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference
  * measured bar height leaves UIKit nothing to adjust, so the resting position
  * is the opening one. Off the native header path this is a plain ScrollView.
  */
-const NativeHeaderScrollView = forwardRef<ScrollView, ScrollViewProps>(
+const NativeHeaderScrollView = forwardRef<ScrollViewInstance, ScrollViewProps>(
   function NativeHeaderScrollView(
     { contentContainerStyle, scrollIndicatorInsets, ...rest },
     ref

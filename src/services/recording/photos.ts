@@ -137,13 +137,14 @@ async function drawRecordingPhoto(
       );
       const geometry = photoMapGeometry(boundsPoints, layout.route);
       if (points.length > 1 && options.showRoute !== false) {
-        const path = Skia.Path.Make();
+        const builder = Skia.PathBuilder.Make();
         points.forEach((point, index) => {
           const { x, y } = geometry.point(point);
           if (!index || point.segment !== points[index - 1].segment)
-            path.moveTo(x, y);
-          else path.lineTo(x, y);
+            builder.moveTo(x, y);
+          else builder.lineTo(x, y);
         });
+        const path = builder.detach();
         paint.setColor(Skia.Color(options.routeColor));
         paint.setStyle(PaintStyle.Stroke);
         paint.setStrokeWidth(options.layout === 'trail' ? 18 : 14);
@@ -369,7 +370,7 @@ export async function createRecordingPhoto(
   };
   try {
     new File(uri).copy(new File(directory(), photo.originalFileName!));
-    new File(directory(), photo.fileName).write(
+    await new File(directory(), photo.fileName).write(
       await renderRecordingPhoto(uri, composition)
     );
     return photo;
@@ -397,7 +398,7 @@ export async function createPhotoPreview(
     options
   );
   const file = new File(Paths.cache, fileName ?? `${randomUUID()}.jpg`);
-  file.write(bytes);
+  await file.write(bytes);
   return file.uri;
 }
 
@@ -438,7 +439,7 @@ export async function createPhotoEditorLayers(
     'background'
   );
   const file = new File(Paths.cache, `${randomUUID()}.png`);
-  file.write(bytes);
+  await file.write(bytes);
   try {
     return {
       background: file.uri,

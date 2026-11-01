@@ -18,6 +18,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type TextInputProps,
+  type TextInputInstance,
 } from 'react-native';
 import { fetch as expoFetch } from 'expo/fetch';
 import { KeyboardAvoidingView as KeyboardControllerAvoidingView } from 'react-native-keyboard-controller';
@@ -329,7 +330,7 @@ function LocalComposerInput({
   ...props
 }: LocalComposerInputProps) {
   const aui = useAui();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const composerText = useAuiState((s) => s.composer.text);
   const [localText, setLocalText] = useState(composerText);
   const localTextRef = useRef(composerText);

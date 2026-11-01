@@ -13,7 +13,11 @@ export default function PhotoTextColor({
     suppliedLabel ??
     t('recording.editor.textColor', { defaultValue: 'Text color' });
   return (
-    <Host style={{ width: 48, height: 48 }} colorScheme="dark">
+    <Host
+      style={{ width: 48, height: 48 }}
+      alignment="center"
+      colorScheme="dark"
+    >
       <ColorPicker
         label={label}
         selection={value}

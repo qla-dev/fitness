@@ -13,6 +13,7 @@ import {
   SectionList,
   TextInput,
   Platform,
+  type ViewInstance,
 } from 'react-native';
 import Button from '../components/ui/Button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -194,7 +195,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
   const [loadingFoodId, setLoadingFoodId] = useState<string | null>(null);
 
   // "+" New Food / New Meal menu, anchored under the button.
-  const addButtonRef = useRef<View>(null);
+  const addButtonRef = useRef<ViewInstance>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null);
 

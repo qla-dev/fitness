@@ -95,13 +95,14 @@ const AnchoredMenu: React.FC<Props> = ({
   // and plain once their headers were given the inset they were missing.
   const top = anchor.y + anchor.height + 6;
   const isLeftHalf = anchor.x + anchor.width / 2 < screenWidth / 2;
+  // An absolute box pinned on one side is not capped by the space on the
+  // other, so a long description line grew the menu past the screen edge.
+  // Cap it to what is left, minus the 8pt margin.
+  const left = Math.max(8, anchor.x);
+  const right = Math.max(8, screenWidth - (anchor.x + anchor.width));
   const menuStyle = isLeftHalf
-    ? { top, left: Math.max(8, anchor.x), minWidth }
-    : {
-        top,
-        right: Math.max(8, screenWidth - (anchor.x + anchor.width)),
-        minWidth,
-      };
+    ? { top, left, minWidth, maxWidth: screenWidth - left - 8 }
+    : { top, right, minWidth, maxWidth: screenWidth - right - 8 };
 
   return (
     <Modal

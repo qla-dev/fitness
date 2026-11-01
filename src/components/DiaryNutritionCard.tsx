@@ -11,6 +11,7 @@ import {
   View,
   Text,
   useWindowDimensions,
+  type ScrollViewInstance,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -329,7 +330,7 @@ export default function DiaryNutritionCard({
   );
 
   const { width: windowWidth } = useWindowDimensions();
-  const macroStripRef = useRef<ScrollView>(null);
+  const macroStripRef = useRef<ScrollViewInstance>(null);
   const isFocused = useIsFocusedWhenNavigable();
   const [stripWidth, setStripWidth] = useState(
     () => windowWidth - 2 * SCREEN_GUTTER

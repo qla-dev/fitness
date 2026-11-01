@@ -262,7 +262,7 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
       const file = new File(Paths.cache, fileName);
 
       file.create();
-      file.write(JSON.stringify(data, null, 2));
+      await file.write(JSON.stringify(data, null, 2));
 
       await Sharing.shareAsync(file.uri, {
         mimeType: 'application/json',

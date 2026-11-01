@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, View } from 'react-native';
+import { Text, View, type TextInputInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -65,7 +65,7 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const queryClient = useQueryClient();
-  const input = useRef<TextInput>(null);
+  const input = useRef<TextInputInstance>(null);
 
   const isGoal = params.field === 'goal';
   // Every field but a goal is one line of text on the profile, or the

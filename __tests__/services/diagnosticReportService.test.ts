@@ -486,6 +486,17 @@ describe('diagnosticReportService', () => {
       );
     });
 
+    it('does not share an incomplete report when the asynchronous write fails', async () => {
+      mockFileInstance.write.mockRejectedValueOnce(new Error('Disk full'));
+
+      await expect(shareDiagnosticReport(makeHookData())).rejects.toThrow(
+        'Disk full'
+      );
+
+      expect(Sharing.shareAsync).not.toHaveBeenCalled();
+      expect(mockFileInstance.delete).toHaveBeenCalledTimes(1);
+    });
+
     it('cleans up temp file after sharing', async () => {
       await shareDiagnosticReport(makeHookData());
       expect(mockFileInstance.delete).toHaveBeenCalledTimes(1);

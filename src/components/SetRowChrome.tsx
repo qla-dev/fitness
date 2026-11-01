@@ -12,7 +12,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  type TextInput,
+  type TextInputInstance,
 } from 'react-native';
 import {
   KeyboardEvents,
@@ -78,7 +78,7 @@ export interface SetCellInputProps {
   onBlur?: () => void;
   keyboardType: 'decimal-pad' | 'number-pad';
   accessibilityLabel: string;
-  inputRef: Ref<TextInput>;
+  inputRef: Ref<TextInputInstance>;
   className?: string;
   /** Shown while the cell is empty; the assumed value when one resolves. */
   placeholder?: string;

@@ -14,7 +14,13 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
 import {
   Directions,
@@ -83,7 +89,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const goToNextDay = useDiaryDateStore((s) => s.goToNextDay);
   const goToToday = useDiaryDateStore((s) => s.goToToday);
   const syncTodayRollover = useDiaryDateStore((s) => s.syncTodayRollover);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const calendarRef = useRef<RingCalendarSheetRef>(null);
 
   // Only reset to today when the calendar day has actually changed (midnight rollover)

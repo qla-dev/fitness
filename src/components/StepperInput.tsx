@@ -3,9 +3,9 @@ import {
   View,
   TextInput,
   Pressable,
-  type NativeSyntheticEvent,
-  type TextInputFocusEventData,
+  type TextInputFocusEvent,
   type TextInputProps,
+  type TextInputInstance,
 } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
@@ -105,7 +105,7 @@ interface StepperInputProps {
   /** Extra props forwarded to the text input */
   inputProps?: Partial<TextInputProps>;
   /** Ref forwarded to the underlying text input for imperative focus control */
-  inputRef?: React.Ref<TextInput>;
+  inputRef?: React.Ref<TextInputInstance>;
   /** Accessibility labels for the decrement, input, and increment controls. */
   accessibilityLabels?: {
     decrement?: string;
@@ -125,8 +125,6 @@ interface StepperInputProps {
   /** Width of the number field between them. */
   inputWidth?: number;
 }
-
-type TextInputFocusEvent = NativeSyntheticEvent<TextInputFocusEventData>;
 
 function StepperInput({
   value,

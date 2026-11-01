@@ -56,16 +56,20 @@ it('covers the map until the current location arrives', async () => {
   await act(async () =>
     resolvePosition({ coords: { latitude: 43.85, longitude: 18.4 } })
   );
-  expect(view.queryByTestId('route-location-loading')).toBeNull();
+  await waitFor(() =>
+    expect(view.queryByTestId('route-location-loading')).toBeNull()
+  );
 });
 
 it('removes the overlay on permission failure and allows a successful retry', async () => {
   permission.mockResolvedValueOnce({ granted: false });
   position.mockResolvedValue({ coords: { latitude: 43.85, longitude: 18.4 } });
   const view = screen();
-  await waitFor(() =>
-    expect(view.queryByTestId('route-location-loading')).toBeNull()
-  );
+  await waitFor(() => expect(permission).toHaveBeenCalledTimes(1));
+  // Settle the rejected permission chain inside act, as the test above does,
+  // so the overlay state update is flushed rather than left to the scheduler.
+  await act(async () => {});
+  expect(view.queryByTestId('route-location-loading')).toBeNull();
   expect(
     view.getByText(
       'Allow location access and try again to set your starting point.'

@@ -10,7 +10,7 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type TextInput,
+  type TextInputInstance,
 } from 'react-native';
 import {
   KeyboardAvoidingView,
@@ -108,7 +108,7 @@ function RenameWorkoutDialog({
   onSubmit: (name: string) => void;
 }) {
   const { t } = useTranslation();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const [value, setValue] = useState(initialName);
   // Re-seed the field to the current name each time the dialog opens.
   const [wasVisible, setWasVisible] = useState(visible);

@@ -13,6 +13,7 @@ import {
   ScrollView,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -23,7 +24,10 @@ import { useCSSVariable } from 'uniwind';
 import Icon, { type IconName } from '../components/Icon';
 import LiquidGlassSurface from '../components/LiquidGlassSurface';
 import WorkoutGoalCard from '../components/recording/WorkoutGoalCard';
-import { useLiquidGlassActive , useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import {
+  useLiquidGlassActive,
+  useNativeIOSHeadersActive,
+} from '../services/nativeTabBarPreference';
 import { ToggleChipRow } from '../components/FilterChipRow';
 import SensorSheet from '../components/recording/SensorSheet';
 import { useMeasurementHistory } from '../hooks/useMeasurementHistory';
@@ -115,7 +119,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
    * no session could be started. Focusing on the frame after the mount is the
    * one that sticks.
    */
-  const statInputs = useRef<Record<string, TextInput | null>>({});
+  const statInputs = useRef<Record<string, TextInputInstance | null>>({});
   useEffect(() => {
     if (!editingStat) return;
     const frame = requestAnimationFrame(() =>

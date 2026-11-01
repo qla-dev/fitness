@@ -12,7 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
 import {
   Directions,
@@ -97,7 +97,7 @@ const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
   const goToNextDay = useDiaryDateStore((s) => s.goToNextDay);
   const goToToday = useDiaryDateStore((s) => s.goToToday);
   const syncTodayRollover = useDiaryDateStore((s) => s.syncTodayRollover);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const calendarRef = useRef<RingCalendarSheetRef>(null);
   const servingSheetRef = useRef<ServingAdjustSheetRef>(null);
 

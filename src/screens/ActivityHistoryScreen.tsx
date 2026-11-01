@@ -23,10 +23,7 @@ import {
 import { useExerciseHistory } from '../hooks/useExerciseHistory';
 import { usePreferences } from '../hooks/usePreferences';
 import { useServerConnection } from '../hooks/useServerConnection';
-import {
-  getWorkoutSummary,
-  isProviderDayTotal,
-} from '../utils/workoutSession';
+import { getWorkoutSummary, isProviderDayTotal } from '../utils/workoutSession';
 import { getAppLocale } from '../localization';
 import { getTodayDate } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -308,7 +305,7 @@ export default function ActivityHistoryScreen({
               <View className="py-6">
                 <ActivityIndicator />
               </View>
-            ) : null
+            ) : undefined
           }
         />
       )}

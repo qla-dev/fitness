@@ -204,7 +204,7 @@ export const shareDiagnosticReport = async (
 
   try {
     file.create();
-    file.write(JSON.stringify(report, null, 2));
+    await file.write(JSON.stringify(report, null, 2));
     await Sharing.shareAsync(file.uri, {
       mimeType: 'application/json',
       UTI: 'public.json',

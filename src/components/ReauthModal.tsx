@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  type ScrollViewInstance,
 } from 'react-native';
 import Button from './ui/Button';
 import { useCSSVariable } from 'uniwind';
@@ -66,7 +67,7 @@ const ReauthModal: React.FC<ReauthModalProps> = ({
   ]) as [string, string, string];
 
   // Config state
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const [config, setConfig] = useState<ServerConfig | null>(null);
   const [authSettings, setAuthSettings] = useState<AuthSettings | null>(null);
 
@@ -487,7 +488,7 @@ const ReauthModal: React.FC<ReauthModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-      showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
           contentContainerClassName="justify-center items-center p-6"
           contentContainerStyle={{ flexGrow: 1 }}

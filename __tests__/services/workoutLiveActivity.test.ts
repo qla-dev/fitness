@@ -1,5 +1,6 @@
 import { LEGACY_IN_APP_WORKOUT_SOURCE } from '@workspace/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { APP_URL } from '../../src/constants/appUrlScheme';
 import type {
   ExerciseSnapshotResponse,
@@ -841,7 +842,7 @@ describe('workoutLiveActivity', () => {
 
     it('does not show toasts or alerts on update failures', async () => {
       const alertSpy = jest
-        .spyOn(global, 'alert')
+        .spyOn(Alert, 'alert')
         .mockImplementation(() => undefined);
       await initHydrated();
       useActiveWorkoutStore.getState().startWorkout(makeSession());

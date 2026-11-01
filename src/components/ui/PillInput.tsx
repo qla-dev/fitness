@@ -1,12 +1,18 @@
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import {
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../Icon';
 
 type PillInputProps = Omit<TextInputProps, 'value' | 'onChangeText'> & {
-  ref?: React.Ref<TextInput>;
+  ref?: React.Ref<TextInputInstance>;
   value: string;
   onChangeText: (value: string) => void;
   /** Suffix shown inside the pill, e.g. "kg". */
@@ -52,8 +58,8 @@ export default function PillInput({
     '--color-text-secondary',
     '--color-icon-danger',
   ]) as [string, string];
-  const inputRef = React.useRef<TextInput>(null);
-  React.useImperativeHandle(ref, () => inputRef.current as TextInput);
+  const inputRef = React.useRef<TextInputInstance>(null);
+  React.useImperativeHandle(ref, () => inputRef.current as TextInputInstance);
 
   const pill = (
     <View

@@ -1,6 +1,6 @@
 import { useFallbackTabBarInset } from '../hooks/useFallbackTabBarInset';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, type ScrollViewInstance } from 'react-native';
 import HapticRefreshControl from '../components/HapticRefreshControl';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -48,7 +48,7 @@ export default function TrendsScreen({ navigation }: Props) {
   const { defaultColor } = useHeaderActionColors();
   const accent = useCSSVariable('--color-accent-primary') as string;
   const bottomPadding = useActiveWorkoutBarPadding();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [range, setRange] = useState<HealthTrendDateRange>('w');
   const [refreshing, setRefreshing] = useState(false);
   const { isConnected, isLoading } = useServerConnection();

@@ -406,7 +406,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
           <Spacer />
         </HStack>
         <HStack spacing={12}>
-          <VStack alignment="leading">
+          <VStack alignment="leading" spacing={0}>
             <Text
               modifiers={[
                 font({ size: 26, weight: 'bold' }),
@@ -422,13 +422,13 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
               {props.recordingMetrics.distanceUnit}
             </Text>
           </VStack>
-          <VStack alignment="leading">
+          <VStack alignment="leading" spacing={0}>
             {elapsedClock(72)}
             <Text modifiers={[font({ size: 11 }), secondaryText()]}>
               {props.labels.elapsed}
             </Text>
           </VStack>
-          <VStack alignment="leading">
+          <VStack alignment="leading" spacing={0}>
             <Text modifiers={[monospacedDigit()]}>
               {props.recordingMetrics.pace}
             </Text>
@@ -440,7 +440,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
         {props.recordingMetrics.hasGoal && (
           <ProgressView value={props.recordingMetrics.progress} />
         )}
-        <HStack>
+        <HStack spacing={0}>
           <Image systemName="flame.fill" />
           <Text
             modifiers={[
@@ -473,14 +473,14 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
         spacing={6}
         modifiers={[padding({ all: 16 })]}
       >
-        <HStack>
+        <HStack spacing={0}>
           <Text modifiers={[font({ weight: 'bold', size: 16 }), lineLimit(1)]}>
             {props.workoutName}
           </Text>
           <Spacer />
           {labeledTimer()}
         </HStack>
-        <HStack>
+        <HStack spacing={0}>
           {statusLine()}
           <Spacer />
           {actionButtons()}
@@ -492,7 +492,7 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
     // render on a remote device, where LiveActivityIntent presses are unproven.
     bannerSmall: (
       <VStack alignment="leading" spacing={2} modifiers={[padding({ all: 8 })]}>
-        <HStack>
+        <HStack spacing={0}>
           <Text modifiers={[font({ weight: 'bold', size: 13 }), lineLimit(1)]}>
             {props.workoutName}
           </Text>
@@ -513,11 +513,13 @@ const WorkoutLiveActivity = (props: WorkoutLiveActivityProps) => {
       </HStack>
     ),
     expandedTrailing: (
-      <HStack modifiers={[padding({ trailing: 12 })]}>{labeledTimer()}</HStack>
+      <HStack spacing={0} modifiers={[padding({ trailing: 12 })]}>
+        {labeledTimer()}
+      </HStack>
     ),
     expandedBottom: (
       <VStack spacing={6} modifiers={[padding({ horizontal: 12, bottom: 8 })]}>
-        <HStack>
+        <HStack spacing={0}>
           {statusLine()}
           <Spacer />
           {actionButtons()}

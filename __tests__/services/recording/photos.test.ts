@@ -93,11 +93,11 @@ jest.mock('@shopify/react-native-skia', () => {
         width,
         height,
       }),
-      Path: {
+      PathBuilder: {
         Make: () => ({
           moveTo: jest.fn(),
           lineTo: jest.fn(),
-          dispose: jest.fn(),
+          detach: () => ({ dispose: jest.fn() }),
         }),
       },
     },
