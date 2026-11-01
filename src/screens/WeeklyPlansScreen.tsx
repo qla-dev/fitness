@@ -179,6 +179,13 @@ function WeeklyPlansContent({
     openSetupWizardSession({
       steps: [...grocerySteps(t, vendorsFor), ...(create ? [planStep] : [])],
       initial: setup.state.grocery,
+      // Editing answers already given opens on them, with Save.
+      ...(!create && setup.state.groceryDone
+        ? {
+            openOnReview: true,
+            finishLabel: t('common.save', { defaultValue: 'Save' }),
+          }
+        : null),
       onSave: async (answers, done) => {
         // The plan question is this visit's, not a food preference.
         const { [PLAN_WEEK]: planWeek, ...grocery } = answers;

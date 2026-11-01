@@ -204,6 +204,11 @@ export interface SetupWizardSession {
   /** The review page's final action; "Save and start" by default. */
   finishLabel?: string;
   /**
+   * Opens on the review page instead of the first question, for answers that
+   * are already given: each is tapped to change it, and the action saves.
+   */
+  openOnReview?: boolean;
+  /**
    * A result worked out from the required steps. When they were not all
    * answered on opening, the last one's action reads `label`, and its
    * answer is followed by a flash of `flash(answers)` before the tour goes on.

@@ -118,6 +118,10 @@ function SetupWizardContent({
         .findIndex((candidate) => candidate.id === singleStep);
       if (at >= 0) return at;
     }
+    if (session?.openOnReview)
+      return allSteps.filter(
+        (candidate) => visibleFields(candidate, initial).length > 0
+      ).length;
     return Math.max(0, Math.min(allSteps.length, Number(initial.__step) || 0));
   });
   // A step whose only question is hidden by an earlier answer (target weight
@@ -666,9 +670,19 @@ function SetupWizardContent({
                   : value
                     ? [value]
                     : [];
+                // Tapping an answer goes back to its question.
+                const at = steps.findIndex((s) =>
+                  visibleFields(s, answers).some((f) => f.id === field.id)
+                );
                 return (
-                  <View
+                  <Pressable
                     key={field.id}
+                    accessibilityRole="button"
+                    disabled={at < 0 || busy}
+                    onPress={() => {
+                      fireSelectionHaptic();
+                      setIndex(at);
+                    }}
                     className="bg-surface rounded-2xl p-4 mb-2"
                   >
                     <Text className="text-text-secondary text-sm">
@@ -688,7 +702,7 @@ function SetupWizardContent({
                             .join(', ')
                         : t('setup.skipped', { defaultValue: 'Skipped' })}
                     </Text>
-                  </View>
+                  </Pressable>
                 );
               })
           )}
