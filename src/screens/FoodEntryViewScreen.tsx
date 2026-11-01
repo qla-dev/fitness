@@ -57,7 +57,6 @@ import type {
 } from '../types/foodUnitVariants';
 import type { RootStackScreenProps } from '../types/navigation';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -875,7 +874,7 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
         // The transparent bar reserves no space, so the content starts below
         // it by hand, as on the log sheet.
         contentContainerStyle={{
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
           paddingBottom: insets.bottom + 16 + activeWorkoutBarPadding,
         }}
       >

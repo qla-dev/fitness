@@ -26,7 +26,6 @@ import {
 import { useSelectedExercise } from '../hooks/useSelectedExercise';
 import { useExerciseImageSource } from '../hooks/useExerciseImageSource';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -275,7 +274,7 @@ const ActivityAddScreen: React.FC<Props> = ({ navigation, route }) => {
         // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior, so
         // the transparent bar's measured height is applied by hand.
         contentContainerStyle={{
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 0,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
         }}
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"

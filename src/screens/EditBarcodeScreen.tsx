@@ -266,7 +266,7 @@ const EditBarcodeScreen: React.FC<EditBarcodeScreenProps> = ({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="gap-2">

@@ -44,8 +44,18 @@ export const SHOPPING_CURRENCIES = [
   'USD',
 ] as const;
 
-/** Croatia is the only region with live store prices. */
-export const LIVE_PRICE_REGIONS: readonly string[] = ['HR'];
+
+
+/**
+ * Regions whose meal plans are priced from official or published shelf
+ * prices: Croatia (cijene.dev), Serbia (the retailers' price lists on
+ * data.gov.rs) and the Netherlands (Checkjebon). Everywhere else MarkAI
+ * estimates the prices. Keep in step with the backend's price sources.
+ */
+export const OFFICIAL_PRICE_REGIONS: readonly string[] = ['HR', 'RS', 'NL'];
+
+/** Regions whose stores can be compared chain by chain: the same three. */
+export const LIVE_PRICE_REGIONS = OFFICIAL_PRICE_REGIONS;
 
 export const regionName = (t: TFunction, code: string): string => {
   const region = SHOPPING_REGIONS.find((item) => item.code === code);
@@ -53,11 +63,11 @@ export const regionName = (t: TFunction, code: string): string => {
 };
 
 /**
- * The currency a plan is priced in: live Croatian prices are in euros
- * whatever was picked; elsewhere the pick, or the region's own currency.
+ * The currency a plan is priced in: shelf prices come in the region's own
+ * currency whatever was picked; estimates use the pick, or the region's own.
  */
 export function planCurrency(region: string, picked?: string): string {
   const home = SHOPPING_REGIONS.find((item) => item.code === region);
-  if (LIVE_PRICE_REGIONS.includes(region)) return 'EUR';
+  if (OFFICIAL_PRICE_REGIONS.includes(region)) return home?.currency ?? 'EUR';
   return picked || home?.currency || 'EUR';
 }

@@ -5760,10 +5760,13 @@
       "otherAllergies": "Gib weitere Allergien ein"
     },
     "region": "Wo kaufst du ein?",
-    "regionHint": "Die Essenspläne werden für dieses Land bepreist. In Kroatien nutzen sie echte Ladenpreise, täglich aktualisiert.",
+    "regionHint": "Die Essenspläne werden für dieses Land bepreist – mit echten Ladenpreisen, wo diese veröffentlicht werden.",
     "planMeals": "Mahlzeiten für die Woche planen",
     "listTotal": "Gesamt {{total}}",
-    "missing": "Diese Liste wurde gelöscht."
+    "missing": "Diese Liste wurde gelöscht.",
+    "officialPrices": "Offizielle Ladenpreise",
+    "estimatedPrices": "Geschätzte Preise",
+    "estimateWarning": "Die Preise für {{region}} sind Schätzungen von MarkAI, keine Ladenpreise. Betrachte die Summen als grobe Orientierung."
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6328,7 +6331,7 @@
     "livePrices": "Ladenpreise",
     "estimated": "Geschätzt",
     "heroTitle": "Plane eine Woche voller Mahlzeiten",
-    "heroBody": "Beantworte ein paar Fragen zu deiner Küche, deinem Budget und deinem Geschmack. MarkAI plant 7 Tage, für die du in einem Rutsch einkaufen kannst. In Kroatien nutzt es echte Ladenpreise, täglich aktualisiert.",
+    "heroBody": "Beantworte ein paar Fragen zu deiner Küche, deinem Budget und deinem Geschmack. MarkAI plant 7 Tage, die du auf einmal einkaufen kannst – mit echten Ladenpreisen in Kroatien, Serbien und den Niederlanden, anderswo geschätzt.",
     "planning": "MarkAI plant deine Woche…",
     "create": "Essensplan mit KI erstellen · {{coins}} Münzen",
     "signIn": "Melde dich an, um mit MarkAI zu planen",

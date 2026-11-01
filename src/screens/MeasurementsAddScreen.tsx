@@ -54,7 +54,6 @@ import { isAutoHealthSyncCustomCategoryName } from '../utils/autoHealthSyncCateg
 import type { RootStackScreenProps } from '../types/navigation';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -1219,7 +1218,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
         // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
         // so the content starts below the transparent bar by hand.
         contentContainerStyle={{
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
         }}
         bottomOffset={80}
         keyboardShouldPersistTaps="handled"

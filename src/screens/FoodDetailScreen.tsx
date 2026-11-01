@@ -408,7 +408,7 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + activeWorkoutBarPadding + 16,
           gap: 16,
         }}

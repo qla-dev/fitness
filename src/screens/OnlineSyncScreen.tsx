@@ -1,10 +1,5 @@
 import { useEffect } from 'react';
-import {
-  Alert,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import Button from '../components/ui/Button';
@@ -87,7 +82,7 @@ export default function OnlineSyncScreen({
     >
       {header}
       <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 16 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
       >
         {!session ? (

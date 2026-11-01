@@ -113,6 +113,7 @@ const NutrientTrendsScreen: React.FC<NutrientTrendsScreenProps> = ({
         className="flex-1"
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
         showsVerticalScrollIndicator={false}

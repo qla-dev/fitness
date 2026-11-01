@@ -5865,10 +5865,13 @@
       "otherAllergies": "Inserisci altre allergie"
     },
     "region": "Dove fai la spesa?",
-    "regionHint": "I piani alimentari hanno i prezzi di questo paese. In Croazia usano prezzi reali dei negozi, aggiornati ogni giorno.",
+    "regionHint": "I piani alimentari hanno i prezzi di questo paese, dai prezzi reali dei negozi dove vengono pubblicati.",
     "planMeals": "Pianifica i pasti della settimana",
     "listTotal": "Totale {{total}}",
-    "missing": "Questa lista è stata eliminata."
+    "missing": "Questa lista è stata eliminata.",
+    "officialPrices": "Prezzi ufficiali dei negozi",
+    "estimatedPrices": "Prezzi stimati",
+    "estimateWarning": "I prezzi per {{region}} sono stime di MarkAI, non prezzi dei negozi. Considera i totali come un'indicazione approssimativa."
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6436,7 +6439,7 @@
     "livePrices": "Prezzi dei negozi",
     "estimated": "Stimato",
     "heroTitle": "Pianifica una settimana di pasti",
-    "heroBody": "Rispondi a qualche domanda su cucina, budget e gusti. MarkAI pianifica 7 giorni di cui puoi fare la spesa in una volta sola. In Croazia usa prezzi reali dei negozi, aggiornati ogni giorno.",
+    "heroBody": "Rispondi a qualche domanda su cucina, budget e gusti. MarkAI pianifica 7 giorni da comprare in una volta sola, con i prezzi reali dei negozi in Croazia, Serbia e Paesi Bassi e stimati altrove.",
     "planning": "MarkAI sta pianificando la tua settimana…",
     "create": "Crea piano alimentare con IA · {{coins}} monete",
     "signIn": "Accedi per pianificare con MarkAI",

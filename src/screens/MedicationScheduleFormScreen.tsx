@@ -603,6 +603,7 @@ const MedicationScheduleFormScreen: React.FC<
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}
         contentInsetAdjustmentBehavior={

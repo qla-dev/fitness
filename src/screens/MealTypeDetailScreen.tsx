@@ -209,7 +209,7 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
     return (
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-4 py-4 gap-5"
+        contentContainerClassName="px-4 pb-4 gap-5"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 16 + activeWorkoutBarPadding,
         }}

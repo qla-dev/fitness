@@ -60,7 +60,6 @@ import {
 } from '../hooks';
 import type { FoodItem } from '../types/foods';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -1743,7 +1742,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
         // The transparent bar reserves no space, so the content starts
         // below it by hand.
         contentContainerStyle={{
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 16,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
         }}
       >
         <FoodNutritionHeader

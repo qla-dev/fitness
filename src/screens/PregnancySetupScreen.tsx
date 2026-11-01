@@ -101,6 +101,7 @@ const PregnancySetupScreen: React.FC<Props> = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + 96,
         }}
       >

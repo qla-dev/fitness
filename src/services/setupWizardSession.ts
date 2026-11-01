@@ -5,7 +5,13 @@ import type { IconName } from '../components/Icon';
 import type { FlashMeter, FlashStat } from '../components/ui/FlashOverlay';
 import type { MacroGlyph } from '../constants/macroRings';
 
-export type SetupOption = { value: string; label: string; icon?: IconName };
+export type SetupOption = {
+  value: string;
+  label: string;
+  icon?: IconName;
+  /** A heading the option is listed under; options keep their order. */
+  group?: string;
+};
 
 /**
  * A match offered under a text field while it is typed. Picking it sets the
@@ -33,6 +39,11 @@ export interface SetupField {
    * a step earlier. Resolved into `options` by `visibleFields`.
    */
   optionsFor?: (answers: SetupAnswers) => SetupOption[];
+  /**
+   * A line under the options for what the current answer means, such as a
+   * region whose prices are only estimated. Nothing when it returns nothing.
+   */
+  notice?: (answers: SetupAnswers) => string | undefined;
   multiple?: boolean;
   numeric?: boolean;
   min?: number;
@@ -136,6 +147,17 @@ export interface SetupFlash {
   tint?: string;
   meter?: FlashMeter;
   stats?: FlashStat[];
+}
+
+/** Options split under their headings, in order; one untitled group if none has one. */
+export function groupOptions(options: SetupOption[]) {
+  const groups: { title?: string; options: SetupOption[] }[] = [];
+  for (const option of options) {
+    const last = groups[groups.length - 1];
+    if (last && last.title === option.group) last.options.push(option);
+    else groups.push({ title: option.group, options: [option] });
+  }
+  return groups;
 }
 
 /**

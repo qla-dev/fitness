@@ -317,7 +317,7 @@ function WeeklyPlansContent({
           <Text className="text-text-secondary">
             {t('weeklyPlans.heroBody', {
               defaultValue:
-                'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.',
+                'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go, priced from real store prices in Croatia, Serbia and the Netherlands and estimated elsewhere.',
             })}
           </Text>
         </View>

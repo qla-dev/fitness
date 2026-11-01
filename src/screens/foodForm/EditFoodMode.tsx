@@ -49,7 +49,6 @@ import { localizeFoodUnit } from '../../utils/foodUnitLocalization';
 import { parseDecimalInput } from '../../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
@@ -657,9 +656,7 @@ export function EditFoodMode({
         noteImages={savedNoteImages}
         isSubmitting={isSubmitting}
         hideSubmitButton={usesNativeHeader}
-        contentTopInset={
-          usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : undefined
-        }
+        contentTopInset={usesNativeHeader ? headerOffset : 0}
         headerChildren={
           <View className="mb-4">
             <FoodImagePicker

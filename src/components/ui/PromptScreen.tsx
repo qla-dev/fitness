@@ -9,7 +9,6 @@ import {
 
 import FooterCTA from './FooterCTA';
 import {
-  HEADER_CONTENT_GAP,
   useModalTopPadding,
   useNativeHeaderOffset,
   useScreenHeader,
@@ -160,9 +159,7 @@ function PromptScreenContent({
         topAligned
           ? undefined
           : {
-              paddingTop: usesNativeHeader
-                ? headerOffset + HEADER_CONTENT_GAP
-                : 8,
+              paddingTop: usesNativeHeader ? headerOffset : 0,
             }
       }
     >
@@ -206,7 +203,7 @@ function PromptScreenContent({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             flexGrow: 1,
-            paddingTop: usesNativeHeader ? HEADER_CONTENT_GAP : 8,
+            paddingTop: 0,
             paddingBottom: (hasFooter ? footerHeight : insets.bottom) + 12,
           }}
         >

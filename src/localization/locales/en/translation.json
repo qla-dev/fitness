@@ -5760,10 +5760,13 @@
       "otherAllergies": "Enter any other allergies"
     },
     "region": "Where do you shop?",
-    "regionHint": "Meal plans are priced for this country. In Croatia they use real store prices, updated daily.",
+    "regionHint": "Meal plans are priced for this country, from real store prices where they are published.",
     "planMeals": "Plan meals for the week",
     "listTotal": "Total {{total}}",
-    "missing": "This list was deleted."
+    "missing": "This list was deleted.",
+    "officialPrices": "Official store prices",
+    "estimatedPrices": "Estimated prices",
+    "estimateWarning": "Prices for {{region}} are MarkAI estimates, not store prices. Treat totals as a rough guide."
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6328,7 +6331,7 @@
     "livePrices": "Store prices",
     "estimated": "Estimated",
     "heroTitle": "Plan a week of meals",
-    "heroBody": "Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.",
+    "heroBody": "Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go, priced from real store prices in Croatia, Serbia and the Netherlands and estimated elsewhere.",
     "planning": "MarkAI is planning your week…",
     "create": "Create meal plan with AI · {{coins}} coins",
     "signIn": "Sign in to plan with MarkAI",

@@ -33,6 +33,7 @@ import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
   clearSetupWizardSession,
   answerValues,
+  groupOptions,
   ASSIST_LINK,
   getSetupWizardSession,
   takeOfferedSetupAnswers,
@@ -497,59 +498,86 @@ function SetupWizardContent({
                   style={step.row ? { flex: field.flex ?? 1 } : undefined}
                 >
                   {field.options ? (
-                    <View className="flex-row flex-wrap gap-2">
-                      {field.options.map((option) => {
-                        const selected = answerValues(
-                          answers,
-                          field.id
-                        ).includes(option.value);
-                        return (
-                          <Pressable
-                            key={option.value}
-                            accessibilityRole={
-                              field.multiple ? 'checkbox' : 'radio'
-                            }
-                            accessibilityState={{ checked: selected }}
-                            onPress={() => {
-                              fireSelectionHaptic();
-                              setAnswers((a) => {
-                                const old = answerValues(a, field.id);
-                                const value = field.multiple
-                                  ? option.value === 'none'
-                                    ? selected
-                                      ? []
-                                      : ['none']
-                                    : selected
-                                      ? old.filter((v) => v !== option.value)
-                                      : [
-                                          ...old.filter((v) => v !== 'none'),
-                                          option.value,
-                                        ]
-                                  : option.value;
-                                return { ...a, [field.id]: value };
-                              });
-                            }}
-                            // Tight horizontal padding so short pairs such as "Often moving" /
-                            // "Physically demanding" share a row on ~390pt phones.
-                            className={`flex-row items-center gap-1.5 rounded-2xl px-3.5 py-3.5 border ${selected ? 'bg-accent-primary border-accent-primary' : 'bg-surface border-border'}`}
-                          >
-                            {option.icon && (
-                              <Icon
-                                name={option.icon}
-                                size={18}
-                                color={selected ? '#FFFFFF' : accentColor}
-                              />
-                            )}
-                            {/* Same weight in both states: a bolder selected label
-                              would widen the chip and reflow the row. */}
-                            <Text
-                              className={`font-medium ${selected ? 'text-white' : 'text-text-primary'}`}
-                            >
-                              {option.label}
+                    <View className="gap-4">
+                      {groupOptions(field.options).map((group) => (
+                        <View key={group.title ?? 'options'} className="gap-2">
+                          {group.title ? (
+                            <Text className="text-text-secondary text-sm font-semibold uppercase">
+                              {group.title}
                             </Text>
-                          </Pressable>
-                        );
-                      })}
+                          ) : null}
+                          <View className="flex-row flex-wrap gap-2">
+                            {group.options.map((option) => {
+                              const selected = answerValues(
+                                answers,
+                                field.id
+                              ).includes(option.value);
+                              return (
+                                <Pressable
+                                  key={option.value}
+                                  accessibilityRole={
+                                    field.multiple ? 'checkbox' : 'radio'
+                                  }
+                                  accessibilityState={{ checked: selected }}
+                                  onPress={() => {
+                                    fireSelectionHaptic();
+                                    setAnswers((a) => {
+                                      const old = answerValues(a, field.id);
+                                      const value = field.multiple
+                                        ? option.value === 'none'
+                                          ? selected
+                                            ? []
+                                            : ['none']
+                                          : selected
+                                            ? old.filter(
+                                                (v) => v !== option.value
+                                              )
+                                            : [
+                                                ...old.filter(
+                                                  (v) => v !== 'none'
+                                                ),
+                                                option.value,
+                                              ]
+                                        : option.value;
+                                      return { ...a, [field.id]: value };
+                                    });
+                                  }}
+                                  // Tight horizontal padding so short pairs such as "Often moving" /
+                                  // "Physically demanding" share a row on ~390pt phones.
+                                  className={`flex-row items-center gap-1.5 rounded-2xl px-3.5 py-3.5 border ${selected ? 'bg-accent-primary border-accent-primary' : 'bg-surface border-border'}`}
+                                >
+                                  {option.icon && (
+                                    <Icon
+                                      name={option.icon}
+                                      size={18}
+                                      color={selected ? '#FFFFFF' : accentColor}
+                                    />
+                                  )}
+                                  {/* Same weight in both states: a bolder selected label
+                              would widen the chip and reflow the row. */}
+                                  <Text
+                                    className={`font-medium ${selected ? 'text-white' : 'text-text-primary'}`}
+                                  >
+                                    {option.label}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      {field.notice?.(answers) ? (
+                        <View className="flex-row items-start gap-2">
+                          <Icon
+                            name="info-circle"
+                            size={18}
+                            color={accentColor}
+                          />
+                          <Text className="flex-1 text-text-secondary text-sm">
+                            {field.notice(answers)}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                   ) : (
                     <PillInput

@@ -371,7 +371,7 @@ const WorkoutPresetDetailScreen: React.FC<WorkoutPresetDetailScreenProps> = ({
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + activeWorkoutBarPadding + 16,
         }}
       >

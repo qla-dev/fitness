@@ -52,7 +52,6 @@ import { suggestedExercisesQueryKey } from '../hooks/queryKeys';
 import { useExternalExerciseSearch } from '../hooks/useExternalExerciseSearch';
 import { useNavigationActionGuard } from '../hooks/useNavigationActionGuard';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -949,7 +948,7 @@ const ExerciseSearchScreen: React.FC<ExerciseSearchScreenProps> = ({
       <View
         className="px-4"
         style={{
-          marginTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 8,
+          marginTop: usesNativeHeader ? headerOffset : 0,
         }}
       >
         <SegmentedControl

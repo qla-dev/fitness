@@ -37,7 +37,6 @@ import SafeImage from '../components/SafeImage';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
@@ -819,7 +818,7 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         contentContainerStyle={{
           // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior, so
           // the transparent bar's measured height is applied by hand.
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 0,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}
         bottomOffset={20}

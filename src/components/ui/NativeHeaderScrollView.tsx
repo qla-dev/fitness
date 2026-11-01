@@ -28,9 +28,8 @@ const NativeHeaderScrollView = forwardRef<ScrollViewInstance, ScrollViewProps>(
     const headerOffset = useNativeHeaderOffset();
     const top = usesNativeHeader ? headerOffset : 0;
     const flat = (StyleSheet.flatten(contentContainerStyle) ?? {}) as ViewStyle;
-    const ownTop = Number(
-      flat.paddingTop ?? flat.paddingVertical ?? flat.padding ?? 0
-    );
+    // Content starts flush with the bar on every screen: the bar carries the
+    // gap above it, so a screen's own top padding is not added again.
     return (
       <ScrollView
         ref={ref}
@@ -38,7 +37,7 @@ const NativeHeaderScrollView = forwardRef<ScrollViewInstance, ScrollViewProps>(
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustsScrollIndicatorInsets={false}
         scrollIndicatorInsets={{ ...scrollIndicatorInsets, top }}
-        contentContainerStyle={[flat, { paddingTop: ownTop + top }]}
+        contentContainerStyle={[flat, { paddingTop: top }]}
       />
     );
   }

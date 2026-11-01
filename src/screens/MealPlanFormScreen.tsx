@@ -535,7 +535,7 @@ const MealPlanFormScreen: React.FC<MealPlanFormScreenProps> = ({
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 16,
+          paddingTop: 0,
           paddingBottom: 24,
         }}
         keyboardShouldPersistTaps="handled"

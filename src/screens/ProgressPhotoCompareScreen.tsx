@@ -254,7 +254,7 @@ const ProgressPhotoCompareScreen: React.FC<Props> = ({ navigation, route }) => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="px-4 py-3"
+        contentContainerClassName="px-4 pb-3"
       >
         <View className="flex-row gap-3">
           {renderPane(

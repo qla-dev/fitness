@@ -113,7 +113,7 @@
     "version": "1.7.0",
     "owner": "qla-dev",
     "ios": {
-      "buildNumber": "26"
+      "buildNumber": "27"
     },
     "android": {
       "versionCode": 3

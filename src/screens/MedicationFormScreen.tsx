@@ -238,6 +238,7 @@ const MedicationFormScreen: React.FC<MedicationFormScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 0,
           rowGap: 24,
           paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
         }}

@@ -124,8 +124,7 @@ export default function GroceryListScreen({
   };
   const header = useScreenHeader({
     title:
-      draft?.name.trim() ||
-      t('screens.cart', { defaultValue: 'Grocery List' }),
+      draft?.name.trim() || t('screens.cart', { defaultValue: 'Grocery List' }),
     left: { kind: 'back' },
     right: [
       ...(draft?.region
@@ -195,6 +194,7 @@ export default function GroceryListScreen({
         bottomOffset={24}
         contentContainerStyle={{
           padding: 20,
+          paddingTop: 0,
           paddingBottom: insets.bottom + 40,
         }}
       >

@@ -3,7 +3,6 @@ import { View, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
   SAVE_LABEL,
@@ -85,7 +84,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
           padding: 16,
           // KeyboardAwareScrollView ignores contentInsetAdjustmentBehavior,
           // so the content starts below the transparent bar by hand.
-          paddingTop: usesNativeHeader ? headerOffset + HEADER_CONTENT_GAP : 12,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
           paddingBottom: insets.bottom + 40,
         }}
         bottomOffset={80}

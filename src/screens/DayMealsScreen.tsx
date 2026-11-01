@@ -56,7 +56,7 @@ const DayMealsScreen: React.FC<DayMealsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_GUTTER,
-          paddingTop: CARD_GAP,
+          paddingTop: 0,
           paddingBottom: SCREEN_GUTTER + activeWorkoutBarPadding,
           gap: CARD_GAP,
         }}

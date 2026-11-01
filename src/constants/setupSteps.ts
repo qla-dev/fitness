@@ -6,7 +6,12 @@ import {
   type SetupField,
   type SetupStep,
 } from '../services/setupWizardSession';
-import { regionName, SHOPPING_CURRENCIES, SHOPPING_REGIONS } from './regions';
+import {
+  OFFICIAL_PRICE_REGIONS,
+  regionName,
+  SHOPPING_CURRENCIES,
+  SHOPPING_REGIONS,
+} from './regions';
 import type { Vendor } from '../services/online/prices';
 import {
   calorieGoalPrompt,
@@ -601,14 +606,42 @@ export function grocerySteps(
       {
         id: 'region',
         label: t('groceries.region', { defaultValue: 'Where do you shop?' }),
-        options: SHOPPING_REGIONS.map((region) => ({
-          value: region.code,
-          label: regionName(t, region.code),
-        })),
+        // Countries with real shelf prices first, under their own heading;
+        // the rest are estimated, and say so once picked.
+        options: [
+          ...SHOPPING_REGIONS.filter((region) =>
+            OFFICIAL_PRICE_REGIONS.includes(region.code)
+          ).map((region) => ({
+            value: region.code,
+            label: regionName(t, region.code),
+            group: t('groceries.officialPrices', {
+              defaultValue: 'Official store prices',
+            }),
+          })),
+          ...SHOPPING_REGIONS.filter(
+            (region) => !OFFICIAL_PRICE_REGIONS.includes(region.code)
+          ).map((region) => ({
+            value: region.code,
+            label: regionName(t, region.code),
+            group: t('groceries.estimatedPrices', {
+              defaultValue: 'Estimated prices',
+            }),
+          })),
+        ],
+        notice: (answers) =>
+          typeof answers.region === 'string' &&
+          answers.region !== '' &&
+          !OFFICIAL_PRICE_REGIONS.includes(answers.region)
+            ? t('groceries.estimateWarning', {
+                defaultValue:
+                  'Prices for {{region}} are MarkAI estimates, not store prices. Treat totals as a rough guide.',
+                region: regionName(t, answers.region),
+              })
+            : undefined,
       },
       t('groceries.regionHint', {
         defaultValue:
-          'Meal plans are priced for this country. In Croatia they use real store prices, updated daily.',
+          'Meal plans are priced for this country, from real store prices where they are published.',
       })
     ),
     questionStep(

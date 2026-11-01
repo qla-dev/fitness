@@ -49,7 +49,6 @@ import {
 } from '../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import {
-  HEADER_CONTENT_GAP,
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
@@ -587,9 +586,7 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
         // The transparent bar reserves no space, so the content starts below
         // it by hand, as in ActivityAddScreen.
         contentContainerStyle={{
-          paddingTop: usesNativeHeader
-            ? headerOffset + HEADER_CONTENT_GAP
-            : 16,
+          paddingTop: usesNativeHeader ? headerOffset : 0,
         }}
         keyboardShouldPersistTaps="handled"
       >

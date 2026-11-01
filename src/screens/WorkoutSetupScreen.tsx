@@ -645,6 +645,7 @@ export default function WorkoutSetupScreen({ navigation, route }: Props) {
         className="flex-1 bg-background"
         contentContainerStyle={{
           padding: 16,
+          paddingTop: 0,
           paddingBottom: insets.bottom + 24,
         }}
         contentInsetAdjustmentBehavior={

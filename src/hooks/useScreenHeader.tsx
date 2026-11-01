@@ -1,9 +1,4 @@
-import React, {
-  useContext,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useContext, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated as RNAnimated,
@@ -69,12 +64,12 @@ export const IOS_NATIVE_HEADER_HEIGHT = 44;
 export const HEADER_CONTENT_GAP = 12;
 
 /**
- * The air under the screen-owned bar's hairline, which the bar carries itself
- * so no screen has to remember it. Deliberately small: most screens already
- * pad their content by 16, and this is added to that — it exists for the ones
- * that pad by nothing and had their first row sitting on the line.
+ * The air under the screen-owned bar's hairline. None: the bar's own bottom
+ * padding (12, as under the native Liquid Glass bar's buttons) is the gap
+ * above the content on every path, and screens start their content flush
+ * with the bar instead of padding it again.
  */
-const HEADER_BAR_BOTTOM_GAP = 8;
+const HEADER_BAR_BOTTOM_GAP = 0;
 
 /** The clearance between the title and the nearest header button. */
 const TITLE_SIDE_GAP = 8;
