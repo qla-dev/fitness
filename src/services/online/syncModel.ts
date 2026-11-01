@@ -31,6 +31,8 @@ export const SYNC_COLLECTIONS = [
   'markaiReceipts',
   'mealPlans',
   'mealPlanTemplates',
+  'personalSetup',
+  'groceryLists',
   // Must match `fitness.collections` in the backend.
   'medications',
   'medicationSchedules',

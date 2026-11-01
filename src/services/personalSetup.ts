@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { z } from 'zod';
+import {
+  deleteRecord,
+  localTransaction,
+  saveRecord,
+  table,
+  type LocalDatabase,
+} from './local/database';
+import { fingerprint } from './online/syncModel';
 
 export const answersSchema = z.record(
   z.string(),
@@ -69,21 +77,99 @@ export const withList = (
 export async function setupScope(): Promise<string> {
   return 'local';
 }
-const key = (scope: string) => `@qla/personal-setup/v1/${scope}`;
-export async function readSetup(scope: string): Promise<PersonalSetup> {
-  const raw = await AsyncStorage.getItem(key(scope));
-  return raw === null ? emptySetup() : stateSchema.parse(JSON.parse(raw));
+/*
+ * The questionnaires and grocery lists live in the local database, which
+ * syncs with the account: one `personalSetup` record per scope holding the
+ * answers, and one `groceryLists` record per list. Each list row carries its
+ * scope and its position, so the order the screens show survives a sync.
+ */
+const SETUP_TABLE = 'personalSetup';
+const LISTS_TABLE = 'groceryLists';
+const MUTATION = { method: 'PUT', endpoint: '/local/personal-setup' };
+
+const answersOf = (state: PersonalSetup) => ({
+  profile: state.profile,
+  profileDone: state.profileDone,
+  grocery: state.grocery,
+  groceryDone: state.groceryDone,
+});
+
+const scopeLists = (db: LocalDatabase, scope: string) =>
+  table(db, LISTS_TABLE)
+    .filter((row) => row.scope === scope)
+    .sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
+
+function readFrom(db: LocalDatabase, scope: string): PersonalSetup {
+  const row = table(db, SETUP_TABLE).find((r) => r.id === scope);
+  // Parsing drops the bookkeeping fields (scope, position, timestamps).
+  return stateSchema.parse({ ...row, lists: scopeLists(db, scope) });
 }
-let queue: Promise<unknown> = Promise.resolve();
-export function updateSetup(
+
+/** Writes `next`, touching only the records that changed so sync stays quiet. */
+function writeTo(db: LocalDatabase, scope: string, next: PersonalSetup): void {
+  const answers = answersOf(next);
+  const row = table(db, SETUP_TABLE).find((r) => r.id === scope);
+  if (!row) saveRecord(db, SETUP_TABLE, { id: scope, ...answers });
+  else if (
+    fingerprint(answersOf(stateSchema.parse(row))) !== fingerprint(answers)
+  )
+    saveRecord(db, SETUP_TABLE, answers, scope);
+
+  const stored = new Map(scopeLists(db, scope).map((r) => [String(r.id), r]));
+  next.lists.forEach((list, position) => {
+    const data = { ...list, scope, position };
+    const existing = stored.get(list.id);
+    stored.delete(list.id);
+    if (!existing) saveRecord(db, LISTS_TABLE, data);
+    else if (
+      fingerprint({
+        ...listSchema.parse(existing),
+        position: existing.position,
+      }) !== fingerprint({ ...list, position })
+    )
+      saveRecord(db, LISTS_TABLE, data, list.id);
+  });
+  for (const id of stored.keys()) deleteRecord(db, LISTS_TABLE, id);
+}
+
+/**
+ * Where this lived before it synced: one AsyncStorage entry per scope. Moved
+ * into the database on first use, then deleted. Lists another device already
+ * synced are kept, and the old answers fill in only an empty scope.
+ */
+const legacyKey = (scope: string) => `@qla/personal-setup/v1/${scope}`;
+async function migrateLegacy(scope: string): Promise<void> {
+  const raw = await AsyncStorage.getItem(legacyKey(scope));
+  if (raw === null) return;
+  const legacy = stateSchema.parse(JSON.parse(raw));
+  await localTransaction((db) => {
+    const current = readFrom(db, scope);
+    const hasAnswers = table(db, SETUP_TABLE).some((r) => r.id === scope);
+    const known = new Set(current.lists.map((list) => list.id));
+    writeTo(db, scope, {
+      ...(hasAnswers ? current : legacy),
+      lists: [
+        ...current.lists,
+        ...legacy.lists.filter((list) => !known.has(list.id)),
+      ],
+    });
+  }, MUTATION);
+  await AsyncStorage.removeItem(legacyKey(scope));
+}
+
+export async function readSetup(scope: string): Promise<PersonalSetup> {
+  await migrateLegacy(scope);
+  return localTransaction((db) => readFrom(db, scope));
+}
+/** Applies `update` to the stored state; edits are serialized by the database. */
+export async function updateSetup(
   scope: string,
   update: (state: PersonalSetup) => PersonalSetup
 ): Promise<PersonalSetup> {
-  const task = queue.then(async () => {
-    const next = stateSchema.parse(update(await readSetup(scope)));
-    await AsyncStorage.setItem(key(scope), JSON.stringify(next));
+  await migrateLegacy(scope);
+  return localTransaction((db) => {
+    const next = stateSchema.parse(update(readFrom(db, scope)));
+    writeTo(db, scope, next);
     return next;
-  });
-  queue = task.catch(() => undefined);
-  return task;
+  }, MUTATION);
 }
