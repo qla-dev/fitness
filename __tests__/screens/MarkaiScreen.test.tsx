@@ -232,6 +232,86 @@ it('shows the short label of a prompt the app wrote, and sends the full prompt',
   expect(screen.queryByText(/Age: 30/)).toBeNull();
 });
 
+it('plans a week in the chat, working through its skills, and closes the reply with the plan card', async () => {
+  const week = {
+    title: 'Budget week',
+    summary: 'Cheap and simple.',
+    region: 'BA',
+    currency: 'BAM',
+    prices: 'estimate',
+    price_date: null,
+    weekly_cost: 42.5,
+    days: [],
+  };
+  mockRoute.params = {
+    preset: {
+      prompt: 'Plan my week of meals from my food and kitchen answers.',
+      label: 'Plan my week',
+      mode: 'macros',
+      task: 'meal_plan',
+      mealPlan: {
+        preferences: { region: 'BA', diet: 'vegan' },
+        region: 'BA',
+        currency: 'BAM',
+        language: 'en',
+        servings: 2,
+      },
+    },
+  };
+  let answer!: (value: unknown) => void;
+  jest
+    .mocked(onlineRequest)
+    .mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)));
+  const screen = render(<MarkaiScreen />);
+  await waitFor(() =>
+    expect(onlineRequest).toHaveBeenCalledWith(
+      '/markai/messages',
+      expect.objectContaining({
+        task: 'meal_plan',
+        label: 'Plan my week',
+        preferences: { region: 'BA', diet: 'vegan' },
+        region: 'BA',
+        currency: 'BAM',
+        language: 'en',
+      })
+    )
+  );
+  // The wait reads as its skills, the first under way.
+  expect(screen.getByLabelText('MarkAI is using Meal planner')).toBeTruthy();
+  await act(async () =>
+    answer({
+      id: 'week-reply',
+      reply: {
+        text: 'Cheap and simple.',
+        food: null,
+        meal_plan: week,
+        food_id: 'week-reply',
+        log_requested: false,
+      },
+      ai_coins: 90,
+    })
+  );
+  const { listWeeklyPlans } = jest.requireActual(
+    '../../src/services/weeklyPlans'
+  );
+  await waitFor(async () =>
+    expect(await listWeeklyPlans()).toEqual([
+      expect.objectContaining({
+        id: 'week-reply',
+        title: 'Budget week',
+        servings: 2,
+        is_active: true,
+      }),
+    ])
+  );
+  fireEvent.press(await screen.findByText('Budget week'));
+  await waitFor(() =>
+    expect(mockNavigate).toHaveBeenCalledWith('WeeklyPlan', {
+      planId: 'week-reply',
+    })
+  );
+});
+
 it('shows an optimistic message and thinking, retains failures, and retries the same request once', async () => {
   let rejectRequest!: (error: Error) => void;
   jest.mocked(onlineRequest).mockImplementationOnce(

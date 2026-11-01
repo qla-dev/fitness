@@ -1,13 +1,12 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WeeklyPlansScreen from '../../src/screens/WeeklyPlansScreen';
+import { listWeeklyPlans } from '../../src/services/weeklyPlans';
 import {
-  createWeeklyPlan,
-  listWeeklyPlans,
-} from '../../src/services/weeklyPlans';
-import { getSetupWizardSession } from '../../src/services/setupWizardSession';
+  clearSetupWizardSession,
+  getSetupWizardSession,
+} from '../../src/services/setupWizardSession';
 
 let mockSession: unknown = null;
 const mockSave = jest.fn(async () => undefined);
@@ -46,7 +45,6 @@ jest.mock('@expo/ui/community/menu', () => ({
 jest.mock('../../src/services/weeklyPlans', () => ({
   ...jest.requireActual('../../src/services/weeklyPlans'),
   listWeeklyPlans: jest.fn(),
-  createWeeklyPlan: jest.fn(),
 }));
 
 const plan = {
@@ -74,6 +72,7 @@ const renderScreen = () =>
   );
 
 beforeEach(() => {
+  clearSetupWizardSession(getSetupWizardSession());
   mockSession = null;
   mockManualPlans = [];
   jest.clearAllMocks();
@@ -98,33 +97,63 @@ it('asks to sign in before planning', async () => {
   expect(navigation.navigate).toHaveBeenCalledWith('OnlineAccount');
 });
 
-it('opens the questionnaire, then plans only after confirming the coins', async () => {
+it("ends a new plan's questionnaire on Plan my week, which plans it in a new chat", async () => {
   mockSession = { token: 't', user: { id: '1', name: 'N', ai_coins: 10 } };
-  jest.mocked(createWeeklyPlan).mockResolvedValue({ ...plan, id: 'p2' } as any);
-  const alert = jest.spyOn(Alert, 'alert');
   const screen = renderScreen();
   fireEvent.press(await screen.findByText('Create meal plan · 10 coins'));
   expect(navigation.navigate).toHaveBeenCalledWith('SetupWizard');
 
   const session = getSetupWizardSession()!;
+  expect(session.steps.at(-1)!.id).toBe('planWeek');
   await act(async () => {
-    await session.onSave({ region: 'HR', diet: 'vegan' }, true);
+    await session.onSave(
+      { region: 'BA', servings: '2', diet: 'vegan', planWeek: 'yes' },
+      true,
+      true
+    );
     session.onClose();
   });
-  expect(createWeeklyPlan).not.toHaveBeenCalled();
-  const buttons = alert.mock.calls[0][2]!;
-  await act(async () => {
-    buttons.find((button) => button.text === 'Plan my week')!.onPress!();
+  // The plan question is not saved as a food preference.
+  const saved = (mockSave.mock.calls[0] as any)[0]({}) as {
+    grocery: Record<string, unknown>;
+  };
+  expect(saved.grocery).toEqual({ region: 'BA', servings: '2', diet: 'vegan' });
+  expect(navigation.navigate).toHaveBeenCalledWith('MarkAI', {
+    preset: expect.objectContaining({
+      task: 'meal_plan',
+      label: 'Plan my week',
+      mode: 'macros',
+      mealPlan: expect.objectContaining({
+        preferences: { region: 'BA', servings: '2', diet: 'vegan' },
+        region: 'BA',
+        currency: 'BAM',
+        servings: 2,
+      }),
+    }),
   });
-  expect(createWeeklyPlan).toHaveBeenCalledWith(
-    { region: 'HR', diet: 'vegan' },
-    expect.any(String)
+});
+
+it('plans nothing when the last question is answered Not now', async () => {
+  mockSession = { token: 't', user: { id: '1', name: 'N', ai_coins: 10 } };
+  const screen = renderScreen();
+  fireEvent.press(await screen.findByText('Create meal plan · 10 coins'));
+  const session = getSetupWizardSession()!;
+  await act(async () => {
+    await session.onSave({ region: 'HR', planWeek: 'no' }, true, true);
+    session.onClose();
+  });
+  expect(navigation.navigate).not.toHaveBeenCalledWith(
+    'MarkAI',
+    expect.anything()
   );
-  await waitFor(() =>
-    expect(navigation.navigate).toHaveBeenCalledWith('WeeklyPlan', {
-      planId: 'p2',
-    })
-  );
+});
+
+it('edits preferences without the plan question', async () => {
+  const screen = renderScreen();
+  fireEvent.press(await screen.findByText('My food & kitchen preferences'));
+  expect(
+    getSetupWizardSession()!.steps.some((step) => step.id === 'planWeek')
+  ).toBe(false);
 });
 
 it('builds a plan by hand from the header +, and lists hand-built plans', async () => {

@@ -99,6 +99,44 @@ export class NotSignedInError extends Error {
   }
 }
 
+/** A week as MarkAI sends it, before it is saved on the device. */
+export type PlannedWeek = Omit<WeeklyPlan, 'id' | 'servings' | 'is_active'>;
+
+/** What MarkAI plans a week from: the questionnaire and where it is priced. */
+export function mealPlanRequest(answers: SetupAnswers, language: string) {
+  const region = String(answers.region || 'HR');
+  return {
+    preferences: answers,
+    region,
+    currency: planCurrency(region, String(answers.currency || '')),
+    language,
+  };
+}
+
+/**
+ * Saves a planned week as the active plan, under `id` when given. A week
+ * already saved under that id is returned as it is, so a chat reply opened
+ * again does not save its plan twice or take the active badge back.
+ */
+export function saveWeeklyPlan(
+  plan: PlannedWeek,
+  servings: number,
+  id?: string
+): Promise<WeeklyPlan> {
+  return localTransaction((db) => {
+    const saved = id ? table(db, TABLE).find((row) => row.id === id) : null;
+    if (saved) return saved as unknown as WeeklyPlan;
+    for (const row of table(db, TABLE))
+      if (row.is_active) saveRecord(db, TABLE, { is_active: false }, row.id);
+    return saveRecord(db, TABLE, {
+      ...plan,
+      ...(id ? { id } : null),
+      servings: Math.max(1, servings || 1),
+      is_active: true,
+    }) as unknown as WeeklyPlan;
+  }, MUTATION);
+}
+
 /**
  * Asks MarkAI for a week built from the questionnaire answers, saves it as
  * the active plan and returns it. Costs AI coins; the balance is updated
@@ -111,28 +149,15 @@ export async function createWeeklyPlan(
 ): Promise<WeeklyPlan> {
   const session = useOnlineAccount.getState().session;
   if (!session) throw new NotSignedInError();
-  const region = String(answers.region || 'HR');
   const response = await onlineRequest<{
-    plan: Omit<WeeklyPlan, 'id' | 'servings' | 'is_active'>;
+    plan: PlannedWeek;
     ai_coins: number;
   }>('/markai/meal-plans', {
     id: requestId,
-    preferences: answers,
-    region,
-    currency: planCurrency(region, String(answers.currency || '')),
-    language,
+    ...mealPlanRequest(answers, language),
   });
   await updateOnlineAccount({ ...session.user, ai_coins: response.ai_coins });
-  const servings = Math.max(1, Number(answers.servings) || 1);
-  return localTransaction((db) => {
-    for (const row of table(db, TABLE))
-      if (row.is_active) saveRecord(db, TABLE, { is_active: false }, row.id);
-    return saveRecord(db, TABLE, {
-      ...response.plan,
-      servings,
-      is_active: true,
-    }) as unknown as WeeklyPlan;
-  }, MUTATION);
+  return saveWeeklyPlan(response.plan, Number(answers.servings));
 }
 
 const UNIT_LABEL: Record<PlanIngredient['unit'], string> = {

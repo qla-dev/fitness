@@ -39,6 +39,7 @@ import type {
 import type { Meal, MealIngredientDraft } from './meals';
 import type { MealPlanPickerTarget, MealPlanTemplate } from './mealPlans';
 import type { WorkoutPreset } from './workoutPresets';
+import type { MarkaiTask, MealPlanRequest } from '../services/online/markai';
 
 export type FoodPickerMode =
   'log-entry' | 'meal-builder' | 'meal-plan' | 'library';
@@ -72,7 +73,9 @@ export type RootStackParamList = {
           mode: 'macros' | 'training' | 'free';
           returnToSetup?: boolean;
           /** A priced request, such as the ten-coin macro plan. */
-          task?: 'all_macros';
+          task?: MarkaiTask;
+          /** What a `meal_plan` task plans the week from. */
+          mealPlan?: MealPlanRequest & { servings: number };
         };
       }
     | undefined;

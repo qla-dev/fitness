@@ -89,9 +89,110 @@ function Letter({
   );
 }
 
+/** One skill of a long task, worked through in turn while it runs. */
+export type ThinkingStep = { skill: string; icon: IconName };
+
+/** How long each step of a long task holds the line before the next. */
+const STEP_MS = 7000;
+
+/**
+ * A long task (a planned week) shown as its skills, one row each: the row
+ * being worked on carries the travelling highlight, the ones before it are
+ * ticked off, and the last keeps going until the answer arrives.
+ */
+function ThinkingSteps({ steps }: { steps: ThinkingStep[] }) {
+  const { t } = useTranslation();
+  const [current, setCurrent] = useState(0);
+  const [muted, foreground, green] = useCSSVariable([
+    '--color-text-muted',
+    '--color-text-primary',
+    '--color-cat-green',
+  ]) as string[];
+  const sweep = useSharedValue(-0.3);
+  useEffect(() => {
+    sweep.value = withRepeat(
+      withTiming(1.3, { duration: 2400, easing: Easing.linear }),
+      -1
+    );
+    return () => cancelAnimation(sweep);
+  }, [sweep]);
+  useEffect(() => {
+    if (current >= steps.length - 1) return;
+    const timer = setTimeout(() => setCurrent((value) => value + 1), STEP_MS);
+    return () => clearTimeout(timer);
+  }, [current, steps.length]);
+  const using = (skill: string) =>
+    t('markai.usingSkill', {
+      defaultValue: 'MarkAI is using {{skill}}',
+      skill,
+    });
+  return (
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={using(steps[current].skill)}
+      style={{ paddingVertical: 4, gap: 6 }}
+    >
+      {steps.slice(0, current + 1).map((step, index) => {
+        const label = using(step.skill);
+        return (
+          <Animated.View
+            key={step.skill}
+            entering={FadeIn.duration(260)}
+            style={{ flexDirection: 'row', flexWrap: 'wrap' }}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {index < current ? (
+              <>
+                <View
+                  style={{
+                    width: ICON_SIZE,
+                    height: 27,
+                    marginRight: 6,
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="checkmark" size={ICON_SIZE} color={green} />
+                </View>
+                <Animated.Text
+                  style={{ fontSize: 18, lineHeight: 27, color: muted }}
+                >
+                  {label}
+                </Animated.Text>
+              </>
+            ) : (
+              <>
+                <SkillIcon
+                  name={step.icon}
+                  sweep={sweep}
+                  muted={muted}
+                  foreground={foreground}
+                />
+                {Array.from(label).map((letter, position) => (
+                  <Letter
+                    key={position}
+                    letter={letter}
+                    index={position}
+                    length={Array.from(label).length}
+                    sweep={sweep}
+                    muted={muted}
+                    foreground={foreground}
+                  />
+                ))}
+              </>
+            )}
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function MarkaiThinking({
   skill,
   icon,
+  steps,
 }: {
   skill: string;
   /**
@@ -100,7 +201,14 @@ export default function MarkaiThinking({
    * skill is named, as in ABC doctor's, whose look this follows.
    */
   icon: IconName;
+  /** A long task's skills, shown a row each in place of the single line. */
+  steps?: ThinkingStep[];
 }) {
+  if (steps?.length) return <ThinkingSteps steps={steps} />;
+  return <ThinkingLine skill={skill} icon={icon} />;
+}
+
+function ThinkingLine({ skill, icon }: { skill: string; icon: IconName }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState(0);
   const [muted, foreground] = useCSSVariable([

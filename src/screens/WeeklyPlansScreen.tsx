@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -19,7 +18,7 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { grocerySteps } from '../constants/setupSteps';
-import { LIVE_PRICE_REGIONS, regionName } from '../constants/regions';
+import { LIVE_PRICE_REGIONS } from '../constants/regions';
 import {
   fetchVendors,
   vendorsQueryKey,
@@ -28,19 +27,19 @@ import {
 import {
   isSetupWizardOpen,
   openSetupWizardSession,
+  type SetupStep,
 } from '../services/setupWizardSession';
 import {
-  createWeeklyPlan,
   deleteWeeklyPlan,
   listWeeklyPlans,
-  NotSignedInError,
+  mealPlanRequest,
   setActiveWeeklyPlan,
   weeklyPlansQueryKey,
-  planMoney,
   type WeeklyPlan,
 } from '../services/weeklyPlans';
-import { OnlineError, useOnlineAccount } from '../services/online/account';
-import { fireSelectionHaptic, fireSuccessHaptic } from '../services/haptics';
+import WeeklyPlanCard from '../components/WeeklyPlanCard';
+import { useOnlineAccount } from '../services/online/account';
+import { fireSelectionHaptic } from '../services/haptics';
 import type { SetupAnswers } from '../services/personalSetup';
 import { useMealPlans } from '../hooks/useMealPlans';
 import type { MealPlanTemplate } from '../types/mealPlans';
@@ -48,6 +47,8 @@ import type { RootStackScreenProps } from '../types/navigation';
 
 /** Matches `meal_plan_coins` in the backend config. */
 export const MEAL_PLAN_COINS = 10;
+/** The questionnaire's closing question on a new plan. */
+const PLAN_WEEK = 'planWeek';
 
 /**
  * The user's weekly meal plans: a card per plan with the active one marked,
@@ -73,16 +74,11 @@ export default function WeeklyPlansScreen({
     client.getQueryData<Vendor[]>(vendorsQueryKey(region)) ?? [];
   const session = useOnlineAccount((s) => s.session);
   const setup = usePersonalSetup();
-  const [accent, green, muted] = useCSSVariable([
-    '--color-accent-primary',
-    '--color-cat-green',
-    '--color-text-muted',
-  ]) as string[];
+  const accent = useCSSVariable('--color-accent-primary') as string;
   const { data: plans = [], isLoading } = useQuery({
     queryKey: weeklyPlansQueryKey,
     queryFn: listWeeklyPlans,
   });
-  const [creating, setCreating] = useState(false);
   // Hand-built plans: library foods and meals set per weekday in the form.
   const { mealPlans: manualPlans } = useMealPlans();
   const header = useScreenHeader({
@@ -101,57 +97,58 @@ export default function WeeklyPlansScreen({
   const refresh = () =>
     client.invalidateQueries({ queryKey: weeklyPlansQueryKey });
 
-  const generate = async (answers: SetupAnswers) => {
-    setCreating(true);
-    try {
-      const plan = await createWeeklyPlan(answers, i18n.language);
-      fireSuccessHaptic();
-      await refresh();
-      navigation.navigate('WeeklyPlan', { planId: plan.id });
-    } catch (error) {
-      if (error instanceof NotSignedInError)
-        navigation.navigate('OnlineAccount');
-      else
-        Alert.alert(
-          error instanceof OnlineError && error.status === 402
-            ? t('weeklyPlans.noCoins', {
-                defaultValue: 'Not enough AI coins for a meal plan.',
-              })
-            : t('weeklyPlans.failed', {
-                defaultValue:
-                  'MarkAI could not plan this week. Your coins were refunded.',
-              })
-        );
-    } finally {
-      setCreating(false);
-    }
+  // A new plan ends the questionnaire on this question: Yes plans the week
+  // in a new MarkAI conversation, where the plan arrives as its card.
+  const planStep: SetupStep = {
+    id: PLAN_WEEK,
+    heading: t('weeklyPlans.plan', { defaultValue: 'Plan my week' }),
+    hint: t('weeklyPlans.planHint', {
+      defaultValue:
+        'MarkAI plans 7 days of meals from your answers, in a new chat. Uses {{coins}} AI coins.',
+      coins: MEAL_PLAN_COINS,
+    }),
+    fields: [
+      {
+        id: PLAN_WEEK,
+        label: t('weeklyPlans.plan', { defaultValue: 'Plan my week' }),
+        options: [
+          {
+            value: 'yes',
+            label: t('weeklyPlans.planYes', {
+              defaultValue: 'Yes, plan my week',
+            }),
+            icon: 'sparkles',
+          },
+          {
+            value: 'no',
+            label: t('weeklyPlans.planNo', { defaultValue: 'Not now' }),
+          },
+        ],
+      },
+    ],
   };
-
-  const confirmGenerate = (answers: SetupAnswers) =>
-    Alert.alert(
-      t('weeklyPlans.confirmTitle', {
-        defaultValue: 'Plan a week with MarkAI?',
-      }),
-      t('weeklyPlans.confirmMessage', {
-        defaultValue:
-          '7 days of meals from your food and kitchen preferences. Uses {{coins}} AI coins.',
-        coins: MEAL_PLAN_COINS,
-      }),
-      [
-        {
-          text: t('common.cancel', { defaultValue: 'Cancel' }),
-          style: 'cancel',
+  const planInChat = (answers: SetupAnswers) =>
+    navigation.navigate('MarkAI', {
+      preset: {
+        prompt: t('weeklyPlans.planPrompt', {
+          defaultValue:
+            'Plan my week of meals from my food and kitchen answers.',
+        }),
+        label: t('weeklyPlans.plan', { defaultValue: 'Plan my week' }),
+        mode: 'macros',
+        task: 'meal_plan',
+        mealPlan: {
+          ...mealPlanRequest(answers, i18n.language),
+          servings: Math.max(1, Number(answers.servings) || 1),
         },
-        {
-          text: t('weeklyPlans.plan', { defaultValue: 'Plan my week' }),
-          onPress: () => void generate(answers),
-        },
-      ]
-    );
+      },
+    });
 
-  // The answers saved by the wizard this time round, if any; `create` asks
-  // to plan once it closes, which is the only moment it is clearly finished.
+  // The answers saved by the wizard this time round, if any, and whether
+  // its last question asked to plan; acted on once it closes, the only
+  // moment it is clearly finished.
   const saved = useRef<SetupAnswers | null>(null);
+  const plan = useRef(false);
   const openQuestionnaire = (create: boolean) => {
     if (!setup.state || isSetupWizardOpen()) return;
     if (create && !session) {
@@ -159,20 +156,24 @@ export default function WeeklyPlansScreen({
       return;
     }
     saved.current = null;
+    plan.current = false;
     openSetupWizardSession({
-      steps: grocerySteps(t, vendorsFor),
+      steps: [...grocerySteps(t, vendorsFor), ...(create ? [planStep] : [])],
       initial: setup.state.grocery,
       onSave: async (answers, done) => {
+        // The plan question is this visit's, not a food preference.
+        const { [PLAN_WEEK]: planWeek, ...grocery } = answers;
+        plan.current = planWeek === 'yes';
         await setup.save((s) => ({
           ...s,
-          grocery: answers,
+          grocery,
           groceryDone: done,
         }));
-        saved.current = answers;
+        saved.current = grocery;
       },
       onClose: () => {
         const answers = saved.current ?? setup.state?.grocery;
-        if (create && answers) confirmGenerate(answers);
+        if (create && plan.current && answers) planInChat(answers);
       },
     });
     navigation.navigate('SetupWizard');
@@ -214,63 +215,12 @@ export default function WeeklyPlansScreen({
           void deleteWeeklyPlan(plan.id).then(refresh);
       }}
     >
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          fireSelectionHaptic();
-          navigation.navigate('WeeklyPlan', { planId: plan.id });
-        }}
-        className="bg-surface rounded-2xl p-4 gap-2"
-        style={[
-          { width: columnWidth ?? '100%' },
-          plan.is_active ? { borderWidth: 2, borderColor: accent } : null,
-        ]}
-      >
-        <View className="flex-row items-center gap-2">
-          <Text
-            className="text-text-primary text-lg font-semibold flex-1"
-            numberOfLines={1}
-          >
-            {plan.title}
-          </Text>
-          {plan.is_active ? (
-            <View
-              className="rounded-full px-2.5 py-0.5"
-              style={{ backgroundColor: accent }}
-            >
-              <Text className="text-white text-xs font-bold">
-                {t('mealPlans.active', { defaultValue: 'Active' })}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-        {plan.summary ? (
-          <Text className="text-text-secondary" numberOfLines={2}>
-            {plan.summary}
-          </Text>
-        ) : null}
-        <View className="flex-row items-center gap-2 flex-wrap">
-          <Text className="text-text-primary font-semibold">
-            {t('weeklyPlans.perWeek', {
-              defaultValue: '{{amount}} / week',
-              amount: planMoney(plan.weekly_cost, plan.currency),
-            })}
-          </Text>
-          <Text style={{ color: muted }}>·</Text>
-          <Text className="text-text-secondary text-sm">
-            {regionName(t, plan.region)}
-          </Text>
-          <Text style={{ color: muted }}>·</Text>
-          <Text
-            className="text-sm"
-            style={{ color: plan.prices === 'cijene' ? green : muted }}
-          >
-            {plan.prices === 'cijene'
-              ? t('weeklyPlans.livePrices', { defaultValue: 'Store prices' })
-              : t('weeklyPlans.estimated', { defaultValue: 'Estimated' })}
-          </Text>
-        </View>
-      </Pressable>
+      <WeeklyPlanCard
+        plan={plan}
+        active={plan.is_active}
+        width={columnWidth ?? '100%'}
+        onPress={() => navigation.navigate('WeeklyPlan', { planId: plan.id })}
+      />
     </MenuView>
   );
 
@@ -342,27 +292,16 @@ export default function WeeklyPlansScreen({
                 'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.',
             })}
           </Text>
-          {creating ? (
-            <View className="flex-row items-center gap-3 py-2">
-              <ActivityIndicator />
-              <Text className="text-text-secondary">
-                {t('weeklyPlans.planning', {
-                  defaultValue: 'MarkAI is planning your week…',
+          <Button onPress={() => openQuestionnaire(true)}>
+            {session
+              ? t('weeklyPlans.create', {
+                  defaultValue: 'Create meal plan · {{coins}} coins',
+                  coins: MEAL_PLAN_COINS,
+                })
+              : t('weeklyPlans.signIn', {
+                  defaultValue: 'Sign in to plan with MarkAI',
                 })}
-              </Text>
-            </View>
-          ) : (
-            <Button onPress={() => openQuestionnaire(true)}>
-              {session
-                ? t('weeklyPlans.create', {
-                    defaultValue: 'Create meal plan · {{coins}} coins',
-                    coins: MEAL_PLAN_COINS,
-                  })
-                : t('weeklyPlans.signIn', {
-                    defaultValue: 'Sign in to plan with MarkAI',
-                  })}
-            </Button>
-          )}
+          </Button>
         </View>
 
         <SettingsRowGroup>

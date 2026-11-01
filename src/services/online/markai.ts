@@ -4,6 +4,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { localTransaction, saveRecord, table } from '../local/database';
 import { getTodayDate } from '../../utils/dateUtils';
 import { externalFoodItemToFoodInfo } from '../../types/foodInfo';
+import type { PlannedWeek } from '../weeklyPlans';
 
 export const foodProposalSchema = z.object({
   name: z.string().min(1).max(200),
@@ -39,8 +40,18 @@ export type GoalProposal =
  * A request priced above a reply. The backend sets the price
  * (fitness.markai_task_coins); MARKAI_TASK_COINS only tells the user.
  */
-export type MarkaiTask = 'all_macros';
-export const MARKAI_TASK_COINS: Record<MarkaiTask, number> = { all_macros: 10 };
+export type MarkaiTask = 'all_macros' | 'meal_plan';
+export const MARKAI_TASK_COINS: Record<MarkaiTask, number> = {
+  all_macros: 10,
+  meal_plan: 10,
+};
+/** What a `meal_plan` task is planned from; see `mealPlanRequest`. */
+export type MealPlanRequest = {
+  preferences: Record<string, unknown>;
+  region: string;
+  currency: string;
+  language: string;
+};
 /**
  * A session a Moving help reply suggests: value in minutes, kilometres or
  * kilocalories by goal. Started through workout setup, never by itself.
@@ -57,6 +68,8 @@ export type MarkaiReply = {
   goal?: GoalProposal | null;
   /** Absent on replies from before sessions were suggested. */
   workout?: WorkoutSuggestion | null;
+  /** The week a `meal_plan` task planned, shown as its plan card. */
+  meal_plan?: PlannedWeek | null;
   food_id: string;
   log_requested: boolean;
 };

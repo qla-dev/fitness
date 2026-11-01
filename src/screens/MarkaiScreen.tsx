@@ -30,7 +30,12 @@ import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon, { type IconName } from '../components/Icon';
 import MarkaiEmptyState from '../components/markai/MarkaiEmptyState';
-import MarkaiThinking from '../components/markai/MarkaiThinking';
+import MarkaiThinking, {
+  type ThinkingStep,
+} from '../components/markai/MarkaiThinking';
+import WeeklyPlanCard from '../components/WeeklyPlanCard';
+import { queryClient } from '../hooks/queryClient';
+import { saveWeeklyPlan, weeklyPlansQueryKey } from '../services/weeklyPlans';
 import MarkaiUserMessage from '../components/markai/MarkaiUserMessage';
 import MarkaiNutrition from '../components/markai/MarkaiNutrition';
 import { useCSSVariable } from 'uniwind';
@@ -68,6 +73,7 @@ import {
   type GoalProposal,
   type MarkaiReply,
   type MarkaiTask,
+  type MealPlanRequest,
 } from '../services/online/markai';
 import { offerSetupAnswer } from '../services/setupWizardSession';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -88,6 +94,7 @@ const MODE_ICONS: Record<Mode, IconName> = {
   training: 'exercise-weights',
 };
 type Attachment = { uri: string; data: string };
+type WeekRequest = MealPlanRequest & { servings: number };
 export default function MarkaiScreen() {
   const accountId = useOnlineAccount((s) => s.session?.user.id);
   // The provider ties the chat's scroll view to the composer, so iOS 26 draws
@@ -158,6 +165,8 @@ function MarkaiContent() {
     /** What the thinking line shows the wait as working on. */
     task?: MarkaiTask;
     mode: Mode;
+    /** A `meal_plan` task's questionnaire, kept for a retry. */
+    mealPlan?: WeekRequest;
   } | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [attaching, setAttaching] = useState(false);
@@ -213,6 +222,7 @@ function MarkaiContent() {
     id: string;
     task?: MarkaiTask;
     label?: string;
+    mealPlan?: WeekRequest;
   } | null>(null);
   const header = useScreenHeader({
     variant: 'transparent',
@@ -442,7 +452,8 @@ function MarkaiContent() {
     label?: string,
     // A suggestion sets the mode and sends in one tap, before the state
     // update has landed.
-    sendMode: Mode = mode
+    sendMode: Mode = mode,
+    mealPlan?: WeekRequest
   ) => {
     if (
       lock.current ||
@@ -456,7 +467,7 @@ function MarkaiContent() {
     setBusy(true);
     setError(null);
     const prompt = value.trim();
-    setPending({ prompt, label, image, task, mode: sendMode });
+    setPending({ prompt, label, image, task, mode: sendMode, mealPlan });
     setText('');
     setAttachment(null);
     atBottom.current = true;
@@ -467,7 +478,8 @@ function MarkaiContent() {
       pendingRequest.current.image !== (image?.data ?? null) ||
       pendingRequest.current.mode !== sendMode ||
       pendingRequest.current.conversation !== conversation ||
-      pendingRequest.current.task !== task
+      pendingRequest.current.task !== task ||
+      pendingRequest.current.mealPlan !== mealPlan
     ) {
       pendingRequest.current = {
         prompt,
@@ -477,6 +489,7 @@ function MarkaiContent() {
         id: randomUUID(),
         task,
         label,
+        mealPlan,
       };
     }
     let delivered = false;
@@ -494,8 +507,26 @@ function MarkaiContent() {
         ...(label ? { label } : null),
         ...(image ? { image: image.data } : null),
         ...(task ? { task } : null),
+        ...(mealPlan
+          ? {
+              preferences: mealPlan.preferences,
+              region: mealPlan.region,
+              currency: mealPlan.currency,
+              language: mealPlan.language,
+            }
+          : null),
       });
       delivered = true;
+      // The planned week is saved on the device under the reply's id, so its
+      // card opens it, and becomes the active plan.
+      if (response.reply.meal_plan) {
+        await saveWeeklyPlan(
+          response.reply.meal_plan,
+          mealPlan?.servings ?? 1,
+          response.id
+        );
+        void queryClient.invalidateQueries({ queryKey: weeklyPlansQueryKey });
+      }
       animateNext.current = true;
       setTypingId(response.id);
       setMessages((items) => [
@@ -528,13 +559,13 @@ function MarkaiContent() {
         // a raw error line. The message stays pending, so it can be retried
         // once there are credits (a refused request stored nothing).
         if (!delivered)
-          setPending({ prompt, label, image, task, mode: sendMode });
+          setPending({ prompt, label, image, task, mode: sendMode, mealPlan });
         if (task) setTaskShort(true);
         await refreshOnlineAccount();
         return;
       }
       if (!delivered)
-        setPending({ prompt, label, image, task, mode: sendMode });
+        setPending({ prompt, label, image, task, mode: sendMode, mealPlan });
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       lock.current = false;
@@ -547,14 +578,53 @@ function MarkaiContent() {
     const preset = pendingPreset.current;
     if (!preset || loading || busy || !conversation || !session) return;
     pendingPreset.current = null;
-    void send(preset.prompt, null, preset.task, preset.label);
+    void send(
+      preset.prompt,
+      null,
+      preset.task,
+      preset.label,
+      preset.mode,
+      preset.mealPlan
+    );
     // send is recreated each render; these are the conditions it waits on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation, loading, busy, session]);
   // The skill the wait is working in: a priced plan and a goal the app
   // asked for have their own, ahead of the chat's mode.
-  const thinking = (): { skill: string; icon: IconName } => {
+  const thinking = (): {
+    skill: string;
+    icon: IconName;
+    steps?: ThinkingStep[];
+  } => {
     const request = pending;
+    // A week takes a while: its skills are worked through a row at a time.
+    if (request?.task === 'meal_plan')
+      return {
+        skill: t('markai.skill.mealPlan', { defaultValue: 'Meal planner' }),
+        icon: 'calendar',
+        steps: [
+          {
+            skill: t('markai.skill.mealPlan', { defaultValue: 'Meal planner' }),
+            icon: 'calendar',
+          },
+          {
+            skill: t('markai.skill.nutrition', {
+              defaultValue: 'Nutrition calculator',
+            }),
+            icon: 'chart-pie',
+          },
+          {
+            skill: t('markai.skill.prices', { defaultValue: 'Price checker' }),
+            icon: 'calculator',
+          },
+          {
+            skill: t('markai.skill.groceries', {
+              defaultValue: 'Shopping list builder',
+            }),
+            icon: 'cart',
+          },
+        ],
+      };
     if (request?.task === 'all_macros')
       return {
         skill: t('markai.skill.macroPlan', { defaultValue: 'Macro planner' }),
@@ -787,6 +857,26 @@ function MarkaiContent() {
                   }}
                 />
               )}
+              {/* A planned week closes its reply as the Meal plans card. */}
+              {message.reply.meal_plan && typingId !== message.id && (
+                <WeeklyPlanCard
+                  plan={message.reply.meal_plan}
+                  disabled={busy}
+                  onPress={() => {
+                    const plan = message.reply.meal_plan;
+                    if (!plan) return;
+                    Keyboard.dismiss();
+                    // Saved when it arrived; a conversation from another
+                    // device saves it here, once.
+                    void saveWeeklyPlan(plan, 1, message.id).then((saved) => {
+                      void queryClient.invalidateQueries({
+                        queryKey: weeklyPlansQueryKey,
+                      });
+                      navigation.navigate('WeeklyPlan', { planId: saved.id });
+                    });
+                  }}
+                />
+              )}
               {message.reply.goal && typingId !== message.id && (
                 <MarkaiGoalCard
                   goal={message.reply.goal}
@@ -810,7 +900,8 @@ function MarkaiContent() {
                   pending.image,
                   pendingRequest.current?.task,
                   pending.label,
-                  pendingRequest.current?.mode
+                  pendingRequest.current?.mode,
+                  pending.mealPlan
                 )
               }
             />
