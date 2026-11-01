@@ -6330,7 +6330,7 @@
     "heroTitle": "Plane eine Woche voller Mahlzeiten",
     "heroBody": "Beantworte ein paar Fragen zu deiner Küche, deinem Budget und deinem Geschmack. MarkAI plant 7 Tage, für die du in einem Rutsch einkaufen kannst. In Kroatien nutzt es echte Ladenpreise, täglich aktualisiert.",
     "planning": "MarkAI plant deine Woche…",
-    "create": "Essensplan erstellen · {{coins}} Münzen",
+    "create": "Essensplan mit KI erstellen · {{coins}} Münzen",
     "signIn": "Melde dich an, um mit MarkAI zu planen",
     "preferencesHint": "Ernährung, Allergien, Budget, Region und Geräte",
     "yourPlans": "Deine Pläne",

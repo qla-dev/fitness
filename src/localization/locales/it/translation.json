@@ -6438,7 +6438,7 @@
     "heroTitle": "Pianifica una settimana di pasti",
     "heroBody": "Rispondi a qualche domanda su cucina, budget e gusti. MarkAI pianifica 7 giorni di cui puoi fare la spesa in una volta sola. In Croazia usa prezzi reali dei negozi, aggiornati ogni giorno.",
     "planning": "MarkAI sta pianificando la tua settimana…",
-    "create": "Crea piano alimentare · {{coins}} monete",
+    "create": "Crea piano alimentare con IA · {{coins}} monete",
     "signIn": "Accedi per pianificare con MarkAI",
     "preferencesHint": "Dieta, allergie, budget, regione ed elettrodomestici",
     "yourPlans": "I tuoi piani",

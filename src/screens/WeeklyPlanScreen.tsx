@@ -17,6 +17,7 @@ import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
 import Button from '../components/ui/Button';
 import FooterCTA from '../components/ui/FooterCTA';
+import FilterChipRow from '../components/FilterChipRow';
 import StatusView from '../components/StatusView';
 import ProductThumb from '../components/ProductThumb';
 import FoodThumbnail from '../components/FoodThumbnail';
@@ -70,6 +71,8 @@ function WeeklyPlanContent({
 }: RootStackScreenProps<'WeeklyPlan'>) {
   const edgeEffectRef = useScrollEdgeEffectRef();
   const [footerHeight, setFooterHeight] = useState(88);
+  // The day the chips show; until one is picked, today's.
+  const [dayChoice, setDayChoice] = useState<number | null>(null);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const nativeHeader = useNativeIOSHeadersActive();
@@ -138,6 +141,14 @@ function WeeklyPlanContent({
       </View>
     );
 
+  // weekday 1 = Monday … 7 = Sunday, as the plan numbers them.
+  const today = ((new Date().getDay() + 6) % 7) + 1;
+  const selectedDay =
+    dayChoice ??
+    (plan.days.some((day) => day.weekday === today)
+      ? today
+      : plan.days[0]?.weekday);
+
   const kcal = (day: PlanDay) =>
     Math.round(day.meals.reduce((sum, meal) => sum + meal.calories, 0));
 
@@ -151,7 +162,8 @@ function WeeklyPlanContent({
         ref={edgeEffectRef}
         contentInsetAdjustmentBehavior={nativeHeader ? 'automatic' : 'never'}
         contentContainerStyle={{
-          padding: 16,
+          // No top padding: the header carries the gap above the content.
+          paddingHorizontal: 16,
           gap: 16,
           paddingBottom: footerHeight + 12,
         }}
@@ -202,137 +214,153 @@ function WeeklyPlanContent({
           ) : null}
         </View>
 
-        {plan.days.map((day) => (
-          <View key={day.weekday} style={{ gap: CARD_GAP }}>
-            {/* The day's totals sit with its name; its grocery list is the
+        {/* The week as the Store's category chips, one day at a time; the
+            row runs to the screen's edges, past the content's padding. */}
+        <View style={{ marginHorizontal: -16, marginBottom: -12 }}>
+          <FilterChipRow
+            value={String(selectedDay)}
+            clearValue={String(selectedDay)}
+            onChange={(value) => setDayChoice(Number(value))}
+            options={plan.days.map((day) => ({
+              value: String(day.weekday),
+              label: weekdayName(t, day.weekday),
+            }))}
+          />
+        </View>
+
+        {plan.days
+          .filter((day) => day.weekday === selectedDay)
+          .map((day) => (
+            <View key={day.weekday} style={{ gap: CARD_GAP }}>
+              {/* The day's totals sit with its name; its grocery list is the
                 row's one action, at the end. */}
-            <View className="flex-row items-center gap-2 px-1">
-              <View className="flex-row items-baseline gap-2 flex-1 min-w-0">
-                <Text className="text-text-primary text-xl font-bold">
-                  {weekdayName(t, day.weekday)}
-                </Text>
-                <Text
-                  className="text-text-secondary flex-shrink"
-                  numberOfLines={1}
+              <View className="flex-row items-center gap-2 px-1">
+                <View className="flex-row items-baseline gap-2 flex-1 min-w-0">
+                  <Text className="text-text-primary text-xl font-bold">
+                    {weekdayName(t, day.weekday)}
+                  </Text>
+                  <Text
+                    className="text-text-secondary flex-shrink"
+                    numberOfLines={1}
+                  >
+                    {t('weeklyPlans.dayTotals', {
+                      defaultValue: '{{kcal}} kcal · {{cost}}',
+                      kcal: formatLocalizedNumber(kcal(day)),
+                      cost: planMoney(day.cost * plan.servings, plan.currency),
+                    })}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('weeklyPlans.addDay', {
+                    defaultValue: 'Add day to grocery list',
+                  })}
+                  hitSlop={12}
+                  onPress={() =>
+                    openList(
+                      plan,
+                      [day],
+                      t('weeklyPlans.dayList', {
+                        defaultValue: '{{plan}} · {{day}}',
+                        plan: plan.title,
+                        day: weekdayName(t, day.weekday),
+                      })
+                    )
+                  }
+                  className="flex-row items-center gap-1"
                 >
-                  {t('weeklyPlans.dayTotals', {
-                    defaultValue: '{{kcal}} kcal · {{cost}}',
-                    kcal: formatLocalizedNumber(kcal(day)),
-                    cost: planMoney(day.cost * plan.servings, plan.currency),
-                  })}
-                </Text>
+                  <Text className="text-sm font-semibold text-accent-primary">
+                    {t('weeklyPlans.addDayShort', {
+                      defaultValue: 'Add to list',
+                    })}
+                  </Text>
+                  <Icon name="chevron-forward" size={12} color={accent} />
+                </Pressable>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('weeklyPlans.addDay', {
-                  defaultValue: 'Add day to grocery list',
-                })}
-                hitSlop={12}
-                onPress={() =>
-                  openList(
-                    plan,
-                    [day],
-                    t('weeklyPlans.dayList', {
-                      defaultValue: '{{plan}} · {{day}}',
-                      plan: plan.title,
-                      day: weekdayName(t, day.weekday),
-                    })
-                  )
-                }
-                className="flex-row items-center gap-1"
-              >
-                <Text className="text-sm font-semibold text-accent-primary">
-                  {t('weeklyPlans.addDayShort', {
-                    defaultValue: 'Add to list',
-                  })}
-                </Text>
-                <Icon name="chevron-forward" size={12} color={accent} />
-              </Pressable>
-            </View>
-            {/* Each meal is laid out as the Tracker lays out a logged meal:
+              {/* Each meal is laid out as the Tracker lays out a logged meal:
                 its slot, calories in the pill, the dish under the name and
                 its ingredients as food rows. */}
-            {day.meals.map((meal, index) => (
-              <MealLogCard
-                key={index}
-                icon={SLOT_ICON[meal.slot] ?? 'meal-snack'}
-                label={slotName(meal.slot)}
-                subtitle={meal.name}
-                badge={`${formatLocalizedNumber(Math.round(meal.calories))} ${t(
-                  'foodSummary.caloriesUnit',
-                  { defaultValue: 'Cal' }
-                )}`}
-              >
-                {meal.ingredients.map((ingredient, i) => (
-                  <View key={i}>
-                    <MenuItem
-                      leading={
-                        ingredient.ean ? (
-                          <ProductThumb ean={ingredient.ean} size={39} />
-                        ) : (
-                          <FoodThumbnail
-                            image={null}
-                            getImageSource={() => null}
-                            size={39}
-                            menuStyle
-                            showFallback
-                          />
-                        )
-                      }
-                      trailing={
-                        ingredient.price ? (
-                          <Text
-                            numberOfLines={1}
-                            style={{
-                              fontSize: 14,
-                              fontWeight: '500',
-                              color: menuMuted,
-                              textAlign: 'right',
-                            }}
-                          >
-                            {planMoney(
-                              ingredient.price * plan.servings,
-                              plan.currency
-                            )}
-                          </Text>
-                        ) : undefined
-                      }
-                    >
-                      <Text
-                        className="text-text-primary"
-                        numberOfLines={1}
-                        style={{ fontSize: 16, fontWeight: '400' }}
+              {day.meals.map((meal, index) => (
+                <MealLogCard
+                  key={index}
+                  icon={SLOT_ICON[meal.slot] ?? 'meal-snack'}
+                  label={slotName(meal.slot)}
+                  subtitle={meal.name}
+                  badge={`${formatLocalizedNumber(Math.round(meal.calories))} ${t(
+                    'foodSummary.caloriesUnit',
+                    { defaultValue: 'Cal' }
+                  )}`}
+                >
+                  {meal.ingredients.map((ingredient, i) => (
+                    <View key={i}>
+                      <MenuItem
+                        leading={
+                          ingredient.ean ? (
+                            <ProductThumb ean={ingredient.ean} size={39} />
+                          ) : (
+                            <FoodThumbnail
+                              image={null}
+                              getImageSource={() => null}
+                              size={39}
+                              menuStyle
+                              showFallback
+                            />
+                          )
+                        }
+                        trailing={
+                          ingredient.price ? (
+                            <Text
+                              numberOfLines={1}
+                              style={{
+                                fontSize: 14,
+                                fontWeight: '500',
+                                color: menuMuted,
+                                textAlign: 'right',
+                              }}
+                            >
+                              {planMoney(
+                                ingredient.price * plan.servings,
+                                plan.currency
+                              )}
+                            </Text>
+                          ) : undefined
+                        }
                       >
-                        {ingredient.name}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          fontSize: 11,
-                          lineHeight: 15,
-                          marginTop: 3,
-                          color: menuMuted,
-                        }}
-                      >
-                        {`${formatLocalizedNumber(
-                          Math.round(ingredient.quantity * 10) / 10
-                        )} ${t(`weeklyPlans.units.${ingredient.unit}`, {
-                          defaultValue:
-                            ingredient.unit === 'piece'
-                              ? 'pcs'
-                              : ingredient.unit,
-                        })}`}
-                      </Text>
-                    </MenuItem>
-                    {i < meal.ingredients.length - 1 ? (
-                      <MenuItemDivider inset={64} />
-                    ) : null}
-                  </View>
-                ))}
-              </MealLogCard>
-            ))}
-          </View>
-        ))}
+                        <Text
+                          className="text-text-primary"
+                          numberOfLines={1}
+                          style={{ fontSize: 16, fontWeight: '400' }}
+                        >
+                          {ingredient.name}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 11,
+                            lineHeight: 15,
+                            marginTop: 3,
+                            color: menuMuted,
+                          }}
+                        >
+                          {`${formatLocalizedNumber(
+                            Math.round(ingredient.quantity * 10) / 10
+                          )} ${t(`weeklyPlans.units.${ingredient.unit}`, {
+                            defaultValue:
+                              ingredient.unit === 'piece'
+                                ? 'pcs'
+                                : ingredient.unit,
+                          })}`}
+                        </Text>
+                      </MenuItem>
+                      {i < meal.ingredients.length - 1 ? (
+                        <MenuItemDivider inset={64} />
+                      ) : null}
+                    </View>
+                  ))}
+                </MealLogCard>
+              ))}
+            </View>
+          ))}
       </ScrollView>
       {/* The week's grocery list is the screen's one action, pinned like
           every other screen's footer action. */}

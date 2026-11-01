@@ -1,5 +1,9 @@
 import { useRef, useState } from 'react';
 import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
+import {
   ActivityIndicator,
   Pressable,
   ScrollView,
@@ -12,7 +16,7 @@ import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 import { MenuView } from '@expo/ui/community/menu';
 import Icon from '../components/Icon';
-import Button from '../components/ui/Button';
+import FooterCTA from '../components/ui/FooterCTA';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
@@ -54,9 +58,23 @@ const PLAN_WEEK = 'planWeek';
  * The user's weekly meal plans: a card per plan with the active one marked,
  * and a new plan that starts from the food and kitchen questionnaire.
  */
-export default function WeeklyPlansScreen({
+export default function WeeklyPlansScreen(
+  props: RootStackScreenProps<'WeeklyPlans'>
+) {
+  // Ties the scroll view to the footer, so with Liquid Glass the action sits
+  // over the scroll edge effect instead of a filled band.
+  return (
+    <ScrollEdgeEffectProvider>
+      <WeeklyPlansContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+function WeeklyPlansContent({
   navigation,
 }: RootStackScreenProps<'WeeklyPlans'>) {
+  const edgeEffectRef = useScrollEdgeEffectRef();
+  const [footerHeight, setFooterHeight] = useState(88);
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const nativeHeader = useNativeIOSHeadersActive();
@@ -271,11 +289,13 @@ export default function WeeklyPlansScreen({
     >
       {header}
       <ScrollView
+        ref={edgeEffectRef}
         contentInsetAdjustmentBehavior={nativeHeader ? 'automatic' : 'never'}
         contentContainerStyle={{
-          padding: 16,
+          // No top padding: the header carries the gap above the content.
+          paddingHorizontal: 16,
           gap: 16,
-          paddingBottom: insets.bottom + 24,
+          paddingBottom: footerHeight + 12,
         }}
       >
         <View className="bg-surface rounded-2xl p-5 gap-3">
@@ -293,16 +313,6 @@ export default function WeeklyPlansScreen({
                 'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.',
             })}
           </Text>
-          <Button onPress={() => openQuestionnaire(true)}>
-            {session
-              ? t('weeklyPlans.create', {
-                  defaultValue: 'Create meal plan · {{coins}} coins',
-                  coins: MEAL_PLAN_COINS,
-                })
-              : t('weeklyPlans.signIn', {
-                  defaultValue: 'Sign in to plan with MarkAI',
-                })}
-          </Button>
         </View>
 
         <SettingsRowGroup>
@@ -363,6 +373,25 @@ export default function WeeklyPlansScreen({
           </Text>
         ) : null}
       </ScrollView>
+      {/* Creating a plan is the screen's one action, pinned like every
+          other screen's footer action. */}
+      <FooterCTA
+        absolute
+        glass
+        edgeEffect
+        onHeightChange={setFooterHeight}
+        label={
+          session
+            ? t('weeklyPlans.create', {
+                defaultValue: 'Create meal plan with AI · {{coins}} coins',
+                coins: MEAL_PLAN_COINS,
+              })
+            : t('weeklyPlans.signIn', {
+                defaultValue: 'Sign in to plan with MarkAI',
+              })
+        }
+        onPress={() => openQuestionnaire(true)}
+      />
     </View>
   );
 }

@@ -6330,7 +6330,7 @@
     "heroTitle": "Plan a week of meals",
     "heroBody": "Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go. In Croatia it uses real store prices, updated daily.",
     "planning": "MarkAI is planning your week…",
-    "create": "Create meal plan · {{coins}} coins",
+    "create": "Create meal plan with AI · {{coins}} coins",
     "signIn": "Sign in to plan with MarkAI",
     "preferencesHint": "Diet, allergies, budget, region and appliances",
     "yourPlans": "Your plans",

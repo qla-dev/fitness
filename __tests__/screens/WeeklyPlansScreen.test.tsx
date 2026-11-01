@@ -37,6 +37,7 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSHeadersActive: () => false,
 }));
 jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('@expo/ui/community/menu', () => ({
@@ -100,7 +101,7 @@ it('asks to sign in before planning', async () => {
 it("ends a new plan's questionnaire on Plan my week, which plans it in a new chat", async () => {
   mockSession = { token: 't', user: { id: '1', name: 'N', ai_coins: 10 } };
   const screen = renderScreen();
-  fireEvent.press(await screen.findByText('Create meal plan · 10 coins'));
+  fireEvent.press(await screen.findByText('Create meal plan with AI · 10 coins'));
   expect(navigation.navigate).toHaveBeenCalledWith('SetupWizard');
 
   const session = getSetupWizardSession()!;
@@ -136,7 +137,7 @@ it("ends a new plan's questionnaire on Plan my week, which plans it in a new cha
 it('plans nothing when the last question is answered Not now', async () => {
   mockSession = { token: 't', user: { id: '1', name: 'N', ai_coins: 10 } };
   const screen = renderScreen();
-  fireEvent.press(await screen.findByText('Create meal plan · 10 coins'));
+  fireEvent.press(await screen.findByText('Create meal plan with AI · 10 coins'));
   const session = getSetupWizardSession()!;
   await act(async () => {
     await session.onSave({ region: 'HR', planWeek: 'no' }, true, true);
