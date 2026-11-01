@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
 import Button from '../components/ui/Button';
+import FooterCTA from '../components/ui/FooterCTA';
 import StatusView from '../components/StatusView';
 import ProductThumb from '../components/ProductThumb';
 import FoodThumbnail from '../components/FoodThumbnail';
@@ -46,10 +52,24 @@ const SLOT_ICON = {
  * and what the day costs, and can go to a grocery list on its own; the whole
  * week can too, with the same ingredients added up across days.
  */
-export default function WeeklyPlanScreen({
+export default function WeeklyPlanScreen(
+  props: RootStackScreenProps<'WeeklyPlan'>
+) {
+  // Ties the scroll view to the footer, so with Liquid Glass the action sits
+  // over the scroll edge effect instead of a filled band.
+  return (
+    <ScrollEdgeEffectProvider>
+      <WeeklyPlanContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+function WeeklyPlanContent({
   navigation,
   route,
 }: RootStackScreenProps<'WeeklyPlan'>) {
+  const edgeEffectRef = useScrollEdgeEffectRef();
+  const [footerHeight, setFooterHeight] = useState(88);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const nativeHeader = useNativeIOSHeadersActive();
@@ -66,6 +86,7 @@ export default function WeeklyPlanScreen({
   });
   const plan = plans?.find((item) => item.id === route.params.planId);
   const header = useScreenHeader({
+    variant: 'transparent',
     title: plan?.title ?? t('mealPlans.title', { defaultValue: 'Meal plans' }),
     left: { kind: 'back' },
   });
@@ -127,11 +148,12 @@ export default function WeeklyPlanScreen({
     >
       {header}
       <ScrollView
+        ref={edgeEffectRef}
         contentInsetAdjustmentBehavior={nativeHeader ? 'automatic' : 'never'}
         contentContainerStyle={{
           padding: 16,
           gap: 16,
-          paddingBottom: insets.bottom + 24,
+          paddingBottom: footerHeight + 12,
         }}
       >
         <View className="bg-surface rounded-2xl p-5 gap-2">
@@ -165,26 +187,6 @@ export default function WeeklyPlanScreen({
                   region: regionName(t, plan.region),
                 })}
           </Text>
-          <View className="flex-row gap-3 mt-2">
-            <View className="flex-1">
-              <Button
-                onPress={() =>
-                  openList(
-                    plan,
-                    plan.days,
-                    t('weeklyPlans.weekList', {
-                      defaultValue: '{{plan}} · whole week',
-                      plan: plan.title,
-                    })
-                  )
-                }
-              >
-                {t('weeklyPlans.addWeek', {
-                  defaultValue: 'Add week to grocery list',
-                })}
-              </Button>
-            </View>
-          </View>
           {!plan.is_active ? (
             <Button
               variant="ghost"
@@ -202,17 +204,46 @@ export default function WeeklyPlanScreen({
 
         {plan.days.map((day) => (
           <View key={day.weekday} style={{ gap: CARD_GAP }}>
-            <View className="flex-row items-baseline px-1">
-              <Text className="text-text-primary text-xl font-bold flex-1">
-                {weekdayName(t, day.weekday)}
-              </Text>
-              <Text className="text-text-secondary">
-                {t('weeklyPlans.dayTotals', {
-                  defaultValue: '{{kcal}} kcal · {{cost}}',
-                  kcal: formatLocalizedNumber(kcal(day)),
-                  cost: planMoney(day.cost * plan.servings, plan.currency),
+            {/* The day's totals sit with its name; its grocery list is the
+                row's one action, at the end. */}
+            <View className="flex-row items-center gap-2 px-1">
+              <View className="flex-row items-baseline gap-2 flex-1 min-w-0">
+                <Text className="text-text-primary text-xl font-bold">
+                  {weekdayName(t, day.weekday)}
+                </Text>
+                <Text
+                  className="text-text-secondary flex-shrink"
+                  numberOfLines={1}
+                >
+                  {t('weeklyPlans.dayTotals', {
+                    defaultValue: '{{kcal}} kcal · {{cost}}',
+                    kcal: formatLocalizedNumber(kcal(day)),
+                    cost: planMoney(day.cost * plan.servings, plan.currency),
+                  })}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('weeklyPlans.addDay', {
+                  defaultValue: 'Add day to grocery list',
                 })}
-              </Text>
+                hitSlop={8}
+                onPress={() =>
+                  openList(
+                    plan,
+                    [day],
+                    t('weeklyPlans.dayList', {
+                      defaultValue: '{{plan}} · {{day}}',
+                      plan: plan.title,
+                      day: weekdayName(t, day.weekday),
+                    })
+                  )
+                }
+                className="bg-accent-primary/10 rounded-full items-center justify-center"
+                style={{ width: 36, height: 36 }}
+              >
+                <Icon name="cart" size={18} color={accent} />
+              </Pressable>
             </View>
             {/* Each meal is laid out as the Tracker lays out a logged meal:
                 its slot, calories in the pill, the dish under the name and
@@ -296,31 +327,30 @@ export default function WeeklyPlanScreen({
                 ))}
               </MealLogCard>
             ))}
-            <Pressable
-              accessibilityRole="button"
-              onPress={() =>
-                openList(
-                  plan,
-                  [day],
-                  t('weeklyPlans.dayList', {
-                    defaultValue: '{{plan}} · {{day}}',
-                    plan: plan.title,
-                    day: weekdayName(t, day.weekday),
-                  })
-                )
-              }
-              className="flex-row items-center gap-2 self-start px-1"
-            >
-              <Icon name="cart" size={16} color={accent} />
-              <Text style={{ color: accent }} className="font-semibold">
-                {t('weeklyPlans.addDay', {
-                  defaultValue: 'Add day to grocery list',
-                })}
-              </Text>
-            </Pressable>
           </View>
         ))}
       </ScrollView>
+      {/* The week's grocery list is the screen's one action, pinned like
+          every other screen's footer action. */}
+      <FooterCTA
+        absolute
+        glass
+        edgeEffect
+        onHeightChange={setFooterHeight}
+        label={t('weeklyPlans.addWeek', {
+          defaultValue: 'Add week to grocery list',
+        })}
+        onPress={() =>
+          openList(
+            plan,
+            plan.days,
+            t('weeklyPlans.weekList', {
+              defaultValue: '{{plan}} · whole week',
+              plan: plan.title,
+            })
+          )
+        }
+      />
     </View>
   );
 }

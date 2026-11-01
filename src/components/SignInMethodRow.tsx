@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Animated, { useReducedMotion, ZoomIn } from 'react-native-reanimated';
+import GoogleLogo from './GoogleLogo';
 import Icon from './Icon';
 import MenuItemIcon from './MenuItemIcon';
 import {
@@ -225,16 +226,20 @@ export default function SignInMethodRow({
             ...tileStyle,
           }}
         >
-          <Icon
-            name={logo}
-            size={22}
-            color={provider === 'apple' ? paper : '#1F1F1F'}
-          />
+          {provider === 'google' ? (
+            <GoogleLogo size={22} />
+          ) : (
+            <Icon name={logo} size={22} color={paper} />
+          )}
         </View>
       ) : (
         // Not connected, the same tile as the Email and Password rows.
         <MenuItemIcon size={TILE}>
-          <Icon name={logo} size={22} color={secondary} weight="semibold" />
+          {provider === 'google' ? (
+            <GoogleLogo size={20} color={secondary} />
+          ) : (
+            <Icon name={logo} size={22} color={secondary} weight="semibold" />
+          )}
         </MenuItemIcon>
       )}
       <View className="flex-1 min-w-0">

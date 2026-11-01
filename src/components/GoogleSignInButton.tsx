@@ -1,6 +1,6 @@
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Icon from './Icon';
+import GoogleLogo from './GoogleLogo';
 import Button from './ui/Button';
 import { fireSelectionHaptic } from '../services/haptics';
 
@@ -58,7 +58,7 @@ export default function GoogleSignInButton({
             style={{ width: 17, height: 17 }}
           />
         ) : (
-          <Icon name="google-logo" size={17} color={GOOGLE_TEXT} />
+          <GoogleLogo size={17} />
         )}
         <Text
           className="text-base font-semibold"

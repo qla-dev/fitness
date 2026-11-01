@@ -82,6 +82,7 @@ export default function WeeklyPlansScreen({
   // Hand-built plans: library foods and meals set per weekday in the form.
   const { mealPlans: manualPlans } = useMealPlans();
   const header = useScreenHeader({
+    variant: 'transparent',
     title: t('mealPlans.title', { defaultValue: 'Meal plans' }),
     left: { kind: 'back' },
     right: {
