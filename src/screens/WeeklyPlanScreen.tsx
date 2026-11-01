@@ -35,10 +35,13 @@ import {
   weekdayName,
   weeklyPlansQueryKey,
   type PlanDay,
+  type PlanIngredient,
+  type PlanMeal,
   type WeeklyPlan,
 } from '../services/weeklyPlans';
 import { formatLocalizedNumber } from '../localization';
 import { fireSelectionHaptic } from '../services/haptics';
+import { markaiFoodToFoodInfo } from '../services/online/markai';
 import type { RootStackScreenProps } from '../types/navigation';
 
 const SLOT_ICON = {
@@ -140,6 +143,27 @@ function WeeklyPlanContent({
         />
       </View>
     );
+
+  // Logging from a plan opens the same sheet as everywhere else: the whole
+  // dish with MarkAI's estimate for it, or one ingredient as a real food —
+  // the shelf product by its barcode, or a search for its name.
+  const logMeal = (weekday: number, index: number, meal: PlanMeal) =>
+    navigation.navigate('FoodEntryAdd', {
+      item: markaiFoodToFoodInfo(`${plan.id}-${weekday}-${index}`, {
+        name: meal.name,
+        serving: t('weeklyPlans.oneServing', { defaultValue: '1 serving' }),
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+      }),
+    });
+  const logIngredient = (ingredient: PlanIngredient) => {
+    fireSelectionHaptic();
+    if (ingredient.ean)
+      navigation.navigate('FoodScan', { lookupBarcode: ingredient.ean });
+    else navigation.navigate('FoodSearch', { initialQuery: ingredient.name });
+  };
 
   // weekday 1 = Monday … 7 = Sunday, as the plan numbers them.
   const today = ((new Date().getDay() + 6) % 7) + 1;
@@ -286,6 +310,8 @@ function WeeklyPlanContent({
                   icon={SLOT_ICON[meal.slot] ?? 'meal-snack'}
                   label={slotName(meal.slot)}
                   subtitle={meal.name}
+                  onOpen={() => logMeal(day.weekday, index, meal)}
+                  hideOverflow
                   badge={`${formatLocalizedNumber(Math.round(meal.calories))} ${t(
                     'foodSummary.caloriesUnit',
                     { defaultValue: 'Cal' }
@@ -293,65 +319,74 @@ function WeeklyPlanContent({
                 >
                   {meal.ingredients.map((ingredient, i) => (
                     <View key={i}>
-                      <MenuItem
-                        leading={
-                          ingredient.ean ? (
-                            <ProductThumb ean={ingredient.ean} size={39} />
-                          ) : (
-                            <FoodThumbnail
-                              image={null}
-                              getImageSource={() => null}
-                              size={39}
-                              menuStyle
-                              showFallback
-                            />
-                          )
-                        }
-                        trailing={
-                          ingredient.price ? (
-                            <Text
-                              numberOfLines={1}
-                              style={{
-                                fontSize: 14,
-                                fontWeight: '500',
-                                color: menuMuted,
-                                textAlign: 'right',
-                              }}
-                            >
-                              {planMoney(
-                                ingredient.price * plan.servings,
-                                plan.currency
-                              )}
-                            </Text>
-                          ) : undefined
-                        }
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t('weeklyPlans.logIngredient', {
+                          defaultValue: 'Log {{name}}',
+                          name: ingredient.name,
+                        })}
+                        onPress={() => logIngredient(ingredient)}
                       >
-                        <Text
-                          className="text-text-primary"
-                          numberOfLines={1}
-                          style={{ fontSize: 16, fontWeight: '400' }}
+                        <MenuItem
+                          leading={
+                            ingredient.ean ? (
+                              <ProductThumb ean={ingredient.ean} size={39} />
+                            ) : (
+                              <FoodThumbnail
+                                image={null}
+                                getImageSource={() => null}
+                                size={39}
+                                menuStyle
+                                showFallback
+                              />
+                            )
+                          }
+                          trailing={
+                            ingredient.price ? (
+                              <Text
+                                numberOfLines={1}
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: '500',
+                                  color: menuMuted,
+                                  textAlign: 'right',
+                                }}
+                              >
+                                {planMoney(
+                                  ingredient.price * plan.servings,
+                                  plan.currency
+                                )}
+                              </Text>
+                            ) : undefined
+                          }
                         >
-                          {ingredient.name}
-                        </Text>
-                        <Text
-                          numberOfLines={1}
-                          style={{
-                            fontSize: 11,
-                            lineHeight: 15,
-                            marginTop: 3,
-                            color: menuMuted,
-                          }}
-                        >
-                          {`${formatLocalizedNumber(
-                            Math.round(ingredient.quantity * 10) / 10
-                          )} ${t(`weeklyPlans.units.${ingredient.unit}`, {
-                            defaultValue:
-                              ingredient.unit === 'piece'
-                                ? 'pcs'
-                                : ingredient.unit,
-                          })}`}
-                        </Text>
-                      </MenuItem>
+                          <Text
+                            className="text-text-primary"
+                            numberOfLines={1}
+                            style={{ fontSize: 16, fontWeight: '400' }}
+                          >
+                            {ingredient.name}
+                          </Text>
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 11,
+                              lineHeight: 15,
+                              marginTop: 3,
+                              color: menuMuted,
+                            }}
+                          >
+                            {`${formatLocalizedNumber(
+                              Math.round(ingredient.quantity * 10) / 10
+                            )} ${t(`weeklyPlans.units.${ingredient.unit}`, {
+                              defaultValue:
+                                ingredient.unit === 'piece'
+                                  ? 'pcs'
+                                  : ingredient.unit,
+                            })}`}
+                          </Text>
+                        </MenuItem>
+                      </Pressable>
                       {i < meal.ingredients.length - 1 ? (
                         <MenuItemDivider inset={64} />
                       ) : null}
