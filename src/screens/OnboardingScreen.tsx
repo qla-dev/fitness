@@ -21,6 +21,13 @@ import { useCSSVariable } from 'uniwind';
 import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
 import FormInput, { UnfocusedInputEcho } from '../components/FormInput';
+import {
+  INPUT_FILL_CLASS,
+  INPUT_FONT_SIZE,
+  INPUT_HEIGHT,
+  INPUT_PADDING_LEFT,
+  INPUT_RADIUS,
+} from '../components/ui/inputStyle';
 import SegmentedControl from '../components/SegmentedControl';
 import MfaForm, {
   ErrorBanner,
@@ -623,20 +630,22 @@ export default function OnboardingScreen({ navigation }: Props) {
           {t('auth.frontendUrl', { defaultValue: 'Frontend URL' })}
         </Text>
         <View
-          className="flex-row items-center rounded-lg pr-2.5 bg-raised"
-          style={{
-            borderWidth: 1,
-            borderColor: isServerUrlFocused ? accentPrimary : borderSubtle,
-          }}
+          className={`${INPUT_FILL_CLASS} flex-row items-center pr-2.5`}
+          style={{ minHeight: INPUT_HEIGHT, borderRadius: INPUT_RADIUS }}
         >
           <View className="flex-1">
             {/* While unfocused, the input's own text is transparent and
                 UnfocusedInputEcho renders the value on top; see FormInput.tsx. */}
             <TextInput
               ref={serverUrlInputRef}
-              className="p-2.5 text-base text-text-primary"
+              className="text-text-primary"
               style={[
-                { lineHeight: 20 },
+                {
+                  paddingVertical: 14,
+                  paddingHorizontal: INPUT_PADDING_LEFT,
+                  fontSize: INPUT_FONT_SIZE,
+                  lineHeight: 22,
+                },
                 !isServerUrlFocused && !!serverUrl && { color: 'transparent' },
               ]}
               placeholder="https://your-server.com"
@@ -655,7 +664,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             <UnfocusedInputEcho
               focused={isServerUrlFocused}
               value={serverUrl}
-              style={{ padding: 10 }}
+              style={{ paddingHorizontal: 18 }}
             />
           </View>
           <Button

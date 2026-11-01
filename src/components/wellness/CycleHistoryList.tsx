@@ -1,11 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Switch from '../ui/Switch';
 import { useCSSVariable } from 'uniwind';
 import { useCycleHistory } from '../../hooks/useCycleHistory';
 import CycleBarGlyph from './CycleBarGlyph';
 import Icon from '../Icon';
+import FormInput from '../FormInput';
+import {
+  INPUT_FILL_CLASS,
+  INPUT_HEIGHT,
+  INPUT_PADDING_LEFT,
+  INPUT_RADIUS,
+} from '../ui/inputStyle';
 import Button from '../ui/Button';
 import SwipeableDeleteRow from '../SwipeableDeleteRow';
 import CalendarSheet, { type CalendarSheetRef } from '../CalendarSheet';
@@ -85,7 +92,12 @@ const CycleHistoryList: React.FC = () => {
             </Text>
             <TouchableOpacity
               onPress={() => calendarSheetRef.current?.present()}
-              className="bg-raised rounded-lg p-2.5 text-text-primary border border-border-subtle flex-row justify-between items-center"
+              className={`${INPUT_FILL_CLASS} flex-row justify-between items-center`}
+              style={{
+                minHeight: INPUT_HEIGHT,
+                borderRadius: INPUT_RADIUS,
+                paddingHorizontal: INPUT_PADDING_LEFT,
+              }}
             >
               <Text className="text-text-primary">
                 {startDate
@@ -103,22 +115,20 @@ const CycleHistoryList: React.FC = () => {
               <Text className="text-text-secondary text-xs mb-1">
                 {t('cycleHistory.periodDays', { defaultValue: 'Period Days' })}
               </Text>
-              <TextInput
+              <FormInput
                 value={periodLength}
                 onChangeText={setPeriodLength}
                 keyboardType="number-pad"
-                className="bg-raised rounded-lg p-2 text-text-primary border border-border-subtle"
               />
             </View>
             <View className="flex-1">
               <Text className="text-text-secondary text-xs mb-1">
                 {t('cycleHistory.cycleDays', { defaultValue: 'Cycle Days' })}
               </Text>
-              <TextInput
+              <FormInput
                 value={cycleLength}
                 onChangeText={setCycleLength}
                 keyboardType="number-pad"
-                className="bg-raised rounded-lg p-2 text-text-primary border border-border-subtle"
               />
             </View>
           </View>

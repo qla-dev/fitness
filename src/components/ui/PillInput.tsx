@@ -5,11 +5,18 @@ import {
   TextInput,
   View,
   type TextInputInstance,
+  type TextInputProps,
 } from 'react-native';
-import type { TextInputProps } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../Icon';
+import {
+  INPUT_FILL_CLASS,
+  INPUT_FONT_SIZE,
+  INPUT_HEIGHT,
+  INPUT_PADDING_LEFT,
+  INPUT_RADIUS,
+} from './inputStyle';
 
 type PillInputProps = Omit<TextInputProps, 'value' | 'onChangeText'> & {
   ref?: React.Ref<TextInputInstance>;
@@ -63,11 +70,11 @@ export default function PillInput({
 
   const pill = (
     <View
-      className="bg-surface flex-row items-center"
+      className={`${INPUT_FILL_CLASS} flex-row items-center`}
       style={{
-        height: 52,
-        borderRadius: 26,
-        paddingLeft: 18,
+        height: INPUT_HEIGHT,
+        borderRadius: INPUT_RADIUS,
+        paddingLeft: INPUT_PADDING_LEFT,
         paddingRight: 10,
         // Always bordered so flagging an error never changes the pill's size.
         borderWidth: 1,
@@ -81,7 +88,7 @@ export default function PillInput({
         placeholderTextColor={textSecondary}
         editable={editable}
         className="flex-1 h-full text-text-primary"
-        style={[{ fontSize: 17 }, style]}
+        style={[{ fontSize: INPUT_FONT_SIZE }, style]}
         {...inputProps}
       />
       {unit ? (

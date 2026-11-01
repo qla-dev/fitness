@@ -11,6 +11,13 @@ import {
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import PromptSheet, { dismissPromptSheet } from './ui/PromptSheet';
+import {
+  INPUT_FILL_CLASS,
+  INPUT_FONT_SIZE,
+  INPUT_HEIGHT,
+  INPUT_PADDING_LEFT,
+  INPUT_RADIUS,
+} from './ui/inputStyle';
 
 export interface PickerOption<T> {
   label: string;
@@ -41,8 +48,18 @@ export function PickerTrigger({
   const [textMuted] = useCSSVariable(['--color-text-muted']) as [string];
   return (
     <TouchableOpacity
-      className="flex-row items-center justify-between px-3 py-2.5 rounded-lg border border-border-subtle bg-raised min-h-11"
-      style={containerStyle}
+      // The shared field look (see inputStyle), so a picker lines up with the
+      // FormInput beside it.
+      className={`${INPUT_FILL_CLASS} flex-row items-center justify-between`}
+      style={[
+        {
+          minHeight: INPUT_HEIGHT,
+          borderRadius: INPUT_RADIUS,
+          paddingLeft: INPUT_PADDING_LEFT,
+          paddingRight: 16,
+        },
+        containerStyle,
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityRole="button"
@@ -52,7 +69,12 @@ export function PickerTrigger({
         t('common.openSelectionMenu', { defaultValue: 'Opens selection menu' })
       }
     >
-      <Text className="text-base flex-1 text-text-primary">{label}</Text>
+      <Text
+        className="flex-1 text-text-primary"
+        style={{ fontSize: INPUT_FONT_SIZE }}
+      >
+        {label}
+      </Text>
       <Icon name="chevron-down" size={16} color={textMuted} />
     </TouchableOpacity>
   );

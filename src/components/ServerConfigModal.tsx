@@ -878,8 +878,8 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
             <UnfocusedInputEcho
               focused={isServerUrlFocused}
               value={serverUrl}
-              // FormInput's text padding plus its 1px border.
-              style={{ paddingLeft: 13, paddingRight: 41 }}
+              // FormInput's text padding.
+              style={{ paddingLeft: 18, paddingRight: 41 }}
             />
             <Button
               variant="ghost"

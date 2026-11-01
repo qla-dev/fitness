@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef } from 'react';
 import {
   Text,
   TextInput,
@@ -11,6 +11,14 @@ import {
 import { useCSSVariable } from 'uniwind';
 
 import { scheduleAndroidImeShowRetry } from '../utils/keyboardFocus';
+import {
+  INPUT_FILL_CLASS,
+  INPUT_FONT_SIZE,
+  INPUT_HEIGHT,
+  INPUT_MULTILINE_RADIUS,
+  INPUT_PADDING_LEFT,
+  INPUT_RADIUS,
+} from './ui/inputStyle';
 
 /**
  * Ellipsized overlay that echoes a single-line input's value while it is
@@ -37,8 +45,8 @@ export const UnfocusedInputEcho = ({
       style={style}
     >
       <Text
-        className="text-base text-text-primary"
-        style={{ lineHeight: 20 }}
+        className="text-text-primary"
+        style={{ fontSize: INPUT_FONT_SIZE, lineHeight: 22 }}
         numberOfLines={1}
       >
         {value}
@@ -60,13 +68,7 @@ const FormInput = forwardRef<TextInputInstance, FormInputProps>(
     { className = '', style, placeholderTextColor, onFocus, onBlur, ...props },
     ref
   ) => {
-    const [textMuted, raisedBg, borderSubtle, accentPrimary] = useCSSVariable([
-      '--color-text-muted',
-      '--color-raised',
-      '--color-border-subtle',
-      '--color-accent-primary',
-    ]) as [string, string, string, string];
-    const [isFocused, setIsFocused] = useState(false);
+    const textMuted = useCSSVariable('--color-text-muted') as string;
 
     const innerRef = useRef<TextInputInstance>(null);
     const { autoFocus } = props;
@@ -89,27 +91,23 @@ const FormInput = forwardRef<TextInputInstance, FormInputProps>(
             ref.current = node;
           }
         }}
-        className={`text-base text-text-primary rounded-lg ${className}`}
+        // The shared field look (see inputStyle): a borderless pill.
+        className={`${INPUT_FILL_CLASS} text-text-primary ${className}`}
         placeholderTextColor={placeholderTextColor ?? textMuted}
-        onFocus={(e) => {
-          setIsFocused(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setIsFocused(false);
-          onBlur?.(e);
-        }}
+        onFocus={onFocus}
+        onBlur={onBlur}
         style={[
           {
-            backgroundColor: raisedBg,
-            borderWidth: 1,
-            borderColor: isFocused ? accentPrimary : borderSubtle,
-            paddingTop: 10,
-            paddingBottom: 10,
-            paddingLeft: 12,
-            paddingRight: 12,
-            fontSize: 16,
-            lineHeight: 20,
+            minHeight: INPUT_HEIGHT,
+            borderRadius: props.multiline
+              ? INPUT_MULTILINE_RADIUS
+              : INPUT_RADIUS,
+            paddingTop: 14,
+            paddingBottom: 14,
+            paddingLeft: INPUT_PADDING_LEFT,
+            paddingRight: INPUT_PADDING_LEFT,
+            fontSize: INPUT_FONT_SIZE,
+            lineHeight: 22,
           },
           style,
         ]}

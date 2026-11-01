@@ -395,14 +395,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             defaultValue: 'Your rings, steps and workouts',
           })}
         />
-        <DashboardActivityCard
-          summary={summary}
-          steps={measurements?.steps}
-          loading={isLoading}
-          onOpenGoal={openGoal}
-        />
-
-        {/* Tap-to-open launcher for the MarkAI chat. Styled like an input to
+        {/* Tap-to-open launcher for the MarkAI chat, first under the intro so
+            it is the top thing on the screen. Styled like an input to
             invite, but it pushes the full chat screen rather than capturing text
             here — the screen's scroll + date-fling gestures make a live input
             here more trouble than it is worth. The composer autofocuses on
@@ -419,6 +413,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             </Text>
           </Pressable>
         )}
+
+        <DashboardActivityCard
+          summary={summary}
+          steps={measurements?.steps}
+          loading={isLoading}
+          onOpenGoal={openGoal}
+        />
 
         <DashboardActivityDetails
           summary={summary}

@@ -334,8 +334,9 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
 
   // Settings resolve to null until cycle tracking has been set up. A loader here
   // hung the screen forever with no header to leave by; this offers the way
-  // in instead.
-  if (!settings) {
+  // in instead. Tracking that was turned off gets the same way back in, through
+  // the questionnaire, rather than a lone switch over an empty screen.
+  if (!settings || !settings.enabled) {
     return (
       <View
         className="flex-1 bg-background"
