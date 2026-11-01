@@ -296,6 +296,6 @@ it('signed out, shows a still screen with sign-in pinned in the footer', () => {
     screen.UNSAFE_queryByType(require('react-native').ScrollView)
   ).toBeNull();
   expect(screen.getByText('Sign in with Apple')).toBeTruthy();
-  expect(screen.getByText(/Sign in to get 100 AI coins/)).toBeTruthy();
+  expect(screen.getByText(/Sign in to get 30 AI coins/)).toBeTruthy();
   expect(screen.getByText('Moving help')).toBeTruthy();
 });

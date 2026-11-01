@@ -64,7 +64,7 @@ it('closes after authentication without waiting for sync or showing a credit scr
   fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(goBack).toHaveBeenCalledTimes(1));
   expect(syncOnline).toHaveBeenCalledTimes(1);
-  expect(screen.queryByText('100 AI coins')).toBeNull();
+  expect(screen.queryByText('30 AI coins')).toBeNull();
 });
 
 it('keeps the sign-in sheet open when authentication fails', async () => {

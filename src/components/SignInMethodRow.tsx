@@ -105,7 +105,7 @@ export default function SignInMethodRow({
         : email
       : t('account.signedIn', { defaultValue: 'Signed in' })
     : t('account.appleConnectHint', {
-        defaultValue: 'Sync across phones · 100 free AI coins',
+        defaultValue: 'Sync across phones · 30 free AI coins',
       });
   const busy = method.busy || working;
 

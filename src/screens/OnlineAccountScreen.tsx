@@ -155,7 +155,7 @@ export default function OnlineAccountScreen({
       title={t('online.welcome', { defaultValue: 'Make it yours' })}
       description={t('online.invite', {
         defaultValue:
-          'Create your free account to get 100 AI coins for MarkAI and keep your synced diary when you change phones.',
+          'Create your free account to get 30 AI coins for MarkAI and keep your synced diary when you change phones.',
       })}
       footerLabel={t('online.skip', { defaultValue: 'Continue offline' })}
       onFooterPress={finish}
@@ -168,7 +168,7 @@ export default function OnlineAccountScreen({
           <Benefit
             icon="sparkles"
             title={t('online.benefitCoinsTitle', {
-              defaultValue: '100 free AI coins',
+              defaultValue: '30 free AI coins',
             })}
             body={t('online.benefitCoinsBody', {
               defaultValue:

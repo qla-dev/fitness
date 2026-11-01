@@ -830,7 +830,7 @@ function MarkaiContent() {
           sticky={false}
           note={t('markai.register', {
             defaultValue:
-              'Sign in to get 100 AI coins. Each AI reply costs 1 coin; logging a food card is free.',
+              'Sign in to get 30 AI coins. Each AI reply costs 1 coin; logging a food card is free.',
           })}
           action={
             apple.available || google.available ? (

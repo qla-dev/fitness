@@ -6,7 +6,7 @@ qla.fit is a React Native 0.85 + Expo SDK 56 app for syncing Apple Health / Heal
 
 ## Local-First With Optional Online Sync
 
-**Updated by the owner on 2026-10-22:** The diary is stored in SQLite (`src/services/local/localStore.ts`); AsyncStorage holds settings and small preferences only. The sibling `../backend` Laravel/SQLite app provides optional online sync, Apple sign-in and MarkAI; `../web` is the website. Production is `https://fit.qla.dev`, with API base `https://fit.qla.dev/endpoints/api`. Native, backend and web are separate repositories. New accounts receive 100 AI coins once. The offline repositories remain authoritative for local UI operations; online features live in `src/services/online`.
+**Updated by the owner on 2026-10-22:** The diary is stored in SQLite (`src/services/local/localStore.ts`); AsyncStorage holds settings and small preferences only. The sibling `../backend` Laravel/SQLite app provides optional online sync, Apple sign-in and MarkAI; `../web` is the website. Production is `https://fit.qla.dev`, with API base `https://fit.qla.dev/endpoints/api`. Native, backend and web are separate repositories. New accounts receive 30 AI coins once. The offline repositories remain authoritative for local UI operations; online features live in `src/services/online`.
 
 - The diary always uses the on-device SQLite repository. There is no data-mode switch or build flag.
 - `apiClient.ts` routes diary calls to `localApiFetch`, and `healthDataApi.ts` imports health records there too. Online account, sync and MarkAI requests use the separate `services/online` clients; provider catalog lookups also use the network.

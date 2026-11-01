@@ -239,7 +239,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                       amount: onlineSession.user.ai_coins,
                     })
                   : t('online.profileReward', {
-                      defaultValue: '100 AI coins when you create your account',
+                      defaultValue: '30 AI coins when you create your account',
                     })
               }
               onPress={() =>
