@@ -68,7 +68,8 @@
     "more": "Altro",
     "all": "Tutti",
     "share": "Condividi",
-    "time": "Ora"
+    "time": "Ora",
+    "options": "Opzioni"
   },
   "fitPass": {
     "title": "FitPass",
@@ -102,7 +103,9 @@
       "openSettingsFailed": "Impossibile aprire le Impostazioni di iOS",
       "iosSubtitle": "{{language}} · {{managedBy}}",
       "italian": "Italiano",
-      "german": "Deutsch"
+      "german": "Deutsch",
+      "croatian": "Hrvatski",
+      "serbian": "Srpski"
     },
     "lastSynced": "Ultima sincronizzazione {{time}}",
     "addServer": "Tocca per aggiungere un server",
@@ -234,7 +237,8 @@
     "channels": {
       "medicationReminders": "Promemoria dei farmaci",
       "workoutTimer": "Timer dell'allenamento",
-      "fasting": "Digiuno"
+      "fasting": "Digiuno",
+      "cycleTrainingNotes": "Note di allenamento giornaliere"
     },
     "actions": {
       "completeSet": "Completa la serie",
@@ -1014,7 +1018,7 @@
     "beliefLocalTitle": "Il tuo diario vive sul tuo telefono.",
     "beliefLocalBody": "Tutto ciò che registri viene salvato prima su questo dispositivo e funziona offline. Un account aggiunge solo la sincronizzazione, così un nuovo telefono riparte da dove si era fermato il vecchio.",
     "beliefAiTitle": "L'IA aiuta, non scoccia.",
-    "beliefAiBody": "MarkAI costa una moneta solo quando risponde, e nulla di ciò che suggerisce viene applicato finché non lo decidi tu.",
+    "beliefAiBody": "MarkAI costa una AI coin solo quando risponde, e nulla di ciò che suggerisce viene applicato finché non lo decidi tu.",
     "featuresTitle": "Cosa c'è dentro",
     "features": {
       "nutrition": "Cibo, macro e acqua",
@@ -1804,7 +1808,14 @@
     "periodLate_other": "Mestruazioni in ritardo di {{count}} giorni",
     "daysToDue_one": "{{count}} giorno alla data del parto",
     "daysToDue_many": "{{count}} g alla data del parto",
-    "daysToDue_other": "{{count}} g alla data del parto"
+    "daysToDue_other": "{{count}} g alla data del parto",
+    "inDays_one": "tra {{count}} g",
+    "inDays_many": "tra {{count}} g",
+    "inDays_other": "tra {{count}} g",
+    "fertile": "Fertile",
+    "now": "Ora",
+    "ovulation": "Ovulazione",
+    "today": "Oggi"
   },
   "syncHealth": {
     "noMetricsTitle": "Scegli i dati sulla salute da sincronizzare",
@@ -1939,9 +1950,9 @@
     },
     "legend": {
       "period": "Mestruazioni",
-      "predictedPeriod": "Mestruazioni previste",
-      "fertileWindow": "Finestra fertile",
-      "estimatedOvulation": "Ovulazione stim.",
+      "predictedPeriod": "Previste",
+      "fertileWindow": "Fertile",
+      "estimatedOvulation": "Ovulazione",
       "logged": "Registrato"
     }
   },
@@ -2108,7 +2119,8 @@
       "conditions": "Condizioni",
       "conditionsSubtitle": "Seleziona le condizioni applicabili per personalizzare il monitoraggio.",
       "display": "Opzioni di visualizzazione",
-      "actions": "Azioni"
+      "actions": "Azioni",
+      "notifications": "Notifiche"
     },
     "fields": {
       "trackingMode": "Modalità di monitoraggio",
@@ -2120,7 +2132,8 @@
       "discreetMode": "Modalità discreta",
       "terminology": "Terminologia",
       "export": "Esporta dati di ciclo e gravidanza",
-      "reset": "Reimposta procedura guidata"
+      "reset": "Reimposta procedura guidata",
+      "trainingNotes": "Nota di allenamento giornaliera"
     },
     "pickers": {
       "mode": "Seleziona modalità",
@@ -2134,7 +2147,8 @@
       "fertileSubtitle": "Evidenzia i giorni fertili sul calendario",
       "discreetSubtitle": "Nasconde le etichette \"Ciclo\" o \"Gravidanza\" nell'interfaccia",
       "exportSubtitle": "Scarica l'esportazione dati JSON",
-      "resetSubtitle": "Riavvia la configurazione guidata"
+      "resetSubtitle": "Riavvia la configurazione guidata",
+      "trainingNotesSubtitle": "Alle 9:00, quanto allenarti oggi in base alla fase del ciclo"
     }
   },
   "measurements": {
@@ -2343,7 +2357,11 @@
     "saving": "Salvataggio...",
     "save": "Salva voce",
     "invalidTemperature": "Temperatura inserita non valida",
-    "invalidWeight": "Peso inserito non valido"
+    "invalidWeight": "Peso inserito non valido",
+    "menstrualFlowHint": "Quanto è abbondante il flusso oggi, se presente.",
+    "symptomsHint": "Tocca tutto ciò che noti oggi.",
+    "cervicalMucusHint": "La sua consistenza aiuta a individuare i giorni fertili.",
+    "notesHint": "Qualsiasi altra cosa da ricordare su oggi."
   },
   "cycleSymptoms": {
     "title": "Sintomi",
@@ -5062,6 +5080,7 @@
     "scan": "Scansiona con la fotocamera"
   },
   "cycleHub": {
+    "calendar": "Calendario",
     "tools": "Strumenti",
     "trends": "Tendenze",
     "wellness": "Benessere",
@@ -5078,7 +5097,20 @@
     },
     "trackingTitle": "Il tuo ritmo, alle tue condizioni. Fai una pausa quando vuoi e riprendi dal Profilo.",
     "stopTitle": "Interrompere il monitoraggio del ciclo?",
-    "stopMessage": "Il monitoraggio del ciclo si disattiva e scompare dal Tracker. I giorni registrati vengono conservati e puoi riattivarlo nel Profilo in Ciclo e gravidanza."
+    "stopMessage": "Il monitoraggio del ciclo si disattiva e scompare dal Tracker. I giorni registrati vengono conservati e puoi riattivarlo nel Profilo in Ciclo e gravidanza.",
+    "summary": {
+      "late_one": "{{count}} g di ritardo",
+      "late_many": "{{count}} g di ritardo",
+      "late_other": "{{count}} g di ritardo",
+      "inDays_one": "{{count}} g",
+      "inDays_many": "{{count}} g",
+      "inDays_other": "{{count}} g",
+      "nextPeriod": "Prossime mestruazioni",
+      "now": "Ora",
+      "fertileWindow": "Finestra fertile",
+      "today": "Oggi",
+      "ovulation": "Ovulazione stimata"
+    }
   },
   "workoutPresetLibrary": {
     "configure": "Configura la connessione al server nelle Impostazioni per vedere i tuoi programmi di allenamento."
@@ -5295,14 +5327,14 @@
     "signIn": "Metodi di accesso",
     "passwordSet": "Impostata",
     "apple": "Apple",
-    "appleConnectHint": "Sincronizza tra i telefoni · 100 monete AI gratis",
+    "appleConnectHint": "Sincronizza tra i telefoni · 30 AI coins gratis",
     "appleRelay": "{{email}} · Nascosta da Apple",
     "connected": "Collegato",
     "connect": "Collega",
     "google": "Google",
     "signedIn": "Accesso effettuato",
     "signOutTitle": "Uscire da {{provider}}?",
-    "signOutBody": "Il tuo diario resta su questo telefono. Accedi di nuovo per sincronizzarlo e usare le tue monete AI.",
+    "signOutBody": "Il tuo diario resta su questo telefono. Accedi di nuovo per sincronizzarlo e usare le tue AI coins.",
     "providerConnected": "{{provider}}, collegato. {{detail}}",
     "providerConnect": "Collega {{provider}}",
     "disconnectBody": "Scollega {{provider}} per smettere di accedere con questo metodo. L'altro metodo di accesso mantiene l'account.",
@@ -5393,7 +5425,10 @@
     "goalIncrease": "Aumenta obiettivo",
     "goalDecrease": "Diminuisci obiettivo",
     "fieldSaveFailed": "Impossibile salvare {{field}}. Riprova.",
-    "aiAssistant": "Assistente AI"
+    "aiAssistant": "Assistente AI",
+    "wellnessSubtitle": "Monitoraggio, previsioni e note giornaliere",
+    "cyclePregnancySubtitle": "Monitoraggio del ciclo, previsioni e note giornaliere",
+    "medicationsSubtitle": "Dosi, orari e promemoria"
   },
   "programs": {
     "title": "Programma",
@@ -5756,12 +5791,12 @@
     "carbsHintShort": "I carboidrati sono il tuo carburante principale per l'allenamento e l'energia di ogni giorno.",
     "fatHintShort": "I grassi sostengono i tuoi ormoni e aiutano il corpo a usare le vitamine.",
     "assistMarkaiLink": "Lascia calcolare a MarkAI",
-    "assistCalories": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 moneta.",
-    "assistProtein": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 moneta.",
+    "assistCalories": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 AI coin.",
+    "assistProtein": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 AI coin.",
     "assistAllMacrosLink": "pianificare tutti i tuoi macro",
-    "assistAllMacros": "Oppure {{link}}: calorie, proteine, carboidrati e grassi in un colpo solo, per {{coins}} monete.",
-    "assistCarbs": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 moneta.",
-    "assistFat": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 moneta."
+    "assistAllMacros": "Oppure {{link}}: calorie, proteine, carboidrati e grassi in un colpo solo, per {{coins}} AI coins.",
+    "assistCarbs": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 AI coin.",
+    "assistFat": "Non sei sicuro/a? {{link}} in base alle tue risposte, per 1 AI coin."
   },
   "groceries": {
     "discardTitle": "Scartare le modifiche non salvate?",
@@ -6309,10 +6344,10 @@
   "online": {
     "account": "Il tuo account",
     "welcome": "Rendilo tuo",
-    "reward": "Il tuo account è pronto. 100 monete AI sono tue da usare con MarkAI.",
+    "reward": "Il tuo account è pronto. 30 AI coins sono tue da usare con MarkAI.",
     "signedIn": "Hai effettuato l'accesso. Il tuo account tiene pronti i dati sincronizzati per il prossimo dispositivo.",
-    "invite": "Crea il tuo account gratuito per ottenere 100 monete AI per MarkAI e mantenere il diario sincronizzato quando cambi telefono.",
-    "balance": "{{amount}} monete AI",
+    "invite": "Crea il tuo account gratuito per ottenere 30 AI coins per MarkAI e mantenere il diario sincronizzato quando cambi telefono.",
+    "balance": "{{amount}} AI coins",
     "appleOnly": "L'accesso con Apple è disponibile sui dispositivi Apple supportati. Puoi continuare a usare l'app offline.",
     "skip": "Continua offline",
     "sync": "Sincronizzazione online",
@@ -6329,10 +6364,10 @@
     "keepDevice": "Mantieni la versione di questo dispositivo",
     "keepOnline": "Usa la versione online",
     "signOut": "Esci",
-    "profileReward": "100 monete AI quando crei il tuo account",
+    "profileReward": "30 AI coins quando crei il tuo account",
     "continueWithApple": "Continua con Apple",
-    "benefitCoinsTitle": "100 monete AI gratuite",
-    "benefitCoinsBody": "Ogni risposta di MarkAI costa una moneta: stima un pasto da una foto, pianifica una sessione o chiedi e basta. Registrare una scheda di cibo suggerita da MarkAI è gratis.",
+    "benefitCoinsTitle": "30 AI coins gratuite",
+    "benefitCoinsBody": "Ogni risposta di MarkAI costa una AI coin: stima un pasto da una foto, pianifica una sessione o chiedi e basta. Registrare una scheda di cibo suggerita da MarkAI è gratis.",
     "benefitSyncTitle": "Il tuo diario ti segue",
     "benefitSyncBody": "Cibo, allenamenti e progressi si sincronizzano con il tuo account, così un nuovo telefono riparte da dove si era fermato il vecchio.",
     "benefitPrivateTitle": "Privato, prima di tutto offline",
@@ -6340,7 +6375,7 @@
     "signInGeneric": "Accedi",
     "signInGoogle": "Accedi con Google",
     "continueWithGoogle": "Continua con Google",
-    "coins": "Monete AI"
+    "coins": "AI coins"
   },
   "markai": {
     "title": "MarkAI",
@@ -6350,7 +6385,7 @@
     "allMacrosPrompt": "Calcola tutti i miei macro: calorie, proteine, carboidrati e grassi per il mio obiettivo",
     "free": "Chat libera",
     "dateError": "Inserisci una data valida come AAAA-MM-GG.",
-    "register": "Accedi per ottenere 100 monete AI. Ogni risposta AI costa 1 moneta; registrare una scheda di cibo è gratis.",
+    "register": "Accedi per ottenere 30 AI coins. Ogni risposta AI costa 1 AI coin; registrare una scheda di cibo è gratis.",
     "hint": "Descrivi il tuo cibo, chiedi dell'allenamento o inizia una conversazione. Le stime del cibo compaiono come schede che puoi registrare.",
     "kcal": "{{value}} kcal",
     "grams": "{{value}} g",
@@ -6419,7 +6454,11 @@
     },
     "skill": {
       "macroPlan": "Pianificatore di macro",
-      "goal": "Calcolatore di obiettivi"
+      "goal": "Calcolatore di obiettivi",
+      "mealPlan": "Pianificatore di pasti",
+      "nutrition": "Calcolatore nutrizionale",
+      "prices": "Verifica prezzi",
+      "groceries": "Lista della spesa"
     },
     "usage": "Utilizzo"
   },
@@ -6429,10 +6468,10 @@
     "manualSummary_one": "Creato da te · {{count}} elemento",
     "manualSummary_many": "Creato da te · {{count}} elementi",
     "manualSummary_other": "Creato da te · {{count}} elementi",
-    "noCoins": "Monete AI insufficienti per un piano alimentare.",
-    "failed": "MarkAI non è riuscito a pianificare questa settimana. Le tue monete sono state rimborsate.",
+    "noCoins": "AI coins insufficienti per un piano alimentare.",
+    "failed": "MarkAI non è riuscito a pianificare questa settimana. Le tue AI coins sono state rimborsate.",
     "confirmTitle": "Pianificare una settimana con MarkAI?",
-    "confirmMessage": "7 giorni di pasti in base alle tue preferenze di cibo e cucina. Usa {{coins}} monete AI.",
+    "confirmMessage": "7 giorni di pasti in base alle tue preferenze di cibo e cucina. Usa {{coins}} AI coins.",
     "plan": "Pianifica la mia settimana",
     "makeActive": "Rendi attivo",
     "perWeek": "{{amount}} / settimana",
@@ -6441,7 +6480,7 @@
     "heroTitle": "Pianifica una settimana di pasti",
     "heroBody": "Rispondi a qualche domanda su cucina, budget e gusti. MarkAI pianifica 7 giorni da comprare in una volta sola, con i prezzi reali dei negozi in Croazia, Serbia e Paesi Bassi e stimati altrove.",
     "planning": "MarkAI sta pianificando la tua settimana…",
-    "create": "Crea piano alimentare con IA · {{coins}} monete",
+    "create": "Crea piano alimentare con IA · {{coins}} AI coins",
     "signIn": "Accedi per pianificare con MarkAI",
     "preferencesHint": "Dieta, allergie, budget, regione ed elettrodomestici",
     "yourPlans": "I tuoi piani",
@@ -6474,7 +6513,14 @@
       "g": "g",
       "ml": "ml",
       "piece": "pz"
-    }
+    },
+    "planHint": "MarkAI pianifica 7 giorni di pasti in base alle tue risposte, in una nuova chat. Usa {{coins}} AI coins.",
+    "planYes": "Sì, pianifica la mia settimana",
+    "planNo": "Non ora",
+    "planPrompt": "Pianifica i pasti della mia settimana in base alle mie risposte su cibo e cucina.",
+    "oneServing": "1 porzione",
+    "addDayShort": "Aggiungi alla lista",
+    "logIngredient": "Registra {{name}}"
   },
   "regions": {
     "HR": "Croazia",
@@ -6656,5 +6702,38 @@
     "stop": "Interrompi monitoraggio",
     "start": "Avvia monitoraggio",
     "settings": "Impostazioni di monitoraggio"
+  },
+  "workoutPresetCount_many": "{{formattedCount}} esercizi",
+  "cycleTraining": {
+    "startAnyway": "Inizia comunque",
+    "discreet": {
+      "title": "Nota di allenamento di oggi",
+      "rest": "Oggi è adatto al riposo o a un movimento leggero: una passeggiata, stretching o yoga.",
+      "easy": "Oggi mantieni l'allenamento leggero e dai priorità al recupero.",
+      "peak": "Una buona giornata per spingere: carichi pesanti o intervalli. Riscaldati bene.",
+      "steady": "Oggi è adatto un allenamento moderato."
+    },
+    "periodHeavy": {
+      "title": "Vacci piano oggi",
+      "body": "Giorno {{day}} del tuo ciclo. Di solito ora l'energia è al minimo, quindi una passeggiata, stretching o yoga ti faranno più bene di una sessione intensa."
+    },
+    "period": {
+      "title": "Allenamento leggero oggi",
+      "body": "Giorno {{day}} del tuo ciclo. Cardio leggero e mobilità funzionano bene mentre le mestruazioni finiscono."
+    },
+    "premenstrual": {
+      "title": "Rallenta prima delle mestruazioni",
+      "body_one": "Le mestruazioni sono previste tra {{count}} giorno. Riduci l'intensità e dai priorità al recupero.",
+      "body_many": "Le mestruazioni sono previste tra {{count}} giorni. Riduci l'intensità e dai priorità al recupero.",
+      "body_other": "Le mestruazioni sono previste tra {{count}} giorni. Riduci l'intensità e dai priorità al recupero."
+    },
+    "peak": {
+      "title": "Una buona giornata per spingere",
+      "body": "Giorno {{day}} del tuo ciclo. In questa fase energia e forza tendono a raggiungere il picco, quindi è adatta a carichi pesanti o intervalli. Riscaldati bene."
+    },
+    "steady": {
+      "title": "Allenamento costante oggi",
+      "body": "Giorno {{day}} del tuo ciclo. In questa fase vanno bene sessioni moderate; tieni d'occhio stanchezza e sonno."
+    }
   }
 }

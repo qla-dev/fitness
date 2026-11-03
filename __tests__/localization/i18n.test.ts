@@ -109,8 +109,17 @@ describe('getDeviceLanguage', () => {
 });
 
 describe('SUPPORTED_LANGUAGES', () => {
-  it('includes en, pl, es, bs, it and de', () => {
-    expect(SUPPORTED_LANGUAGES).toEqual(['en', 'pl', 'es', 'bs', 'it', 'de']);
+  it('includes en, pl, es, bs, hr, sr, it and de', () => {
+    expect(SUPPORTED_LANGUAGES).toEqual([
+      'en',
+      'pl',
+      'es',
+      'bs',
+      'hr',
+      'sr',
+      'it',
+      'de',
+    ]);
   });
 });
 

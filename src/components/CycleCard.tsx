@@ -23,6 +23,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
+import { getAppLocale } from '../localization';
 
 type CycleCardNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Diary'>,
@@ -83,10 +84,8 @@ interface CycleRingContentInfo {
 const CycleCardRingContent: React.FC<{
   info: CycleRingContentInfo;
 }> = ({ info }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const tokens = useWellnessTokens();
   const phaseName = (() => {
     switch (info.phase) {

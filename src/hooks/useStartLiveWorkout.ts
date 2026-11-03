@@ -9,10 +9,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   LEGACY_IN_APP_WORKOUT_SOURCE,
   type PresetSessionExerciseRequest,
-} from '@workspace/shared';
+ SharedCycle, SharedCycleSettings } from '@workspace/shared';
 import { useCreateWorkout } from './useExerciseMutations';
 import { flushActiveWorkoutBeforeClear } from './useActiveWorkoutAutosave';
-import { serverConnectionQueryKey } from './queryKeys';
+import { serverConnectionQueryKey , cycleSettingsQueryKey, cyclesQueryKey } from './queryKeys';
 import { defaultWorkoutName } from './useWorkoutForm';
 import { useActiveWorkoutStore } from '../stores/activeWorkoutStore';
 import {
@@ -21,6 +21,11 @@ import {
 } from '../services/notifications';
 import { getActiveServerConfig } from '../services/storage';
 import { getTodayDate } from '../utils/dateUtils';
+import { computeCyclePrediction } from './useCyclePredictionData';
+import {
+  trainingGuidanceCopy,
+  trainingGuidanceFor,
+} from '../utils/cycleTrainingGuidance';
 import {
   extractPlannedSetValues,
   stripPlannedSetValues,
@@ -201,16 +206,62 @@ export function useStartLiveWorkout(navigation: StartLiveWorkoutNavigation): {
         );
         return;
       }
-      const prompted = promptForActiveWorkoutConflict(
-        queryClient,
-        {
-          onGoToWorkout: () => navigation.navigate('ActiveWorkout'),
-          onClearAndStart: () => runStart(args),
-        },
-        t
+      const proceed = async () => {
+        const prompted = promptForActiveWorkoutConflict(
+          queryClient,
+          {
+            onGoToWorkout: () => navigation.navigate('ActiveWorkout'),
+            onClearAndStart: () => runStart(args),
+          },
+          t
+        );
+        if (prompted) return;
+        await runStart(args);
+      };
+
+      // Today's place in the cycle, when tracking it: a session on one of its
+      // tough days is asked about first. Read from the cache the training
+      // notes keep filled, so starting never waits on a request for it.
+      const today = getTodayDate();
+      const cycleSettings =
+        queryClient.getQueryData<SharedCycleSettings | null>(
+          cycleSettingsQueryKey
+        );
+      const cycleToday = computeCyclePrediction(
+        cycleSettings,
+        queryClient.getQueryData<SharedCycle[]>(cyclesQueryKey) ?? [],
+        today
       );
-      if (prompted) return;
-      await runStart(args);
+      const guidance =
+        cycleSettings?.enabled &&
+        (cycleSettings.mode === 'standard' || cycleSettings.mode === 'ttc') &&
+        cycleToday &&
+        cycleToday.day > 0
+          ? trainingGuidanceFor(cycleToday, today)
+          : null;
+      if (guidance?.tough) {
+        // The same words as that morning's note, so the warning reads as a
+        // reminder rather than a verdict; starting anyway is one tap.
+        const copy = trainingGuidanceCopy(
+          t,
+          guidance,
+          !!cycleSettings?.discreet_mode
+        );
+        Alert.alert(copy.title, copy.body, [
+          {
+            text: t('common.cancel', { defaultValue: 'Cancel' }),
+            style: 'cancel',
+          },
+          {
+            text: t('cycleTraining.startAnyway', {
+              defaultValue: 'Start anyway',
+            }),
+            onPress: () => void proceed(),
+          },
+        ]);
+        return;
+      }
+      await proceed();
     },
     [queryClient, navigation, runStart, t]
   );

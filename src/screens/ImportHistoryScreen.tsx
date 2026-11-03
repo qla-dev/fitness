@@ -27,6 +27,7 @@ import type { RootStackScreenProps } from '../types/navigation';
 import Icon, { type IconName } from '../components/Icon';
 import { useCSSVariable } from 'uniwind';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
+import { getAppLocale } from '../localization';
 
 type ImportHistoryScreenProps = RootStackScreenProps<'ImportHistory'>;
 
@@ -277,7 +278,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 };
 
 const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -328,7 +329,7 @@ const ImportHistoryScreen: React.FC<ImportHistoryScreenProps> = () => {
 
   const startDisabled = !isHealthStoreInitialized || syncClaimed;
   const idleNotice = idleNoticeCopy(t, lastOutcome);
-  const locale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
+  const locale = getAppLocale();
 
   // Live progress while a run is importing; the checkpoint carries the same
   // numbers across a remount so a paused run still shows where it stopped.

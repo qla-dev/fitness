@@ -23,6 +23,7 @@ import { weightFromKg, weightToKg } from '../../utils/unitConversions';
 import { upsertBbt } from '../../services/api/cycleApi';
 import { addLog } from '../../services/LogService';
 import CycleIcon from './CycleIcon';
+import LogSection from './LogSection';
 import CycleSymptomPicker from './CycleSymptomPicker';
 import Button from '../ui/Button';
 import FormInput from '../FormInput';
@@ -348,14 +349,18 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
   }
 
   return (
-    <View className="gap-4">
+    <View className="gap-7">
       {/* Period / Flow Selector — Only for non-pregnant cycle tracking */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 border-0">
-          <Text className="text-text-primary text-sm font-semibold mb-3">
-            {t('cycleToday.menstrualFlow', { defaultValue: 'Menstrual Flow' })}
-          </Text>
-          <View className="flex-row justify-between">
+        <LogSection
+          title={t('cycleToday.menstrualFlow', {
+            defaultValue: 'Menstrual Flow',
+          })}
+          subtitle={t('cycleToday.menstrualFlowHint', {
+            defaultValue: 'How heavy bleeding is today, if at all.',
+          })}
+        >
+          <View className="flex-row justify-between -mx-1">
             {FLOW_OPTIONS.map((opt) => {
               const isSelected = flowLevel === opt.value;
               return (
@@ -365,7 +370,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
                   className={`items-center justify-center rounded-xl p-2 flex-1 mx-1 border ${
                     isSelected
                       ? 'bg-accent-primary/10 border-accent-primary'
-                      : 'bg-raised border-transparent'
+                      : 'bg-surface border-transparent'
                   }`}
                 >
                   <CycleIcon id={opt.icon} size={24} />
@@ -378,7 +383,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
               );
             })}
           </View>
-        </View>
+        </LogSection>
       )}
 
       {/* Date & Weight — Only for pregnancy tracking */}
@@ -409,20 +414,25 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
       )}
 
       {/* Symptoms */}
-      <View className="bg-surface rounded-xl p-4 border-0">
-        <CycleSymptomPicker
-          selected={selectedSymptoms}
-          onToggle={handleToggleSymptom}
-          loading={isSymptomsLoading}
-        />
-      </View>
+      <CycleSymptomPicker
+        selected={selectedSymptoms}
+        onToggle={handleToggleSymptom}
+        loading={isSymptomsLoading}
+        subtitle={t('cycleToday.symptomsHint', {
+          defaultValue: 'Tap everything you notice today.',
+        })}
+      />
 
       {/* Cervical Mucus — Bottom Sheet Picker */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 border-0 gap-2">
-          <Text className="text-text-primary text-sm font-semibold">
-            {t('cycleToday.cervicalMucus', { defaultValue: 'Cervical Mucus' })}
-          </Text>
+        <LogSection
+          title={t('cycleToday.cervicalMucus', {
+            defaultValue: 'Cervical Mucus',
+          })}
+          subtitle={t('cycleToday.cervicalMucusHint', {
+            defaultValue: 'Its texture helps place your fertile days.',
+          })}
+        >
           <BottomSheetPicker
             title={t('cycleToday.selectCervicalMucus', {
               defaultValue: 'Select Cervical Mucus',
@@ -437,12 +447,12 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
               defaultValue: 'Tap to select...',
             })}
           />
-        </View>
+        </LogSection>
       )}
 
       {/* TTC: Intercourse + Cervical Position */}
       {isTtc && (
-        <View className="bg-surface rounded-xl p-4 border-0 gap-4">
+        <View className="gap-4">
           <View>
             <Text className="text-text-primary text-sm font-semibold mb-3">
               {t('cycleToday.intercourse', { defaultValue: 'Intercourse' })}
@@ -461,7 +471,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
                     className={`rounded-full px-4 py-2 border ${
                       isSelected
                         ? 'bg-accent-primary/10 border-accent-primary'
-                        : 'bg-raised border-transparent'
+                        : 'bg-surface border-transparent'
                     }`}
                   >
                     <Text
@@ -493,7 +503,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
                       className={`rounded-full px-4 py-2 border ${
                         isSelected
                           ? 'bg-accent-primary/10 border-accent-primary'
-                          : 'bg-raised border-transparent'
+                          : 'bg-surface border-transparent'
                       }`}
                     >
                       <Text
@@ -534,18 +544,15 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
       {/* Basal Body Temperature — Only for non-pregnant cycle tracking */}
       {!isPregnant && (
-        <View className="bg-surface rounded-xl p-4 border-0">
-          <Text className="text-text-primary text-sm font-semibold mb-2">
-            {t('cycleToday.basalTemperature', {
-              defaultValue: 'Basal Body Temperature',
-            })}
-          </Text>
-          <Text className="text-text-secondary text-xs mb-3">
-            {t('cycleToday.basalTemperatureHint', {
-              defaultValue:
-                'Track your waking temperature (°C) to identify biphasic shifts post-ovulation.',
-            })}
-          </Text>
+        <LogSection
+          title={t('cycleToday.basalTemperature', {
+            defaultValue: 'Basal Body Temperature',
+          })}
+          subtitle={t('cycleToday.basalTemperatureHint', {
+            defaultValue:
+              'Track your waking temperature (°C) to identify biphasic shifts post-ovulation.',
+          })}
+        >
           <FormInput
             value={bbt}
             onChangeText={setBbt}
@@ -554,14 +561,16 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
             })}
             keyboardType="decimal-pad"
           />
-        </View>
+        </LogSection>
       )}
 
       {/* Notes */}
-      <View className="bg-surface rounded-xl p-4 border-0">
-        <Text className="text-text-primary text-sm font-semibold mb-2">
-          {t('cycleToday.notes', { defaultValue: 'Notes' })}
-        </Text>
+      <LogSection
+        title={t('cycleToday.notes', { defaultValue: 'Notes' })}
+        subtitle={t('cycleToday.notesHint', {
+          defaultValue: 'Anything else worth remembering about today.',
+        })}
+      >
         <TextInput
           value={notes}
           onChangeText={setNotes}
@@ -573,12 +582,12 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
           placeholderTextColor={textMuted}
           multiline
           numberOfLines={4}
-          className={`bg-raised rounded-xl p-3 text-text-primary text-sm min-h-[80px] border ${
-            isNotesFocused ? 'border-accent-primary' : 'border-border-subtle'
+          className={`bg-surface rounded-xl p-3 text-text-primary text-sm min-h-[80px] border ${
+            isNotesFocused ? 'border-accent-primary' : 'border-transparent'
           }`}
           style={{ textAlignVertical: 'top' }}
         />
-      </View>
+      </LogSection>
 
       {/* Save Button */}
       {!hideSaveButton && (

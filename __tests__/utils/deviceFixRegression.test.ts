@@ -55,15 +55,20 @@ describe('device-testing fix regression (calendar + meal types)', () => {
       expect(p.firstDayOfWeek).toBe(0);
     });
 
-    test('fallback when preference is unavailable defaults to Sunday (0)', () => {
+    // Without a preference the week starts where the region's does: Monday
+    // for Poland, Sunday for the US.
+    test("fallback when preference is unavailable follows the locale's region", () => {
       const p = resolveCalendarPresentation('pl-PL', undefined);
-      expect(p.firstDayOfWeek).toBe(0);
+      expect(p.firstDayOfWeek).toBe(1);
       expect(
         resolveCalendarPresentation('pl-PL', null as unknown as number)
           .firstDayOfWeek
+      ).toBe(1);
+      expect(resolveCalendarPresentation('pl-PL', 7).firstDayOfWeek).toBe(1);
+      expect(resolveCalendarPresentation('pl-PL', -1).firstDayOfWeek).toBe(1);
+      expect(
+        resolveCalendarPresentation('en-US', undefined).firstDayOfWeek
       ).toBe(0);
-      expect(resolveCalendarPresentation('pl-PL', 7).firstDayOfWeek).toBe(0);
-      expect(resolveCalendarPresentation('pl-PL', -1).firstDayOfWeek).toBe(0);
     });
   });
 

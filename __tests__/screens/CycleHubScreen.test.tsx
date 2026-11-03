@@ -160,11 +160,11 @@ describe('CycleHubScreen', () => {
     mockMode = 'standard';
   });
 
-  it('renders Overview, Trends, and History tabs in cycle mode', () => {
+  it('renders Overview, Calendar, and Trends tabs in cycle mode', () => {
     const { getByText, queryByText } = renderScreen();
     expect(getByText('Overview')).toBeTruthy();
     expect(getByText('Trends')).toBeTruthy();
-    expect(getByText('History')).toBeTruthy();
+    expect(getByText('Calendar')).toBeTruthy();
     expect(queryByText('Tools')).toBeNull();
   });
 
@@ -174,21 +174,21 @@ describe('CycleHubScreen', () => {
 
     expect(screen.getByText('Przegląd')).toBeTruthy();
     expect(screen.getByText('Trendy')).toBeTruthy();
-    expect(screen.getByText('Historia')).toBeTruthy();
+    expect(screen.getByText('Kalendarz')).toBeTruthy();
 
     await act(async () => {
       await i18n.changeLanguage('en');
     });
     expect(screen.getByText('Overview')).toBeTruthy();
     expect(screen.getByText('Trends')).toBeTruthy();
-    expect(screen.getByText('History')).toBeTruthy();
+    expect(screen.getByText('Calendar')).toBeTruthy();
 
     await act(async () => {
       await i18n.changeLanguage('pl');
     });
     expect(screen.getByText('Przegląd')).toBeTruthy();
     expect(screen.getByText('Trendy')).toBeTruthy();
-    expect(screen.getByText('Historia')).toBeTruthy();
+    expect(screen.getByText('Kalendarz')).toBeTruthy();
   });
 
   it('renders Overview, Tools, and History tabs in pregnancy mode', () => {
@@ -210,6 +210,8 @@ describe('CycleHubScreen', () => {
   it('splits pregnancy content across the Overview and Tools tabs', () => {
     mockMode = 'pregnant';
     const { getByText, getByTestId, queryByTestId } = renderScreen();
+    // The hub opens on the calendar.
+    fireEvent.press(getByText('Overview'));
     expect(getByTestId('pregnancy-view-overview')).toBeTruthy();
     expect(queryByTestId('pregnancy-view-tools')).toBeNull();
 
@@ -219,12 +221,15 @@ describe('CycleHubScreen', () => {
   });
 
   it('opens the log modal for a tapped calendar day', () => {
-    const { getByText } = renderScreen();
-    fireEvent.press(getByText('History'));
+    const { getByText, getByTestId } = renderScreen();
+    fireEvent.press(getByText('Calendar'));
 
-    fireEvent.press(getByText('15'));
+    // The pager also draws the neighbouring month, so the day is found by
+    // its date rather than its number.
+    const day = `${getTodayDate().slice(0, 7)}-15`;
+    fireEvent.press(getByTestId(new RegExp(`^cycle-day-${day}-`)));
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CycleLogModal', {
-      date: expect.stringMatching(/^\d{4}-\d{2}-15$/),
+      date: day,
     });
   });
 
@@ -232,7 +237,7 @@ describe('CycleHubScreen', () => {
     const month = getTodayDate().slice(0, 7);
     mockLogs.push({ entry_date: `${month}-10` });
     const { getByText, getByTestId, queryByTestId } = renderScreen();
-    fireEvent.press(getByText('History'));
+    fireEvent.press(getByText('Calendar'));
 
     expect(getByTestId(`logged-dot-${month}-10`)).toBeTruthy();
     expect(queryByTestId(`logged-dot-${month}-11`)).toBeNull();

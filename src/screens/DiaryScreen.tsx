@@ -78,17 +78,16 @@ import {
   setNativeHeaderDatePickerOptions,
   type NativeHeaderDatePickerNavigation,
 } from '../utils/nativeHeaderDatePicker';
+import { getAppLocale } from '../localization';
 
 type DiaryScreenProps = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Diary'>,
   NativeStackScreenProps<RootStackParamList>
 >;
 const DiaryScreen: React.FC<DiaryScreenProps> = ({ navigation }) => {
-  const { t, i18n: translationI18n } = useTranslation();
+  const { t } = useTranslation();
   const tabBarInset = useFallbackTabBarInset();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const dateLocale = getAppLocale();
   const insets = useSafeAreaInsets();
   const { isConnected, isLoading: isConnectionLoading } = useServerConnection();
   const selectedDate = useDiaryDateStore((s) => s.selectedDate);

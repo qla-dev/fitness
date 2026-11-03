@@ -67,7 +67,8 @@
     "more": "More",
     "all": "All",
     "share": "Share",
-    "time": "Time"
+    "time": "Time",
+    "options": "Options"
   },
   "fitPass": {
     "title": "FitPass",
@@ -94,6 +95,8 @@
       "polish": "Polski",
       "spanish": "Español",
       "bosnian": "Bosanski",
+      "croatian": "Hrvatski",
+      "serbian": "Srpski",
       "pickerHint": "Opens language selection menu",
       "changeFailed": "Couldn't change the language",
       "managedByIOS": "Managed by iOS",
@@ -233,7 +236,8 @@
     "channels": {
       "medicationReminders": "Medication reminders",
       "workoutTimer": "Workout timer",
-      "fasting": "Fasting"
+      "fasting": "Fasting",
+      "cycleTrainingNotes": "Daily training notes"
     },
     "actions": {
       "completeSet": "Complete Set",
@@ -1779,7 +1783,13 @@
     "periodLate_one": "Period {{count}} day late",
     "periodLate_other": "Period {{count}} day late",
     "daysToDue_one": "{{count}} day to due date",
-    "daysToDue_other": "{{count}}d to due date"
+    "daysToDue_other": "{{count}}d to due date",
+    "inDays_one": "in {{count}}d",
+    "inDays_other": "in {{count}}d",
+    "fertile": "Fertile",
+    "now": "Now",
+    "ovulation": "Ovulation",
+    "today": "Today"
   },
   "syncHealth": {
     "noMetricsTitle": "Choose health data to sync",
@@ -1912,9 +1922,9 @@
     },
     "legend": {
       "period": "Period",
-      "predictedPeriod": "Predicted Period",
-      "fertileWindow": "Fertile Window",
-      "estimatedOvulation": "Est. Ovulation",
+      "predictedPeriod": "Predicted",
+      "fertileWindow": "Fertile",
+      "estimatedOvulation": "Ovulation",
       "logged": "Logged"
     }
   },
@@ -2081,7 +2091,8 @@
       "conditions": "Conditions",
       "conditionsSubtitle": "Select applicable conditions to personalize your tracking.",
       "display": "Display Options",
-      "actions": "Actions"
+      "actions": "Actions",
+      "notifications": "Notifications"
     },
     "fields": {
       "trackingMode": "Tracking Mode",
@@ -2093,7 +2104,8 @@
       "discreetMode": "Discreet Mode",
       "terminology": "Terminology",
       "export": "Export Cycle & Pregnancy Data",
-      "reset": "Reset Onboarding Wizard"
+      "reset": "Reset Onboarding Wizard",
+      "trainingNotes": "Daily Training Note"
     },
     "pickers": {
       "mode": "Select Mode",
@@ -2107,7 +2119,8 @@
       "fertileSubtitle": "Highlight fertile days on calendar",
       "discreetSubtitle": "Hides \"Cycle\" or \"Pregnancy\" labels in UI",
       "exportSubtitle": "Download JSON data export",
-      "resetSubtitle": "Restart setup walkthrough"
+      "resetSubtitle": "Restart setup walkthrough",
+      "trainingNotesSubtitle": "At 9:00, how hard to train today, from your cycle phase"
     }
   },
   "measurements": {
@@ -2315,7 +2328,11 @@
     "saving": "Saving...",
     "save": "Save Log Entry",
     "invalidTemperature": "Invalid temperature input",
-    "invalidWeight": "Invalid weight input"
+    "invalidWeight": "Invalid weight input",
+    "menstrualFlowHint": "How heavy bleeding is today, if at all.",
+    "symptomsHint": "Tap everything you notice today.",
+    "cervicalMucusHint": "Its texture helps place your fertile days.",
+    "notesHint": "Anything else worth remembering about today."
   },
   "cycleSymptoms": {
     "title": "Symptoms",
@@ -4974,6 +4991,7 @@
     "scan": "Scan with camera"
   },
   "cycleHub": {
+    "calendar": "Calendar",
     "tools": "Tools",
     "trends": "Trends",
     "wellness": "Wellness",
@@ -4989,7 +5007,18 @@
     },
     "trackingTitle": "Your rhythm, on your terms. Pause any time and pick it up again from Profile.",
     "stopTitle": "Stop cycle tracking?",
-    "stopMessage": "Cycle tracking turns off and leaves your Tracker. Your logged days are kept, and you can turn it back on in Profile under Cycle & Pregnancy."
+    "stopMessage": "Cycle tracking turns off and leaves your Tracker. Your logged days are kept, and you can turn it back on in Profile under Cycle & Pregnancy.",
+    "summary": {
+      "late_one": "{{count}}d late",
+      "late_other": "{{count}}d late",
+      "inDays_one": "{{count}}d",
+      "inDays_other": "{{count}}d",
+      "nextPeriod": "Next period",
+      "now": "Now",
+      "fertileWindow": "Fertile window",
+      "today": "Today",
+      "ovulation": "Est. ovulation"
+    }
   },
   "workoutPresetLibrary": {
     "configure": "Configure your server connection in Settings to view your workout programs."
@@ -5297,7 +5326,10 @@
     "goalIncrease": "Increase goal",
     "goalDecrease": "Decrease goal",
     "fieldSaveFailed": "Could not save {{field}}. Please try again.",
-    "aiAssistant": "AI assistant"
+    "aiAssistant": "AI assistant",
+    "wellnessSubtitle": "Tracking, predictions and daily notes",
+    "cyclePregnancySubtitle": "Cycle tracking, predictions and daily notes",
+    "medicationsSubtitle": "Doses, schedules and reminders"
   },
   "programs": {
     "title": "Program",
@@ -6312,7 +6344,11 @@
     },
     "skill": {
       "macroPlan": "Macro planner",
-      "goal": "Goal calculator"
+      "goal": "Goal calculator",
+      "mealPlan": "Meal planner",
+      "nutrition": "Nutrition calculator",
+      "prices": "Price checker",
+      "groceries": "Shopping list builder"
     },
     "usage": "Usage"
   },
@@ -6365,7 +6401,14 @@
       "g": "g",
       "ml": "ml",
       "piece": "pcs"
-    }
+    },
+    "planHint": "MarkAI plans 7 days of meals from your answers, in a new chat. Uses {{coins}} AI coins.",
+    "planYes": "Yes, plan my week",
+    "planNo": "Not now",
+    "planPrompt": "Plan my week of meals from my food and kitchen answers.",
+    "oneServing": "1 serving",
+    "addDayShort": "Add to list",
+    "logIngredient": "Log {{name}}"
   },
   "regions": {
     "HR": "Croatia",
@@ -6544,5 +6587,36 @@
     "stop": "Stop tracking",
     "start": "Start tracking",
     "settings": "Tracking settings"
+  },
+  "cycleTraining": {
+    "startAnyway": "Start anyway",
+    "discreet": {
+      "title": "Today's training note",
+      "rest": "Today suits rest or gentle movement: a walk, stretching or yoga.",
+      "easy": "Keep training light today and give recovery priority.",
+      "peak": "A good day to push: heavy lifts or intervals. Warm up well.",
+      "steady": "Moderate training suits today."
+    },
+    "periodHeavy": {
+      "title": "Take it easy today",
+      "body": "Day {{day}} of your cycle. Energy usually runs lowest now, so a walk, stretching or yoga will do more for you than a hard session."
+    },
+    "period": {
+      "title": "Light training today",
+      "body": "Day {{day}} of your cycle. Easy cardio and mobility work well while your period winds down."
+    },
+    "premenstrual": {
+      "title": "Ease off before your period",
+      "body_one": "Your period is due in {{count}} day. Lower the intensity and give recovery priority.",
+      "body_other": "Your period is due in {{count}} days. Lower the intensity and give recovery priority."
+    },
+    "peak": {
+      "title": "A good day to push",
+      "body": "Day {{day}} of your cycle. Energy and strength tend to peak in this phase, so it suits heavy lifts or intervals. Warm up well."
+    },
+    "steady": {
+      "title": "Steady training today",
+      "body": "Day {{day}} of your cycle. Moderate sessions suit this phase; keep an eye on fatigue and sleep."
+    }
   }
 }

@@ -25,6 +25,7 @@ import { useScreenHeader } from '../hooks/useScreenHeader';
 import { trackingMenu } from '../utils/trackingMenu';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import Icon from '../components/Icon';
+import StatusView from '../components/StatusView';
 import FeatureFacts from '../components/FeatureFacts';
 import MedicalDisclaimer from '../components/MedicalDisclaimer';
 import MedicationRow from '../components/medications/MedicationRow';
@@ -100,6 +101,9 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
     };
   }, [medications]);
 
+  const isEmpty =
+    !isLoading && !isError && active.length === 0 && inactive.length === 0;
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
@@ -110,46 +114,51 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
     variant: 'transparent',
     title: t('medications.title', { defaultValue: 'Medications' }),
     left: { kind: 'back' },
-    right: [
-      trackingMenu({
-        t,
-        identifier: 'medications-list-tracking',
-        title: tracking
-          ? t('medications.trackingTitle', {
-              defaultValue:
-                'Every dose in its place. Stop any time; your list stays here.',
-            })
-          : t('medications.trackingOffTitle', {
-              defaultValue:
-                'Medications are off your Tracker. Start tracking to bring them back.',
+    // With nothing listed there is nothing to track or settle yet: the empty
+    // state's own Add is the way in, as on the cycle screen. Adding turns
+    // tracking back on, so the menu is not needed to get it back.
+    right: isEmpty
+      ? null
+      : [
+          trackingMenu({
+            t,
+            identifier: 'medications-list-tracking',
+            title: tracking
+              ? t('medications.trackingTitle', {
+                  defaultValue:
+                    'Every dose in its place. Stop any time; your list stays here.',
+                })
+              : t('medications.trackingOffTitle', {
+                  defaultValue:
+                    'Medications are off your Tracker. Start tracking to bring them back.',
+                }),
+            tracking,
+            confirmTitle: t('medications.stopTitle', {
+              defaultValue: 'Stop medication tracking?',
             }),
-        tracking,
-        confirmTitle: t('medications.stopTitle', {
-          defaultValue: 'Stop medication tracking?',
-        }),
-        confirmMessage: t('medications.stopMessage', {
-          defaultValue:
-            'Medications leave your Tracker. Your medications and logged doses are kept, and you can start tracking again from here.',
-        }),
-        onStop: () => {
-          setTracking(false);
-          navigation.goBack();
-        },
-        onStart: () => setTracking(true),
-      }),
-      {
-        kind: 'icon',
-        sfSymbol: 'plus',
-        ionicon: 'add-outline',
-        role: 'primary',
-        separated: true,
-        onPress: addMedication,
-        accessibilityLabel: t('medications.addMedication', {
-          defaultValue: 'Add medication',
-        }),
-        identifier: 'medications-list-add',
-      },
-    ],
+            confirmMessage: t('medications.stopMessage', {
+              defaultValue:
+                'Medications leave your Tracker. Your medications and logged doses are kept, and you can start tracking again from here.',
+            }),
+            onStop: () => {
+              setTracking(false);
+              navigation.goBack();
+            },
+            onStart: () => setTracking(true),
+          }),
+          {
+            kind: 'icon',
+            sfSymbol: 'plus',
+            ionicon: 'add-outline',
+            role: 'primary',
+            separated: true,
+            onPress: addMedication,
+            accessibilityLabel: t('medications.addMedication', {
+              defaultValue: 'Add medication',
+            }),
+            identifier: 'medications-list-add',
+          },
+        ],
   });
 
   const renderMedItem = ({ item }: { item: Medication }) => (
@@ -206,28 +215,24 @@ const MedicationsListScreen: React.FC<MedicationsListScreenProps> = ({
             paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
           }}
         >
-          <View className="items-center p-8">
-            <Icon name="medication" size={48} color={iconDecorative} />
-            <Text className="text-text-muted text-lg mt-4 text-center">
-              {t('medications.noMedications', {
+          {/* The shared empty state, as the cycle screen shows it. */}
+          <View className="px-4">
+            <StatusView
+              inline
+              icon="medication"
+              title={t('medications.noMedications', {
                 defaultValue: 'No medications yet',
               })}
-            </Text>
-            <Text className="text-text-muted text-sm mt-2 text-center">
-              {t('medications.emptyDescription', {
+              subtitle={t('medications.emptyDescription', {
                 defaultValue: 'Add your first medication to start tracking.',
               })}
-            </Text>
-            <TouchableOpacity
-              className="mt-4 bg-accent-primary px-6 py-3 rounded-xl"
-              onPress={addMedication}
-            >
-              <Text className="text-white font-semibold">
-                {t('medications.addMedicationTitle', {
+              action={{
+                label: t('medications.addMedicationTitle', {
                   defaultValue: 'Add Medication',
-                })}
-              </Text>
-            </TouchableOpacity>
+                }),
+                onPress: addMedication,
+              }}
+            />
           </View>
           <FeatureFacts feature="medications" className="px-4" />
           <View className="px-4">

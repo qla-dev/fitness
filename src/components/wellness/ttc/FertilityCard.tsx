@@ -7,6 +7,7 @@ import { daysBetween } from '@workspace/shared';
 import { getTodayDate, formatDate } from '../../../utils/dateUtils';
 
 import { useCyclePredictionData } from '../../../hooks/useCyclePredictionData';
+import { getAppLocale } from '../../../localization';
 
 interface FertilityCardProps {
   date?: string;
@@ -18,10 +19,8 @@ interface FertilityCardProps {
  * with client-side prediction fallback.
  */
 const FertilityCard: React.FC<FertilityCardProps> = ({ date }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const referenceDate = date ?? getTodayDate();
   const { fertility, isLoading } = useCycleFertility(referenceDate);
   const predictionData = useCyclePredictionData(referenceDate);

@@ -10,7 +10,10 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  ScrollEdgeEffectProvider,
+  useScrollEdgeEffectRef,
+} from '@bsky.app/expo-scroll-edge-effect';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
@@ -25,6 +28,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Button from '../components/ui/Button';
+import FooterCTA from '../components/ui/FooterCTA';
 import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
@@ -51,7 +55,6 @@ import {
 } from '../services/healthSyncSettings';
 import { fetchHealthDisplayData } from '../services/healthDataDisplay';
 import { isSyncClaimed } from '../services/autoSyncCoordinator';
-import { fireSelectionHaptic } from '../services/haptics';
 import {
   loadBackgroundSyncEnabled,
   loadSyncOnOpenEnabled,
@@ -151,11 +154,22 @@ const metricsByCategory = CATEGORY_ORDER.map((category) => ({
  * Only acting here (syncing or switching on automatic sync) marks Health as set
  * up; closing with Done alone brings both Health steps back on the next start.
  */
-export default function AppleHealthCheckScreen({
+export default function AppleHealthCheckScreen(
+  props: RootStackScreenProps<'AppleHealthCheck'>
+) {
+  return (
+    <ScrollEdgeEffectProvider>
+      <AppleHealthCheckContent {...props} />
+    </ScrollEdgeEffectProvider>
+  );
+}
+
+function AppleHealthCheckContent({
   navigation,
 }: RootStackScreenProps<'AppleHealthCheck'>) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const edgeEffectRef = useScrollEdgeEffectRef();
+  const [footerHeight, setFooterHeight] = useState(88);
   // GoalEdit's height for the bar (see useModalTopPadding).
   const modalTopPadding = useModalTopPadding();
   const [accentColor, textSecondary] = useCSSVariable([
@@ -422,7 +436,6 @@ export default function AppleHealthCheckScreen({
 
   const syncNow = () => {
     if (busy) return;
-    fireSelectionHaptic();
     setFinishingIndex(0);
     void confirmHealthStartup();
     dismissAfterSyncRef.current = true;
@@ -523,8 +536,13 @@ export default function AppleHealthCheckScreen({
     >
       {header}
       <NativeHeaderScrollView
+        ref={edgeEffectRef}
+        className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: footerHeight + 24,
+        }}
       >
         <View className="items-center mb-4">
           <HealthHeroIcon />
@@ -826,12 +844,15 @@ export default function AppleHealthCheckScreen({
         onConfirm={(from, to) => void doRemoveWritebackData({ from, to })}
       />
 
-      <View
-        className="px-5 pt-3 bg-background border-t border-border"
-        style={{ paddingBottom: Math.max(insets.bottom, 12) }}
-      >
-        <Button disabled={!healthReady || busy} onPress={syncNow}>
-          {busy ? (
+      <FooterCTA
+        absolute
+        glass
+        edgeEffect
+        onHeightChange={setFooterHeight}
+        disabled={!healthReady || busy}
+        onPress={syncNow}
+        label={
+          busy ? (
             // Beside the label rather than Button's own `loading`, which
             // replaces it: the label is where the import reports its progress,
             // and a bare spinner would hide the percentage for the length of
@@ -844,9 +865,9 @@ export default function AppleHealthCheckScreen({
             </View>
           ) : (
             syncLabel
-          )}
-        </Button>
-      </View>
+          )
+        }
+      />
     </View>
   );
 }

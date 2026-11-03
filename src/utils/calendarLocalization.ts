@@ -1,3 +1,4 @@
+import { getCalendars } from 'expo-localization';
 import { useAppLocale } from '../localization';
 import { usePreferences } from '../hooks/usePreferences';
 
@@ -49,11 +50,69 @@ export function getCalendarMonthNames(appLocale: string): string[] {
   );
 }
 
+/** Regions whose weeks start on Sunday; most of the world starts on Monday. */
+const SUNDAY_FIRST_REGIONS = new Set([
+  'US',
+  'CA',
+  'MX',
+  'BR',
+  'JP',
+  'KR',
+  'TW',
+  'HK',
+  'MO',
+  'IL',
+  'PH',
+  'ZA',
+  'SA',
+  'IN',
+  'PK',
+  'TH',
+  'ID',
+  'PE',
+  'CO',
+  'VE',
+  'GT',
+  'DO',
+  'PR',
+]);
+
+/**
+ * The week start when the account has not chosen one: the phone's own
+ * region setting first (what its system calendar shows), then the region of
+ * the app's locale (bs-BA, hr-HR and sr-Latn-RS start on Monday, en-US on
+ * Sunday). Returns 0 = Sunday ... 6 = Saturday.
+ */
+export function defaultFirstDayOfWeek(appLocale: string): number {
+  try {
+    // expo-localization counts 1 = Sunday ... 7 = Saturday.
+    const firstWeekday = getCalendars?.()[0]?.firstWeekday;
+    if (typeof firstWeekday === 'number' && firstWeekday >= 1)
+      return (firstWeekday - 1) % 7;
+  } catch {
+    // Not available (tests, web): fall through to the locale.
+  }
+  try {
+    const locale = new Intl.Locale(appLocale) as Intl.Locale & {
+      getWeekInfo?: () => { firstDay: number };
+      weekInfo?: { firstDay: number };
+    };
+    // Intl numbers the days 1 = Monday ... 7 = Sunday.
+    const firstDay =
+      locale.getWeekInfo?.().firstDay ?? locale.weekInfo?.firstDay;
+    if (typeof firstDay === 'number') return firstDay % 7;
+    const region = locale.maximize().region;
+    if (region) return SUNDAY_FIRST_REGIONS.has(region) ? 0 : 1;
+  } catch {
+    // An unparseable tag keeps the historical Sunday start.
+  }
+  return 0;
+}
+
 /**
  * Pure presentation resolver combining the active application language and the
  * canonical account first-day-of-week preference. Defaults the week start to
- * Sunday (0) when the preference is unavailable, mirroring the existing
- * web/product behavior.
+ * the phone's region (then the locale's) when the preference is unavailable.
  */
 export function resolveCalendarPresentation(
   appLocale: string,
@@ -63,7 +122,9 @@ export function resolveCalendarPresentation(
   return {
     locale: appLocaleToDatepickerLocale(appLocale),
     firstDayOfWeek:
-      typeof fdow === 'number' && fdow >= 0 && fdow <= 6 ? fdow : 0,
+      typeof fdow === 'number' && fdow >= 0 && fdow <= 6
+        ? fdow
+        : defaultFirstDayOfWeek(appLocale),
   };
 }
 

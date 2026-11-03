@@ -18,6 +18,7 @@ import {
   type LocalRecord,
 } from './database';
 import { dedupeMealTypes } from './mealTypeDedupe';
+import { dedupeProviders } from './providerDedupe';
 import { foodRepository } from './foodRepository';
 import { localSessions, workoutRepository } from './workoutRepository';
 import { calculateExerciseStats } from '../../utils/workoutSession';
@@ -121,8 +122,10 @@ function initialise(db: LocalDatabase) {
 
 function route(db: LocalDatabase, request: LocalRequest): unknown {
   initialise(db);
-  // Repairs devices that already merged a second set of default meal types.
+  // Repairs devices that already merged a second set of default meal types
+  // or providers.
   if (dedupeMealTypes(db.tables)) markLocalDatabaseDirty();
+  if (dedupeProviders(db.tables)) markLocalDatabaseDirty();
   const { path, query, method, body } = request;
   const parts = path.split('/');
   if (path === '/api/measurements/watch' && method === 'POST')

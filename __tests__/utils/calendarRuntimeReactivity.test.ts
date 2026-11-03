@@ -73,7 +73,7 @@ describe('runtime app-language reactivity (PL <-> EN without restart)', () => {
     );
   });
 
-  test('CalendarSheet falls back to Sunday (0) when preference is unavailable', async () => {
+  test("CalendarSheet falls back to the locale's week start when preference is unavailable", async () => {
     await i18n.changeLanguage('en');
     expect(
       resolveCalendarPresentation(getAppLocale(), undefined).firstDayOfWeek
@@ -81,7 +81,7 @@ describe('runtime app-language reactivity (PL <-> EN without restart)', () => {
     await i18n.changeLanguage('pl');
     expect(
       resolveCalendarPresentation(getAppLocale(), undefined).firstDayOfWeek
-    ).toBe(0);
+    ).toBe(1);
   });
 });
 

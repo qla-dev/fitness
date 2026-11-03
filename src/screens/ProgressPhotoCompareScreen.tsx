@@ -12,7 +12,6 @@ import Toast from 'react-native-toast-message';
 import { daysBetween } from '@workspace/shared';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
-import i18n from '../localization/i18n';
 import Icon from '../components/Icon';
 import ProgressPhotoViewer from '../components/ProgressPhotoViewer';
 import SafeImage from '../components/SafeImage';
@@ -32,6 +31,7 @@ import {
 } from '../utils/unitConversions';
 import type { PhotoType, ProgressPhotoDay } from '../types/checkInPhotos';
 import type { RootStackScreenProps } from '../types/navigation';
+import { getAppLocale } from '../localization';
 
 type Props = RootStackScreenProps<'ProgressPhotoCompare'>;
 
@@ -49,7 +49,7 @@ type Side = 'before' | 'after';
 const ProgressPhotoCompareScreen: React.FC<Props> = ({ navigation, route }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const dateLocale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
+  const dateLocale = getAppLocale();
   const [accentPrimary, mutedColor] = useCSSVariable([
     '--color-accent-primary',
     '--color-icon-decorative',

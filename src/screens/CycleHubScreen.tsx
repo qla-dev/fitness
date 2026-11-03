@@ -67,9 +67,10 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
   // Tabs State. The middle segment is mode-specific: cycle/TTC gets Trends,
   // pregnancy gets Tools; a middle-tab selection left over from the other mode
   // falls back to Overview.
+  // Opens on the calendar, the first tab.
   const [activeTab, setActiveTab] = useState<
     'overview' | 'trends' | 'tools' | 'history'
-  >('overview');
+  >('history');
   const middleTab =
     mode === 'pregnant'
       ? ({
@@ -219,15 +220,17 @@ const CycleHubScreen: React.FC<CycleHubScreenProps> = ({ navigation }) => {
         <View className="mb-3">
           <SegmentedControl
             segments={[
+              // Calendar first (the tab the hub opens on), then Overview,
+              // then Trends, or Tools in pregnancy.
+              {
+                key: 'history',
+                label: t('cycleHub.calendar', { defaultValue: 'Calendar' }),
+              },
               {
                 key: 'overview',
                 label: t('cycleHub.overview', { defaultValue: 'Overview' }),
               },
               middleTab,
-              {
-                key: 'history',
-                label: t('cycleHub.history', { defaultValue: 'History' }),
-              },
             ]}
             activeKey={currentTab}
             onSelect={setActiveTab}

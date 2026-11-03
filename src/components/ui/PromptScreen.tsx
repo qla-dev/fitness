@@ -71,6 +71,11 @@ export type PromptScreenProps = {
   hasTextInput?: boolean;
   /** One header action opposite the close button (MarkAI usage on history). */
   headerRight?: HeaderItem;
+  /**
+   * Replaces the close button, for a screen of several steps whose later
+   * steps go back one rather than leave (the cycle setup).
+   */
+  headerLeft?: HeaderItem;
   /** Called instead of going back when the close button is pressed. */
   onDismiss?: () => void;
   /**
@@ -102,6 +107,7 @@ function PromptScreenContent({
   hasTextInput = false,
   topAligned = false,
   headerRight,
+  headerLeft,
   onDismiss,
   bleed = false,
   children,
@@ -123,7 +129,7 @@ function PromptScreenContent({
   const header = useScreenHeader({
     variant: 'transparent',
     title: headerTitle,
-    left: {
+    left: headerLeft ?? {
       kind: 'dismiss',
       disabled: dismissDisabled,
       onPress: onDismiss ?? (() => navigation.goBack()),

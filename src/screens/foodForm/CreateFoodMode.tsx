@@ -60,6 +60,7 @@ import {
   equivalentsDiffer,
   isBlankEquivalent,
 } from './persistence';
+import { getAppLocale } from '../../localization';
 
 type CreateFoodParams = Extract<
   FoodFormScreenProps['route']['params'],
@@ -77,10 +78,8 @@ export function CreateFoodMode({
   navigation: FoodFormScreenProps['navigation'];
   routeKey: string;
 }) {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();

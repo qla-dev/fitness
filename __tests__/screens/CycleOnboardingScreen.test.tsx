@@ -38,8 +38,16 @@ jest.mock('../../src/components/Icon', () => {
   return { __esModule: true, default: () => <View testID="icon" /> };
 });
 
+// PromptScreen's footer reads the insets context directly, so the mock
+// carries it too.
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  SafeAreaInsetsContext: require('react').createContext({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  }),
 }));
 
 const mockCreatePregnancyAsync = jest.fn().mockResolvedValue({});

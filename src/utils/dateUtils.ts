@@ -65,6 +65,18 @@ export const formatDate = (dateString: string, locale: string): string => {
   });
 };
 
+// Format a YYYY-MM-DD date in full, in the locale's own order and words
+// ("November 2, 2026", "2. novembar 2026.")
+export const formatLongDate = (dateString: string, locale: string): string => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
 // Format a YYYY-MM-DD date for short display ("Jun 30")
 export const formatShortDate = (dateString: string, locale: string): string => {
   const [year, month, day] = dateString.split('-').map(Number);

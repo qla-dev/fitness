@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 import Button from '../components/ui/Button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../components/Icon';
 import { SEARCH_INPUT_STYLE } from '../components/LibrarySearchBar';
@@ -1191,21 +1193,45 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
 
   // --- Body ---
 
+  // The centred states sit over the space the keyboard leaves, as MarkAI's
+  // empty state does: they ride up with it instead of hiding under it.
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
+  const centredLift = useAnimatedStyle(() => ({
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: -keyboardHeight.value,
+  }));
+
   const renderBody = () => {
     if (!isConnected) {
       return (
-        <View className="flex-1 justify-center items-center px-6">
+        <Reanimated.View style={centredLift}>
           <Icon name="cloud-offline" size={48} color={accentColor} />
           <Text className="text-text-secondary text-base mt-4 text-center">
             {t('foodSearch.states.connectToSearch', {
               defaultValue: 'Connect to a server to search foods',
             })}
           </Text>
-        </View>
+        </Reanimated.View>
       );
     }
 
     if (inSearchMode) {
+      // With nothing else to list, the saved-foods status (its spinner, or
+      // the no-match line) is the whole screen, so it centres like the
+      // landing's empty state instead of hanging under the search bar.
+      const [onlySection] = resultSections;
+      if (resultSections.length === 1 && onlySection.kind === 'status') {
+        return (
+          <View className="flex-1 bg-surface">
+            <Reanimated.View style={centredLift}>
+              {renderResultRow({ item: onlySection.data[0] })}
+            </Reanimated.View>
+          </View>
+        );
+      }
       return (
         <View className="flex-1 bg-surface">
           <SectionList
@@ -1230,7 +1256,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
     }
     if (isError) {
       return (
-        <View className="flex-1 justify-center items-center px-6">
+        <Reanimated.View style={centredLift}>
           <Icon name="alert-circle" size={48} color={accentColor} />
           <Text className="text-text-secondary text-base mt-4 text-center">
             {t('foodSearch.states.failedToLoad', {
@@ -1244,12 +1270,12 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
           >
             {t('common.retry', { defaultValue: 'Retry' })}
           </Button>
-        </View>
+        </Reanimated.View>
       );
     }
     if (landingSections.length === 0) {
       return (
-        <View className="flex-1 justify-center items-center px-6">
+        <Reanimated.View style={centredLift}>
           <Icon name="search" size={48} color={textSecondary} />
           <Text className="text-text-secondary text-base mt-4 text-center">
             {isOwnershipFiltered
@@ -1270,7 +1296,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
               {t('foodSearch.filter.showAll', { defaultValue: 'Show All' })}
             </Button>
           )}
-        </View>
+        </Reanimated.View>
       );
     }
     return (

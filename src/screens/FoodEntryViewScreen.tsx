@@ -81,6 +81,7 @@ import {
   nextQuantity,
 } from '../utils/foodDetails';
 import { DECIMAL_INPUT_REGEX, parseDecimalInput } from '../utils/numericInput';
+import { getAppLocale } from '../localization';
 
 type FoodEntryViewScreenProps = RootStackScreenProps<'FoodEntryView'>;
 
@@ -134,10 +135,8 @@ const FoodEntryViewScreen: React.FC<FoodEntryViewScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const [entry, setEntry] = useState(route.params.entry);
   const [createdVariantOverride, setCreatedVariantOverride] =
     useState<FoodUnitVariant | null>(null);

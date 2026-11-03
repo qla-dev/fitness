@@ -11,8 +11,11 @@ import SettingsRow, {
   SettingsValueSubtitle,
 } from '../components/SettingsRow';
 import StatusView from '../components/StatusView';
+import FeatureFacts from '../components/FeatureFacts';
+import MedicalDisclaimer from '../components/MedicalDisclaimer';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useCycleSettings } from '../hooks/useCycleSettings';
+import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import { useDiscreetMode } from '../hooks/useDiscreetMode';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { addLog } from '../services/LogService';
@@ -43,6 +46,12 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
   const usesNativeHeader = useNativeIOSHeadersActive();
 
   const { settings, isLoading, updateSettings } = useCycleSettings();
+  const trainingNotesEnabled = useAppPreferencesStore(
+    (s) => s.cycleTrainingNotesEnabled
+  );
+  const setTrainingNotesEnabled = useAppPreferencesStore(
+    (s) => s.setCycleTrainingNotesEnabled
+  );
 
   const modeOptions = [
     {
@@ -343,23 +352,39 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
         style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
       >
         {header}
-        <StatusView
-          icon="wellness"
-          title={t('cycleSettings.notSetUp.title', {
-            defaultValue: 'Cycle tracking is not set up',
-          })}
-          subtitle={t('cycleSettings.notSetUp.subtitle', {
-            defaultValue:
-              'Set up cycle or pregnancy tracking to change these settings.',
-          })}
-          action={{
-            label: t('cycleSettings.notSetUp.action', {
-              defaultValue: 'Set up tracking',
-            }),
-            onPress: () => navigation.replace('CycleOnboarding'),
+        {/* Scrolls like the Medications empty state, so the facts under the
+            way in are reachable on a short screen. Discreet mode keeps the
+            cycle wording off it, as on the hub. */}
+        <NativeHeaderScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: insets.bottom + 80 + activeWorkoutBarPadding,
           }}
-          className="bg-background"
-        />
+        >
+          <StatusView
+            inline
+            icon="wellness"
+            title={t('cycleSettings.notSetUp.title', {
+              defaultValue: 'Cycle tracking is not set up',
+            })}
+            subtitle={t('cycleSettings.notSetUp.subtitle', {
+              defaultValue:
+                'Set up cycle or pregnancy tracking to change these settings.',
+            })}
+            action={{
+              label: t('cycleSettings.notSetUp.action', {
+                defaultValue: 'Set up tracking',
+              }),
+              onPress: () => navigation.replace('CycleOnboarding'),
+            }}
+          />
+          {!discreetMode && <FeatureFacts feature="cycle" />}
+          {/* The About card above already carries its own bottom margin. */}
+          <View className={`${discreetMode ? 'mt-6' : 'mt-0'} px-2`}>
+            <MedicalDisclaimer />
+          </View>
+        </NativeHeaderScrollView>
       </View>
     );
   }
@@ -528,6 +553,28 @@ const CycleSettingsScreen: React.FC<CycleSettingsScreenProps> = ({
                   }
                 />
               ))}
+            </SettingsRowGroup>
+
+            <SettingsRowGroup
+              title={t('cycleSettings.groups.notifications', {
+                defaultValue: 'Notifications',
+              })}
+            >
+              <SettingsRow
+                title={t('cycleSettings.fields.trainingNotes', {
+                  defaultValue: 'Daily Training Note',
+                })}
+                subtitle={t('cycleSettings.values.trainingNotesSubtitle', {
+                  defaultValue:
+                    'At 9:00, how hard to train today, from your cycle phase',
+                })}
+                rightAccessory={
+                  <Switch
+                    value={trainingNotesEnabled}
+                    onValueChange={setTrainingNotesEnabled}
+                  />
+                }
+              />
             </SettingsRowGroup>
 
             <SettingsRowGroup

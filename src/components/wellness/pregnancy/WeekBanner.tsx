@@ -8,6 +8,7 @@ import { useWellnessTokens } from '../theme/wellnessTokens';
 import Icon from '../../Icon';
 
 import { useDiscreetMode } from '../../../hooks/useDiscreetMode';
+import { getAppLocale } from '../../../localization';
 
 interface WeekBannerProps {
   ga: GestationalAge;
@@ -17,10 +18,8 @@ interface WeekBannerProps {
 
 /** Gestational-age header: current week/day, trimester, term progress, due date. */
 const WeekBanner: React.FC<WeekBannerProps> = ({ ga, dueDate, onEdit }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const tokens = useWellnessTokens();
   const [accentPrimary] = useCSSVariable(['--color-accent-primary']) as [
     string,

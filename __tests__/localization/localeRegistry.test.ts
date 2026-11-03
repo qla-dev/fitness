@@ -74,9 +74,14 @@ describe('locale registry contracts', () => {
     expect(normalizeLocaleFromRegistry('pt', synthetic)).toBeNull();
   });
 
-  it('serves Croatian and Serbian in Bosnian, and Italian and German as themselves', () => {
-    for (const tag of ['hr', 'hr-HR', 'sr', 'sr-Latn-RS', 'sr-Cyrl-RS'])
-      expect(normalizeLocaleFromRegistry(tag)).toBe('bs');
+  it('ships Croatian and Serbian as their own languages, and Italian and German as themselves', () => {
+    for (const tag of ['hr', 'hr-HR'])
+      expect(normalizeLocaleFromRegistry(tag)).toBe('hr');
+    for (const tag of ['sr', 'sr-Latn-RS', 'sr-Cyrl-RS'])
+      expect(normalizeLocaleFromRegistry(tag)).toBe('sr');
+    // Serbo-Croatian and Montenegrin still read Bosnian.
+    expect(normalizeLocaleFromRegistry('sh')).toBe('bs');
+    expect(normalizeLocaleFromRegistry('cnr-ME')).toBe('bs');
     expect(normalizeLocaleFromRegistry('it-IT')).toBe('it');
     expect(normalizeLocaleFromRegistry('de-AT')).toBe('de');
     // An alias never outranks a registered locale's own family.

@@ -8,6 +8,7 @@ import HeaderCircleButton from './ui/HeaderCircleButton';
 import type { IconName } from './Icon';
 import { formatDateLabel } from '../utils/dateUtils';
 import { fireSelectionHaptic } from '../services/haptics';
+import { getAppLocale } from '../localization';
 
 /** Tap target for each header button, and the gap that keeps them apart. */
 const BUTTON_SIZE = 44;
@@ -94,8 +95,8 @@ const TabHeader: React.FC<TabHeaderProps> = ({
 }) => {
   // Subscribe to the reactive app language so the date label re-localizes
   // immediately on a runtime PL <-> EN switch without an app restart.
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
+  const { t } = useTranslation();
+  const locale = getAppLocale();
   const insets = useSafeAreaInsets();
   /**
    * Every button in this bar answers a press with the selection haptic, the

@@ -6,7 +6,6 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import i18n from '../localization/i18n';
 import {
   View,
   Text,
@@ -64,6 +63,7 @@ import {
   useSaveCustomMeasurement,
   useDeleteCustomMeasurement,
 } from '../hooks/useCustomMeasurements';
+import { getAppLocale } from '../localization';
 
 type Props = RootStackScreenProps<'MeasurementsAdd'>;
 
@@ -1237,10 +1237,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
               ? t('date.today', { defaultValue: 'Today' })
               : selectedDate === addDays(getTodayDate(), -1)
                 ? t('date.yesterday', { defaultValue: 'Yesterday' })
-                : formatDate(
-                    selectedDate,
-                    i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US'
-                  )}
+                : formatDate(selectedDate, getAppLocale())}
           </Text>
           <Icon
             name="chevron-down"

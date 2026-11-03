@@ -4,6 +4,7 @@ import { Text, TouchableOpacity } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Icon from './Icon';
 import { formatDateLabel } from '../utils/dateUtils';
+import { getAppLocale } from '../localization';
 
 interface DateSelectRowProps {
   date: string;
@@ -12,10 +13,8 @@ interface DateSelectRowProps {
 
 /** Tappable "Date <label> v" row that opens the caller's calendar sheet. */
 const DateSelectRow: React.FC<DateSelectRowProps> = ({ date, onPress }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const [textPrimary] = useCSSVariable(['--color-text-primary']) as [string];
 
   return (

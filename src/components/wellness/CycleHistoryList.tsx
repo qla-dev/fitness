@@ -16,13 +16,16 @@ import {
 import Button from '../ui/Button';
 import SwipeableDeleteRow from '../SwipeableDeleteRow';
 import CalendarSheet, { type CalendarSheetRef } from '../CalendarSheet';
-import { getTodayDate, formatDate } from '../../utils/dateUtils';
+import {
+  getTodayDate,
+  formatDate,
+  formatLongDate,
+} from '../../utils/dateUtils';
+import { getAppLocale } from '../../localization';
 
 const CycleHistoryList: React.FC = () => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const { cycles, createCycle, deleteCycle } = useCycleHistory();
   const maxCycleLength = cycles.reduce(
     (max, c) => Math.max(max, c.cycle_length || 0),
@@ -163,7 +166,7 @@ const CycleHistoryList: React.FC = () => {
               key={c.id || c.start_date}
               title={t('cycleHistory.startedAccessibility', {
                 defaultValue: 'Cycle started {{date}}',
-                date: c.start_date,
+                date: formatLongDate(c.start_date, dateLocale),
               })}
               onConfirmDelete={() => c.id && deleteCycle(c.id)}
               className={`p-3.5 ${idx < cycles.length - 1 ? 'border-b border-border-subtle' : ''}`}
@@ -171,7 +174,7 @@ const CycleHistoryList: React.FC = () => {
               <Text className="text-text-primary font-semibold text-sm">
                 {t('cycleHistory.started', {
                   defaultValue: 'Started {{date}}',
-                  date: c.start_date,
+                  date: formatLongDate(c.start_date, dateLocale),
                 })}
               </Text>
               <Text className="text-text-secondary text-sm mt-1">

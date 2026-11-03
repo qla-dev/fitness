@@ -19,6 +19,7 @@ import { formatDateLabel } from '../utils/dateUtils';
 import { useCalendarPresentation } from '../utils/calendarLocalization';
 import { dayToPickerDate, localDateToDay } from '@workspace/shared';
 import type { CopyFoodEntriesPayload } from '../services/api/foodEntriesApi';
+import { getAppLocale } from '../localization';
 
 export interface CopyMealSheetRef {
   present: (
@@ -36,10 +37,8 @@ interface CopyMealSheetProps {
 
 const CopyMealSheet = forwardRef<CopyMealSheetRef, CopyMealSheetProps>(
   ({ isPending = false, onCopy }, ref) => {
-    const { t, i18n: translationI18n } = useTranslation();
-    const dateLocale = translationI18n.language.startsWith('pl')
-      ? 'pl-PL'
-      : 'en-US';
+    const { t } = useTranslation();
+    const dateLocale = getAppLocale();
     const { presentation } = useCalendarPresentation();
     const [sheetOpen, setSheetOpen] = useState(false);
 

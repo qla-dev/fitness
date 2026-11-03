@@ -31,6 +31,7 @@ import {
 } from '../utils/mealNutrition';
 import type { RootStackScreenProps } from '../types/navigation';
 import { getLocalizedMealLabel } from '../constants/meals';
+import { getAppLocale } from '../localization';
 
 type MealTypeDetailScreenProps = RootStackScreenProps<'MealTypeDetail'>;
 
@@ -38,10 +39,8 @@ const MealTypeDetailScreen: React.FC<MealTypeDetailScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const { date, mealType, mealTypeId, mealLabel } = route.params;
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();

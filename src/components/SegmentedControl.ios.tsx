@@ -6,6 +6,7 @@ import {
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import { useCSSVariable } from 'uniwind';
+import { useTranslation } from 'react-i18next';
 import {
   SEGMENTED_CONTROL_HEIGHT,
   type Segment,
@@ -44,6 +45,7 @@ export default function SegmentedControl<T extends string>({
   label?: string;
   size?: SegmentedControlSize;
 }) {
+  const { t } = useTranslation();
   const [textPrimary, textMuted] = useCSSVariable([
     '--color-text-primary',
     '--color-text-muted',
@@ -60,7 +62,7 @@ export default function SegmentedControl<T extends string>({
       ignoreSafeArea="all"
     >
       <Picker<T>
-        label={label ?? 'Options'}
+        label={label ?? t('common.options', { defaultValue: 'Options' })}
         selection={activeKey}
         onSelectionChange={onSelect}
         modifiers={[

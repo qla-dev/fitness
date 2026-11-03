@@ -18,7 +18,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useCSSVariable } from 'uniwind';
-import i18n from '../localization/i18n';
 import Icon from '../components/Icon';
 import SafeImage from '../components/SafeImage';
 import PhotoDayWeight from '../components/PhotoDayWeight';
@@ -35,6 +34,7 @@ import { formatShortDate, getTodayDate } from '../utils/dateUtils';
 import { type WeightDisplayMode } from '../utils/unitConversions';
 import type { PhotoType, ProgressPhotoDay } from '../types/checkInPhotos';
 import type { RootStackScreenProps } from '../types/navigation';
+import { getAppLocale } from '../localization';
 
 type Props = RootStackScreenProps<'ProgressPhotoTimelapse'>;
 
@@ -81,7 +81,7 @@ const ProgressPhotoTimelapseScreen: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const dateLocale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
+  const dateLocale = getAppLocale();
   const [accentPrimary, mutedColor] = useCSSVariable([
     '--color-accent-primary',
     '--color-icon-decorative',

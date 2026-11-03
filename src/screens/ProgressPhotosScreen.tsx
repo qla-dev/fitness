@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
-import i18n from '../localization/i18n';
 import Icon from '../components/Icon';
 import SafeImage from '../components/SafeImage';
 import ProgressPhotoViewer from '../components/ProgressPhotoViewer';
@@ -34,6 +33,7 @@ import {
   type ProgressPhotoDay,
 } from '../types/checkInPhotos';
 import type { RootStackScreenProps } from '../types/navigation';
+import { getAppLocale } from '../localization';
 
 type Props = RootStackScreenProps<'ProgressPhotos'>;
 
@@ -72,7 +72,7 @@ interface TimelineRow {
 const ProgressPhotosScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const dateLocale = i18n.language.startsWith('pl') ? 'pl-PL' : 'en-US';
+  const dateLocale = getAppLocale();
   const [accentPrimary, mutedColor] = useCSSVariable([
     '--color-accent-primary',
     '--color-icon-decorative',

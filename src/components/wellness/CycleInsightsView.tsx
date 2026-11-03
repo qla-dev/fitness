@@ -20,12 +20,11 @@ import {
   localizeCycleSymptom,
   localizeCycleAnomaly,
 } from '../../utils/cycleLocalization';
+import { getAppLocale } from '../../localization';
 
 const CycleInsightsView: React.FC = () => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const [accentColor, dangerColor] = useCSSVariable([
     '--color-accent-primary',
     '--color-icon-danger',

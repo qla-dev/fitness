@@ -21,6 +21,7 @@ import { formatDate } from '../../../utils/dateUtils';
 import ActionSheet, { type ActionSheetRef } from '../../ActionSheet';
 import Icon from '../../Icon';
 import type { BumpPhoto } from '../../../types/womensHealth';
+import { getAppLocale } from '../../../localization';
 
 interface BumpPhotoJournalProps {
   pregnancyId: string;
@@ -31,10 +32,8 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
   pregnancyId,
   currentWeek,
 }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const { photos, isLoading } = usePregnancyPhotos(pregnancyId);
   const { uploadAsync, isUploading, deleteAsync } =
     usePregnancyPhotoMutations();
@@ -46,7 +45,6 @@ const BumpPhotoJournal: React.FC<BumpPhotoJournalProps> = ({
   const actionSheetRef = useRef<ActionSheetRef>(null);
   const pickerLock = useRef(false);
   const [selectedPhoto, setSelectedPhoto] = useState<BumpPhoto | null>(null);
-
 
   const pickAndUpload = async (source: 'camera' | 'library') => {
     if (pickerLock.current) return;

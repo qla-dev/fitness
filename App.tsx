@@ -146,6 +146,7 @@ import ActiveWorkoutBar, {
 import { ActiveWorkoutTransitionScreenLayout } from './src/components/ActiveWorkoutTransitionProbe';
 import ActiveWorkoutKeepAwake from './src/components/ActiveWorkoutKeepAwake';
 import MedicationReminderReconciler from './src/components/MedicationReminderReconciler';
+import CycleTrainingNotesReconciler from './src/components/CycleTrainingNotesReconciler';
 import StartUpProtocol from './src/components/StartUpProtocol';
 import { useNativeIOSTabsActive, useNativeIOSHeadersActive } from './src/services/nativeTabBarPreference';
 import { useWidgetLanguageRefresh } from './src/hooks/useWidgetLanguageRefresh';
@@ -887,9 +888,10 @@ function AppContent() {
           <Stack.Screen
             name="CycleOnboarding"
             component={SafeCycleOnboarding}
-            options={createStackScreenOptions(t('screens.cycleSetup', { defaultValue: 'Cycle Setup' }), {
+            // Drawn by PromptScreen, so presented exactly like GoalEdit.
+            options={createStackScreenOptions('', {
               presentation: 'modal',
-              headerBackButtonDisplayMode: 'minimal',
+              headerBackVisible: false,
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),
             })}
           />
@@ -1066,6 +1068,7 @@ function AppContent() {
         <ActiveWorkoutBar />
         <ActiveWorkoutKeepAwake />
         <MedicationReminderReconciler />
+        <CycleTrainingNotesReconciler />
         <StartUpProtocol />
         <SafeAreaToast />
         </LightboxProvider>

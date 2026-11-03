@@ -40,11 +40,12 @@ import { useDiscreetMode } from '../hooks/useDiscreetMode';
 
 import type { RootStackScreenProps } from '../types/navigation';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
+import { getAppLocale } from '../localization';
 
 type SettingsScreenProps = RootStackScreenProps<'Profile'>;
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { t, i18n: translationI18n } = useTranslation();
+  const { t } = useTranslation();
   const onlineSession = useOnlineAccount((s) => s.session);
   const onlineAccountId = onlineSession?.user.id;
   useFocusEffect(
@@ -55,9 +56,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           .catch(() => undefined);
     }, [onlineAccountId])
   );
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const dateLocale = getAppLocale();
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -334,6 +333,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         defaultValue: 'Cycle & Pregnancy',
                       })
                 }
+                subtitle={
+                  discreetMode
+                    ? t('profile.wellnessSubtitle', {
+                        defaultValue: 'Tracking, predictions and daily notes',
+                      })
+                    : t('profile.cyclePregnancySubtitle', {
+                        defaultValue:
+                          'Cycle tracking, predictions and daily notes',
+                      })
+                }
                 onPress={() => navigation.navigate('CycleSettings')}
                 iconColor={catPink}
               />
@@ -341,6 +350,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 icon="medication"
                 title={t('screens.library.medications', {
                   defaultValue: 'Medications',
+                })}
+                subtitle={t('profile.medicationsSubtitle', {
+                  defaultValue: 'Doses, schedules and reminders',
                 })}
                 onPress={() => navigation.navigate('MedicationsList')}
                 iconColor={catTeal}

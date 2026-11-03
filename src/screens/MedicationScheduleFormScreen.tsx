@@ -47,6 +47,7 @@ import { offerMedicationScheduleDraft } from '../services/medicationScheduleDraf
 import type { RootStackScreenProps } from '../types/navigation';
 import { scheduleTypeLabel } from '../utils/medicationLocalization';
 import { SCHEDULE_TYPES } from '../types/medications';
+import { getAppLocale } from '../localization';
 
 type MedicationScheduleFormScreenProps =
   RootStackScreenProps<'MedicationScheduleForm'>;
@@ -166,10 +167,8 @@ function baseFromSchedule(existing?: MedicationSchedule): FormState {
 const MedicationScheduleFormScreen: React.FC<
   MedicationScheduleFormScreenProps
 > = ({ route, navigation }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const { medicationId, scheduleId, doseUnit: draftDoseUnit } = route.params;
   const isEditing = !!scheduleId;
   // No medication yet: the questionnaire is still adding it.

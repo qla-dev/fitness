@@ -75,6 +75,7 @@ import type { WorkoutDraftSet } from '../types/drafts';
 import { activityTelemetry } from '../utils/activityTelemetry';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
+import { getAppLocale } from '../localization';
 
 /** The icon a shared photo draws above each kind of reading. */
 const DETAIL_METRIC_ICONS: Record<keyof typeof METRIC_COLORS, PhotoMetricIcon> =
@@ -126,10 +127,8 @@ type EditableField =
   'name' | 'duration' | 'calories' | 'distance' | 'avgHeartRate' | 'notes';
 
 const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const [session, setSession] = useState(route.params.session);
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();

@@ -58,6 +58,7 @@ export const PREFERENCE_DEFAULTS = {
   medicationsCardVisible: true,
   progressPhotosCardVisible: true,
   medicationRemindersEnabled: true,
+  cycleTrainingNotesEnabled: true,
   medicationReminderRepeats: true,
   medicationReminderHideNames: false,
   liquidGlassTabBarEnabled: false,
@@ -93,6 +94,8 @@ export type AppPreferencesData = {
   medicationsCardVisible: boolean;
   progressPhotosCardVisible: boolean;
   medicationRemindersEnabled: boolean;
+  /** The 9:00 note on how hard to train, from the cycle phase. */
+  cycleTrainingNotesEnabled: boolean;
   medicationReminderRepeats: boolean;
   medicationReminderHideNames: boolean;
   liquidGlassTabBarEnabled: boolean;
@@ -128,6 +131,7 @@ export interface AppPreferencesState extends AppPreferencesData {
   setMedicationsCardVisible: (value: boolean) => void;
   setProgressPhotosCardVisible: (value: boolean) => void;
   setMedicationRemindersEnabled: (value: boolean) => void;
+  setCycleTrainingNotesEnabled: (value: boolean) => void;
   setMedicationReminderRepeats: (value: boolean) => void;
   setMedicationReminderHideNames: (value: boolean) => void;
   setLiquidGlassTabBarEnabled: (value: boolean) => void;
@@ -215,6 +219,8 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         set({ progressPhotosCardVisible: value }),
       setMedicationRemindersEnabled: (value) =>
         set({ medicationRemindersEnabled: value }),
+      setCycleTrainingNotesEnabled: (value) =>
+        set({ cycleTrainingNotesEnabled: value }),
       setMedicationReminderRepeats: (value) =>
         set({ medicationReminderRepeats: value }),
       setMedicationReminderHideNames: (value) =>
@@ -266,6 +272,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         medicationsCardVisible: state.medicationsCardVisible,
         progressPhotosCardVisible: state.progressPhotosCardVisible,
         medicationRemindersEnabled: state.medicationRemindersEnabled,
+        cycleTrainingNotesEnabled: state.cycleTrainingNotesEnabled,
         medicationReminderRepeats: state.medicationReminderRepeats,
         medicationReminderHideNames: state.medicationReminderHideNames,
         liquidGlassTabBarEnabled: state.liquidGlassTabBarEnabled,

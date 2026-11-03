@@ -1,0 +1,11 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "qla.fit treba pristup kameri da bi skenirao barkodove i deklaracije namirnica.",
+    "NSHealthShareUsageDescription": "qla.fit čita podatke iz aplikacije Health (poput aktivnosti, treninga i tjelesnih mjerenja) kako bi ih prikazao u aplikaciji i sinhronizirao s vašim samostalno hostovanim qla.fit serverom.",
+    "NSHealthUpdateUsageDescription": "qla.fit zapisuje ishranu i hidrataciju koju unesete u aplikaciji u Apple Health, održavajući oboje sinhroniziranim.",
+    "NSLocalNetworkUsageDescription": "qla.fit se povezuje sa samostalno hostovanim serverima na vašoj lokalnoj mreži.",
+    "NSBluetoothAlwaysUsageDescription": "qla.fit koristi Bluetooth za povezivanje s fitness senzorima kao što su mjerači otkucaja srca.",
+    "NSLocationWhenInUseUsageDescription": "qla.fit koristi vašu lokaciju za mapiranje i mjerenje vaših trčanja i vožnji.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "qla.fit koristi vašu lokaciju kako bi nastavio snimati vašu rutu dok je aplikacija u pozadini."
+  }
+}

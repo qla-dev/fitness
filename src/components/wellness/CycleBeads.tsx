@@ -59,7 +59,10 @@ const CycleBeads: React.FC<CycleBeadsProps> = ({
   // Bead size follows the circumference so a 35-day cycle still leaves gaps.
   const spacing = (2 * Math.PI * (size / 2 - 8)) / len;
   const bead = Math.min(size * 0.035, spacing * 0.36);
-  const radius = size / 2 - bead * 2.6 - 1;
+  // Inset by today's halo at its widest (HALO_MAX beads), so the canvas edge
+  // never cuts it: the ring used to sit at the halo's resting size, and every
+  // breath cropped it flat at the top.
+  const radius = size / 2 - bead * HALO_MAX - 1;
 
   const beads = useMemo(() => {
     const out: {
@@ -220,6 +223,10 @@ const Bead: React.FC<{
   return <Circle cx={x} cy={y} r={radius} color={color} />;
 };
 
+/** The halo's radius in beads, at rest and at the top of a breath. */
+const HALO_REST = 2.6;
+const HALO_MAX = HALO_REST + 1.1;
+
 /** Today's soft halo, slowly breathing. */
 const Halo: React.FC<{
   x: number;
@@ -228,7 +235,9 @@ const Halo: React.FC<{
   color: string;
   breath: SharedValue<number>;
 }> = ({ x, y, bead, color, breath }) => {
-  const radius = useDerivedValue(() => bead * (2.6 + breath.value * 1.1));
+  const radius = useDerivedValue(
+    () => bead * (HALO_REST + breath.value * (HALO_MAX - HALO_REST))
+  );
   const opacity = useDerivedValue(() => 0.35 - breath.value * 0.2);
   return <Circle cx={x} cy={y} r={radius} color={color} opacity={opacity} />;
 };

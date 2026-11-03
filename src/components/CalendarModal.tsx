@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
-import { useSheetBackdrop } from './ui/sheetChrome';
+import { sheetContainer, useSheetBackdrop } from './ui/sheetChrome';
 import { fireSelectionHaptic } from '../services/haptics';
 
 export interface CalendarModalRef {
@@ -132,6 +132,11 @@ const CalendarModal = forwardRef<CalendarModalRef, Props>(
         // full screen height over it.
         topInset={insets.top}
         backdropComponent={backdrop}
+        // In its own window on iOS, like CalendarSheet: opened from a modal
+        // route the sheet otherwise sat under it, its backdrop dimming only
+        // that screen and leaving the native header's buttons and the sheet's
+        // top edge bright above it.
+        containerComponent={sheetContainer}
         onDismiss={onDismiss}
         onAnimate={onAnimate}
         backgroundStyle={{

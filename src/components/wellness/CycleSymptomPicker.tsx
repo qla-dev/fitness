@@ -8,12 +8,15 @@ import {
 import CycleIcon from './CycleIcon';
 
 import { useCycleMode } from '../../hooks/useCycleMode';
+import LogSection from './LogSection';
 
 interface CycleSymptomPickerProps {
   /** Draft selection of symptom display names; owned by the parent form. */
   selected: string[];
   onToggle: (symptom: CycleSymptomDef) => void;
   loading?: boolean;
+  /** The line under the heading, as every section of the log has. */
+  subtitle?: string;
 }
 
 const PREGNANCY_TOP_SYMPTOMS = [
@@ -54,6 +57,7 @@ const CycleSymptomPicker: React.FC<CycleSymptomPickerProps> = ({
   selected,
   onToggle,
   loading,
+  subtitle,
 }) => {
   const { t } = useTranslation();
   const { mode } = useCycleMode();
@@ -188,11 +192,10 @@ const CycleSymptomPicker: React.FC<CycleSymptomPickerProps> = ({
   }
 
   return (
-    <View className="gap-2">
-      <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-text-primary text-sm font-semibold">
-          {t('cycleSymptoms.title', { defaultValue: 'Symptoms' })}
-        </Text>
+    <LogSection
+      title={t('cycleSymptoms.title', { defaultValue: 'Symptoms' })}
+      subtitle={subtitle}
+      right={
         <TouchableOpacity
           onPress={() => setShowAll((v) => !v)}
           activeOpacity={0.7}
@@ -203,8 +206,8 @@ const CycleSymptomPicker: React.FC<CycleSymptomPickerProps> = ({
               : t('cycleSymptoms.showAll', { defaultValue: 'Show all' })}
           </Text>
         </TouchableOpacity>
-      </View>
-
+      }
+    >
       <View className="flex-row flex-wrap gap-2">
         {displayedSymptoms.map((s) => {
           const isActive = activeSymptomSnapshots.includes(
@@ -219,7 +222,7 @@ const CycleSymptomPicker: React.FC<CycleSymptomPickerProps> = ({
               className={`flex-row items-center rounded-full px-3.5 py-2 border ${
                 isActive
                   ? 'bg-accent-primary/10 border-accent-primary'
-                  : 'bg-raised border-border-subtle'
+                  : 'bg-surface border-transparent'
               }`}
             >
               <CycleIcon id={s.icon} size={20} />
@@ -236,7 +239,7 @@ const CycleSymptomPicker: React.FC<CycleSymptomPickerProps> = ({
           );
         })}
       </View>
-    </View>
+    </LogSection>
   );
 };
 

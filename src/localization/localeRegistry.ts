@@ -11,6 +11,12 @@ export type LocaleMetadata = {
    * Only consulted when no registered locale matches the tag itself.
    */
   aliases?: string[];
+  /**
+   * The locale whose app strings this one reads, for a language the app
+   * shows as its own (name, dates, numbers) while sharing another's wording:
+   * Croatian and Serbian read Bosnian's.
+   */
+  translationSource?: string;
 };
 
 type ManifestLocaleKey = keyof typeof manifest.locales;
@@ -70,7 +76,7 @@ export function normalizeLocaleFromRegistry(
       )[0]?.[0] ?? null;
   if (family) return family;
 
-  // hr-HR, sr-Latn-RS, sr-Cyrl…: a language served by another locale.
+  // sh, cnr: a language served by another locale.
   return (
     entries.find(([, metadata]) =>
       (metadata.aliases ?? []).some((alias) => {

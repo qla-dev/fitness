@@ -60,6 +60,7 @@ import type { Exercise } from '../types/exercise';
 import type { RootStackScreenProps } from '../types/navigation';
 import { localizeExerciseTaxonomyValue } from '../localization/exerciseTaxonomy';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
+import { getAppLocale } from '../localization';
 
 type ExerciseDetailScreenProps = RootStackScreenProps<'ExerciseDetail'>;
 
@@ -116,10 +117,8 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const { item, updatedItem, selectionReturnKey } = route.params;
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();

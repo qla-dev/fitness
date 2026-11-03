@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useCSSVariable } from 'uniwind';
 import {
-  buildMonthGrid,
-  addDays,
-  compareDays,
-  isHormonalBc,
-} from '@workspace/shared';
+  View,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+} from 'react-native';
+import { useCSSVariable } from 'uniwind';
+import { addDays, compareDays, isHormonalBc } from '@workspace/shared';
 import type {
   SharedCycle,
   SharedCycleDailyLog,
@@ -16,7 +16,28 @@ import type {
 import Icon from '../Icon';
 import { useWellnessTokens } from './theme/wellnessTokens';
 import { getPhaseColor } from '../../utils/cycleDisplayUtils';
-import { usePreferences } from '../../hooks/usePreferences';
+import { getTodayDate } from '../../utils/dateUtils';
+import {
+  getCalendarMonthNames,
+  getCalendarWeekdayShortNames,
+  useCalendarPresentation,
+} from '../../utils/calendarLocalization';
+import {
+  CalendarMonthGrid,
+  MonthPager,
+  WeekdayHeader,
+  cellWidthFor,
+  monthString,
+  monthsAround,
+  type DayDecoration,
+  type MonthPagerRef,
+} from '../calendar/MonthPager';
+
+/** Months either side of the opening one; the future holds the predictions. */
+const MONTHS_BACK = 24;
+const MONTHS_FORWARD = 12;
+/** The day's tinted circle, the cell's whole target. */
+const DAY_SIZE = 36;
 
 interface CycleCalendarGridProps {
   initialDate: string; // YYYY-MM-DD, seeds the visible month
@@ -36,35 +57,37 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
   settings,
   onMonthChange,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const tokens = useWellnessTokens();
-  const { preferences } = usePreferences();
-  const firstDayOfWeek =
-    typeof preferences?.first_day_of_week === 'number' &&
-    preferences.first_day_of_week >= 0 &&
-    preferences.first_day_of_week <= 6
-      ? preferences.first_day_of_week
-      : 0;
-  const [textPrimary, textMuted] = useCSSVariable([
-    '--color-text-primary',
-    '--color-text-muted',
-  ]) as [string, string];
-  const [currentMonth, setCurrentMonth] = useState(() =>
-    initialDate.slice(0, 7)
-  ); // YYYY-MM
+  const { appLocale, presentation } = useCalendarPresentation();
+  const [textPrimary] = useCSSVariable(['--color-text-primary']) as [string];
+  const today = getTodayDate();
 
-  useEffect(() => {
-    onMonthChange?.(currentMonth);
-  }, [currentMonth, onMonthChange]);
+  // The Activities calendar's pager: newest month first, the opening one
+  // MONTHS_FORWARD pages in.
+  const months = useMemo(
+    () => monthsAround(initialDate, MONTHS_BACK, MONTHS_FORWARD),
+    [initialDate]
+  );
+  const initialIndex = MONTHS_FORWARD;
+  const [index, setIndex] = useState(initialIndex);
+  const pagerRef = useRef<MonthPagerRef>(null);
+  const monthNames = useMemo(
+    () => getCalendarMonthNames(appLocale),
+    [appLocale]
+  );
+  const weekdayNames = useMemo(
+    () => getCalendarWeekdayShortNames(appLocale),
+    [appLocale]
+  );
 
-  const { year, monthVal } = useMemo(() => {
-    const parts = currentMonth.split('-').map(Number);
-    return { year: parts[0] || 2026, monthVal: parts[1] || 7 };
-  }, [currentMonth]);
-
-  const { days: gridDates } = useMemo(
-    () => buildMonthGrid(year, monthVal, firstDayOfWeek),
-    [year, monthVal, firstDayOfWeek]
+  const handleIndexChange = useCallback(
+    (next: number) => {
+      setIndex(next);
+      const entry = months[next];
+      if (entry) onMonthChange?.(monthString(entry));
+    },
+    [months, onMonthChange]
   );
 
   // Stats for prediction
@@ -191,51 +214,65 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
     [logs]
   );
 
-  const handlePrevMonth = () => {
-    let nextMonth = monthVal - 1;
-    let nextYear = year;
-    if (nextMonth < 1) {
-      nextMonth = 12;
-      nextYear -= 1;
-    }
-    setCurrentMonth(`${nextYear}-${String(nextMonth).padStart(2, '0')}`);
-  };
-
-  const handleNextMonth = () => {
-    let nextMonth = monthVal + 1;
-    let nextYear = year;
-    if (nextMonth > 12) {
-      nextMonth = 1;
-      nextYear += 1;
-    }
-    setCurrentMonth(`${nextYear}-${String(nextMonth).padStart(2, '0')}`);
-  };
-
-  const monthName = new Date(year, monthVal - 1, 1).toLocaleString(
-    i18n.language.toLowerCase().startsWith('pl') ? 'pl-PL' : 'en-US',
-    { month: 'long', year: 'numeric' }
+  const decorateDay = useCallback(
+    (day: string): DayDecoration => {
+      const phase = decoratedDaysMap[day] || 'none';
+      const testID = `cycle-day-${day}-${phase}`;
+      const dot = loggedDays.has(day) ? textPrimary : undefined;
+      if (phase === 'period') {
+        const color = getPhaseColor('menstrual', tokens);
+        return { testID, dot, color, backgroundColor: color + '26' };
+      }
+      if (phase === 'predicted-period') {
+        const color = getPhaseColor('menstrual', tokens);
+        return {
+          testID,
+          dot,
+          color,
+          backgroundColor: color + '14',
+          borderColor: color,
+          borderStyle: 'dashed',
+        };
+      }
+      if (phase === 'fertile') {
+        const color = getPhaseColor('fertile', tokens);
+        return { testID, dot, color, backgroundColor: color + '26' };
+      }
+      if (phase === 'ovulation') {
+        const color = getPhaseColor('ovulation', tokens);
+        return {
+          testID,
+          dot,
+          color,
+          backgroundColor: color + '26',
+          borderColor: color,
+        };
+      }
+      return { testID, dot };
+    },
+    [decoratedDaysMap, loggedDays, textPrimary, tokens]
   );
-  const baseWeekdays = [
-    t('cycleCalendar.weekdays.sunday', { defaultValue: 'S' }),
-    t('cycleCalendar.weekdays.monday', { defaultValue: 'M' }),
-    t('cycleCalendar.weekdays.tuesday', { defaultValue: 'T' }),
-    t('cycleCalendar.weekdays.wednesday', { defaultValue: 'W' }),
-    t('cycleCalendar.weekdays.thursday', { defaultValue: 'T' }),
-    t('cycleCalendar.weekdays.friday', { defaultValue: 'F' }),
-    t('cycleCalendar.weekdays.saturday', { defaultValue: 'S' }),
-  ];
-  // Rotate weekday headers so they start on the account-configured first day.
-  const weekdays = Array.from(
-    { length: 7 },
-    (_, i) => baseWeekdays[(i + firstDayOfWeek) % 7]
-  );
+
+  // The pager pages by its own width, which only the card knows.
+  // A first guess from the window keeps the grid drawn before layout.
+  const { width: windowWidth } = useWindowDimensions();
+  const [width, setWidth] = useState(windowWidth - 32);
+  const cellWidth = cellWidthFor(width);
+  const visible = months[index] ?? months[initialIndex];
+  const title = visible
+    ? `${monthNames[visible.month] ?? ''} ${String(visible.year)}`
+    : '';
 
   return (
-    <View className="bg-surface rounded-xl p-4 border-0">
+    <View
+      className="bg-surface rounded-xl py-4"
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+    >
       {/* Month Header Navigation */}
-      <View className="flex-row justify-between items-center mb-4">
+      <View className="flex-row justify-between items-center mb-3 px-4">
         <TouchableOpacity
-          onPress={handlePrevMonth}
+          onPress={() => pagerRef.current?.goTo(index + 1)}
+          disabled={index >= months.length - 1}
           accessibilityLabel={t('cycleCalendar.previousMonth', {
             defaultValue: 'Previous month',
           })}
@@ -244,11 +281,10 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
         >
           <Icon name="chevron-back" size={20} color={textPrimary} />
         </TouchableOpacity>
-        <Text className="text-text-primary text-base font-bold">
-          {monthName}
-        </Text>
+        <Text className="text-text-primary text-base font-bold">{title}</Text>
         <TouchableOpacity
-          onPress={handleNextMonth}
+          onPress={() => pagerRef.current?.goTo(index - 1)}
+          disabled={index <= 0}
           accessibilityLabel={t('cycleCalendar.nextMonth', {
             defaultValue: 'Next month',
           })}
@@ -259,117 +295,42 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Weekdays Headers */}
-      <View className="flex-row mb-2">
-        {weekdays.map((day, idx) => (
-          <Text
-            key={idx}
-            className="flex-1 text-center text-text-secondary text-xs font-semibold py-1"
-          >
-            {day}
-          </Text>
-        ))}
-      </View>
-
-      {/* Days Grid */}
-      <View className="flex-row flex-wrap">
-        {gridDates.map((dateStr) => {
-          const hasLog = loggedDays.has(dateStr);
-          const phase = decoratedDaysMap[dateStr] || 'none';
-          const [, , dayNum] = dateStr.split('-').map(Number);
-          const isCurrentMonth = dateStr.startsWith(currentMonth);
-
-          // Class/Style mappings
-          let cellBg = 'transparent';
-          let textColor = textPrimary;
-          let borderColor = 'transparent';
-          let borderStyle: 'solid' | 'dashed' = 'solid';
-
-          if (phase === 'period') {
-            const pColor = getPhaseColor('menstrual', tokens);
-            cellBg = pColor + '26'; // ~15% opacity
-            textColor = pColor;
-          } else if (phase === 'predicted-period') {
-            const pColor = getPhaseColor('menstrual', tokens);
-            cellBg = pColor + '14'; // ~8% opacity
-            textColor = pColor;
-            borderColor = pColor;
-            borderStyle = 'dashed';
-          } else if (phase === 'fertile') {
-            const pColor = getPhaseColor('fertile', tokens);
-            cellBg = pColor + '26';
-            textColor = pColor;
-          } else if (phase === 'ovulation') {
-            const pColor = getPhaseColor('ovulation', tokens);
-            cellBg = pColor + '26';
-            textColor = pColor;
-            borderColor = pColor;
-          }
-
-          if (!isCurrentMonth) {
-            textColor = textMuted;
-            if (cellBg !== 'transparent') {
-              cellBg = textMuted + '15';
-            }
-          }
-
-          return (
-            <TouchableOpacity
-              key={dateStr}
-              onPress={() => onDayPress(dateStr)}
-              style={{
-                width: '14.28%',
-                aspectRatio: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 4,
-              }}
-            >
-              <View
-                testID={`cycle-day-${dateStr}-${phase}`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 999,
-                  backgroundColor: cellBg,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: borderColor !== 'transparent' ? 1.5 : 0,
-                  borderColor,
-                  borderStyle,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '500',
-                    color: textColor,
-                  }}
-                >
-                  {dayNum}
-                </Text>
-                {hasLog && (
-                  <View
-                    testID={`logged-dot-${dateStr}`}
-                    style={{
-                      position: 'absolute',
-                      bottom: 6,
-                      width: 4,
-                      height: 4,
-                      borderRadius: 2,
-                      backgroundColor: textColor,
-                    }}
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {width > 0 && (
+        <>
+          <WeekdayHeader
+            names={weekdayNames}
+            firstDayOfWeek={presentation.firstDayOfWeek}
+            cellWidth={cellWidth}
+          />
+          <MonthPager
+            ref={pagerRef}
+            months={months}
+            initialIndex={initialIndex}
+            width={width}
+            onIndexChange={handleIndexChange}
+            renderMonth={({ item }) => (
+              <CalendarMonthGrid
+                year={item.year}
+                month={item.month}
+                today={today}
+                selectedDate=""
+                firstDayOfWeek={presentation.firstDayOfWeek}
+                cellWidth={cellWidth}
+                pageWidth={width}
+                onSelect={onDayPress}
+                labelSize={DAY_SIZE}
+                decorateDay={decorateDay}
+              />
+            )}
+          />
+        </>
+      )}
 
       {/* Calendar Color Legend */}
-      <View className="mt-4 pt-3 border-t border-border-subtle flex-row flex-wrap justify-between gap-y-2 px-1">
-        <View className="flex-row items-center gap-1.5">
+      {/* One row: a label too long for its share shrinks rather than pushing
+          the last one onto a line of its own. */}
+      <View className="mt-2 mx-4 pt-3 border-t border-border-subtle flex-row justify-between gap-2 px-1">
+        <View className="flex-row items-center gap-1 shrink">
           <View
             style={{
               width: 10,
@@ -378,13 +339,18 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
               backgroundColor: getPhaseColor('menstrual', tokens) + '35',
             }}
           />
-          <Text className="text-text-secondary text-xs">
+          <Text
+            className="text-text-secondary text-xs shrink"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {t('cycleCalendar.legend.period', { defaultValue: 'Period' })}
           </Text>
         </View>
 
         {!suppressPredictions && (
-          <View className="flex-row items-center gap-1.5">
+          <View className="flex-row items-center gap-1 shrink">
             <View
               style={{
                 width: 10,
@@ -396,9 +362,14 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
                 borderStyle: 'dashed',
               }}
             />
-            <Text className="text-text-secondary text-xs">
+            <Text
+              className="text-text-secondary text-xs shrink"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {t('cycleCalendar.legend.predictedPeriod', {
-                defaultValue: 'Predicted Period',
+                defaultValue: 'Predicted',
               })}
             </Text>
           </View>
@@ -406,7 +377,7 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
 
         {!suppressFertility && (
           <>
-            <View className="flex-row items-center gap-1.5">
+            <View className="flex-row items-center gap-1 shrink">
               <View
                 style={{
                   width: 10,
@@ -415,14 +386,19 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
                   backgroundColor: getPhaseColor('fertile', tokens) + '35',
                 }}
               />
-              <Text className="text-text-secondary text-xs">
+              <Text
+                className="text-text-secondary text-xs shrink"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {t('cycleCalendar.legend.fertileWindow', {
-                  defaultValue: 'Fertile Window',
+                  defaultValue: 'Fertile',
                 })}
               </Text>
             </View>
 
-            <View className="flex-row items-center gap-1.5">
+            <View className="flex-row items-center gap-1 shrink">
               <View
                 style={{
                   width: 10,
@@ -433,16 +409,21 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
                   borderColor: getPhaseColor('ovulation', tokens),
                 }}
               />
-              <Text className="text-text-secondary text-xs">
+              <Text
+                className="text-text-secondary text-xs shrink"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {t('cycleCalendar.legend.estimatedOvulation', {
-                  defaultValue: 'Est. Ovulation',
+                  defaultValue: 'Ovulation',
                 })}
               </Text>
             </View>
           </>
         )}
 
-        <View className="flex-row items-center gap-1.5">
+        <View className="flex-row items-center gap-1 shrink">
           <View
             style={{
               width: 4,
@@ -451,7 +432,12 @@ const CycleCalendarGrid: React.FC<CycleCalendarGridProps> = ({
               backgroundColor: textPrimary,
             }}
           />
-          <Text className="text-text-secondary text-xs">
+          <Text
+            className="text-text-secondary text-xs shrink"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {t('cycleCalendar.legend.logged', { defaultValue: 'Logged' })}
           </Text>
         </View>

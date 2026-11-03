@@ -26,11 +26,23 @@
       "displayNameKey": "settings.language.bosnian",
       "defaultDisplayName": "Bosanski",
       "aliases": [
-        "hr",
-        "sr",
         "sh",
         "cnr"
       ]
+    },
+    "hr": {
+      "languageCode": "hr",
+      "intlLocale": "hr-HR",
+      "displayNameKey": "settings.language.croatian",
+      "defaultDisplayName": "Hrvatski",
+      "translationSource": "bs"
+    },
+    "sr": {
+      "languageCode": "sr",
+      "intlLocale": "sr-Latn-RS",
+      "displayNameKey": "settings.language.serbian",
+      "defaultDisplayName": "Srpski",
+      "translationSource": "bs"
     },
     "it": {
       "languageCode": "it",

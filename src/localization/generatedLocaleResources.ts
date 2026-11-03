@@ -15,6 +15,8 @@ export const RESOURCE_MAP = {
   "de": { translation: locale_deTranslation },
   "en": { translation: locale_enTranslation },
   "es": { translation: locale_esTranslation },
+  "hr": { translation: locale_bsTranslation },
   "it": { translation: locale_itTranslation },
   "pl": { translation: locale_plTranslation },
+  "sr": { translation: locale_bsTranslation },
 } satisfies Record<SupportedLanguage, { translation: object }>;

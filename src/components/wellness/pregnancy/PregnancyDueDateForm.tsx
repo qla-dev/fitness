@@ -7,16 +7,14 @@ import { getTodayDate, formatDate, addDays } from '../../../utils/dateUtils';
 import BottomSheetPicker from '../../BottomSheetPicker';
 import CalendarSheet, { type CalendarSheetRef } from '../../CalendarSheet';
 import SettingsRow, { SettingsRowGroup } from '../../SettingsRow';
+import { getAppLocale } from '../../../localization';
 
-const BASIS_OPTIONS: { value: PregnancyDueDateBasis; label: string }[] = [
-  // i18n-audit-ignore-next-line hardcoded-ui-text -- internal translation selector key, not visible text.
-  { value: 'manual', label: 'dueDate' },
-  // i18n-audit-ignore-next-line hardcoded-ui-text -- internal translation selector key, not visible text.
-  { value: 'scan', label: 'ultrasoundScan' },
-  // i18n-audit-ignore-next-line hardcoded-ui-text -- internal translation selector key, not visible text.
-  { value: 'lmp', label: 'lastPeriod' },
-  // i18n-audit-ignore-next-line hardcoded-ui-text -- internal translation selector key, not visible text.
-  { value: 'conception', label: 'conceptionDate' },
+// `labelKey` picks the translated label below; it is never shown itself.
+const BASIS_OPTIONS: { value: PregnancyDueDateBasis; labelKey: string }[] = [
+  { value: 'manual', labelKey: 'dueDate' },
+  { value: 'scan', labelKey: 'ultrasoundScan' },
+  { value: 'lmp', labelKey: 'lastPeriod' },
+  { value: 'conception', labelKey: 'conceptionDate' },
 ];
 
 const DATE_FIELD_LABEL: Record<PregnancyDueDateBasis, string> = {
@@ -128,10 +126,8 @@ const PregnancyDueDateForm: React.FC<PregnancyDueDateFormProps> = ({
   form,
   children,
 }) => {
-  const { t, i18n: translationI18n } = useTranslation();
-  const dateLocale = translationI18n.language.startsWith('pl')
-    ? 'pl-PL'
-    : 'en-US';
+  const { t } = useTranslation();
+  const dateLocale = getAppLocale();
   const calendarRef = useRef<CalendarSheetRef>(null);
 
   return (
@@ -143,7 +139,7 @@ const PregnancyDueDateForm: React.FC<PregnancyDueDateFormProps> = ({
             <BottomSheetPicker
               value={form.basis}
               options={BASIS_OPTIONS.map((option) => ({
-                ...option,
+                value: option.value,
                 label: (
                   {
                     dueDate: t('pregnancyDueDate.options.dueDate', {
@@ -161,7 +157,7 @@ const PregnancyDueDateForm: React.FC<PregnancyDueDateFormProps> = ({
                       { defaultValue: 'Conception date' }
                     ),
                   } as Record<string, string>
-                )[option.label],
+                )[option.labelKey],
               }))}
               onSelect={form.setBasis}
               title={t('pregnancyDueDate.estimateBy', {

@@ -1,33 +1,34 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text } from 'react-native';
 import { useCSSVariable } from 'uniwind';
 import Toast from 'react-native-toast-message';
-import { getTodayDate, addDays } from '../utils/dateUtils';
+import { getTodayDate, addDays, formatLongDate } from '../utils/dateUtils';
+import { useAppLocale } from '../localization';
 
-import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
+import SettingsRow, {
+  SettingsRowGroup,
+  SettingsValueSubtitle,
+} from '../components/SettingsRow';
 import { useCycleSettings } from '../hooks/useCycleSettings';
 import {
   usePregnancyMutations,
   useCurrentPregnancy,
 } from '../hooks/usePregnancy';
 import { bulkPutLogs } from '../services/api/cycleApi';
-import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { addLog } from '../services/LogService';
-import { useScreenHeader } from '../hooks/useScreenHeader';
 import type { RootStackScreenProps } from '../types/navigation';
 import BottomSheetPicker from '../components/BottomSheetPicker';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../components/CalendarSheet';
+import RingCalendarSheet, {
+  type RingCalendarSheetRef,
+} from '../components/RingCalendarSheet';
 import StepperInput, { useStepperDraft } from '../components/StepperInput';
-import Button from '../components/ui/Button';
 import Icon from '../components/Icon';
 import PregnancyDueDateForm, {
   usePregnancyDueDateForm,
 } from '../components/wellness/pregnancy/PregnancyDueDateForm';
 import Switch from '../components/ui/Switch';
+import PromptScreen from '../components/ui/PromptScreen';
 import { CYCLE_SETTING_LIMITS } from '../utils/cycleDisplayUtils';
 
 import {
@@ -35,7 +36,6 @@ import {
   CYCLE_CONDITIONS,
   type CycleMode,
 } from '@workspace/shared';
-import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
 type CycleOnboardingScreenProps = RootStackScreenProps<'CycleOnboarding'>;
 
@@ -56,6 +56,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
   navigation,
 }) => {
   const { t } = useTranslation();
+  const appLocale = useAppLocale();
   const getModeLabel = (key: (typeof MODE_OPTIONS)[number]['key']): string => {
     switch (key) {
       case 'standard':
@@ -140,8 +141,6 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
         return fallback;
     }
   };
-  const insets = useSafeAreaInsets();
-  const usesNativeHeader = useNativeIOSHeadersActive();
   const [accentColor, formDisabled] = useCSSVariable([
     '--color-accent-primary',
     '--color-form-disabled',
@@ -175,7 +174,7 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
   });
 
   // Refs
-  const calendarSheetRef = useRef<CalendarSheetRef>(null);
+  const calendarSheetRef = useRef<RingCalendarSheetRef>(null);
 
   const handleToggleCondition = (cond: string, val: boolean) => {
     if (val) {
@@ -275,186 +274,190 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
     }
   };
 
-  const header = useScreenHeader({
-    variant: 'transparent',
-    title: t('cycleOnboarding.stepTitle', {
-      defaultValue: 'Setup: Step {{step}} of 4',
-      step,
-    }),
-    left:
-      step > 1
-        ? {
-            kind: 'primary',
-            label: t('common.back', { defaultValue: 'Back' }),
-            onPress: () => setStep((s) => s - 1),
-          }
-        : {
-            kind: 'primary',
-            label: t('common.back', { defaultValue: 'Back' }),
-            onPress: () => navigation.goBack(),
-          },
-  });
+  const isPostRecovery = mode === 'postpartum' || mode === 'menopause';
+  const stepCopy: Record<number, { title: string; description?: string }> = {
+    1: {
+      title: t('cycleOnboarding.goalTitle', {
+        defaultValue: 'What is your tracking goal?',
+      }),
+      description: t('cycleOnboarding.goalDescription', {
+        defaultValue:
+          'Select the mode that best fits your current health focus. You can change this anytime in settings.',
+      }),
+    },
+    2: {
+      title: t('cycleOnboarding.datesTitle', {
+        defaultValue: 'Dates & Averages',
+      }),
+      description:
+        mode === 'pregnant'
+          ? t('cycleOnboarding.dueDateDescription', {
+              defaultValue:
+                'Tell us how to estimate your due date. You can change this later in settings.',
+            })
+          : isPostRecovery
+            ? undefined
+            : t('cycleOnboarding.predictionsDescription', {
+                defaultValue: 'Help us build predictions for your cycle.',
+              }),
+    },
+    3: {
+      title: t('cycleOnboarding.profileTitle', {
+        defaultValue: 'Profile & Conditions',
+      }),
+      description: t('cycleOnboarding.profileDescription', {
+        defaultValue:
+          'Select any relevant conditions or birth control methods to personalize your tracking.',
+      }),
+    },
+    4: {
+      title: t('cycleOnboarding.disclaimerTitle', {
+        defaultValue: 'Disclaimer & Complete',
+      }),
+    },
+  };
 
+  // The questionnaire's shape: the first step closes the sheet, later ones
+  // step back through it, and the action that moves on is the footer.
   return (
-    <View
-      className="flex-1 bg-background"
-      style={usesNativeHeader ? undefined : { paddingTop: insets.top }}
-    >
-      {header}
-      <NativeHeaderScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: insets.bottom + 100,
-        }}
+    <>
+      <PromptScreen
+        topAligned
+        headerTitle={t('cycleOnboarding.stepTitle', {
+          defaultValue: 'Setup: Step {{step}} of 4',
+          step,
+        })}
+        title={stepCopy[step].title}
+        description={stepCopy[step].description}
+        headerLeft={
+          step > 1
+            ? {
+                kind: 'icon',
+                sfSymbol: 'chevron.left',
+                ionicon: 'chevron-back',
+                accessibilityLabel: t('common.back', { defaultValue: 'Back' }),
+                onPress: () => setStep((s) => s - 1),
+                disabled: loading,
+              }
+            : undefined
+        }
+        dismissDisabled={loading}
+        footerLabel={
+          step < 4
+            ? t('common.next', { defaultValue: 'Next' })
+            : t('cycleOnboarding.acceptInitialize', {
+                defaultValue: 'Accept & Initialize Profile',
+              })
+        }
+        onFooterPress={
+          step < 4 ? () => setStep((s) => s + 1) : () => void handleComplete()
+        }
+        footerLoading={loading}
       >
         {step === 1 && (
-          <View className="gap-4">
-            <Text className="text-xl font-bold text-text-primary">
-              {t('cycleOnboarding.goalTitle', {
-                defaultValue: 'What is your tracking goal?',
-              })}
-            </Text>
-            <Text className="text-text-secondary text-sm mb-2">
-              {t('cycleOnboarding.goalDescription', {
-                defaultValue:
-                  'Select the mode that best fits your current health focus. You can change this anytime in settings.',
-              })}
-            </Text>
-            <SettingsRowGroup>
-              {MODE_OPTIONS.map((opt) => {
-                const isSelected = mode === opt.value;
-                return (
-                  <SettingsRow
-                    key={opt.value}
-                    title={getModeLabel(opt.key)}
-                    onPress={() => setMode(opt.value as CycleMode)}
-                    rightAccessory={
-                      <Icon
-                        name={
-                          isSelected ? 'radio-button-on' : 'radio-button-off'
-                        }
-                        size={24}
-                        color={isSelected ? accentColor : formDisabled}
-                      />
-                    }
-                  />
-                );
-              })}
-            </SettingsRowGroup>
-          </View>
+          <SettingsRowGroup>
+            {MODE_OPTIONS.map((opt) => {
+              const isSelected = mode === opt.value;
+              return (
+                <SettingsRow
+                  key={opt.value}
+                  title={getModeLabel(opt.key)}
+                  onPress={() => setMode(opt.value as CycleMode)}
+                  rightAccessory={
+                    <Icon
+                      name={isSelected ? 'radio-button-on' : 'radio-button-off'}
+                      size={24}
+                      color={isSelected ? accentColor : formDisabled}
+                    />
+                  }
+                />
+              );
+            })}
+          </SettingsRowGroup>
         )}
 
-        {step === 2 && (
-          <View className="gap-4">
-            <Text className="text-xl font-bold text-text-primary">
-              {t('cycleOnboarding.datesTitle', {
-                defaultValue: 'Dates & Averages',
-              })}
-            </Text>
-            {mode === 'pregnant' ? (
-              <View className="gap-4">
-                <Text className="text-text-secondary text-sm">
-                  {t('cycleOnboarding.dueDateDescription', {
-                    defaultValue:
-                      'Tell us how to estimate your due date. You can change this later in settings.',
-                  })}
-                </Text>
-                <PregnancyDueDateForm form={dueDateForm} />
-              </View>
-            ) : mode === 'postpartum' || mode === 'menopause' ? (
-              <View className="bg-surface rounded-xl p-4 border border-border-subtle">
-                <Text className="text-text-primary text-base font-semibold mb-2">
-                  {t('cycleOnboarding.noConfiguration', {
-                    defaultValue: 'No configuration needed',
-                  })}
-                </Text>
-                <Text className="text-text-secondary text-sm">
-                  {t('cycleOnboarding.recoveryDescription', {
-                    defaultValue:
-                      "We will tailor your insights to hormonal recovery or menopause transition symptoms. Let's move on to the next step.",
-                  })}
-                </Text>
-              </View>
-            ) : (
-              <View className="gap-4">
-                <Text className="text-text-secondary text-sm">
-                  {t('cycleOnboarding.predictionsDescription', {
-                    defaultValue: 'Help us build predictions for your cycle.',
-                  })}
-                </Text>
-                <SettingsRowGroup>
-                  <SettingsRow
-                    title={t('cycleOnboarding.lastPeriodStart', {
-                      defaultValue: 'Last Period Start Date',
-                    })}
-                    subtitle={lastPeriodStart}
-                    onPress={() => calendarSheetRef.current?.present()}
-                  />
-                  <SettingsRow
-                    title={t('cycleOnboarding.averageCycleLength', {
-                      defaultValue: 'Average Cycle Length',
-                    })}
-                    rightAccessory={
-                      <StepperInput
-                        {...cycleLengthProps}
-                        keyboardType="number-pad"
-                      />
-                    }
-                  />
-                  <SettingsRow
-                    title={t('cycleOnboarding.averagePeriodLength', {
-                      defaultValue: 'Average Period Length',
-                    })}
-                    rightAccessory={
-                      <StepperInput
-                        {...periodLengthProps}
-                        keyboardType="number-pad"
-                      />
-                    }
-                  />
-                </SettingsRowGroup>
-              </View>
-            )}
-          </View>
-        )}
-
-        {step === 3 && (
-          <View className="gap-4">
-            <Text className="text-xl font-bold text-text-primary">
-              {t('cycleOnboarding.profileTitle', {
-                defaultValue: 'Profile & Conditions',
-              })}
-            </Text>
-            <Text className="text-text-secondary text-sm">
-              {t('cycleOnboarding.profileDescription', {
-                defaultValue:
-                  'Select any relevant conditions or birth control methods to personalize your tracking.',
-              })}
-            </Text>
+        {step === 2 &&
+          (mode === 'pregnant' ? (
+            <PregnancyDueDateForm form={dueDateForm} />
+          ) : isPostRecovery ? (
+            <View className="bg-surface rounded-xl p-4 border border-border-subtle">
+              <Text className="text-text-primary text-base font-semibold mb-2">
+                {t('cycleOnboarding.noConfiguration', {
+                  defaultValue: 'No configuration needed',
+                })}
+              </Text>
+              <Text className="text-text-secondary text-sm">
+                {t('cycleOnboarding.recoveryDescription', {
+                  defaultValue:
+                    "We will tailor your insights to hormonal recovery or menopause transition symptoms. Let's move on to the next step.",
+                })}
+              </Text>
+            </View>
+          ) : (
             <SettingsRowGroup>
               <SettingsRow
-                title={t('cycleOnboarding.birthControlMethod', {
-                  defaultValue: 'Birth Control Method',
+                title={t('cycleOnboarding.lastPeriodStart', {
+                  defaultValue: 'Last Period Start Date',
+                })}
+                subtitle={formatLongDate(lastPeriodStart, appLocale)}
+                onPress={() => calendarSheetRef.current?.present()}
+              />
+              <SettingsRow
+                title={t('cycleOnboarding.averageCycleLength', {
+                  defaultValue: 'Average Cycle Length',
                 })}
                 rightAccessory={
-                  <BottomSheetPicker
-                    value={birthControl}
-                    options={BC_OPTIONS.map((option) => ({
-                      ...option,
-                      label: getBirthControlLabel(option.value, option.label),
-                    }))}
-                    onSelect={setBirthControl}
-                    title={t('cycleOnboarding.selectMethod', {
-                      defaultValue: 'Select Method',
-                    })}
-                    containerStyle={{ flex: 1, maxWidth: 200 }}
+                  <StepperInput
+                    {...cycleLengthProps}
+                    keyboardType="number-pad"
+                  />
+                }
+              />
+              <SettingsRow
+                title={t('cycleOnboarding.averagePeriodLength', {
+                  defaultValue: 'Average Period Length',
+                })}
+                rightAccessory={
+                  <StepperInput
+                    {...periodLengthProps}
+                    keyboardType="number-pad"
                   />
                 }
               />
             </SettingsRowGroup>
+          ))}
 
-            <Text className="text-base font-semibold text-text-primary mt-4 mb-2">
+        {step === 3 && (
+          <View>
+            <SettingsRowGroup>
+              {/* The row is the picker's trigger, as on the cycle settings:
+                  the chosen method reads under the title, not in a box of
+                  its own inside the row. */}
+              <BottomSheetPicker
+                value={birthControl}
+                options={BC_OPTIONS.map((option) => ({
+                  ...option,
+                  label: getBirthControlLabel(option.value, option.label),
+                }))}
+                onSelect={setBirthControl}
+                title={t('cycleOnboarding.selectMethod', {
+                  defaultValue: 'Select Method',
+                })}
+                renderTrigger={({ onPress, selectedOption }) => (
+                  <SettingsRow
+                    title={t('cycleOnboarding.birthControlMethod', {
+                      defaultValue: 'Birth Control Method',
+                    })}
+                    subtitle={
+                      <SettingsValueSubtitle value={selectedOption?.label} />
+                    }
+                    onPress={onPress}
+                  />
+                )}
+              />
+            </SettingsRowGroup>
+
+            <Text className="text-base font-semibold text-text-primary mt-6 mb-2">
               {t('cycleOnboarding.conditions', { defaultValue: 'Conditions' })}
             </Text>
             <SettingsRowGroup>
@@ -477,80 +480,39 @@ const CycleOnboardingScreen: React.FC<CycleOnboardingScreenProps> = ({
         )}
 
         {step === 4 && (
-          <View className="gap-4">
-            <Text className="text-xl font-bold text-text-primary">
-              {t('cycleOnboarding.disclaimerTitle', {
-                defaultValue: 'Disclaimer & Complete',
-              })}
-            </Text>
-            <View className="bg-surface border border-border-subtle rounded-xl p-4">
-              <View className="flex-row items-center gap-2 mb-2">
-                <Icon name="warning" size={18} color="#D97706" />
-                <Text className="text-text-primary font-bold">
-                  {t('cycleOnboarding.medicalDisclaimer', {
-                    defaultValue: 'Medical Disclaimer',
-                  })}
-                </Text>
-              </View>
-              <Text className="text-text-secondary text-sm leading-5">
-                {t('cycleOnboarding.disclaimerBody', {
-                  defaultValue:
-                    'The qla.fit Wellness and Reproductive Health Tracker is designed to help you track predictions, symptoms, and physiological parameters. It is NOT intended to be used as a contraceptive method or as a diagnostic/treatment tool.',
-                })}
-                {'\n\n'}
-                {t('cycleOnboarding.consultProfessional', {
-                  defaultValue:
-                    'Always consult with a qualified medical professional for health concerns.',
+          <View className="bg-surface border border-border-subtle rounded-xl p-4">
+            <View className="flex-row items-center gap-2 mb-2">
+              <Icon name="warning" size={18} color="#D97706" />
+              <Text className="text-text-primary font-bold">
+                {t('cycleOnboarding.medicalDisclaimer', {
+                  defaultValue: 'Medical Disclaimer',
                 })}
               </Text>
             </View>
-
-            {loading ? (
-              <ActivityIndicator
-                size="large"
-                color={accentColor}
-                className="mt-4"
-              />
-            ) : (
-              <Button
-                variant="primary"
-                className="mt-4"
-                onPress={handleComplete}
-              >
-                {t('cycleOnboarding.acceptInitialize', {
-                  defaultValue: 'Accept & Initialize Profile',
-                })}
-              </Button>
-            )}
+            <Text className="text-text-secondary text-sm leading-5">
+              {t('cycleOnboarding.disclaimerBody', {
+                defaultValue:
+                  'The qla.fit Wellness and Reproductive Health Tracker is designed to help you track predictions, symptoms, and physiological parameters. It is NOT intended to be used as a contraceptive method or as a diagnostic/treatment tool.',
+              })}
+              {'\n\n'}
+              {t('cycleOnboarding.consultProfessional', {
+                defaultValue:
+                  'Always consult with a qualified medical professional for health concerns.',
+              })}
+            </Text>
           </View>
         )}
-      </NativeHeaderScrollView>
+      </PromptScreen>
 
-      {/* Navigation Buttons for step-wise */}
-      {step < 4 && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: 16,
-            paddingBottom: Math.max(insets.bottom, 16),
-            backgroundColor: 'transparent',
-          }}
-        >
-          <Button variant="primary" onPress={() => setStep((s) => s + 1)}>
-            {t('common.next', { defaultValue: 'Next' })}
-          </Button>
-        </View>
-      )}
-
-      <CalendarSheet
+      {/* The Activities calendar without its rings: a period has started
+          by now, so days after today cannot be picked. */}
+      <RingCalendarSheet
         ref={calendarSheetRef}
+        rings={false}
         selectedDate={lastPeriodStart}
         onSelectDate={setLastPeriodStart}
       />
-    </View>
+    </>
   );
 };
 
