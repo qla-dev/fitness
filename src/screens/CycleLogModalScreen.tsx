@@ -17,9 +17,9 @@ import PregnancyLogView from '../components/wellness/pregnancy/PregnancyLogView'
 import FertilityCard from '../components/wellness/ttc/FertilityCard';
 import TestQuickLog from '../components/wellness/ttc/TestQuickLog';
 import DateSelectRow from '../components/DateSelectRow';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../components/CalendarSheet';
+import RingCalendarSheet, {
+  type RingCalendarSheetRef,
+} from '../components/RingCalendarSheet';
 import { FooterSaveBar } from '../components/FormScreenChrome';
 import { getTodayDate } from '../utils/dateUtils';
 
@@ -36,7 +36,7 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
   const headerOffset = useNativeHeaderOffset();
   const { mode } = useCycleMode();
   const { discreetMode } = useDiscreetMode();
-  const calendarRef = useRef<CalendarSheetRef>(null);
+  const calendarRef = useRef<RingCalendarSheetRef>(null);
   const [selectedDate, setSelectedDate] = React.useState(
     route.params?.date || getTodayDate()
   );
@@ -155,8 +155,11 @@ const CycleLogModalScreen: React.FC<CycleLogModalScreenProps> = ({
         />
       )}
 
-      <CalendarSheet
+      {/* The Activities calendar in its plain-picker mode: same month pager
+          and round day cells, no rings, no future days. */}
+      <RingCalendarSheet
         ref={calendarRef}
+        rings={false}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />

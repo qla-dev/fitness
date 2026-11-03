@@ -56,7 +56,6 @@ export default function MarkaiComposer({
   value,
   onChangeText,
   onSend,
-  onOptions,
   onAttach,
   attachment,
   attaching = false,
@@ -70,7 +69,6 @@ export default function MarkaiComposer({
   value: string;
   onChangeText: (text: string) => void;
   onSend: () => void;
-  onOptions: () => void;
   /** The same camera / library choice the progress photos offer. */
   onAttach: (source: 'camera' | 'library') => void;
   /** The attached photo's local uri, previewed above the field. */
@@ -114,11 +112,6 @@ export default function MarkaiComposer({
     !busy &&
     !disabled &&
     !attaching;
-  const options = () => {
-    input.current?.blur();
-    Keyboard.dismiss();
-    onOptions();
-  };
   return (
     <Animated.View
       style={[{ position: 'absolute', left: 0, right: 0 }, lift]}
@@ -281,10 +274,10 @@ export default function MarkaiComposer({
                   </View>
                 </MenuView>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                onPress={options}
-                disabled={busy}
+              {/* Which mode the chat is in, as a label: it is picked once at the
+                  start and then follows MarkAI's replies, never set by hand. */}
+              <View
+                accessibilityRole="text"
                 style={{
                   flexShrink: 1,
                   // The same height as the round controls beside it, so all
@@ -293,8 +286,8 @@ export default function MarkaiComposer({
                   justifyContent: 'center',
                   paddingHorizontal: 14,
                   borderRadius: 999,
-                  // An accent wash marks it as a control on both themes; plain
-                  // raised vanished into the glass.
+                  // An accent wash, so it reads on both themes; plain raised
+                  // vanished into the glass.
                   backgroundColor: withAlpha(accent, isDark ? 0.22 : 0.12),
                 }}
               >
@@ -308,7 +301,7 @@ export default function MarkaiComposer({
                 >
                   {modeLabel}
                 </Text>
-              </Pressable>
+              </View>
               <View style={{ flex: 1, minWidth: 8 }} />
               <Pressable
                 accessibilityRole="button"

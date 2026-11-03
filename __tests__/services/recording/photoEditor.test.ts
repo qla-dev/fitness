@@ -66,9 +66,11 @@ it('draws every reading after the lead with its icon in every layout', () => {
       { width: 390, height: 693, top: 0, route: [], metrics },
       { ...defaultPhotoEditorOptions, layout }
     );
-    // The lead reading stands alone as the large number, as on the HUD.
+    // Classic, hero and poster set the lead alone as the large number, as on
+    // the HUD; the grid layouts give it a row among equals, icon included.
+    const gridLead = ['summit', 'compact', 'trail'].includes(layout);
     expect(result.metrics.map((metric) => metric.icon)).toEqual([
-      undefined,
+      gridLead ? 'duration' : undefined,
       'distance',
       'calories',
     ]);

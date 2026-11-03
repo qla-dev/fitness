@@ -55,6 +55,7 @@ export const PREFERENCE_DEFAULTS = {
   fastingCardVisible: true,
   cycleCardVisible: true,
   askMarkAIVisible: true,
+  markaiDataAccess: 'ask',
   medicationsCardVisible: true,
   progressPhotosCardVisible: true,
   medicationRemindersEnabled: true,
@@ -91,6 +92,11 @@ export type AppPreferencesData = {
   fastingCardVisible: boolean;
   cycleCardVisible: boolean;
   askMarkAIVisible: boolean;
+  /**
+   * Whether MarkAI may read a summary of the on-device diary and Health data
+   * with each message. `ask` until the user answers the card in the chat.
+   */
+  markaiDataAccess: 'ask' | 'allowed' | 'declined';
   medicationsCardVisible: boolean;
   progressPhotosCardVisible: boolean;
   medicationRemindersEnabled: boolean;
@@ -128,6 +134,7 @@ export interface AppPreferencesState extends AppPreferencesData {
   setFastingCardVisible: (value: boolean) => void;
   setCycleCardVisible: (value: boolean) => void;
   setAskMarkAIVisible: (value: boolean) => void;
+  setMarkaiDataAccess: (value: 'allowed' | 'declined') => void;
   setMedicationsCardVisible: (value: boolean) => void;
   setProgressPhotosCardVisible: (value: boolean) => void;
   setMedicationRemindersEnabled: (value: boolean) => void;
@@ -213,6 +220,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
       setFastingCardVisible: (value) => set({ fastingCardVisible: value }),
       setCycleCardVisible: (value) => set({ cycleCardVisible: value }),
       setAskMarkAIVisible: (value) => set({ askMarkAIVisible: value }),
+      setMarkaiDataAccess: (value) => set({ markaiDataAccess: value }),
       setMedicationsCardVisible: (value) =>
         set({ medicationsCardVisible: value }),
       setProgressPhotosCardVisible: (value) =>
@@ -269,6 +277,7 @@ export const useAppPreferencesStore = create<AppPreferencesState>()(
         fastingCardVisible: state.fastingCardVisible,
         cycleCardVisible: state.cycleCardVisible,
         askMarkAIVisible: state.askMarkAIVisible,
+        markaiDataAccess: state.markaiDataAccess,
         medicationsCardVisible: state.medicationsCardVisible,
         progressPhotosCardVisible: state.progressPhotosCardVisible,
         medicationRemindersEnabled: state.medicationRemindersEnabled,

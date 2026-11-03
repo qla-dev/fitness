@@ -10,6 +10,7 @@ import {
 import { deleteRecordingPhoto } from '../../../src/services/recording/photos';
 
 jest.mock('../../../modules/watch-link', () => ({
+  isWatchLinkAvailable: () => false,
   updateWatchMetrics: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('expo-task-manager', () => ({ defineTask: jest.fn() }));

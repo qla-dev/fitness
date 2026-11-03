@@ -972,6 +972,12 @@ const ActivityDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <RecordingSummary details={session.activity_details} />
             <WorkoutPhotos
               workoutName={name}
+              promptAddPhoto={route.params.promptPhoto}
+              // Cleared once asked, so a remount (or coming back to this
+              // screen) does not ask again.
+              onPromptShown={() =>
+                navigation.setParams({ promptPhoto: undefined })
+              }
               details={session.activity_details}
               sessionId={session.type + ':' + session.id}
               // The same phone-width geometry as a photo taken while

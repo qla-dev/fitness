@@ -165,7 +165,7 @@ function Trace({
       accessible
       accessibilityLabel={`${label}: ${formatLocalizedNumber(min)} – ${formatLocalizedNumber(max)}`}
     >
-      <Text className="text-text-secondary font-medium">{label}</Text>
+      <Text className="text-text-primary text-lg font-semibold">{label}</Text>
       <Svg width="100%" height={85} viewBox="0 0 300 85">
         {segments.map((segment, index) => (
           <Polyline
@@ -205,11 +205,36 @@ export default function RecordingSummary({
     detail.points,
     unit === 'miles' ? 1609.344 : 1000
   );
+  const heartRates = detail.sensors.flatMap((s) =>
+    s.heartRate === null ? [] : [{ timestamp: s.timestamp, value: s.heartRate }]
+  );
+  const cadences =
+    detail.sport === 'ride'
+      ? detail.sensors.flatMap((s) =>
+          s.cadence === null
+            ? []
+            : [{ timestamp: s.timestamp, value: s.cadence }]
+        )
+      : [];
+  // A trace draws from two readings up (see Trace). With no route and no
+  // sensor trace there is nothing in this section, so it takes no space.
+  if (
+    detail.points.length === 0 &&
+    heartRates.length < 2 &&
+    cadences.length < 2
+  )
+    return null;
   return (
     <View className="gap-2 py-4">
-      <Text className="text-text-primary font-semibold">
-        {t('recording.recordedSession', { defaultValue: 'Recorded session' })}
-      </Text>
+      {/* Titled like "Workout photos" below it, and only over a recorded
+          route: without GPS there is no session here to title. */}
+      {detail.points.length > 0 && (
+        <Text className="text-text-primary text-lg font-semibold">
+          {t('recording.recordedSession', {
+            defaultValue: 'Recorded session',
+          })}
+        </Text>
+      )}
       {detail.points.length > 0 && (
         <View className="h-64 rounded-xl overflow-hidden">
           <RouteMap
@@ -220,11 +245,7 @@ export default function RecordingSummary({
       )}
       <Trace
         label={t('recording.heartRate', { defaultValue: 'Heart rate' })}
-        values={detail.sensors.flatMap((s) =>
-          s.heartRate === null
-            ? []
-            : [{ timestamp: s.timestamp, value: s.heartRate }]
-        )}
+        values={heartRates}
       />
       <Trace
         label={t('recording.speed', { defaultValue: 'Speed' })}
@@ -236,16 +257,12 @@ export default function RecordingSummary({
       {detail.sport === 'ride' && (
         <Trace
           label={t('recording.cadence', { defaultValue: 'Cadence' })}
-          values={detail.sensors.flatMap((s) =>
-            s.cadence === null
-              ? []
-              : [{ timestamp: s.timestamp, value: s.cadence }]
-          )}
+          values={cadences}
         />
       )}
       {splits.length > 0 && (
         <View className="gap-1">
-          <Text className="text-text-primary font-semibold">
+          <Text className="text-text-primary text-lg font-semibold">
             {t('recording.splits', { defaultValue: 'Splits' })}
           </Text>
           {splits.map((split, i) => (

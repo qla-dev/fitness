@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode } from 'react';
+import React, { useContext, useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +14,10 @@ import {
   useScreenHeader,
   type HeaderItem,
 } from '../../hooks/useScreenHeader';
-import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
+import {
+  NoNativeHeaderContext,
+  useNativeIOSHeadersActive,
+} from '../../services/nativeTabBarPreference';
 import NativeHeaderScrollView from './NativeHeaderScrollView';
 
 /**
@@ -116,6 +119,10 @@ function PromptScreenContent({
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
+  // An iOS detent form sheet sizes and scrolls its first scroll view and lays
+  // flex content out empty, so there the scroll view is the root and the bar
+  // scrolls with the page as its first child (Hideya's power-ups do this).
+  const barInScroll = useContext(NoNativeHeaderContext) && topAligned;
   const headerOffset = useNativeHeaderOffset();
   const modalTopPadding = useModalTopPadding();
   const [footerHeight, setFooterHeight] = useState(0);
@@ -177,6 +184,37 @@ function PromptScreenContent({
       ) : null}
     </View>
   );
+
+  if (barInScroll)
+    return (
+      <NativeHeaderScrollView
+        className="bg-background"
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: modalTopPadding,
+          paddingBottom: insets.bottom + 12,
+        }}
+      >
+        {header}
+        {heading}
+        <View className={`pt-6 ${bleed ? '' : 'px-5'}`}>{children}</View>
+        {footnote ? (
+          <Text className="text-text-muted text-xs px-5 pt-3">{footnote}</Text>
+        ) : null}
+        {hasFooter ? (
+          <FooterCTA
+            glass
+            label={footerLabel}
+            onPress={onFooterPress}
+            disabled={footerDisabled}
+            loading={footerLoading}
+            tint={footerTint}
+          />
+        ) : null}
+      </NativeHeaderScrollView>
+    );
 
   return (
     <View

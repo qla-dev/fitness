@@ -81,6 +81,8 @@ interface HeadlineAction {
   onPress: () => void;
   /** A small mark in the top-right corner, such as MarkAI's free messages left. */
   badge?: string;
+  /** A second mark under it: MarkAI's paid AI coins, in the coin colour. */
+  coins?: string;
 }
 
 /** One of the rows under them. */
@@ -181,6 +183,7 @@ export default function AddHubScreen() {
     chrome,
     chromeBorder,
     textPrimary,
+    coinAmber,
   ] = useCSSVariable([
     '--color-cat-green',
     '--color-cat-violet',
@@ -193,6 +196,8 @@ export default function AddHubScreen() {
     '--color-chrome',
     '--color-chrome-border',
     '--color-text-primary',
+    // The AI coins colour, as on the Profile's AI coins row.
+    '--color-cat-amber',
   ]) as string[];
 
   const recents = useSyncExternalStore(
@@ -301,6 +306,7 @@ export default function AddHubScreen() {
   const freeMessages = useOnlineAccount((state) =>
     state.session ? (state.session.user.free_messages ?? null) : undefined
   );
+  const paidCoins = useOnlineAccount((state) => state.session?.user.ai_coins);
   // The saved count can be yesterday's; ask for today's when the tab is shown.
   const signedIn = freeMessages !== undefined;
   useEffect(() => {
@@ -329,6 +335,8 @@ export default function AddHubScreen() {
       tint: accent,
       onPress: () => navigation.navigate('MarkAI'),
       badge: freeLeft,
+      coins:
+        paidCoins === undefined ? undefined : formatLocalizedNumber(paidCoins),
     },
     {
       key: 'food',
@@ -408,20 +416,48 @@ export default function AddHubScreen() {
       className="flex-1 bg-surface rounded-2xl items-start p-3.5"
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
-      {action.badge ? (
+      {action.badge || action.coins ? (
+        // Free messages left today over the paid AI coins, stacked in the
+        // corner so the two never collide with the label.
         <View
-          className="absolute rounded-full"
-          style={{
-            top: 12,
-            right: 12,
-            paddingHorizontal: 7,
-            paddingVertical: 2,
-            backgroundColor: withAlpha(action.tint, 0.14),
-          }}
+          className="absolute items-end"
+          style={{ top: 12, right: 12, gap: 4 }}
         >
-          <Text className="text-xs font-bold" style={{ color: action.tint }}>
-            {action.badge}
-          </Text>
+          {action.badge ? (
+            <View
+              className="rounded-full"
+              style={{
+                paddingHorizontal: 7,
+                paddingVertical: 2,
+                backgroundColor: withAlpha(action.tint, 0.14),
+              }}
+            >
+              <Text
+                className="text-xs font-bold"
+                style={{ color: action.tint }}
+              >
+                {action.badge}
+              </Text>
+            </View>
+          ) : null}
+          {action.coins ? (
+            <View
+              accessibilityLabel={t('online.balance', {
+                defaultValue: '{{amount}} AI coins',
+                amount: action.coins,
+              })}
+              className="rounded-full flex-row items-center"
+              style={{
+                paddingHorizontal: 7,
+                paddingVertical: 2,
+                backgroundColor: withAlpha(coinAmber, 0.14),
+              }}
+            >
+              <Text className="text-xs font-bold" style={{ color: coinAmber }}>
+                {action.coins}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
       <View
@@ -437,9 +473,10 @@ export default function AddHubScreen() {
       <Text
         // The same size and weight the rows below use: a card and a row are
         // both one action with a name, and two type styles made them read as
-        // two kinds of thing.
+        // two kinds of thing. One line, cut with an ellipsis, so every card
+        // in the grid is the same height whatever its label.
         className="text-text-primary text-base font-semibold"
-        numberOfLines={2}
+        numberOfLines={1}
         style={{ lineHeight: 20 }}
       >
         {action.label}

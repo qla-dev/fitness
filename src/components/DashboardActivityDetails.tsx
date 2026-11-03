@@ -124,13 +124,16 @@ export default function DashboardActivityDetails({
             <DashboardCardTitle>
               {t('dashboard.activitySteps', { defaultValue: 'Steps' })}
             </DashboardCardTitle>
-            <View className="flex-1" />
+            {/* Pinned to the corner, not laid out after the title, so a long
+                label never pushes it out of line with the other chevrons. */}
             {onOpenGoal ? (
-              <CardChevron
-                accessibilityLabel={t('dashboard.activitySteps', {
-                  defaultValue: 'Steps',
-                })}
-              />
+              <View className="absolute right-0">
+                <CardChevron
+                  accessibilityLabel={t('dashboard.activitySteps', {
+                    defaultValue: 'Steps',
+                  })}
+                />
+              </View>
             ) : null}
           </View>
           {/* Compact past a thousand: the value and its goal share half a row,
@@ -154,13 +157,14 @@ export default function DashboardActivityDetails({
             <DashboardCardTitle>
               {t('dashboard.activityDistance', { defaultValue: 'Distance' })}
             </DashboardCardTitle>
-            <View className="flex-1" />
             {onOpenGoal ? (
-              <CardChevron
-                accessibilityLabel={t('dashboard.activityDistance', {
-                  defaultValue: 'Distance',
-                })}
-              />
+              <View className="absolute right-0">
+                <CardChevron
+                  accessibilityLabel={t('dashboard.activityDistance', {
+                    defaultValue: 'Distance',
+                  })}
+                />
+              </View>
             ) : null}
           </View>
           {/* Unit on the value's own baseline, not stacked under it: the

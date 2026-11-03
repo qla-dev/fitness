@@ -44,6 +44,7 @@ jest.mock('../../src/hooks/useFoods', () => ({
 }));
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,
+  useNativeHeaderOffset: () => 0,
 }));
 jest.mock('../../src/hooks/useTabPress', () => ({ useTabPress: () => {} }));
 jest.mock('../../src/components/ActiveWorkoutBar', () => ({
@@ -52,6 +53,7 @@ jest.mock('../../src/components/ActiveWorkoutBar', () => ({
 jest.mock('../../src/services/nativeTabBarPreference', () => ({
   useNativeIOSTabsActive: () => mockUseNativeTabs(),
   useLiquidGlassActive: () => false,
+  useNativeIOSHeadersActive: () => mockUseNativeTabs(),
 }));
 jest.mock('../../src/components/LibrarySearchBar', () => () => null);
 jest.mock('../../src/components/AddHubSearchState', () => () => null);

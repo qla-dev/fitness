@@ -194,7 +194,7 @@ it('uses the same chat for the legacy Tracker route and shows prompt choices wit
   expect(screen.queryByText('More ideas')).toBeNull();
   // A choice is sent at once, in its own mode, not left in the composer.
   jest.mocked(onlineRequest).mockResolvedValueOnce(reply);
-  fireEvent.press(screen.getByText('Explain my daily metrics'));
+  fireEvent.press(screen.getByText('Daily metrics'));
   await waitFor(() =>
     expect(onlineRequest).toHaveBeenCalledWith(
       '/markai/messages',

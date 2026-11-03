@@ -46,6 +46,12 @@ export interface CompactActivityRowProps {
   session: ExerciseSessionResponse;
   onPress?: () => void;
   distanceUnit?: 'km' | 'miles';
+  /**
+   * Leaves out the space under the card, for a parent that spaces the cards
+   * itself — the swipe-to-delete wrapper, which must end where the card ends
+   * or its red action shows in the gap and round the corners.
+   */
+  unspaced?: boolean;
 }
 
 /**
@@ -68,6 +74,7 @@ const CompactActivityRow: React.FC<CompactActivityRowProps> = ({
   session,
   onPress,
   distanceUnit = 'km',
+  unspaced = false,
 }) => {
   const { t } = useTranslation();
   const accentColor = useCSSVariable('--color-accent-primary') as string;
@@ -112,7 +119,7 @@ const CompactActivityRow: React.FC<CompactActivityRowProps> = ({
       accessibilityLabel={[name, `${value} ${unit}`.trim(), date]
         .filter(Boolean)
         .join(', ')}
-      className="bg-surface rounded-2xl px-4 py-3 mb-3 flex-row items-center"
+      className={`bg-surface rounded-2xl px-4 py-3 flex-row items-center ${unspaced ? '' : 'mb-3'}`}
     >
       <View className="w-12 h-12 rounded-full bg-accent-primary/15 items-center justify-center mr-3">
         <Icon name={getWorkoutIcon(session)} size={22} color={accentColor} />

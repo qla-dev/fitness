@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, act, screen } from '@testing-library/react-native';
+import {
+  fireEvent,
+  render,
+  act,
+  screen,
+  within,
+} from '@testing-library/react-native';
 import { Linking, Platform } from 'react-native';
 import { getLocales } from 'expo-localization';
 import Toast from 'react-native-toast-message';
@@ -239,9 +245,10 @@ describe('AppSettingsScreen', () => {
   });
 
   it('opens the appearance screen from the Theme row, showing the current choice', () => {
-    const { getByText } = renderScreen();
+    const { getByText, getAllByText } = renderScreen();
 
-    expect(getByText('System')).toBeTruthy();
+    // The theme row and the language row (System · …) can both say it.
+    expect(getAllByText('System').length).toBeGreaterThan(0);
     fireEvent.press(getByText('Theme'));
 
     expect(

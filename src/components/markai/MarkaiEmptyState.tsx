@@ -109,19 +109,16 @@ export default function MarkaiEmptyState({
       icon: 'food' as const,
     },
     {
-      label: t('macros.proteinPrompt', {
-        defaultValue: 'Help me with my protein goal',
-      }),
-      prompt: t('macros.proteinPrompt', {
-        defaultValue: 'Help me with my protein goal',
+      label: t('markai.goalsChip', { defaultValue: 'My goals' }),
+      prompt: t('markai.goalsPrompt', {
+        defaultValue:
+          'Look at my daily goals and tell me how I am doing and what to change',
       }),
       mode: 'free' as const,
       icon: 'sparkles' as const,
     },
     {
-      label: t('markai.allMacros', {
-        defaultValue: 'Calculate all my macros',
-      }),
+      label: t('markai.macrosChip', { defaultValue: 'All my macronutrients' }),
       prompt: t('markai.allMacrosPrompt', {
         defaultValue:
           'Calculate all my macros: calories, protein, carbs and fat for my goal',
@@ -130,7 +127,7 @@ export default function MarkaiEmptyState({
       icon: 'calculator' as const,
     },
     {
-      label: t('markai.training', { defaultValue: 'Moving help' }),
+      label: t('markai.trainingChip', { defaultValue: 'Moving help' }),
       prompt: t('markai.trainingPrompt', {
         defaultValue: 'Help me move more and plan my next activity',
       }),
@@ -138,9 +135,7 @@ export default function MarkaiEmptyState({
       icon: 'exercise-walking' as const,
     },
     {
-      label: t('macros.metricsPrompt', {
-        defaultValue: 'Explain my daily metrics',
-      }),
+      label: t('markai.metricsChip', { defaultValue: 'Daily metrics' }),
       prompt: t('macros.metricsPrompt', {
         defaultValue: 'Explain my daily metrics',
       }),
@@ -151,9 +146,10 @@ export default function MarkaiEmptyState({
   return (
     <View className="items-center gap-6">
       <MarkaiMark />
-      {/* Chips as wide as their labels, wrapping and centred: the text is
-          small enough that they sit at least two to a row, without a fixed
-          width that leaves short labels in an empty box. */}
+      {/* Chips as wide as their labels, wrapping and centred. Each chip has
+          a short label of its own, apart from the prompt it sends: the
+          prompts read as sentences, and in longer languages sentence-length
+          labels left every chip alone on its row instead of two to a row. */}
       <View className="flex-row flex-wrap justify-center self-stretch gap-2">
         {choices.map((choice) => (
           <Pressable

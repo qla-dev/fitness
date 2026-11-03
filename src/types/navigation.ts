@@ -394,7 +394,11 @@ export type RootStackParamList = {
     sourceServerConfigId: string | null;
     plannedSetValues: Record<string, AssumedSetValues>;
   };
-  ActivityDetail: { session: IndividualSessionResponse };
+  /**
+   * `promptPhoto` is set only by the recorder's finish, so the "add a photo?"
+   * question is asked once, on arrival, and never when reopening from history.
+   */
+  ActivityDetail: { session: IndividualSessionResponse; promptPhoto?: boolean };
   FastingDetail: undefined;
   SleepDetail: { entryId: string; day: string };
   /**
@@ -436,6 +440,8 @@ export type RootStackParamList = {
   /** `prefill`: a value proposed elsewhere (MarkAI), shown for review, not saved. */
   /** Every sheet (PromptSheet): modal, like GoalEdit. Content comes from the sheet host. */
   Sheet: { owner: number };
+  /** A Sheet that opens at part height and drags up to full (iOS detents). */
+  DetentSheet: { owner: number };
   GoalEdit: { goalKey: string; prefill?: number };
   /** Hydration for one day, counted in servings. Modal, like GoalEdit. */
   WaterEdit: { date: string };

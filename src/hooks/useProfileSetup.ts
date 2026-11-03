@@ -10,6 +10,7 @@ import {
 } from '../services/api/measurementsApi';
 import { fetchProfile } from '../services/api/profileApi';
 import { localApiFetch } from '../services/local/localApi';
+import { addLog } from '../services/LogService';
 import { getTodayDate } from '../utils/dateUtils';
 import { bmi, bmiCategory } from '../utils/bmi';
 import { MACRO_RINGS } from '../constants/macroRings';
@@ -63,7 +64,13 @@ export function useProfileSetup(enabled: boolean) {
       const [profile, measurements] = await Promise.all([
         fetchProfile(),
         fetchMeasurementsRange('1900-01-01', getTodayDate()),
-      ]);
+      ]).catch((error: unknown) => {
+        addLog(
+          `[Setup] Reading profile and measurements failed: ${String(error)}`,
+          'ERROR'
+        );
+        throw error;
+      });
       const sorted = measurements
         .slice()
         .sort((a, b) => b.entry_date.localeCompare(a.entry_date));

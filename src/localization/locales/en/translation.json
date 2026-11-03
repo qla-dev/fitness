@@ -1054,7 +1054,8 @@
     "openSettings": "Open Settings",
     "permissionTitle": "Grant permissions",
     "permissionBody": "qla.fit alerts (rest timers, fasting goals, medication reminders) won't fire.",
-    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}."
+    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}.",
+    "cycle": "Cycle"
   },
   "workoutSettings": {
     "title": "Workout Settings",
@@ -5532,6 +5533,9 @@
     "capturePhoto": "Capture photo with metrics",
     "workoutPhotos": "Workout photos",
     "addPhoto": "Add photo",
+    "addPhotoPrompt": "Add a photo to this workout?",
+    "addPhotoFromLibrary": "Add from Photos",
+    "addPhotoTakePicture": "Take a Picture",
     "photosLoadFailed": "Could not load photos. Tap to retry.",
     "openPhoto": "Open workout photo",
     "showMap": "Show map",
@@ -6271,6 +6275,9 @@
     "title": "MarkAI",
     "macros": "Calculate macros",
     "training": "Moving help",
+    "macrosChip": "All my macronutrients",
+    "trainingChip": "Moving help",
+    "metricsChip": "Daily metrics",
     "allMacros": "Calculate all my macros",
     "allMacrosPrompt": "Calculate all my macros: calories, protein, carbs and fat for my goal",
     "free": "Free chat",
@@ -6350,7 +6357,14 @@
       "prices": "Price checker",
       "groceries": "Shopping list builder"
     },
-    "usage": "Usage"
+    "usage": "Usage",
+    "groceryCard": {
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more",
+      "save": "Save as grocery list"
+    },
+    "goalsChip": "My goals",
+    "goalsPrompt": "Look at my daily goals and tell me how I am doing and what to change"
   },
   "weeklyPlans": {
     "addManual": "Build a meal plan yourself",
@@ -6618,5 +6632,14 @@
       "title": "Steady training today",
       "body": "Day {{day}} of your cycle. Moderate sessions suit this phase; keep an eye on fatigue and sleep."
     }
+  },
+  "markaiData": {
+    "title": "Let MarkAI see your data?",
+    "body": "MarkAI can read a summary of your last 14 days (food, activity, workouts, sleep and weight) to answer about you and tailor workouts. It is sent with each message.",
+    "decline": "Not now",
+    "allow": "Allow",
+    "setting": "Use my data",
+    "settingSubtitle": "Send MarkAI a summary of your last 14 days with each message.",
+    "appSetting": "MarkAI can see my data"
   }
 }

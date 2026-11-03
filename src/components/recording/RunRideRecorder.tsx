@@ -333,7 +333,10 @@ export default function RunRideRecorder({
                 queryKey: ['exercises', 'count'],
               });
               leaving.current = true;
-              navigation.replace('ActivityDetail', { session: entry });
+              navigation.replace('ActivityDetail', {
+                session: entry,
+                promptPhoto: true,
+              });
             }),
         },
       ]

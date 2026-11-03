@@ -311,7 +311,6 @@ function WeeklyPlanContent({
                   label={slotName(meal.slot)}
                   subtitle={meal.name}
                   onOpen={() => logMeal(day.weekday, index, meal)}
-                  hideOverflow
                   badge={`${formatLocalizedNumber(Math.round(meal.calories))} ${t(
                     'foodSummary.caloriesUnit',
                     { defaultValue: 'Cal' }

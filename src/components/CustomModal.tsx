@@ -29,6 +29,8 @@ interface Props {
   onFooterPress?: () => void;
   footerDisabled?: boolean;
   footerLoading?: boolean;
+  /** Opens at part height; dragging up shows the rest (see PromptSheet). */
+  expandable?: boolean;
 }
 
 /**
@@ -52,6 +54,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
       onFooterPress,
       footerDisabled,
       footerLoading,
+      expandable,
     },
     ref
   ) => {
@@ -100,6 +103,7 @@ const CustomModal = forwardRef<CustomModalRef, Props>(
         onFooterPress={onFooterPress}
         footerDisabled={footerDisabled}
         footerLoading={footerLoading}
+        expandable={expandable}
         topAligned
         bleed
       >

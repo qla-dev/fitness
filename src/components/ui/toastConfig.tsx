@@ -118,7 +118,9 @@ function ToastContent({
           </Text>
         ) : null}
         {text2 ? (
-          <Text className="text-text-secondary text-sm" numberOfLines={2}>
+          // One line like the title: a wrapped subtitle grew the toast past
+          // the 66pt row it is built from.
+          <Text className="text-text-secondary text-sm" numberOfLines={1}>
             {text2}
           </Text>
         ) : null}

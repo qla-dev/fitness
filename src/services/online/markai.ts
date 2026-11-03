@@ -61,6 +61,11 @@ export type WorkoutSuggestion = {
   goal: 'time' | 'distance' | 'calories';
   value: number;
 };
+/** A shopping list MarkAI proposed, saved to My lists with one tap. */
+export type GroceryProposal = {
+  name: string;
+  items: { name: string; quantity?: string | null }[];
+};
 export type MarkaiReply = {
   text: string;
   food: FoodProposal | null;
@@ -68,6 +73,10 @@ export type MarkaiReply = {
   goal?: GoalProposal | null;
   /** Absent on replies from before sessions were suggested. */
   workout?: WorkoutSuggestion | null;
+  /** Absent on replies from before lists were proposed. */
+  grocery?: GroceryProposal | null;
+  /** The mode the reply was answered in; the chat follows it. */
+  mode?: MarkaiMode;
   /** The week a `meal_plan` task planned, shown as its plan card. */
   meal_plan?: PlannedWeek | null;
   food_id: string;

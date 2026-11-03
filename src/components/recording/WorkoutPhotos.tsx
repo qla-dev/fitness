@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,7 @@ import {
 import WorkoutPhotoEditor from './WorkoutPhotoEditor';
 import { fetchProfile } from '../../services/api/profileApi';
 import { profileQueryKey } from '../../hooks/queryKeys';
+import { addLog } from '../../services/LogService';
 
 /**
  * Every photo of a workout is edited with the workout's final readings, laid
@@ -55,16 +56,24 @@ function withCurrentReadings(
   };
 }
 
+/** Long enough for a native alert's dismissal to finish. */
+const ALERT_DISMISS_MS = 400;
+
 export default function WorkoutPhotos({
   details,
   sessionId,
   composition,
   workoutName,
+  promptAddPhoto,
+  onPromptShown,
 }: {
   details: ActivityDetailResponse[];
   sessionId: string;
   composition: PhotoComposition;
   workoutName?: string;
+  /** Ask straight away whether to add a photo: set when a recording has just finished. */
+  promptAddPhoto?: boolean;
+  onPromptShown?: () => void;
 }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<RecordingPhoto | null>(null);
@@ -124,18 +133,67 @@ export default function WorkoutPhotos({
         saved,
       ]);
       setSelected(saved);
-    } catch {
+    } catch (error) {
+      // Which step failed (decode, render, file write or the diary save) is
+      // otherwise lost behind the one generic alert.
+      addLog(
+        `[Workout Photo] Saving a ${source} photo failed: ${String(error)}`,
+        'ERROR',
+        [created ? 'after render, at save' : 'before render finished']
+      );
       if (created) deleteRecordingPhoto(created);
       Alert.alert(
         t('progressPhotos.uploadError', {
           defaultValue: 'Could not save that photo',
-        })
+        }),
+        // Development builds name the failure, so it can be fixed from a
+        // screenshot; release builds keep the one plain message.
+        __DEV__ ? String(error) : undefined
       );
     } finally {
       busy.current = false;
       setAdding(false);
     }
   };
+  // A native alert rather than a sheet: one question, with the two sources as
+  // its "yes", asked the moment a finished recording lands here. "No" comes
+  // first and is not cancel-style, since iOS moves a cancel button to the
+  // bottom of a three-button alert.
+  const prompted = useRef(false);
+  // iOS will not present the picker while the alert is still animating away,
+  // and the picker's failure would surface as "could not save that photo".
+  const addAfterAlert = (source: string) => {
+    setTimeout(() => void add(source), ALERT_DISMISS_MS);
+  };
+  const askToAddPhoto = useEffectEvent(() => {
+    onPromptShown?.();
+    Alert.alert(
+      t('recording.addPhotoPrompt', {
+        defaultValue: 'Add a photo to this workout?',
+      }),
+      undefined,
+      [
+        { text: t('common.no', { defaultValue: 'No' }) },
+        {
+          text: t('recording.addPhotoFromLibrary', {
+            defaultValue: 'Add from Photos',
+          }),
+          onPress: () => addAfterAlert('library'),
+        },
+        {
+          text: t('recording.addPhotoTakePicture', {
+            defaultValue: 'Take a Picture',
+          }),
+          onPress: () => addAfterAlert('camera'),
+        },
+      ]
+    );
+  });
+  useEffect(() => {
+    if (!promptAddPhoto || prompted.current) return;
+    prompted.current = true;
+    askToAddPhoto();
+  }, [promptAddPhoto]);
   const data = details.find(
     (detail) => detail.detail_type === RECORDING_DETAIL_TYPE
   )?.detail_data;

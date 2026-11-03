@@ -116,7 +116,11 @@ const CompactActivityCard: React.FC<CompactActivityCardProps> = ({
           }}
           distanceUnit={distanceUnit}
         >
-          <CompactActivityRow session={session} distanceUnit={distanceUnit} />
+          <CompactActivityRow
+            session={session}
+            distanceUnit={distanceUnit}
+            unspaced
+          />
         </SwipeableExerciseRow>
       ))}
     </View>

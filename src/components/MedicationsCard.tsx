@@ -124,7 +124,6 @@ const MedicationsCard: React.FC<MedicationsCardProps> = ({ navigation }) => {
               label={med.name}
               subtitle={subtitle}
               onOpen={() => openMedication(med.id)}
-              hideOverflow
               badge={
                 pending
                   ? undefined
@@ -189,7 +188,6 @@ const MedicationsCard: React.FC<MedicationsCardProps> = ({ navigation }) => {
               label={med.name}
               subtitle={subtitle}
               onOpen={() => openMedication(med.id)}
-              hideOverflow
               // The day's count alone: the pill beside Log already says what
               // it counts.
               badge={prnCount > 0 ? formatLocalizedNumber(prnCount) : undefined}

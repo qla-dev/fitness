@@ -155,8 +155,13 @@ export function photoEditorLayout(
       : options.layout === 'compact'
         ? 0.032
         : 0.04);
-  // Proportional to the wordmark, so every layout keeps the same breathing room.
-  const brandGap = brandSize * 1.6;
+  // The one gap of every layout: between each pair of rows, and between the
+  // rows and the wordmark. Proportional to the wordmark, so the breathing
+  // room reads the same in every layout.
+  const brandGap = brandSize * 0.8;
+  // The drawn lockup is as tall as the name, from the top of its "l" to the
+  // foot of its "q" (photoBranding measures it exactly; this is its share).
+  const brandHeight = brandSize * 0.95;
   const classicBottom = Math.max(
     ...sourceMetrics.map(
       (item) =>
@@ -175,7 +180,7 @@ export function photoEditorLayout(
   const classicFirst = Math.min(...sourceMetrics.map((item) => item.y));
   const classicScale = Math.min(
     width / composition.width,
-    (height * 0.95 - classicTop - brandGap - brandSize * 1.4) /
+    (height * 0.95 - classicTop - brandGap - brandHeight) /
       (classicBottom - classicFirst)
   );
   const classicShift = classicTop - classicFirst * classicScale;
@@ -190,6 +195,104 @@ export function photoEditorLayout(
   }[options.layout as 'trail' | 'compact' | 'summit' | 'hero'];
   const topShift =
     firstTopRow === undefined ? 0 : headerBottom - firstTopRow * height;
+  // Where each reading sits in its grid, and which block it belongs to: a
+  // block is a stack of rows anchored to the top of the photo (under the
+  // header) or to its bottom edge.
+  const cells = sourceMetrics.map((metric, index) => {
+    let x = 0,
+      size = index === 0 ? 0.115 : 0.085,
+      row = index,
+      block: 'top' | 'bottom' = 'top';
+    let maxWidth = 1;
+    if (options.layout === 'trail') {
+      x = (index % 3) / 3;
+      row = Math.floor(index / 3);
+      size = 0.055;
+      maxWidth = 1 / 3;
+    } else if (options.layout === 'compact') {
+      size = 0.045;
+    } else if (options.layout === 'summit') {
+      x = (index % 2) * 0.5;
+      row = Math.floor(index / 2);
+      size = 0.064;
+      maxWidth = 0.5;
+    } else if (options.layout === 'hero') {
+      // The lead alone at the top; the rest a grid on the bottom edge.
+      x = index === 0 ? 0 : ((index - 1) % 2) * 0.5;
+      row = index === 0 ? 0 : Math.floor((index - 1) / 2);
+      block = index === 0 ? 'top' : 'bottom';
+      size = index === 0 ? 0.14 : 0.065;
+      maxWidth = index === 0 ? 1 : 0.5;
+    } else if (options.layout === 'poster') {
+      // Lead over the grid, the whole block on the bottom edge.
+      x = index === 0 ? 0 : ((index - 1) % 2) * 0.5;
+      row = index === 0 ? 0 : 1 + Math.floor((index - 1) / 2);
+      block = 'bottom';
+      size = index === 0 ? 0.13 : 0.062;
+      maxWidth = index === 0 ? 1 : 0.5;
+    }
+    const rowSize = Math.min(
+      size * width,
+      height *
+        (options.layout === 'compact'
+          ? 0.035
+          : options.layout === 'trail'
+            ? 0.045
+            : options.layout === 'summit'
+              ? 0.04
+              : index === 0
+                ? 0.11
+                : 0.032)
+    );
+    return {
+      metric: {
+        ...metric,
+        iconAbove: true,
+        iconSize: rowSize * 0.5,
+        unitSize: rowSize * 0.58,
+        labelSize: rowSize * 0.25,
+        x: inset + x * contentWidth,
+        y: 0,
+        size: rowSize,
+        maxWidth: maxWidth * contentWidth,
+      },
+      row,
+      block,
+    };
+  });
+  // What a reading occupies from the top of its icon to the foot of its label.
+  const drawnHeight = (metric: {
+    icon?: unknown;
+    iconSize: number;
+    size: number;
+    label?: string;
+    labelSize: number;
+  }) =>
+    (metric.icon ? metric.iconSize : 0) +
+    metric.size * 1.2 +
+    (metric.label ? metric.labelSize * 1.2 : 0);
+  // Stacks a block's rows one gap apart, each as tall as its tallest cell.
+  const stack = (block: 'top' | 'bottom', start: number) => {
+    const rows = [
+      ...new Set(cells.filter((c) => c.block === block).map((c) => c.row)),
+    ].sort((p, q) => p - q);
+    let y = start;
+    for (const row of rows) {
+      const inRow = cells.filter((c) => c.block === block && c.row === row);
+      for (const cell of inRow) cell.metric.y = y;
+      y += Math.max(...inRow.map((c) => drawnHeight(c.metric))) + brandGap;
+    }
+    // The block's height, without the gap after its last row.
+    return rows.length ? y - brandGap - start : 0;
+  };
+  // Bottom blocks end the same distance from the bottom edge as the
+  // readings keep from the sides.
+  const bottomHeight = stack('bottom', 0);
+  const bottomStart = height - inset - bottomHeight;
+  if (options.layout !== 'classic') {
+    stack('bottom', bottomStart);
+    stack('top', headerBottom);
+  }
   const placed = sourceMetrics.map((metric, index) => {
     if (options.layout === 'classic') {
       const scale = classicScale;
@@ -207,61 +310,7 @@ export function photoEditorLayout(
         maxWidth: contentWidth,
       };
     }
-    let x = 0,
-      y = 0.065 + index * 0.1,
-      size = index === 0 ? 0.115 : 0.085;
-    let maxWidth = 1;
-    if (options.layout === 'trail') {
-      x = (index % 3) / 3;
-      y = 0.15 + Math.floor(index / 3) * 0.1;
-      size = 0.055;
-      maxWidth = 1 / 3;
-    } else if (options.layout === 'compact') {
-      x = 0;
-      y = 0.08 + index * 0.06;
-      size = 0.045;
-      maxWidth = 1;
-    } else if (options.layout === 'summit') {
-      x = (index % 2) * 0.5;
-      y = 0.065 + Math.floor(index / 2) * 0.09;
-      size = 0.064;
-      maxWidth = 0.5;
-    } else if (options.layout === 'hero') {
-      x = index === 0 ? 0 : ((index - 1) % 2) * 0.5;
-      y = index === 0 ? 0.07 : 0.78 + Math.floor((index - 1) / 2) * 0.085;
-      size = index === 0 ? 0.14 : 0.065;
-      maxWidth = index === 0 ? 1 : 0.5;
-    } else if (options.layout === 'poster') {
-      x = index === 0 ? 0 : ((index - 1) % 2) * 0.5;
-      y = index === 0 ? 0.69 : 0.81 + Math.floor((index - 1) / 2) * 0.075;
-      size = index === 0 ? 0.13 : 0.062;
-      maxWidth = index === 0 ? 1 : 0.5;
-    }
-    const rowSize = Math.min(
-      size * width,
-      height *
-        (options.layout === 'compact'
-          ? 0.035
-          : options.layout === 'trail'
-            ? 0.045
-            : options.layout === 'summit'
-              ? 0.04
-              : index === 0
-                ? 0.11
-                : 0.032)
-    );
-    const top = y * height + (y < 0.5 ? topShift : 0);
-    return {
-      ...metric,
-      iconAbove: true,
-      iconSize: rowSize * 0.5,
-      unitSize: rowSize * 0.58,
-      labelSize: rowSize * 0.25,
-      x: inset + x * contentWidth,
-      y: top,
-      size: rowSize,
-      maxWidth: maxWidth * contentWidth,
-    };
+    return cells[index].metric;
   });
   // A grid row with empty cells (two readings in a three-column row) moves as
   // one with the text alignment, so centered text centers the row itself.
@@ -307,30 +356,32 @@ export function photoEditorLayout(
           : options.layout === 'hero'
             ? { x: 0.58, y: 0.46, width: 0.58, height: 0.4 }
             : { x: 0.57, y: 0.34, width: 0.68, height: 0.48 };
-  // Story and poster keep the wordmark inside the stats block, so scaling
-  // the stats layer up cannot push the logo out of the frame on its own.
   const metricsBottom = Math.max(
-    ...metrics.map(
-      (metric) =>
-        metric.y +
-        (metric.icon ? metric.iconSize : 0) +
-        metric.size * 1.2 +
-        (metric.label ? metric.labelSize * 1.2 : 0)
-    )
+    ...metrics
+      .filter((_, index) => cells[index].block === 'top')
+      .map((metric) => metric.y + drawnHeight(metric))
   );
-  const brandHeight = brandSize * 1.4;
-  // Layouts that stack from the top hang the wordmark one gap under the last
-  // reading, measured from what is drawn, so it sits the same distance away
-  // however many readings there are. Hero and poster place it between blocks.
+  // The wordmark keeps the same one gap from the rows it belongs to: under a
+  // block stacked from the top, over a block stacked on the bottom edge.
   const brandTop =
-    options.layout === 'poster'
-      ? (metrics[0]?.y ?? height * 0.69) - brandSize * 0.5 - brandHeight
-      : options.layout === 'hero'
-        ? height * 0.685
-        : metricsBottom + brandGap;
+    options.layout === 'poster' || options.layout === 'hero'
+      ? bottomStart - brandGap - brandHeight
+      : metricsBottom + brandGap;
   // Summit and hero hang their route under the top block, so it follows it.
   const routeShift =
     options.layout === 'summit' || options.layout === 'hero' ? topShift : 0;
+  // Over a bottom block the route ends one gap above the wordmark, shrinking
+  // only on a frame too short to fit it whole (a square, say).
+  const routeLimit =
+    options.layout === 'poster' || options.layout === 'hero'
+      ? brandTop - brandGap
+      : height;
+  const routeHeight = Math.min(route.height * height, routeLimit);
+  const routeY = Math.min(
+    route.y * height + routeShift,
+    height * (1 - route.height / 2),
+    routeLimit - routeHeight / 2
+  );
   return {
     width,
     height,
@@ -354,13 +405,9 @@ export function photoEditorLayout(
       y:
         options.routeStyle === 'map'
           ? height * (options.mapPosition === 'top' ? 0.25 : 0.75)
-          : Math.min(
-              route.y * height + routeShift,
-              height * (1 - route.height / 2)
-            ),
+          : routeY,
       width: options.routeStyle === 'map' ? width : route.width * width,
-      height:
-        options.routeStyle === 'map' ? height * 0.5 : route.height * height,
+      height: options.routeStyle === 'map' ? height * 0.5 : routeHeight,
     },
   };
 }

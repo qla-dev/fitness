@@ -4,13 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createDuplicatePressGuard } from '../utils/duplicatePress';
-import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
+import {
+  useLiquidGlassActive,
+  useNativeIOSHeadersActive,
+} from '../services/nativeTabBarPreference';
 import {
   useScreenHeader,
   SAVE_LABEL,
   type HeaderItem,
 } from '../hooks/useScreenHeader';
+import { useCSSVariable } from 'uniwind';
 import Button from './ui/Button';
+import LiquidGlassSurface from './LiquidGlassSurface';
 
 /**
  * The height every control in the footer row shares, and the gap between
@@ -24,8 +29,70 @@ export const FOOTER_CONTROL_GAP = 8;
  * changes size with its label or the control, and the control takes the rest.
  */
 export const FOOTER_ACTION_WIDTH = 120;
-/** One corner radius for every control in the footer row (rounded-lg). */
-export const FOOTER_CONTROL_RADIUS = 12;
+/** One corner radius for every control in the footer row: a capsule. */
+export const FOOTER_CONTROL_RADIUS = 999;
+
+/**
+ * The footer's action, drawn as FooterCTA draws its own: a tinted Liquid Glass
+ * capsule when glass is on, the same capsule filled otherwise, so every
+ * sticky action in the app is one shape.
+ */
+function FooterSaveButton({
+  testID,
+  onPress,
+  disabled,
+  loading,
+  style,
+  className,
+  children,
+}: {
+  testID?: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  style?: { height?: number; paddingVertical?: number; borderRadius?: number };
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const glass = useLiquidGlassActive();
+  const accent = useCSSVariable('--color-accent-primary') as string;
+  const shape = { ...style, borderRadius: FOOTER_CONTROL_RADIUS };
+  if (!glass)
+    return (
+      <Button
+        testID={testID}
+        variant="primary"
+        onPress={onPress}
+        disabled={disabled}
+        loading={loading}
+        style={shape}
+        className={className}
+        textClassName="text-sm text-center"
+      >
+        {children}
+      </Button>
+    );
+  return (
+    <LiquidGlassSurface
+      isInteractive
+      tintColor={accent}
+      style={{ borderRadius: FOOTER_CONTROL_RADIUS, overflow: 'hidden' }}
+    >
+      <Button
+        testID={testID}
+        variant="ghost"
+        onPress={onPress}
+        disabled={disabled}
+        loading={loading}
+        style={shape}
+        className={`rounded-full ${className ?? ''}`}
+        textClassName="text-sm text-center text-white"
+      >
+        {children}
+      </Button>
+    </LiquidGlassSurface>
+  );
+}
 
 interface FooterSaveBarProps {
   onPress: () => void;
@@ -72,8 +139,9 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
   }, [allowPress, onPress]);
 
   return (
+    // No rule above it, as FooterCTA: the capsule stands apart on its own.
     <View
-      className="px-4 py-3 border-t border-border-subtle"
+      className="px-4 py-3 bg-background"
       style={{ paddingBottom: Math.max(insets.bottom, 12) }}
     >
       <View
@@ -91,11 +159,10 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
             leading ? { width: FOOTER_ACTION_WIDTH, flexShrink: 0 } : undefined
           }
         >
-          <Button
+          <FooterSaveButton
             // Stable across label changes: a test that presses the action by
             // its copy breaks every time the wording is edited.
             testID="footer-save-button"
-            variant="primary"
             onPress={handlePress}
             disabled={disabled}
             loading={busy}
@@ -113,10 +180,9 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
                 : undefined
             }
             className={leading ? '' : 'py-3'}
-            textClassName="text-sm text-center"
           >
             {busy ? resolvedBusyLabel : resolvedLabel}
-          </Button>
+          </FooterSaveButton>
         </View>
       </View>
     </View>

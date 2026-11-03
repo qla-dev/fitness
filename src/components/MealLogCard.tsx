@@ -13,21 +13,12 @@ export interface MealLogCardProps {
   /** The meal's display label. */
   label: string;
   /**
-   * Optional calorie readout shown after the overflow button (e.g.
+   * Optional calorie readout shown after the label (e.g.
    * "320 / 500 Cal"). Omitted on a meal with nothing logged.
    */
   badge?: string;
-  /**
-   * Opens the meal itself. Given to both the header row and the trailing
-   * overflow button, so the row stays a shortcut for the affordance the
-   * button makes explicit. Omit and neither is rendered.
-   */
+  /** Opens the meal itself, from a tap on the header row. */
   onOpen?: () => void;
-  /**
-   * Leaves out the trailing "…" button, so only the row opens the item. For
-   * a card whose actions already fill the row (a medication's dose pills).
-   */
-  hideOverflow?: boolean;
   /** Adds food to this meal. The card's one accented action. */
   onLog?: () => void;
   /** A second line under the label, e.g. a medication's time and dose. */
@@ -59,7 +50,6 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
   badge,
   onOpen,
   onLog,
-  hideOverflow = false,
   subtitle,
   logLabel,
   logAccessibilityLabel,
@@ -69,7 +59,6 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
   const { t } = useTranslation();
   const accentPrimary = useCSSVariable('--color-accent-primary') as string;
   const hasItems = React.Children.toArray(children).length > 0;
-  // The row and the "…" open the same thing, with the same tick.
   const open = onOpen
     ? () => {
         fireSelectionHaptic();
@@ -137,23 +126,6 @@ const MealLogCard: React.FC<MealLogCardProps> = ({
               {badge}
             </Text>
           </View>
-        ) : null}
-        {/* The overflow button and the row behind it go to the same place: the
-            row is the shortcut, this is the affordance that says so out loud.
-            It replaces the chevron that used to sit here. */}
-        {onOpen && !hideOverflow ? (
-          <Pressable
-            onPress={open}
-            accessibilityRole="button"
-            accessibilityLabel={t('foodSummary.mealOptions', {
-              defaultValue: 'More options for {{label}}',
-              label,
-            })}
-            className="items-center justify-center"
-            style={{ width: 32, height: 32 }}
-          >
-            <Icon name="ellipsis-horizontal" size={18} color={accentPrimary} />
-          </Pressable>
         ) : null}
         {secondaryAction ? (
           <Pressable

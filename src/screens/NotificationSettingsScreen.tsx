@@ -42,6 +42,12 @@ const NotificationSettingsScreen: React.FC<
   const setFastingGoalNotificationsEnabled = useAppPreferencesStore(
     (s) => s.setFastingGoalNotificationsEnabled
   );
+  const cycleTrainingNotesEnabled = useAppPreferencesStore(
+    (s) => s.cycleTrainingNotesEnabled
+  );
+  const setCycleTrainingNotesEnabled = useAppPreferencesStore(
+    (s) => s.setCycleTrainingNotesEnabled
+  );
   const medicationRemindersEnabled = useAppPreferencesStore(
     (s) => s.medicationRemindersEnabled
   );
@@ -252,6 +258,31 @@ const NotificationSettingsScreen: React.FC<
                 }
               />
             )}
+          </SettingsRowGroup>
+        )}
+
+        {/* The same switch as in Cycle settings, listed with every other
+            alert so it can be found where notifications are managed. */}
+        {notificationsEnabled && (
+          <SettingsRowGroup
+            title={t('notificationSettings.cycle', { defaultValue: 'Cycle' })}
+          >
+            <SettingsRow
+              title={t('cycleSettings.fields.trainingNotes', {
+                defaultValue: 'Daily Training Note',
+              })}
+              subtitle={t('cycleSettings.values.trainingNotesSubtitle', {
+                defaultValue:
+                  'At 9:00, how hard to train today, from your cycle phase',
+              })}
+              subtitleNumberOfLines={0}
+              rightAccessory={
+                <Switch
+                  value={cycleTrainingNotesEnabled}
+                  onValueChange={setCycleTrainingNotesEnabled}
+                />
+              }
+            />
           </SettingsRowGroup>
         )}
       </NativeHeaderScrollView>

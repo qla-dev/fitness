@@ -47,7 +47,11 @@ const ProfilePremiumScreen: React.FC<ProfilePremiumScreenProps> = () => {
       {header}
       <NativeHeaderScrollView
         showsVerticalScrollIndicator={false}
+        // Centred in the space under the header, like the chat and the
+        // cycle and medications empty states; still scrolls when it outgrows it.
         contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
           padding: 16,
           paddingBottom: insets.bottom + 32 + activeWorkoutBarPadding,
         }}

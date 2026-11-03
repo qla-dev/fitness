@@ -1696,7 +1696,8 @@
     "openSettings": "Otvori postavke",
     "permissionTitle": "Dodijeli dozvole",
     "permissionBody": "Upozorenja qla.fit (tajmeri odmora, ciljevi posta, podsjetnici za lijekove) neće stizati.",
-    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}."
+    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}.",
+    "cycle": "Ciklus"
   },
   "workoutSettings": {
     "title": "Postavke treninga",
@@ -2379,7 +2380,7 @@
     "fatAmount": "masti",
     "left": "preostalo",
     "calories": "kalorije",
-    "remaining": "Preostalo {{value}} g",
+    "remaining": "{{value}} g preostalo",
     "over": "{{value}} g preko",
     "met": "ispunjeno",
     "goalSeparator": " / {{value}}"
@@ -5728,6 +5729,9 @@
     "capturePhoto": "Snimi fotografiju s metrikama",
     "workoutPhotos": "Fotografije treninga",
     "addPhoto": "Dodaj fotografiju",
+    "addPhotoPrompt": "Želiš li dodati fotografiju ovom treningu?",
+    "addPhotoFromLibrary": "Dodaj iz galerije",
+    "addPhotoTakePicture": "Fotografiši",
     "photosLoadFailed": "Učitavanje fotografija nije uspjelo. Dodirni za ponovni pokušaj.",
     "openPhoto": "Otvori fotografiju treninga",
     "showMap": "Prikaži mapu",
@@ -6056,7 +6060,7 @@
     "burned": "Potrošeno",
     "kcalLeft": "kcal preostalo",
     "kcalLeftOfGoal": "kcal preostalo od {{goal}}",
-    "amountLeft": "Preostalo {{amount}}",
+    "amountLeft": "{{amount}} preostalo",
     "addGoal": "Dodaj cilj",
     "editGoalFor": "Promijeni cilj za {{nutrient}}"
   },
@@ -6470,6 +6474,9 @@
     "title": "MarkAI",
     "macros": "Izračunaj makrose",
     "training": "Pomoć za kretanje",
+    "macrosChip": "Svi makronutrijenti",
+    "trainingChip": "Kretanje",
+    "metricsChip": "Dnevne metrike",
     "allMacros": "Izračunaj sve moje makrose",
     "allMacrosPrompt": "Izračunaj sve moje makrose: kalorije, proteine, ugljikohidrate i masti za moj cilj",
     "free": "Slobodan chat",
@@ -6549,7 +6556,15 @@
       "prices": "Provjera cijena",
       "groceries": "Sastavljač liste za kupovinu"
     },
-    "usage": "Potrošnja"
+    "usage": "Potrošnja",
+    "groceryCard": {
+      "more_one": "+{{count}} još",
+      "more_few": "+{{count}} još",
+      "more_other": "+{{count}} još",
+      "save": "Sačuvaj kao listu za kupovinu"
+    },
+    "goalsChip": "Moji ciljevi",
+    "goalsPrompt": "Pogledaj moje dnevne ciljeve i reci mi kako mi ide i šta da promijenim"
   },
   "weeklyPlans": {
     "addManual": "Sam napravi plan obroka",
@@ -6735,5 +6750,14 @@
     "seeUsage": "Pogledaj potrošnju",
     "renewsToday": "danas u {{time}}",
     "renewsTomorrow": "sutra u {{time}}"
+  },
+  "markaiData": {
+    "title": "Dozvoliti MarkAI-ju da vidi tvoje podatke?",
+    "body": "MarkAI može čitati sažetak tvojih zadnjih 14 dana (hrana, aktivnost, treninzi, san i težina) da ti odgovara o tebi i prilagodi treninge. Šalje se uz svaku poruku.",
+    "decline": "Ne sada",
+    "allow": "Dozvoli",
+    "setting": "Koristi moje podatke",
+    "settingSubtitle": "Šalji MarkAI-ju sažetak tvojih zadnjih 14 dana uz svaku poruku.",
+    "appSetting": "MarkAI vidi moje podatke"
   }
 }

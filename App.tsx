@@ -917,6 +917,29 @@ function AppContent() {
               ...(Platform.OS === 'android' ? androidModalAnimation : {}),
             })}
           />
+          {/* The same sheet at part height, dragged up for the rest: iOS
+              detents, as on Hideya's power-ups. A detent form sheet has no
+              native header, so PromptSheet draws its own bar inside it.
+              Android has no detents and opens it as the modal above. */}
+          <Stack.Screen
+            name="DetentSheet"
+            component={PromptSheetScreen}
+            options={
+              Platform.OS === 'ios'
+                ? {
+                    headerShown: false,
+                    presentation: 'formSheet',
+                    sheetAllowedDetents: [0.55, 1],
+                    sheetGrabberVisible: true,
+                    sheetCornerRadius: 28,
+                  }
+                : createStackScreenOptions('', {
+                    presentation: 'modal',
+                    headerBackVisible: false,
+                    ...androidModalAnimation,
+                  })
+            }
+          />
           <Stack.Screen
             name="GoalEdit"
             component={SafeGoalEdit}

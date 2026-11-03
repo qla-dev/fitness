@@ -127,9 +127,18 @@ const SwipeableExerciseRow: React.FC<SwipeableExerciseRowProps> = ({
   };
 
   return (
-    <Animated.View style={animatedStyle} onLayout={handleLayout}>
+    <Animated.View
+      // A custom card is spaced and clipped out here, around the swipeable:
+      // the delete action fills the swipeable's whole box, so any gap or
+      // corner inside it showed red at rest.
+      style={[animatedStyle, children ? { paddingBottom: 12 } : null]}
+      onLayout={handleLayout}
+    >
       <ReanimatedSwipeable
         ref={swipeableRef}
+        containerStyle={
+          children ? { borderRadius: 16, overflow: 'hidden' } : undefined
+        }
         renderRightActions={renderRightActions}
         overshootRight={false}
         rightThreshold={40}

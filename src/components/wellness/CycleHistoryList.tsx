@@ -15,7 +15,9 @@ import {
 } from '../ui/inputStyle';
 import Button from '../ui/Button';
 import SwipeableDeleteRow from '../SwipeableDeleteRow';
-import CalendarSheet, { type CalendarSheetRef } from '../CalendarSheet';
+import RingCalendarSheet, {
+  type RingCalendarSheetRef,
+} from '../RingCalendarSheet';
 import {
   getTodayDate,
   formatDate,
@@ -32,7 +34,7 @@ const CycleHistoryList: React.FC = () => {
     0
   );
   const [showAddForm, setShowAddForm] = useState(false);
-  const calendarSheetRef = useRef<CalendarSheetRef>(null);
+  const calendarSheetRef = useRef<RingCalendarSheetRef>(null);
   const [accentColor] = useCSSVariable(['--color-accent-primary']) as [string];
 
   // Form State
@@ -208,8 +210,9 @@ const CycleHistoryList: React.FC = () => {
         </View>
       )}
 
-      <CalendarSheet
+      <RingCalendarSheet
         ref={calendarSheetRef}
+        rings={false}
         selectedDate={startDate}
         onSelectDate={setStartDate}
       />

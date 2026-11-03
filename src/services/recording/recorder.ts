@@ -576,7 +576,12 @@ export async function discardRecording() {
     const photos = snapshot.session.photos ?? [];
     await clearRecording(snapshot.session.id);
     if (photos.length) {
-      const { deleteRecordingPhoto } = await import('./photos');
+      // Loaded only here, so the recorder (and its background task) never
+      // pulls in Skia. A require rather than import(): the same lazy load
+      // in Metro, and one Jest can run.
+      const { deleteRecordingPhoto } =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('./photos') as typeof import('./photos');
       for (const photo of photos) {
         try {
           deleteRecordingPhoto(photo);

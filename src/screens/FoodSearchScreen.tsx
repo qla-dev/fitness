@@ -78,6 +78,8 @@ import {
 import type { NativeStackHeaderItemMenu } from '@react-navigation/native-stack';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { ALL_PROVIDERS_VALUE } from '../constants/foodProviders';
+import { getLocalizedMealLabel } from '../constants/meals';
+import { useMealTypes } from '../hooks/useMealTypes';
 
 type FoodSearchScreenProps = RootStackScreenProps<'FoodSearch'>;
 
@@ -105,6 +107,32 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
   const pickerMode = route.params?.pickerMode ?? 'log-entry';
   const mealTypeId = route.params?.mealTypeId;
   const mealPlanTarget = route.params?.mealPlanTarget;
+
+  // Logging to the diary, the title names the meal the food will land in: the
+  // one picked on the way here, or — opened straight from the dashboard — the
+  // meal for the current time of day, the same default FoodEntryAdd selects.
+  // Every other picker mode keeps the generic "Add Food" title.
+  const isLoggingToDiary = pickerMode === 'log-entry' && !mealPlanTarget;
+  const { mealTypes, defaultMealTypeId } = useMealTypes({
+    enabled: isLoggingToDiary,
+  });
+  const titleMealType = mealTypes.find(
+    (mealType) => mealType.id === (mealTypeId ?? defaultMealTypeId)
+  );
+  const mealTitle = titleMealType
+    ? titleMealType.user_id != null
+      ? titleMealType.name
+      : getLocalizedMealLabel(
+          t,
+          titleMealType.name.toLowerCase() === 'snack'
+            ? 'snacks'
+            : titleMealType.name.toLowerCase()
+        )
+    : undefined;
+  useLayoutEffect(() => {
+    if (isLoggingToDiary && mealTitle)
+      navigation.setOptions({ title: mealTitle });
+  }, [isLoggingToDiary, mealTitle, navigation]);
   const isMealBuilderMode = pickerMode === 'meal-builder';
   const isMealPlanMode = pickerMode === 'meal-plan';
   const selectionPickerMode =

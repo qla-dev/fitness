@@ -5,6 +5,7 @@ import {
   updateSetup,
   type PersonalSetup,
 } from '../services/personalSetup';
+import { addLog } from '../services/LogService';
 
 export function usePersonalSetup(enabled = true) {
   const client = useQueryClient();
@@ -12,8 +13,14 @@ export function usePersonalSetup(enabled = true) {
     queryKey: ['personalSetup'],
     enabled,
     queryFn: async () => {
-      const scope = await setupScope();
-      return { scope, state: await readSetup(scope) };
+      try {
+        const scope = await setupScope();
+        return { scope, state: await readSetup(scope) };
+      } catch (error) {
+        // Behind the Profile's Retry row; this is the only trace of why.
+        addLog(`[Setup] Reading the setup failed: ${String(error)}`, 'ERROR');
+        throw error;
+      }
     },
   });
   const mutation = useMutation({

@@ -1,12 +1,55 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readSetup, updateSetup } from '../../src/services/personalSetup';
-import { localTransaction, table } from '../../src/services/local/database';
+import {
+  localTransaction,
+  saveRecord,
+  table,
+} from '../../src/services/local/database';
 
 jest.mock('../../src/services/storage', () => ({
   getActiveServerConfig: jest.fn(),
 }));
 
 describe('personal setup storage', () => {
+  it('reads a synced record with nulls and numbers instead of failing', async () => {
+    await localTransaction(
+      (db) => {
+        saveRecord(db, 'personalSetup', {
+          id: 'local',
+          profile: { age: 30, weight: null, done: true, picks: ['a', 1, null] },
+          profileDone: null,
+          grocery: null,
+          groceryDone: true,
+        } as never);
+        saveRecord(db, 'groceryLists', {
+          id: 7,
+          scope: 'local',
+          position: 0,
+          name: 'Shop',
+          note: null,
+          store: null,
+          archived: null,
+          createdAt: null,
+          items: [{ id: 1, name: 'Eggs', quantity: null, checked: null, price: null }],
+        } as never);
+      },
+      { method: 'PUT', endpoint: '/test' }
+    );
+    const state = await readSetup('local');
+    expect(state.profile).toEqual({ age: '30', done: 'true', picks: ['a', '1'] });
+    expect(state.profileDone).toBe(false);
+    expect(state.grocery).toEqual({});
+    expect(state.groceryDone).toBe(true);
+    expect(state.lists[0]).toMatchObject({
+      id: '7',
+      note: '',
+      store: '',
+      archived: false,
+      items: [{ id: '1', name: 'Eggs', quantity: '', checked: false }],
+    });
+    expect(state.lists[0].items[0].price).toBeUndefined();
+  });
+
   it('remembers explicitly skipped questions after reloading', async () => {
     await updateSetup('local', (s) => ({
       ...s,

@@ -37,6 +37,10 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
   const setHapticsEnabled = useAppPreferencesStore((s) => s.setHapticsEnabled);
   const soundsEnabled = useAppPreferencesStore((s) => s.soundsEnabled);
   const setSoundsEnabled = useAppPreferencesStore((s) => s.setSoundsEnabled);
+  const markaiDataAccess = useAppPreferencesStore((s) => s.markaiDataAccess);
+  const setMarkaiDataAccess = useAppPreferencesStore(
+    (s) => s.setMarkaiDataAccess
+  );
   const liquidGlassEnabled = useAppPreferencesStore(
     (s) => s.liquidGlassTabBarEnabled
   );
@@ -248,6 +252,25 @@ const AppSettingsScreen: React.FC<AppSettingsScreenProps> = ({
           subtitleNumberOfLines={0}
           rightAccessory={
             <Switch value={soundsEnabled} onValueChange={setSoundsEnabled} />
+          }
+        />
+        {/* The same choice as the card in the MarkAI chat and its options. */}
+        <SettingsRow
+          title={t('markaiData.appSetting', {
+            defaultValue: 'MarkAI can see my data',
+          })}
+          subtitle={t('markaiData.settingSubtitle', {
+            defaultValue:
+              'Send MarkAI a summary of your last 14 days with each message.',
+          })}
+          subtitleNumberOfLines={0}
+          rightAccessory={
+            <Switch
+              value={markaiDataAccess === 'allowed'}
+              onValueChange={(value) =>
+                setMarkaiDataAccess(value ? 'allowed' : 'declined')
+              }
+            />
           }
         />
       </NativeHeaderScrollView>

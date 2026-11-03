@@ -9,14 +9,7 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, Text, View } from 'react-native';
 import {
   KeyboardChatScrollView,
   useReanimatedKeyboardAnimation,
@@ -26,7 +19,6 @@ import MarkaiTypewriterText from '../components/markai/MarkaiTypewriterText';
 import MarkaiGoalCard from '../components/markai/MarkaiGoalCard';
 import MarkaiWorkoutCard from '../components/markai/MarkaiWorkoutCard';
 import { usePreferences } from '../hooks/usePreferences';
-import CustomModal, { type CustomModalRef } from '../components/CustomModal';
 import MarkaiComposer from '../components/markai/MarkaiComposer';
 import Icon, { type IconName } from '../components/Icon';
 import MarkaiEmptyState from '../components/markai/MarkaiEmptyState';
@@ -61,6 +53,13 @@ import {
   onlineAccountEntryLabel,
   refreshOnlineAccount,
 } from '../services/online/account';
+import MarkaiDataNotice from '../components/markai/MarkaiDataNotice';
+import { getLocales } from 'expo-localization';
+import { getAppLocale } from '../localization';
+import MarkaiGroceryCard from '../components/markai/MarkaiGroceryCard';
+import { setupScope, updateSetup, withList } from '../services/personalSetup';
+import { buildMarkaiContext } from '../services/online/markaiContext';
+import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import MarkaiLimitNotice, {
   type MarkaiLimitKind,
 } from '../components/markai/MarkaiLimitNotice';
@@ -120,6 +119,8 @@ function MarkaiContent() {
   // A priced task refused for want of credits is remembered until the
   // balance goes up; running out of plain replies is read off the account.
   const coins = session?.user.ai_coins ?? 0;
+  const dataAccess = useAppPreferencesStore((s) => s.markaiDataAccess);
+  const setDataAccess = useAppPreferencesStore((s) => s.setMarkaiDataAccess);
   const [taskShort, setTaskShort] = useState(false);
   const [hadCredits, setHadCredits] = useState(coins > 0);
   const [seenCoins, setSeenCoins] = useState(coins);
@@ -182,7 +183,6 @@ function MarkaiContent() {
   }, []);
   const apple = useAppleSignIn();
   const google = useGoogleSignIn();
-  const optionsSheet = useRef<CustomModalRef>(null);
   const scroller =
     useRef<React.ElementRef<typeof KeyboardChatScrollView>>(null);
   const edgeEffectRef = useScrollEdgeEffectRef();
@@ -327,7 +327,6 @@ function MarkaiContent() {
     setPending(null);
     pendingRequest.current = null;
     atBottom.current = true;
-    optionsSheet.current?.dismiss();
   };
   const selectThread = async (thread: { id: string; mode: Mode }) => {
     if (busy || loading) return;
@@ -494,6 +493,12 @@ function MarkaiContent() {
     }
     let delivered = false;
     try {
+      // Read at send time, so the summary is the diary as it is now. A failed
+      // read only costs MarkAI its view of the data, never the message.
+      const context =
+        dataAccess === 'allowed'
+          ? await buildMarkaiContext().catch(() => undefined)
+          : undefined;
       const response = await onlineRequest<{
         id: string;
         reply: MarkaiReply;
@@ -507,6 +512,18 @@ function MarkaiContent() {
         ...(label ? { label } : null),
         ...(image ? { image: image.data } : null),
         ...(task ? { task } : null),
+        ...(context ? { context } : null),
+        // The phone's own language (hr-BA, sr-RS, …), so MarkAI writes the
+        // right variant: ijekavian for Bosnian and Croatian, ekavian for
+        // Serbian. A meal plan sends its own language below.
+        ...(mealPlan
+          ? null
+          : {
+              language: (getLocales()[0]?.languageTag ?? getAppLocale()).slice(
+                0,
+                12
+              ),
+            }),
         ...(mealPlan
           ? {
               preferences: mealPlan.preferences,
@@ -526,6 +543,17 @@ function MarkaiContent() {
           response.id
         );
         void queryClient.invalidateQueries({ queryKey: weeklyPlansQueryKey });
+      }
+      // The chat follows the mode MarkAI answered in: picked once at the
+      // start, then changed only by what the conversation turns into.
+      const followed = response.reply.mode;
+      if (followed && followed !== sendMode && followed in labels) {
+        setMode(followed);
+        if (accountId)
+          void AsyncStorage.setItem(
+            '@qla/markai/' + accountId + '/active',
+            JSON.stringify({ id: conversation, mode: followed })
+          ).catch(() => undefined);
       }
       animateNext.current = true;
       setTypingId(response.id);
@@ -832,7 +860,7 @@ function MarkaiContent() {
                   </Button>
                 </View>
               )}
-              {/* The suggested session closes a Moving help reply. */}
+              {/* A suggested session closes the reply, in any mode. */}
               {message.reply.workout && typingId !== message.id && (
                 <MarkaiWorkoutCard
                   workout={message.reply.workout}
@@ -874,6 +902,50 @@ function MarkaiContent() {
                       });
                       navigation.navigate('WeeklyPlan', { planId: saved.id });
                     });
+                  }}
+                />
+              )}
+              {/* A proposed list is saved under the reply's id, so saving it
+                  again opens the same list rather than making a copy. */}
+              {message.reply.grocery && typingId !== message.id && (
+                <MarkaiGroceryCard
+                  grocery={message.reply.grocery}
+                  disabled={busy}
+                  onSave={() => {
+                    const grocery = message.reply.grocery;
+                    if (!grocery) return;
+                    void setupScope()
+                      .then((scope) =>
+                        updateSetup(scope, (state) =>
+                          state.lists.some((list) => list.id === message.id)
+                            ? state
+                            : withList(state, {
+                                id: message.id,
+                                name: grocery.name,
+                                note: '',
+                                store: '',
+                                archived: false,
+                                createdAt: new Date().toISOString(),
+                                items: grocery.items.map((item, index) => ({
+                                  id: `${message.id}-${index}`,
+                                  name: item.name,
+                                  quantity: item.quantity ?? '',
+                                  checked: false,
+                                })),
+                              })
+                        )
+                      )
+                      .then((state) => {
+                        queryClient.setQueryData(
+                          ['personalSetup'],
+                          (previous: { scope: string } | undefined) =>
+                            previous ? { ...previous, state } : previous
+                        );
+                        navigation.navigate('GroceryList', {
+                          listId: message.id,
+                        });
+                      })
+                      .catch((e: unknown) => setError(String(e)));
                   }}
                 />
               )}
@@ -956,7 +1028,6 @@ function MarkaiContent() {
           value={text}
           onChangeText={setText}
           onSend={() => void send()}
-          onOptions={() => optionsSheet.current?.present()}
           onAttach={(source) => void attach(source)}
           attachment={attachment?.uri}
           attaching={attaching}
@@ -971,77 +1042,15 @@ function MarkaiContent() {
                 kind={limitKind}
                 onSeeUsage={() => navigation.navigate('MarkaiUsage')}
               />
+            ) : dataAccess === 'ask' ? (
+              <MarkaiDataNotice
+                onAllow={() => setDataAccess('allowed')}
+                onDecline={() => setDataAccess('declined')}
+              />
             ) : null
           }
         />
       ) : null}
-      <CustomModal
-        ref={optionsSheet}
-        title={t('markai.options', { defaultValue: 'Chat options' })}
-        headerRight={
-          session
-            ? {
-                kind: 'text',
-                label: t('online.balance', {
-                  defaultValue: '{{amount}} AI coins',
-                  amount: session.user.ai_coins,
-                }),
-                onPress: () => {
-                  optionsSheet.current?.dismiss();
-                  navigation.navigate('CoinPackages');
-                },
-              }
-            : undefined
-        }
-      >
-        <View className="px-4 gap-3">
-          <Text className="text-text-secondary">
-            {t('markai.chooseMode', {
-              defaultValue: 'Start a new conversation',
-            })}
-          </Text>
-          <ModeChoices
-            labels={labels}
-            disabled={busy || loading}
-            onSelect={newChat}
-          />
-        </View>
-      </CustomModal>
     </View>
   );
-}
-
-function ModeChoices({
-  labels,
-  disabled,
-  onSelect,
-}: {
-  labels: Record<Mode, string>;
-  disabled: boolean;
-  onSelect: (mode: Mode) => void;
-}) {
-  return (['macros', 'training', 'free'] as Mode[]).map((value) => (
-    <Pressable
-      key={value}
-      disabled={disabled}
-      accessibilityRole="button"
-      onPress={() => onSelect(value)}
-      className="bg-surface rounded-2xl px-4 py-3 flex-row items-center gap-3"
-    >
-      <Icon
-        name={
-          value === 'macros'
-            ? 'food'
-            : value === 'training'
-              ? 'exercise'
-              : 'sparkles'
-        }
-        size={20}
-      />
-      <Text className="text-text-primary flex-1" style={{ fontSize: 15 }}>
-        {labels[value]}
-      </Text>
-      <Icon name="chevron-forward" size={16} />
-    </Pressable>
-  ));
 }

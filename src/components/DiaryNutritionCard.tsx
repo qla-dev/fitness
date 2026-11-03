@@ -140,7 +140,20 @@ function CalorieFlank({
           </Text>
         )}
       </View>
-      <Text className="text-text-secondary text-xs">{label}</Text>
+      {/* One line, never broken mid-word: the label may run into the gutter
+          either side of the column ("Potrošeno" is wider than it), which is
+          empty space, so the arcs keep their size. */}
+      <View
+        className="items-center"
+        style={{
+          width: FLANK_WIDTH + 2 * ARC_GUTTER,
+          marginHorizontal: -ARC_GUTTER,
+        }}
+      >
+        <Text className="text-text-secondary text-xs" numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </View>
   );
 }

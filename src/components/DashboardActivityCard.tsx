@@ -270,9 +270,13 @@ export default function DashboardActivityCard({
               <View className="flex-row items-center gap-2">
                 <Icon name={metric.icon} size={18} color={metric.color} />
                 <DashboardCardTitle>{metric.label}</DashboardCardTitle>
-                <View className="flex-1" />
+                {/* Pinned to the corner rather than laid out after the
+                    title, so a long label never pushes it out of line with
+                    the chevrons on the cards around it. */}
                 {onOpenGoal ? (
-                  <CardChevron accessibilityLabel={metric.label} />
+                  <View className="absolute right-0">
+                    <CardChevron accessibilityLabel={metric.label} />
+                  </View>
                 ) : null}
               </View>
               {/* The tiles carry the same value/goal pair as the ring legend

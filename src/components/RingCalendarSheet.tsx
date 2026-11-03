@@ -62,6 +62,12 @@ interface RingCalendarSheetProps {
    * cycle setup's last period start).
    */
   rings?: boolean;
+  /**
+   * With rings off, still lets days after today in the current month be
+   * picked: for logging ahead (a meal or a dose), not for things that have
+   * already happened.
+   */
+  allowFuture?: boolean;
 }
 
 /** How many months before the current one the calendar scrolls back to. */
@@ -313,94 +319,105 @@ const RingMonth = memo(function RingMonth({
 const RingCalendarSheet = forwardRef<
   RingCalendarSheetRef,
   RingCalendarSheetProps
->(({ selectedDate, onSelectDate, markedDates, rings = true }, ref) => {
-  const sheetRef = useRef<CalendarModalRef>(null);
-  const { t } = useTranslation();
-  const { appLocale, presentation } = useCalendarPresentation();
-  const { width } = useWindowDimensions();
-  const today = getTodayDate();
-  // Page 0 is the current month: the list opens there without scrolling.
-  const months = useMemo(() => monthsAround(today, MONTHS_BACK), [today]);
-  const monthNames = useMemo(
-    () => getCalendarMonthNames(appLocale),
-    [appLocale]
-  );
-  const weekdayNames = useMemo(
-    () => getCalendarWeekdayShortNames(appLocale),
-    [appLocale]
-  );
-  const markedSet = useMemo(() => new Set(markedDates ?? []), [markedDates]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useImperativeHandle(ref, () => ({
-    present: () => sheetRef.current?.present(),
-    dismiss: () => sheetRef.current?.dismiss(),
-  }));
-
-  const cellWidth = cellWidthFor(width);
-
-  const handleSelect = useCallback(
-    (date: string) => {
-      fireSelectionHaptic();
-      onSelectDate(date);
-      sheetRef.current?.dismiss();
+>(
+  (
+    {
+      selectedDate,
+      onSelectDate,
+      markedDates,
+      rings = true,
+      allowFuture = false,
     },
-    [onSelectDate]
-  );
+    ref
+  ) => {
+    const sheetRef = useRef<CalendarModalRef>(null);
+    const { t } = useTranslation();
+    const { appLocale, presentation } = useCalendarPresentation();
+    const { width } = useWindowDimensions();
+    const today = getTodayDate();
+    // Page 0 is the current month: the list opens there without scrolling.
+    const months = useMemo(() => monthsAround(today, MONTHS_BACK), [today]);
+    const monthNames = useMemo(
+      () => getCalendarMonthNames(appLocale),
+      [appLocale]
+    );
+    const weekdayNames = useMemo(
+      () => getCalendarWeekdayShortNames(appLocale),
+      [appLocale]
+    );
+    const markedSet = useMemo(() => new Set(markedDates ?? []), [markedDates]);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-  // The page on screen names itself in the sheet header rather than above each
-  // grid, so the month and year stay put while the days slide underneath.
-  const visibleMonth = months[currentIndex] ?? months[0];
-  const headerTitle = visibleMonth
-    ? `${monthNames[visibleMonth.month] ?? ''} ${String(visibleMonth.year)}`
-    : t('ringCalendar.title', { defaultValue: 'Calendar' });
+    useImperativeHandle(ref, () => ({
+      present: () => sheetRef.current?.present(),
+      dismiss: () => sheetRef.current?.dismiss(),
+    }));
 
-  return (
-    <CalendarModal ref={sheetRef} title={headerTitle}>
-      <WeekdayHeader
-        names={weekdayNames}
-        firstDayOfWeek={presentation.firstDayOfWeek}
-        cellWidth={cellWidth}
-        className="border-b border-border-subtle"
-      />
-      <MonthPager
-        months={months}
-        width={width}
-        onIndexChange={setCurrentIndex}
-        renderMonth={({ item, active }) =>
-          rings ? (
-            <RingMonth
-              year={item.year}
-              month={item.month}
-              active={active}
-              today={today}
-              selectedDate={selectedDate}
-              firstDayOfWeek={presentation.firstDayOfWeek}
-              markedSet={markedSet}
-              cellWidth={cellWidth}
-              pageWidth={width}
-              onSelect={handleSelect}
-            />
-          ) : (
-            <CalendarMonthGrid
-              year={item.year}
-              month={item.month}
-              today={today}
-              selectedDate={selectedDate}
-              firstDayOfWeek={presentation.firstDayOfWeek}
-              cellWidth={cellWidth}
-              pageWidth={width}
-              onSelect={handleSelect}
-              labelSize={PLAIN_LABEL_SIZE}
-              dimFuture
-              disableFuture
-            />
-          )
-        }
-      />
-    </CalendarModal>
-  );
-});
+    const cellWidth = cellWidthFor(width);
+
+    const handleSelect = useCallback(
+      (date: string) => {
+        fireSelectionHaptic();
+        onSelectDate(date);
+        sheetRef.current?.dismiss();
+      },
+      [onSelectDate]
+    );
+
+    // The page on screen names itself in the sheet header rather than above each
+    // grid, so the month and year stay put while the days slide underneath.
+    const visibleMonth = months[currentIndex] ?? months[0];
+    const headerTitle = visibleMonth
+      ? `${monthNames[visibleMonth.month] ?? ''} ${String(visibleMonth.year)}`
+      : t('ringCalendar.title', { defaultValue: 'Calendar' });
+
+    return (
+      <CalendarModal ref={sheetRef} title={headerTitle}>
+        <WeekdayHeader
+          names={weekdayNames}
+          firstDayOfWeek={presentation.firstDayOfWeek}
+          cellWidth={cellWidth}
+          className="border-b border-border-subtle"
+        />
+        <MonthPager
+          months={months}
+          width={width}
+          onIndexChange={setCurrentIndex}
+          renderMonth={({ item, active }) =>
+            rings ? (
+              <RingMonth
+                year={item.year}
+                month={item.month}
+                active={active}
+                today={today}
+                selectedDate={selectedDate}
+                firstDayOfWeek={presentation.firstDayOfWeek}
+                markedSet={markedSet}
+                cellWidth={cellWidth}
+                pageWidth={width}
+                onSelect={handleSelect}
+              />
+            ) : (
+              <CalendarMonthGrid
+                year={item.year}
+                month={item.month}
+                today={today}
+                selectedDate={selectedDate}
+                firstDayOfWeek={presentation.firstDayOfWeek}
+                cellWidth={cellWidth}
+                pageWidth={width}
+                onSelect={handleSelect}
+                labelSize={PLAIN_LABEL_SIZE}
+                dimFuture={!allowFuture}
+                disableFuture={!allowFuture}
+              />
+            )
+          }
+        />
+      </CalendarModal>
+    );
+  }
+);
 
 RingCalendarSheet.displayName = 'RingCalendarSheet';
 export default RingCalendarSheet;

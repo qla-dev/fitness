@@ -9,6 +9,7 @@ import {
 } from '@react-navigation/native';
 import PromptScreen, { type PromptScreenProps } from './PromptScreen';
 import { navigationRef } from '../ActiveWorkoutBar';
+import { NoNativeHeaderContext } from '../../services/nativeTabBarPreference';
 import type { RootStackParamList } from '../../types/navigation';
 
 /**
@@ -33,6 +34,12 @@ import type { RootStackParamList } from '../../types/navigation';
 type SheetSpec = Omit<PromptScreenProps, 'children' | 'onDismiss'> & {
   children: ReactNode;
   onClose: () => void;
+  /**
+   * Opens at part height, with the rest a drag up — Hideya's power-ups
+   * sheet. On iOS that is a detent form sheet, which has no native header,
+   * so the sheet draws its own bar; Android has no detents and opens it full.
+   */
+  expandable?: boolean;
 };
 
 const useSheetHost = create<{ specs: Record<number, SheetSpec> }>(() => ({
@@ -40,6 +47,9 @@ const useSheetHost = create<{ specs: Record<number, SheetSpec> }>(() => ({
 }));
 
 export const SHEET_ROUTE = 'Sheet' as const;
+export const DETENT_SHEET_ROUTE = 'DetentSheet' as const;
+const isSheetRoute = (name?: string) =>
+  name === SHEET_ROUTE || name === DETENT_SHEET_ROUTE;
 
 let nextOwner = 1;
 /** Sheets their owner is closing, so the route does not report it back. */
@@ -50,7 +60,7 @@ type SheetRoute = { key: string; name: string; params?: { owner?: number } };
 const sheetRoutes = (): SheetRoute[] =>
   navigationRef.isReady()
     ? ((navigationRef.getRootState()?.routes ?? []) as SheetRoute[]).filter(
-        (route) => route.name === SHEET_ROUTE
+        (route) => isSheetRoute(route.name)
       )
     : [];
 
@@ -87,7 +97,7 @@ export function dismissPromptSheet() {
   const current = navigationRef.isReady()
     ? (navigationRef.getCurrentRoute() as SheetRoute | undefined)
     : undefined;
-  const owner = current?.name === SHEET_ROUTE ? current.params?.owner : null;
+  const owner = isSheetRoute(current?.name) ? current?.params?.owner : null;
   if (typeof owner === 'number') closeFor(owner);
 }
 
@@ -112,8 +122,14 @@ export default function PromptSheet({ open, ...spec }: PromptSheetProps) {
     }
     if (!routeFor(owner) && navigationRef.isReady()) {
       closing.delete(owner);
-      navigationRef.dispatch(StackActions.push(SHEET_ROUTE, { owner }));
+      navigationRef.dispatch(
+        StackActions.push(spec.expandable ? DETENT_SHEET_ROUTE : SHEET_ROUTE, {
+          owner,
+        })
+      );
     }
+    // Which route is read once, at opening; the sheet keeps it while open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, owner]);
 
   // Unmounted while open (its screen went away): take the sheet with it.
@@ -127,7 +143,13 @@ export function PromptSheetScreen() {
   const navigation = useNavigation();
   // Read once: the route's params do not change, and a route on its way out
   // can render once more after it has left the stack.
-  const route = useRoute<RouteProp<RootStackParamList, typeof SHEET_ROUTE>>();
+  const route =
+    useRoute<
+      RouteProp<
+        RootStackParamList,
+        typeof SHEET_ROUTE | typeof DETENT_SHEET_ROUTE
+      >
+    >();
   const [owner] = useState(() => route?.params?.owner ?? -1);
   const spec = useSheetHost((state) => state.specs[owner]);
 
@@ -150,6 +172,18 @@ export function PromptSheetScreen() {
   );
 
   if (!spec) return null;
-  const { children, onClose: _onClose, ...props } = spec;
-  return <PromptScreen {...props}>{children}</PromptScreen>;
+  const {
+    children,
+    onClose: _onClose,
+    expandable: _expandable,
+    ...props
+  } = spec;
+  const content = <PromptScreen {...props}>{children}</PromptScreen>;
+  return route?.name === DETENT_SHEET_ROUTE ? (
+    <NoNativeHeaderContext.Provider value={true}>
+      {content}
+    </NoNativeHeaderContext.Provider>
+  ) : (
+    content
+  );
 }

@@ -148,6 +148,9 @@ export default function MoreMeasurementsSheet({
       // from a row that says so, and which day a pick lands on is the one
       // thing the user cannot otherwise see from here.
       title={formatDottedDay(date)}
+      // Opens on the first rows with the rest a drag up, like Hideya's
+      // power-ups: most visits record weight or water, at the top.
+      expandable
       onDismiss={() => onClose(pickedRef.current)}
     >
       <Text className="px-5 pb-3 text-sm text-text-secondary">

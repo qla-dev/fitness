@@ -945,11 +945,11 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
           }}
           activeOpacity={0.7}
           disabled={isCreateVariantPending}
-          className="flex-row items-center justify-center bg-raised rounded-lg px-3"
+          // A pill like the stepper beside it and every other dropdown,
+          // without the outline the old square box drew.
+          className="flex-row items-center justify-center bg-raised rounded-full px-4"
           style={{
             height: FOOTER_CONTROL_HEIGHT,
-            borderWidth: 1,
-            borderColor: borderSubtle,
             minWidth: 64,
             // Fills the row up to the fixed-width Log button; a long label
             // truncates.
@@ -1031,11 +1031,10 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
-  const [accentColor, textPrimary, borderSubtle] = useCSSVariable([
+  const [accentColor, textPrimary] = useCSSVariable([
     '--color-accent-primary',
     '--color-text-primary',
-    '--color-border-subtle',
-  ]) as [string, string, string];
+  ]) as [string, string];
 
   const buildSaveFoodPayload = useCallback(() => {
     return {

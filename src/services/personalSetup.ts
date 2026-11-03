@@ -10,47 +10,109 @@ import {
 } from './local/database';
 import { fingerprint } from './online/syncModel';
 
+/*
+ * Stored and synced records are read leniently: a synced row can carry a null
+ * where the app writes nothing, or a number where it writes text. One strict
+ * mismatch used to fail the whole read, so the setup and grocery screens had
+ * nothing to open. A record is repaired, never dropped: writeTo deletes any
+ * stored list missing from the state, so a dropped list would be deleted.
+ */
+const text = (fallback = '') =>
+  z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((value) => (value == null ? fallback : String(value)));
+const flag = z
+  .boolean()
+  .nullish()
+  .transform((value) => value ?? false);
+const optionalNumber = z.coerce
+  .number()
+  .nullish()
+  .transform((value) =>
+    value == null || Number.isNaN(value) ? undefined : value
+  )
+  .optional();
+const optionalText = z
+  .string()
+  .nullish()
+  .transform((value) => value ?? undefined)
+  .optional();
+
 export const answersSchema = z.record(
   z.string(),
-  z.union([z.string(), z.array(z.string())])
+  z.union([
+    z.string(),
+    z.number().transform(String),
+    z.array(z.union([z.string(), z.number().transform(String)])),
+  ])
 );
 export type SetupAnswers = z.infer<typeof answersSchema>;
+/** Stored answers, read leniently: text kept, numbers and flags as text, the rest dropped. */
+const storedAnswers = z
+  .unknown()
+  .optional()
+  .transform((raw): SetupAnswers => {
+    const answers: SetupAnswers = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return answers;
+    for (const [key, value] of Object.entries(raw)) {
+      if (typeof value === 'string') answers[key] = value;
+      else if (typeof value === 'number' || typeof value === 'boolean')
+        answers[key] = String(value);
+      else if (Array.isArray(value))
+        answers[key] = value
+          .filter((v) => typeof v === 'string' || typeof v === 'number')
+          .map(String);
+    }
+    return answers;
+  });
+const storedFlag = z
+  .unknown()
+  .optional()
+  .transform((value) => value === true);
+const id = z.union([z.string(), z.number()]).transform(String);
 const itemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  quantity: z.string(),
-  checked: z.boolean(),
+  id,
+  name: text(),
+  quantity: text(),
+  checked: flag,
   /** What the item costs at the list's store, or at plan prices. */
-  price: z.number().optional(),
+  price: optionalNumber,
   /** The meal plan's price, which every store's price is compared from. */
-  basePrice: z.number().optional(),
+  basePrice: optionalNumber,
   /** The basket staple a meal plan priced it from (backend CroatianPrices). */
-  staple: z.string().optional(),
+  staple: optionalText,
   /** The barcode of the product it was priced from, for its photo. */
-  ean: z.string().optional(),
+  ean: optionalText,
 });
 const listSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  note: z.string(),
-  store: z.string(),
-  archived: z.boolean(),
-  items: z.array(itemSchema),
-  createdAt: z.string(),
+  id,
+  name: text(),
+  note: text(),
+  store: text(),
+  archived: flag,
+  items: z
+    .array(itemSchema)
+    .nullish()
+    .transform((items) => items ?? []),
+  createdAt: text(),
   /** Shopping region and currency of a list made from a meal plan. */
-  region: z.string().optional(),
-  currency: z.string().optional(),
+  region: optionalText,
+  currency: optionalText,
   /** The chain code picked in the shop comparison; `store` is its name. */
-  vendor: z.string().optional(),
+  vendor: optionalText,
 });
 export type GroceryList = z.infer<typeof listSchema>;
 export type GroceryItem = z.infer<typeof itemSchema>;
 const stateSchema = z.object({
-  profile: answersSchema.default({}),
-  profileDone: z.boolean().default(false),
-  grocery: answersSchema.default({}),
-  groceryDone: z.boolean().default(false),
-  lists: z.array(listSchema).default([]),
+  profile: storedAnswers,
+  profileDone: storedFlag,
+  grocery: storedAnswers,
+  groceryDone: storedFlag,
+  lists: z
+    .array(listSchema)
+    .nullish()
+    .transform((lists) => lists ?? []),
 });
 export type PersonalSetup = z.infer<typeof stateSchema>;
 export const emptySetup = (): PersonalSetup => stateSchema.parse({});
