@@ -473,7 +473,8 @@
       "fertileWindow": "Plodni dani",
       "today": "Danas",
       "ovulation": "Proc. ovulacija"
-    }
+    },
+    "logStart": "Zabilježi početak ciklusa · {{date}}"
   },
   "diary": {
     "title": "Tracker",
@@ -2726,7 +2727,8 @@
     "dayPeriod_other": "Menstruacija od {{count}} dana",
     "dayCycle_one": "Ciklus od {{count}} dan",
     "dayCycle_few": "Ciklus od {{count}} dana",
-    "dayCycle_other": "Ciklus od {{count}} dana"
+    "dayCycle_other": "Ciklus od {{count}} dana",
+    "logStartTitle": "Početak ciklusa"
   },
   "nutrients": {
     "calories": "Kalorije",
@@ -5999,7 +6001,13 @@
     "missing": "Ova lista je obrisana.",
     "officialPrices": "Zvanične cijene prodavnica",
     "estimatedPrices": "Procijenjene cijene",
-    "estimateWarning": "Cijene za {{region}} su procjene MarkAI-ja, ne cijene prodavnica. Ukupne iznose uzmi kao okvirne."
+    "estimateWarning": "Cijene za {{region}} su procjene MarkAI-ja, ne cijene prodavnica. Ukupne iznose uzmi kao okvirne.",
+    "progress": "{{done}} od {{total}} u korpi",
+    "leftToBuy": "Još {{amount}}",
+    "aiNew": "Napravi AI listu za kupovinu",
+    "aiMake": "Napravi moju listu",
+    "aiFailed": "MarkAI ovaj put nije uspio napraviti listu.",
+    "aiPrompt": "Napravi mi listu za kupovinu za jednu sedmicu prema mojim odgovorima o hrani i kuhinji i vrati je kao listu za kupovinu: {{answers}}"
   },
   "appleHealthCheck": {
     "title": "Apple Health",

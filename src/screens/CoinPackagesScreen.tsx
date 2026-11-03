@@ -96,7 +96,9 @@ export default function CoinPackagesScreen({
     >
       <View className="gap-5 pb-5">
         <View style={divider} />
-        <View className="flex-row items-center">
+        {/* Top-aligned: a value that wraps to two lines keeps its label and
+            icon level with the others instead of riding higher. */}
+        <View className="flex-row items-start">
           <Capability
             label={t('coins.capFood', { defaultValue: 'FOOD' })}
             icon="food"
@@ -104,7 +106,14 @@ export default function CoinPackagesScreen({
             tint={accent}
           />
           <View
-            style={[divider, { width: StyleSheet.hairlineWidth, height: 44 }]}
+            style={[
+              divider,
+              {
+                width: StyleSheet.hairlineWidth,
+                height: 44,
+                alignSelf: 'center',
+              },
+            ]}
           />
           <Capability
             label={t('coins.capTraining', { defaultValue: 'TRAINING' })}
@@ -113,7 +122,14 @@ export default function CoinPackagesScreen({
             tint={accent}
           />
           <View
-            style={[divider, { width: StyleSheet.hairlineWidth, height: 44 }]}
+            style={[
+              divider,
+              {
+                width: StyleSheet.hairlineWidth,
+                height: 44,
+                alignSelf: 'center',
+              },
+            ]}
           />
           <Capability
             label={t('coins.capMetrics', { defaultValue: 'METRICS' })}
@@ -248,7 +264,9 @@ function Capability({
         {label}
       </Text>
       <Icon name={icon} size={18} color={tint} />
-      <Text className="text-text-primary text-sm font-extrabold">{value}</Text>
+      <Text className="text-text-primary text-sm font-extrabold text-center">
+        {value}
+      </Text>
     </View>
   );
 }

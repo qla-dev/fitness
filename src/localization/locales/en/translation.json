@@ -2482,7 +2482,8 @@
     "dayPeriod_one": "{{count}} day period",
     "dayPeriod_other": "{{count}} day periods",
     "dayCycle_one": "{{count}} day cycle",
-    "dayCycle_other": "{{count}} day cycle"
+    "dayCycle_other": "{{count}} day cycle",
+    "logStartTitle": "Cycle start"
   },
   "nutrients": {
     "calories": "Calories",
@@ -5019,7 +5020,8 @@
       "fertileWindow": "Fertile window",
       "today": "Today",
       "ovulation": "Est. ovulation"
-    }
+    },
+    "logStart": "Log the cycle start · {{date}}"
   },
   "workoutPresetLibrary": {
     "configure": "Configure your server connection in Settings to view your workout programs."
@@ -5802,7 +5804,13 @@
     "missing": "This list was deleted.",
     "officialPrices": "Official store prices",
     "estimatedPrices": "Estimated prices",
-    "estimateWarning": "Prices for {{region}} are MarkAI estimates, not store prices. Treat totals as a rough guide."
+    "estimateWarning": "Prices for {{region}} are MarkAI estimates, not store prices. Treat totals as a rough guide.",
+    "progress": "{{done}} of {{total}} in the basket",
+    "leftToBuy": "{{amount}} left",
+    "aiNew": "New AI grocery list",
+    "aiMake": "Make my list",
+    "aiFailed": "MarkAI could not make a list this time.",
+    "aiPrompt": "Make me a grocery list for one week from my food and kitchen answers, and return it as a grocery list: {{answers}}"
   },
   "appleHealthCheck": {
     "title": "Apple Health",

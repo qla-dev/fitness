@@ -1,5 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { randomUUID } from 'expo-crypto';
+import { getLocales } from 'expo-localization';
+import { grocerySteps } from '../constants/setupSteps';
+import { LIVE_PRICE_REGIONS } from '../constants/regions';
+import {
+  fetchVendors,
+  vendorsQueryKey,
+  type Vendor,
+} from '../services/online/prices';
+import {
+  isSetupWizardOpen,
+  openSetupWizardSession,
+} from '../services/setupWizardSession';
+import {
+  onlineRequest,
+  refreshOnlineAccount,
+  useOnlineAccount,
+} from '../services/online/account';
+import type { MarkaiReply } from '../services/online/markai';
+import { withList, type SetupAnswers } from '../services/personalSetup';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -51,6 +72,112 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
     navigation.navigate('GroceryList', { listId });
   const newList = () =>
     navigation.navigate('GroceryList', { draft: blankGroceryList() });
+
+  // The AI list: the meal plan's food and kitchen questionnaire, then MarkAI
+  // writes a week's shopping list straight from the answers. It is saved
+  // and opened here, without a chat or a meal plan in between.
+  const client = useQueryClient();
+  useQueries({
+    queries: LIVE_PRICE_REGIONS.map((region) => ({
+      queryKey: vendorsQueryKey(region),
+      queryFn: () => fetchVendors(region),
+      staleTime: 6 * 60 * 60 * 1000,
+    })),
+  });
+  const vendorsFor = (region: string) =>
+    client.getQueryData<Vendor[]>(vendorsQueryKey(region)) ?? [];
+  const session = useOnlineAccount((s) => s.session);
+  const [generating, setGenerating] = useState(false);
+  const answered = useRef<SetupAnswers | null>(null);
+  const generate = async (answers: SetupAnswers) => {
+    setGenerating(true);
+    try {
+      const response = await onlineRequest<{
+        id: string;
+        reply: MarkaiReply;
+      }>('/markai/messages', {
+        id: randomUUID(),
+        conversation_id: randomUUID(),
+        mode: 'macros',
+        prompt: t('groceries.aiPrompt', {
+          defaultValue:
+            'Make me a grocery list for one week from my food and kitchen answers, and return it as a grocery list: {{answers}}',
+          answers: JSON.stringify(answers),
+        }).slice(0, 6000),
+        label: t('groceries.aiNew', {
+          defaultValue: 'New AI grocery list',
+        }),
+        language: (getLocales()[0]?.languageTag ?? 'en').slice(0, 12),
+      });
+      void refreshOnlineAccount();
+      const grocery = response.reply.grocery;
+      if (!grocery?.items.length) {
+        Alert.alert(
+          t('groceries.aiFailed', {
+            defaultValue: 'MarkAI could not make a list this time.',
+          }),
+          response.reply.text
+        );
+        return;
+      }
+      await setup.save((current) =>
+        withList(current, {
+          ...blankGroceryList(),
+          id: response.id,
+          name: grocery.name,
+          items: grocery.items.map((item, index) => ({
+            id: `${response.id}-${index}`,
+            name: item.name,
+            quantity: item.quantity ?? '',
+            checked: false,
+          })),
+        })
+      );
+      navigation.navigate('GroceryList', { listId: response.id });
+    } catch (error) {
+      Alert.alert(
+        t('groceries.aiFailed', {
+          defaultValue: 'MarkAI could not make a list this time.',
+        }),
+        error instanceof Error ? error.message : undefined
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+  const newAiList = () => {
+    if (generating || !setup.state || isSetupWizardOpen()) return;
+    if (!session) {
+      navigation.navigate('OnlineAccount');
+      return;
+    }
+    answered.current = null;
+    openSetupWizardSession({
+      steps: grocerySteps(t, vendorsFor),
+      initial: setup.state.grocery,
+      // Answers already given open on their review, ready to go.
+      ...(setup.state.groceryDone
+        ? {
+            openOnReview: true,
+            finishLabel: t('groceries.aiMake', {
+              defaultValue: 'Make my list',
+            }),
+          }
+        : null),
+      onSave: async (answers, done) => {
+        await setup.save((current) => ({
+          ...current,
+          grocery: answers,
+          groceryDone: done,
+        }));
+        if (done) answered.current = answers;
+      },
+      onClose: () => {
+        if (answered.current) void generate(answered.current);
+      },
+    });
+    navigation.navigate('SetupWizard');
+  };
   // The Food dashboard's card asks for a blank list: it lands on one, with
   // the list of lists behind it for Back.
   const openedBlank = useRef(false);
@@ -63,6 +190,14 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
     variant: 'transparent',
     title: t('cart.title', { defaultValue: 'Meals' }),
     left: { kind: 'back' },
+    // A list written by hand; the footer makes one with MarkAI.
+    right: {
+      kind: 'icon',
+      sfSymbol: 'plus',
+      ionicon: 'add',
+      accessibilityLabel: t('groceries.newList', { defaultValue: 'New list' }),
+      onPress: newList,
+    },
   });
   return (
     <View
@@ -178,15 +313,16 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
           </>
         )}
       </NativeHeaderScrollView>
-      {/* A new list is the screen's one action, pinned like every other
-          screen's footer action. */}
+      {/* The AI list is the screen's main action; a blank list is the +. */}
       <FooterCTA
         absolute
         glass
         edgeEffect
         onHeightChange={setFooterHeight}
-        label={t('groceries.newList', { defaultValue: 'New list' })}
-        onPress={newList}
+        label={t('groceries.aiNew', { defaultValue: 'New AI grocery list' })}
+        loading={generating}
+        disabled={generating}
+        onPress={newAiList}
       />
     </View>
   );

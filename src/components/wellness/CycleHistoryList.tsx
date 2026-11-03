@@ -1,160 +1,30 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity } from 'react-native';
-import Switch from '../ui/Switch';
-import { useCSSVariable } from 'uniwind';
+import { View, Text } from 'react-native';
 import { useCycleHistory } from '../../hooks/useCycleHistory';
 import CycleBarGlyph from './CycleBarGlyph';
-import Icon from '../Icon';
-import FormInput from '../FormInput';
-import {
-  INPUT_FILL_CLASS,
-  INPUT_HEIGHT,
-  INPUT_PADDING_LEFT,
-  INPUT_RADIUS,
-} from '../ui/inputStyle';
-import Button from '../ui/Button';
 import SwipeableDeleteRow from '../SwipeableDeleteRow';
-import RingCalendarSheet, {
-  type RingCalendarSheetRef,
-} from '../RingCalendarSheet';
-import {
-  getTodayDate,
-  formatDate,
-  formatLongDate,
-} from '../../utils/dateUtils';
+import { formatLongDate } from '../../utils/dateUtils';
 import { getAppLocale } from '../../localization';
 
 const CycleHistoryList: React.FC = () => {
   const { t } = useTranslation();
   const dateLocale = getAppLocale();
-  const { cycles, createCycle, deleteCycle } = useCycleHistory();
+  const { cycles, deleteCycle } = useCycleHistory();
   const maxCycleLength = cycles.reduce(
     (max, c) => Math.max(max, c.cycle_length || 0),
     0
   );
-  const [showAddForm, setShowAddForm] = useState(false);
-  const calendarSheetRef = useRef<RingCalendarSheetRef>(null);
-  const [accentColor] = useCSSVariable(['--color-accent-primary']) as [string];
-
-  // Form State
-  const [startDate, setStartDate] = useState(getTodayDate());
-  const [periodLength, setPeriodLength] = useState('5');
-  const [cycleLength, setCycleLength] = useState('28');
-  const [isExcluded, setIsExcluded] = useState(false);
-
-  const handleAdd = () => {
-    if (!startDate) return;
-    createCycle({
-      start_date: startDate,
-      period_length: parseInt(periodLength, 10) || 5,
-      cycle_length: parseInt(cycleLength, 10) || 28,
-      is_excluded: isExcluded,
-    });
-    // Reset Form
-    setStartDate(getTodayDate());
-    setPeriodLength('5');
-    setCycleLength('28');
-    setIsExcluded(false);
-    setShowAddForm(false);
-  };
-
   return (
     <View className="gap-4">
       <View className="flex-row justify-between items-center">
         <Text className="text-text-primary text-base font-bold">
           {t('cycleHistory.title', { defaultValue: 'Cycle History' })}
         </Text>
-        <TouchableOpacity
-          onPress={() => setShowAddForm(!showAddForm)}
-          className="flex-row items-center"
-        >
-          <Icon
-            name={showAddForm ? 'close' : 'add'}
-            size={18}
-            color={accentColor}
-          />
-          <Text
-            className="font-semibold text-sm ml-1"
-            style={{ color: accentColor }}
-          >
-            {showAddForm
-              ? t('common.cancel', { defaultValue: 'Cancel' })
-              : t('common.add', { defaultValue: 'Add' })}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {showAddForm && (
-        <View className="bg-surface rounded-xl p-4 border-0 gap-3">
-          <Text className="text-text-primary font-semibold text-sm">
-            {t('cycleHistory.logManual', { defaultValue: 'Log Manual Cycle' })}
-          </Text>
-
-          <View>
-            <Text className="text-text-secondary text-xs mb-1">
-              {t('cycleHistory.startDate', { defaultValue: 'Start Date' })}
-            </Text>
-            <TouchableOpacity
-              onPress={() => calendarSheetRef.current?.present()}
-              className={`${INPUT_FILL_CLASS} flex-row justify-between items-center`}
-              style={{
-                minHeight: INPUT_HEIGHT,
-                borderRadius: INPUT_RADIUS,
-                paddingHorizontal: INPUT_PADDING_LEFT,
-              }}
-            >
-              <Text className="text-text-primary">
-                {startDate
-                  ? formatDate(startDate, dateLocale)
-                  : t('cycleHistory.selectDate', {
-                      defaultValue: 'Select Date',
-                    })}
-              </Text>
-              <Icon name="calendar" size={18} color={accentColor} />
-            </TouchableOpacity>
-          </View>
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Text className="text-text-secondary text-xs mb-1">
-                {t('cycleHistory.periodDays', { defaultValue: 'Period Days' })}
-              </Text>
-              <FormInput
-                value={periodLength}
-                onChangeText={setPeriodLength}
-                keyboardType="number-pad"
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-text-secondary text-xs mb-1">
-                {t('cycleHistory.cycleDays', { defaultValue: 'Cycle Days' })}
-              </Text>
-              <FormInput
-                value={cycleLength}
-                onChangeText={setCycleLength}
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
-
-          <View className="flex-row justify-between items-center py-2">
-            <Text className="text-text-primary text-sm">
-              {t('cycleHistory.excludeFromPredictions', {
-                defaultValue: 'Exclude from predictions',
-              })}
-            </Text>
-            <Switch value={isExcluded} onValueChange={setIsExcluded} />
-          </View>
-
-          <Button variant="primary" onPress={handleAdd}>
-            {t('cycleHistory.saveManual', {
-              defaultValue: 'Save Manual Cycle',
-            })}
-          </Button>
-        </View>
-      )}
-
+      {/* A cycle is logged from the calendar above: tapping its first day
+          offers "Log the start of a cycle" in the footer. */}
       {cycles.length === 0 ? (
         <View className="bg-surface rounded-xl p-4 border-0 items-center">
           <Text className="text-text-secondary text-sm">
@@ -209,13 +79,6 @@ const CycleHistoryList: React.FC = () => {
           ))}
         </View>
       )}
-
-      <RingCalendarSheet
-        ref={calendarSheetRef}
-        rings={false}
-        selectedDate={startDate}
-        onSelectDate={setStartDate}
-      />
     </View>
   );
 };

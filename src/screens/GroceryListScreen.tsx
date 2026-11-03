@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   Text,
   TextInput,
   View,
@@ -13,6 +12,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { randomUUID } from 'expo-crypto';
 import Button from '../components/ui/Button';
 import ProductThumb from '../components/ProductThumb';
+import SwipeableDeleteRow from '../components/SwipeableDeleteRow';
+import GroceryCheck from '../components/GroceryCheck';
 import SettingsRow from '../components/SettingsRow';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -53,42 +54,46 @@ export default function GroceryListScreen({
   const [error, setError] = useState(false);
   const lock = useRef(false);
   const leaving = useRef(false);
-  // Against what the screen opened on, so an untouched blank list leaves
-  // without asking.
-  const dirty =
-    !!draft && !!initial && JSON.stringify(initial) !== JSON.stringify(draft);
-  const dirtyRef = useRef(dirty);
-  dirtyRef.current = dirty;
 
-  // Back, swipe and the hardware button all ask before unsaved edits go.
+  // Every change saves itself, a moment after the last one and again on the
+  // way out; there is no Save button and nothing to discard. A list that is
+  // not stored yet (a plan's, or a new one) is saved once it has content.
+  const persist = setup.save;
+  const fallbackName = t('screens.cart', { defaultValue: 'Grocery List' });
+  const lastSaved = useRef(saved ? JSON.stringify(saved) : null);
+  const pending = useRef<GroceryList | null>(null);
+  const flush = useEffectEvent(() => {
+    const list = pending.current;
+    pending.current = null;
+    if (!list) return;
+    const cleaned: GroceryList = {
+      ...list,
+      name: list.name.trim() || fallbackName,
+      items: list.items
+        .filter((i) => i.name.trim())
+        .map((i) => ({ ...i, name: i.name.trim() })),
+    };
+    lastSaved.current = JSON.stringify(list);
+    persist((state) => withList(state, cleaned)).catch(() => setError(true));
+  });
+  useEffect(() => {
+    if (!draft || leaving.current) return;
+    const serial = JSON.stringify(draft);
+    const hasContent =
+      !!draft.name.trim() || draft.items.some((i) => i.name.trim());
+    if (serial === lastSaved.current || !hasContent) return;
+    pending.current = draft;
+    const timer = setTimeout(() => flush(), 600);
+    return () => clearTimeout(timer);
+  }, [draft]);
   useEffect(
-    () =>
-      navigation.addListener('beforeRemove', (event) => {
-        if (leaving.current || !dirtyRef.current) return;
-        event.preventDefault();
-        Alert.alert(
-          t('groceries.discardTitle', {
-            defaultValue: 'Discard unsaved changes?',
-          }),
-          undefined,
-          [
-            {
-              text: t('common.cancel', { defaultValue: 'Cancel' }),
-              style: 'cancel',
-            },
-            {
-              text: t('groceries.discard', { defaultValue: 'Discard' }),
-              style: 'destructive',
-              onPress: () => navigation.dispatch(event.data.action),
-            },
-          ]
-        );
-      }),
-    [navigation, t]
+    () => navigation.addListener('beforeRemove', () => flush()),
+    [navigation]
   );
 
   const run = async (action: () => Promise<unknown>) => {
     if (lock.current) return;
+    pending.current = null;
     lock.current = true;
     setBusy(true);
     setError(false);
@@ -143,12 +148,6 @@ export default function GroceryListScreen({
             },
           ]
         : []),
-      {
-        kind: 'primary' as const,
-        onPress: () => draft && void save(draft),
-        disabled: !draft?.name.trim(),
-        busy,
-      },
     ],
   });
 
@@ -252,58 +251,111 @@ export default function GroceryListScreen({
           onChangeText={(note) => update({ note })}
           className="text-text-primary bg-surface rounded-2xl p-4 mb-5"
         />
-        {draft.items.map((item) => (
-          <View key={item.id} className="bg-surface rounded-2xl p-3 mb-2">
-            <View className="flex-row items-center gap-3">
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityLabel={
+        {/* One compact card: what is left to buy first, ticked items under it,
+            dimmed. Swipe a row left (or long-press it) to remove it. */}
+        {draft.items.length > 0 ? (
+          <View className="flex-row items-center justify-between mb-2 px-1">
+            <Text className="text-text-secondary text-sm font-semibold">
+              {t('groceries.progress', {
+                defaultValue: '{{done}} of {{total}} in the basket',
+                done: draft.items.filter((i) => i.checked).length,
+                total: draft.items.length,
+              })}
+            </Text>
+            {total !== null ? (
+              <Text className="text-text-secondary text-sm">
+                {t('groceries.leftToBuy', {
+                  defaultValue: '{{amount}} left',
+                  amount: planMoney(
+                    draft.items
+                      .filter((i) => !i.checked)
+                      .reduce((sum, i) => sum + (i.price ?? 0), 0),
+                    currency
+                  ),
+                })}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+        <View className="bg-surface rounded-2xl overflow-hidden mb-3">
+          {[...draft.items]
+            .sort((x, y) => Number(x.checked) - Number(y.checked))
+            .map((item, index) => (
+              <SwipeableDeleteRow
+                key={item.id}
+                title={
                   item.name || t('groceries.item', { defaultValue: 'Item' })
                 }
-                accessibilityState={{ checked: item.checked }}
-                onPress={() => updateItem(item.id, { checked: !item.checked })}
-                className={`w-8 h-8 rounded-full border border-accent-primary ${item.checked ? 'bg-accent-primary' : ''}`}
-              />
-              {item.ean ? <ProductThumb ean={item.ean} /> : null}
-              <TextInput
-                accessibilityLabel={t('groceries.item', {
-                  defaultValue: 'Item',
-                })}
-                value={item.name}
-                maxLength={160}
-                onChangeText={(name) => updateItem(item.id, { name })}
-                className={`text-text-primary flex-1 p-2 ${item.checked ? 'line-through' : ''}`}
-              />
-              {typeof item.price === 'number' ? (
-                <Text className="text-text-primary font-semibold">
-                  {planMoney(item.price, currency)}
-                </Text>
-              ) : null}
-            </View>
-            <View className="flex-row items-center justify-between">
-              <TextInput
-                accessibilityLabel={t('groceries.quantity', {
-                  defaultValue: 'Quantity',
-                })}
-                value={item.quantity}
-                maxLength={60}
-                placeholder={t('groceries.quantity', {
-                  defaultValue: 'Quantity',
-                })}
-                onChangeText={(quantity) => updateItem(item.id, { quantity })}
-                className="text-text-secondary flex-1 p-2"
-              />
-              <Button
-                variant="ghost"
-                onPress={() =>
-                  update({ items: draft.items.filter((i) => i.id !== item.id) })
+                onConfirmDelete={() =>
+                  update({
+                    items: draft.items.filter((i) => i.id !== item.id),
+                  })
                 }
+                className={index > 0 ? 'border-t border-border-subtle' : ''}
               >
-                {t('common.remove', { defaultValue: 'Remove' })}
-              </Button>
-            </View>
-          </View>
-        ))}
+                {/* The Tracker's compact food row: a 39pt tile, the name over
+                    a small quantity line, the price on the right, all centred
+                    on one axis. The text stays editable in place. */}
+                <View
+                  className="flex-row items-center px-4"
+                  style={{
+                    minHeight: 64,
+                    gap: 12,
+                    opacity: item.checked ? 0.55 : 1,
+                  }}
+                >
+                  <GroceryCheck
+                    checked={item.checked}
+                    label={
+                      item.name || t('groceries.item', { defaultValue: 'Item' })
+                    }
+                    onToggle={() =>
+                      updateItem(item.id, { checked: !item.checked })
+                    }
+                  />
+                  <ProductThumb ean={item.ean} size={39} />
+                  <View className="flex-1 justify-center" style={{ gap: 3 }}>
+                    <TextInput
+                      accessibilityLabel={t('groceries.item', {
+                        defaultValue: 'Item',
+                      })}
+                      value={item.name}
+                      maxLength={160}
+                      placeholder={t('groceries.item', {
+                        defaultValue: 'Item',
+                      })}
+                      onChangeText={(name) => updateItem(item.id, { name })}
+                      className={`text-text-primary ${item.checked ? 'line-through' : ''}`}
+                      style={{ fontSize: 16, paddingVertical: 0 }}
+                    />
+                    <TextInput
+                      accessibilityLabel={t('groceries.quantity', {
+                        defaultValue: 'Quantity',
+                      })}
+                      value={item.quantity}
+                      maxLength={60}
+                      placeholder={t('groceries.quantity', {
+                        defaultValue: 'Quantity',
+                      })}
+                      onChangeText={(quantity) =>
+                        updateItem(item.id, { quantity })
+                      }
+                      className="text-text-secondary"
+                      style={{ fontSize: 12, paddingVertical: 0 }}
+                    />
+                  </View>
+                  {typeof item.price === 'number' ? (
+                    <Text
+                      className="text-text-secondary"
+                      style={{ fontSize: 14, fontWeight: '500' }}
+                    >
+                      {planMoney(item.price, currency)}
+                    </Text>
+                  ) : null}
+                </View>
+              </SwipeableDeleteRow>
+            ))}
+        </View>
         <Button
           variant="secondary"
           onPress={() =>
