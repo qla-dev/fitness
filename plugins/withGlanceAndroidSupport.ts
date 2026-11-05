@@ -8,10 +8,19 @@ const KOTLIN_COMPOSE_PLUGIN =
   'apply plugin: "org.jetbrains.kotlin.plugin.compose"';
 const KOTLIN_ANDROID_PLUGIN = 'apply plugin: "org.jetbrains.kotlin.android"';
 
-const GLANCE_APPWIDGET_DEP =
-  '    implementation("androidx.glance:glance-appwidget:1.1.1")';
-const GLANCE_MATERIAL3_DEP =
-  '    implementation("androidx.glance:glance-material3:1.1.1")';
+/**
+ * Kept level with the `androidx.glance:glance` that expo-widgets brings in.
+ *
+ * Pinned at 1.1.1 while expo-widgets asked for 1.2.0, Gradle 9 resolved the
+ * graph to a mix of the two and then refused it outright: "No target component
+ * for edge glance-appwidget-external-protobuf:1.2.0 -> glance-material3:1.2.0",
+ * surfaced as the far less helpful "Problems writing to Binary store". Every
+ * glance artifact has to move together, so raising one here means checking
+ * what expo-widgets declares.
+ */
+const GLANCE_VERSION = '1.2.0';
+const GLANCE_APPWIDGET_DEP = `    implementation("androidx.glance:glance-appwidget:${GLANCE_VERSION}")`;
+const GLANCE_MATERIAL3_DEP = `    implementation("androidx.glance:glance-material3:${GLANCE_VERSION}")`;
 
 async function resolveKotlinVersion(projectRoot: string): Promise<string> {
   const catalogPath = path.join(
