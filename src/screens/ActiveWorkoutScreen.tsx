@@ -230,6 +230,7 @@ function ActiveWorkoutScreen({ navigation, route }: Props) {
   >(undefined);
   useEffect(() => {
     if (!isFocused || sourcePresetId == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the verified preset before the async check below
       setVerifiedSourcePresetId(undefined);
       return;
     }
@@ -281,6 +282,7 @@ function ActiveWorkoutScreen({ navigation, route }: Props) {
     if (storeHydrated) return;
     // Hydration may have finished between the initial read and this effect.
     if (useActiveWorkoutStore.persist.hasHydrated()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration can finish between the first read and this effect
       setStoreHydrated(true);
       return;
     }

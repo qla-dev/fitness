@@ -1,5 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import {
+  Image,
+  type ImageSourcePropType,
   View,
   Text,
   Pressable,
@@ -113,6 +115,14 @@ export function SettingsValueSubtitle({
 
 interface SettingsRowProps {
   icon?: IconName;
+  /**
+   * A brand's own mark in place of a glyph (a connector such as FitPass): a
+   * transparent image, drawn at a glyph's size on the same tile as its
+   * neighbours.
+   */
+  iconImage?: ImageSourcePropType;
+  /** A ready-made tile in place of icon or iconImage (Apple Health's icon). */
+  iconElement?: React.ReactNode;
   title: string;
   subtitle?: React.ReactNode;
   /** Line clamp for string subtitles; 0 lets the text wrap freely. */
@@ -129,6 +139,8 @@ interface SettingsRowProps {
 
 const SettingsRow: React.FC<SettingsRowProps> = ({
   icon,
+  iconImage,
+  iconElement,
   title,
   subtitle,
   subtitleNumberOfLines = 1,
@@ -151,7 +163,20 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   const content = (
     <MenuItem
       leading={
-        icon ? (
+        iconElement ? (
+          iconElement
+        ) : iconImage ? (
+          <MenuItemIcon backgroundColor={iconBackgroundColor}>
+            <Image
+              source={iconImage}
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              // Smaller than a glyph's 22: a logo fills its square edge to edge
+              // where a glyph has room around it, so 16 reads the same size.
+              style={{ width: 16, height: 16 }}
+            />
+          </MenuItemIcon>
+        ) : icon ? (
           <MenuItemIcon backgroundColor={iconBackgroundColor}>
             <Icon name={icon} size={22} color={tintColor} weight="semibold" />
           </MenuItemIcon>

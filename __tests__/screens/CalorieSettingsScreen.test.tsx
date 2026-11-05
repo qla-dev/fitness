@@ -79,6 +79,7 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
 
 jest.mock('../../src/hooks/useScreenHeader', () => ({
   useScreenHeader: () => null,
+  useNativeHeaderOffset: () => 0,
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -108,9 +109,9 @@ describe('CalorieSettingsScreen', () => {
     };
   });
 
-  it('explains that Device Projection applies Goal Mode to Health Connect TDEE', () => {
+  it('explains Device Projection in three illustrated guide cards', () => {
     mockPreferences.calorie_goal_adjustment_mode = 'tdee';
-    const { getByText } = render(
+    const { getByText, getByTestId } = render(
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
 
@@ -119,12 +120,20 @@ describe('CalorieSettingsScreen', () => {
         'Current-day Health Connect total calories are projected to midnight; completed days use the recorded total. Goal Mode is applied to that TDEE, with BMR + active calories as a fallback.'
       )
     ).toBeTruthy();
+    const guide = within(getByTestId('calorie-settings-guide'));
+    expect(guide.getByText('Burned Calories')).toBeTruthy();
+    expect(guide.getByText('Eaten Calories')).toBeTruthy();
+    expect(guide.getByText('Remaining Calories')).toBeTruthy();
     expect(
-      getByText(
-        'Health Connect total calories (BMR + active calories fallback)'
+      guide.getByText(
+        'Your device estimates the energy you use throughout the day. If its total is missing, the app uses resting energy and activity instead.'
       )
     ).toBeTruthy();
-    expect(getByText('Projected TDEE × Goal Mode − Eaten')).toBeTruthy();
+    expect(
+      guide.getByText(
+        "The app estimates your full-day burn, applies Goal Mode, then subtracts eaten calories. Today's estimate updates as device data arrives."
+      )
+    ).toBeTruthy();
   });
 
   it('offers and saves Goal Mode percentages on Android', () => {
@@ -133,7 +142,9 @@ describe('CalorieSettingsScreen', () => {
     );
 
     expect(getByRole('radio', { name: 'Maintain (0%)' })).toBeTruthy();
-    expect(getByRole('radio', { name: 'Body Recomposition (-10%)' })).toBeTruthy();
+    expect(
+      getByRole('radio', { name: 'Body Recomposition (-10%)' })
+    ).toBeTruthy();
     expect(getByRole('radio', { name: 'Lean Bulk (+10%)' })).toBeTruthy();
 
     fireEvent.press(getByRole('radio', { name: 'Body Recomposition (-10%)' }));

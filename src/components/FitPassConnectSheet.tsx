@@ -5,16 +5,14 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Toast from 'react-native-toast-message';
 import CustomModal, { type CustomModalRef } from './CustomModal';
-import Button from './ui/Button';
+import FormInput from './FormInput';
 import Switch from './ui/Switch';
-import Icon from './Icon';
 import SettingsRow, { SettingsRowGroup } from './SettingsRow';
-import MenuItemIcon from './MenuItemIcon';
 import { fireSelectionHaptic } from '../services/haptics';
 import {
   clearFitPassCredentials,
@@ -23,6 +21,8 @@ import {
   saveFitPassCredentials,
   saveFitPassSyncEnabled,
 } from '../services/storage';
+
+const FITPASS_ICON = require('../../assets/brand/fitpass.png');
 
 export interface FitPassConnectSheetRef {
   present: () => void;
@@ -39,19 +39,14 @@ export interface FitPassConnectSheetRef {
  * request. Replacing `connect` is all a real service needs; the storage, the
  * toggle and the disconnect path are already correct.
  *
- * The fields are plain TextInputs: the sheet is a modal route now, which
- * moves for the keyboard like any screen.
+ * The fields are the shared `FormInput` pills, and Connect / Disconnect is
+ * the sheet's shared footer action, like every other sheet.
  */
 const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
   (_props, ref) => {
     const { t } = useTranslation();
     const sheet = useRef<CustomModalRef>(null);
-    const [accentColor, textPrimary, textMuted, raised] = useCSSVariable([
-      '--color-accent-primary',
-      '--color-text-primary',
-      '--color-text-muted',
-      '--color-raised',
-    ]) as [string, string, string, string];
+    const accentColor = useCSSVariable('--color-accent-primary') as string;
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -116,25 +111,31 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
       setConnected(false);
     };
 
-    const fieldStyle = {
-      backgroundColor: raised,
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 16,
-      color: textPrimary,
-    };
-
     return (
       <CustomModal
         ref={sheet}
         title={t('fitPass.title', { defaultValue: 'FitPass' })}
+        footerLabel={
+          connected
+            ? t('fitPass.disconnect', { defaultValue: 'Disconnect FitPass' })
+            : t('fitPass.connect', { defaultValue: 'Connect' })
+        }
+        onFooterPress={() => void (connected ? disconnect() : connect())}
+        footerDisabled={!connected && !canConnect}
+        footerLoading={busy}
       >
         <View className="px-4 pb-2">
           <View className="items-center mb-3">
-            <MenuItemIcon size={64} backgroundColor={accentColor}>
-              <Icon name="exercise-weights" size={32} color="#FFFFFF" />
-            </MenuItemIcon>
+            <Image
+              source={FITPASS_ICON}
+              accessibilityIgnoresInvertColors
+              style={{ width: 72, height: 72, borderRadius: 16 }}
+            />
+            <View className="mt-3 rounded-full bg-raised px-3 py-1">
+              <Text className="text-text-secondary text-xs font-semibold uppercase">
+                {t('fitPass.comingSoon', { defaultValue: 'Coming soon' })}
+              </Text>
+            </View>
           </View>
           <Text className="text-text-secondary text-base text-center mb-5">
             {t('fitPass.intro', {
@@ -143,10 +144,10 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
             })}
           </Text>
 
-          <Text className="text-text-secondary text-sm mb-1">
+          <Text className="text-text-secondary text-sm mb-2 ml-4">
             {t('fitPass.username', { defaultValue: 'Username or email' })}
           </Text>
-          <TextInput
+          <FormInput
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -155,17 +156,15 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
             placeholder={t('fitPass.usernamePlaceholder', {
               defaultValue: 'you@example.com',
             })}
-            placeholderTextColor={textMuted}
             accessibilityLabel={t('fitPass.username', {
               defaultValue: 'Username or email',
             })}
-            style={fieldStyle}
           />
 
-          <Text className="text-text-secondary text-sm mb-1 mt-3">
+          <Text className="text-text-secondary text-sm mb-2 ml-4 mt-4">
             {t('fitPass.password', { defaultValue: 'Password' })}
           </Text>
-          <TextInput
+          <FormInput
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -175,7 +174,6 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
             accessibilityLabel={t('fitPass.password', {
               defaultValue: 'Password',
             })}
-            style={fieldStyle}
           />
 
           <View className="mt-4">
@@ -209,26 +207,12 @@ const FitPassConnectSheet = forwardRef<FitPassConnectSheetRef>(
 
           {/* Said plainly rather than implied: the switch is real and the details
             are stored, but no FitPass service exists to call yet. */}
-          <Text className="text-text-muted text-sm text-center mb-3 px-2">
+          <Text className="text-text-muted text-sm text-center px-2">
             {t('fitPass.notLiveNotice', {
               defaultValue:
-                'FitPass syncing is not live yet. Your details are saved on this device only.',
+                'FitPass sync is coming soon. Your details are saved on this device only.',
             })}
           </Text>
-
-          {connected ? (
-            <Button variant="secondary" onPress={() => void disconnect()}>
-              {t('fitPass.disconnect', { defaultValue: 'Disconnect FitPass' })}
-            </Button>
-          ) : (
-            <Button
-              loading={busy}
-              disabled={!canConnect}
-              onPress={() => void connect()}
-            >
-              {t('fitPass.connect', { defaultValue: 'Connect' })}
-            </Button>
-          )}
         </View>
       </CustomModal>
     );

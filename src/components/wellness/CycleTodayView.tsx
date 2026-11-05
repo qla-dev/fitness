@@ -171,6 +171,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
 
   useEffect(() => {
     if (log) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setFlowLevel(log.flow_level ?? null);
       setMucus(log.cervical_mucus ?? null);
       setNotes(log.notes ?? '');
@@ -210,6 +211,7 @@ const CycleTodayView: React.FC<CycleTodayViewProps> = ({
       .map((e) => e.symptom_name_snapshot);
     // The hook falls back to a fresh [] while entries load, so keep the
     // previous reference when content is unchanged or this effect loops.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
     setSelectedSymptoms((prev) =>
       prev.length === names.length && prev.every((n, i) => n === names[i])
         ? prev

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedNumber } from '../../localization';
+import { formatLocalizedNumber, getAppLocale } from '../../localization';
 import { View, TouchableOpacity, Platform, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,7 +60,6 @@ import {
   equivalentsDiffer,
   isBlankEquivalent,
 } from './persistence';
-import { getAppLocale } from '../../localization';
 
 type CreateFoodParams = Extract<
   FoodFormScreenProps['route']['params'],

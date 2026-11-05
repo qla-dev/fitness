@@ -364,7 +364,6 @@ function LocalComposerInput({
     }
 
     if (composerText !== localTextRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       applyLocalText(composerText);
     }
   }, [applyLocalText, composerText]);

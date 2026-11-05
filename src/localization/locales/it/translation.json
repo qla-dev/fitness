@@ -84,7 +84,8 @@
     "connect": "Connetti",
     "disconnect": "Disconnetti FitPass",
     "connected": "FitPass connesso",
-    "connectedDetail": "Le tue visite verranno sincronizzate non appena il servizio sarà disponibile."
+    "connectedDetail": "Le tue visite verranno sincronizzate non appena il servizio sarà disponibile.",
+    "comingSoon": "In arrivo"
   },
   "settings": {
     "app": "Impostazioni app",
@@ -118,9 +119,9 @@
     "rows": {
       "server": "Server",
       "healthSync": "Sincronizzazione dati di salute",
-      "appleHealthSync": "Sincronizzazione dati Apple Health",
-      "healthConnectSync": "Sincronizzazione dati Health Connect",
-      "fitPassSync": "Sincronizzazione FitPass",
+      "appleHealthSync": "Connettore Apple Health",
+      "healthConnectSync": "Connettore Health Connect",
+      "fitPassSync": "Connettore FitPass",
       "app": "Impostazioni app",
       "calories": "Calorie e BMR",
       "food": "Cibo",
@@ -972,6 +973,20 @@
       "standardDescription": "Usa il valore più alto tra il tuo RMR stimato e il minimo clinico.",
       "customDescription": "Sostituisce la soglia standard con il minimo che scegli. Le raccomandazioni di salute restano visibili.",
       "disabledDescription": "Interrompe il limite automatico dell'obiettivo. Gli avvisi di salute restano visibili."
+    },
+    "guide": {
+      "intro": "Scegli come l'attività influisce sul tuo obiettivo. La modalità obiettivo lo regola e la soglia di sicurezza imposta un minimo quando è attiva.",
+      "burnedProjection": "Il tuo dispositivo stima l'energia che usi durante il giorno. Se il suo totale manca, l'app usa energia a riposo e attività.",
+      "burnedWithResting": "Le calorie bruciate includono la tua attività e l'energia che il corpo usa a riposo (BMR).",
+      "burnedActivity": "Le calorie bruciate derivano dall'attività registrata. Attiva Includi calorie a riposo per contare anche l'energia che il corpo usa a riposo.",
+      "foodTitle": "Calorie assunte",
+      "foodBody": "Aggiungi pasti e snack al diario. Le loro calorie contano come calorie assunte; la differenza tra assunte e bruciate è la tua energia netta.",
+      "remainingDynamic": "Il tuo obiettivo giornaliero meno le calorie assunte, con le calorie bruciate aggiunte di nuovo. Muovendoti di più, hai più margine nel budget.",
+      "remainingPercentageWithResting": "Il tuo obiettivo giornaliero meno le calorie assunte, più le calorie a riposo e il {{percentage}}% delle calorie dell'esercizio.",
+      "remainingPercentage": "Il tuo obiettivo giornaliero meno le calorie assunte, più il {{percentage}}% delle calorie dell'esercizio. Cambia la percentuale per scegliere quanto esercizio aggiunge di nuovo.",
+      "remainingProjection": "L'app stima il consumo dell'intera giornata, applica la modalità obiettivo e poi sottrae le calorie assunte. La stima di oggi si aggiorna quando arrivano i dati del dispositivo.",
+      "remainingAdaptive": "Il tuo obiettivo usa una stima basata sui dati del corpo e sul livello di attività, oppure l'obiettivo salvato se i dati del corpo mancano. Le calorie assunte vengono sottratte da quell'obiettivo.",
+      "remainingFixed": "Il tuo obiettivo giornaliero meno le calorie assunte. L'attività compare nel diario, ma non aggiunge calorie a questo budget."
     }
   },
   "dashboardSettings": {
@@ -1062,7 +1077,8 @@
     "openSettings": "Apri impostazioni",
     "permissionTitle": "Concedi le autorizzazioni",
     "permissionBody": "gli avvisi di qla.fit (timer di recupero, obiettivi di digiuno, promemoria farmaci) non verranno inviati.",
-    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}."
+    "permissionWarningAccessibility": "{{title}}. {{body}} {{action}}.",
+    "cycle": "Ciclo"
   },
   "workoutSettings": {
     "title": "Impostazioni allenamento",
@@ -2517,7 +2533,8 @@
     "dayPeriod_many": "Mestruazioni di {{count}} giorni",
     "dayCycle_one": "Ciclo di {{count}} giorno",
     "dayCycle_other": "Ciclo di {{count}} giorni",
-    "dayCycle_many": "Ciclo di {{count}} giorni"
+    "dayCycle_many": "Ciclo di {{count}} giorni",
+    "logStartTitle": "Inizio ciclo"
   },
   "nutrients": {
     "calories": "Calorie",
@@ -2792,10 +2809,6 @@
       "day18": "Giorno 18",
       "symptomFlowLog": "Registro sintomi e flusso",
       "mildNormal": "Lieve • Normale",
-      "benchPress": "Panca piana",
-      "threeSets": "3 serie",
-      "setOneReps": "Serie 1: 10 rip.",
-      "doneWeight": "80 kg • Fatto",
       "fauxprofen": "Fauxprofen",
       "dailyDose": "200 mg • Ogni giorno",
       "taken": "Assunto",
@@ -2803,7 +2816,15 @@
       "caloriesInValue": "1.540",
       "caloriesOutValue": "255",
       "eightAm": "8:00",
-      "eyebrow": "iOS 26"
+      "eyebrow": "iOS 26",
+      "programName": "Fondamenti di forza",
+      "programWeeks": "8 settimane",
+      "programSessions": "3 sessioni a settimana",
+      "programNutrition": "+ Piano nutrizionale",
+      "morningRun": "Corsa mattutina",
+      "runDistance": "5,2 km",
+      "runPace": "5'12\" /km • 148 bpm",
+      "runTime": "27:04"
     },
     "features": {
       "medications": {
@@ -2816,17 +2837,6 @@
         "eyebrow": "CICLO E GRAVIDANZA",
         "headline": "Tieni traccia di ciclo e gravidanza",
         "body": "Monitoraggio completo di fasi del ciclo, sintomi, flusso e andamento della gravidanza, con approfondimenti su misura e obiettivi adattati."
-      },
-      "workout": {
-        "eyebrow": "ALLENAMENTO ED ESERCIZI",
-        "headline": "Allenamenti rinnovati",
-        "body": "Registrazione degli esercizi più snella, gestione aggiornata della libreria esercizi e monitoraggio migliorato delle prestazioni su più serie."
-      },
-      "ios": {
-        "eyebrow": "iOS 26",
-        "headline": "Un look Liquid Glass",
-        "body": "Attiva la navigazione Liquid Glass per schede e intestazioni traslucide che riprendono il colore dello sfondo. Puoi cambiarla quando vuoi nelle impostazioni dell'app.",
-        "cta": "Apri impostazioni"
       },
       "chat": {
         "eyebrow": "CHIEDI A MARKAI",
@@ -2844,6 +2854,17 @@
         "headline": "Scatta un pasto, registra i macro",
         "body": "Stima i valori nutrizionali da una foto quando hai poco tempo.",
         "cta": "Provalo"
+      },
+      "programs": {
+        "eyebrow": "PROGRAMMI DI ALLENAMENTO",
+        "headline": "Programmi già pronti",
+        "body": "Sfoglia 21 programmi di allenamento nella scheda Esercizi, ognuno con le sue sessioni e un piano nutrizionale, e avviane uno con un tocco.",
+        "cta": "Sfoglia i programmi"
+      },
+      "runRide": {
+        "eyebrow": "CORSA E CICLISMO",
+        "headline": "Registra corse e pedalate",
+        "body": "Monitora distanza, ritmo, velocità e il percorso GPS in tempo reale, con sensori Bluetooth per frequenza cardiaca e cadenza. Ogni sessione viene salvata nel diario."
       }
     }
   },
@@ -5110,7 +5131,8 @@
       "fertileWindow": "Finestra fertile",
       "today": "Oggi",
       "ovulation": "Ovulazione stimata"
-    }
+    },
+    "logStart": "Registra l'inizio del ciclo · {{date}}"
   },
   "workoutPresetLibrary": {
     "configure": "Configura la connessione al server nelle Impostazioni per vedere i tuoi programmi di allenamento."
@@ -5696,7 +5718,10 @@
       "draftFailed": "Impossibile salvare questa bozza. Riprova.",
       "moreOptions": "Più opzioni",
       "fewerOptions": "Meno opzioni"
-    }
+    },
+    "addPhotoPrompt": "Vuoi aggiungere una foto a questo allenamento?",
+    "addPhotoFromLibrary": "Aggiungi da Foto",
+    "addPhotoTakePicture": "Scatta una foto"
   },
   "setup": {
     "progress": "Passo {{current}} di {{total}}",
@@ -5906,7 +5931,13 @@
     "missing": "Questa lista è stata eliminata.",
     "officialPrices": "Prezzi ufficiali dei negozi",
     "estimatedPrices": "Prezzi stimati",
-    "estimateWarning": "I prezzi per {{region}} sono stime di MarkAI, non prezzi dei negozi. Considera i totali come un'indicazione approssimativa."
+    "estimateWarning": "I prezzi per {{region}} sono stime di MarkAI, non prezzi dei negozi. Considera i totali come un'indicazione approssimativa.",
+    "progress": "{{done}} di {{total}} nel carrello",
+    "leftToBuy": "{{amount}} rimanenti",
+    "aiNew": "Nuova lista della spesa AI",
+    "aiMake": "Crea la mia lista",
+    "aiFailed": "MarkAI non è riuscito a creare una lista questa volta.",
+    "aiPrompt": "Crea per me una lista della spesa per una settimana in base alle mie risposte su cibo e cucina e restituiscila come lista della spesa: {{answers}}"
   },
   "appleHealthCheck": {
     "title": "Apple Health",
@@ -6019,7 +6050,7 @@
     "welcome": "Parliamo dei tuoi obiettivi",
     "preview": "Anteprima della chat — le risposte AI non sono ancora collegate.",
     "proteinPrompt": "Aiutami con il mio obiettivo proteico",
-    "metricsPrompt": "Spiegami le mie metriche giornaliere",
+    "metricsPrompt": "Aiutami a capire le mie metriche giornaliere.",
     "demoReply": "Questa è una risposta dimostrativa. Una volta collegata, l'AI ti aiuterà a esplorare i tuoi obiettivi nutrizionali e le metriche giornaliere.",
     "placeholder": "Chiedi delle tue metriche…",
     "send": "Invia messaggio",
@@ -6375,14 +6406,15 @@
     "signInGeneric": "Accedi",
     "signInGoogle": "Accedi con Google",
     "continueWithGoogle": "Continua con Google",
-    "coins": "AI coins"
+    "coins": "AI coins",
+    "conflictBody": "Questo dispositivo e il tuo account hanno versioni diverse di alcune voci. Scegli qui sotto quale mantenere."
   },
   "markai": {
     "title": "MarkAI",
     "macros": "Calcola i macro",
     "training": "Aiuto per il movimento",
     "allMacros": "Calcola tutti i miei macro",
-    "allMacrosPrompt": "Calcola tutti i miei macro: calorie, proteine, carboidrati e grassi per il mio obiettivo",
+    "allMacrosPrompt": "Calcola calorie e macro per il mio obiettivo. Chiedimi tutto ciò che ti serve.",
     "free": "Chat libera",
     "dateError": "Inserisci una data valida come AAAA-MM-GG.",
     "register": "Accedi per ottenere 30 AI coins. Ogni risposta AI costa 1 AI coin; registrare una scheda di cibo è gratis.",
@@ -6408,7 +6440,7 @@
     "noHistory": "Le tue conversazioni compariranno qui.",
     "retry": "Non inviato. Tocca per riprovare.",
     "logPrompt": "Aiutami a registrare il mio pasto",
-    "trainingPrompt": "Aiutami a muovermi di più e a pianificare la mia prossima attività",
+    "trainingPrompt": "Suggeriscimi come muovermi oggi.",
     "lessPrompts": "Meno idee",
     "morePrompts": "Più idee",
     "analysing": "MarkAI sta analizzando…",
@@ -6460,7 +6492,18 @@
       "prices": "Verifica prezzi",
       "groceries": "Lista della spesa"
     },
-    "usage": "Utilizzo"
+    "usage": "Utilizzo",
+    "goalsChip": "Aiuto con i miei obiettivi",
+    "goalsPrompt": "Aiutami con i miei obiettivi: come sto andando e cosa dovrei cambiare?",
+    "macrosChip": "Calcola i miei macro",
+    "trainingChip": "Idee per muovermi",
+    "metricsChip": "Aiuto con le metriche giornaliere",
+    "groceryCard": {
+      "more_one": "+{{count}} altro",
+      "more_other": "+{{count}} altri",
+      "save": "Salva come lista della spesa",
+      "more_many": "+{{count}} altri"
+    }
   },
   "weeklyPlans": {
     "addManual": "Crea tu un piano alimentare",
@@ -6734,6 +6777,16 @@
     "steady": {
       "title": "Allenamento costante oggi",
       "body": "Giorno {{day}} del tuo ciclo. In questa fase vanno bene sessioni moderate; tieni d'occhio stanchezza e sonno."
-    }
+    },
+    "chatFollowUp": "Vuoi più informazioni o consigli per oggi?"
+  },
+  "markaiData": {
+    "title": "Vuoi che MarkAI veda i tuoi dati?",
+    "body": "MarkAI può leggere un riepilogo dei tuoi ultimi 14 giorni (cibo, attività, allenamenti, sonno e peso) per rispondere su di te e personalizzare gli allenamenti. Viene inviato con ogni messaggio.",
+    "decline": "Non ora",
+    "allow": "Consenti",
+    "setting": "Usa i miei dati",
+    "settingSubtitle": "Invia a MarkAI un riepilogo dei tuoi ultimi 14 giorni con ogni messaggio.",
+    "appSetting": "MarkAI può vedere i miei dati"
   }
 }

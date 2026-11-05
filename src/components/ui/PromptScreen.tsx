@@ -69,6 +69,8 @@ export type PromptScreenProps = {
   footerLoading?: boolean;
   /** The action's fill, for a screen that is about one coloured thing. */
   footerTint?: string;
+  /** Actions stacked above the footer's own, pinned with it (see FooterCTA). */
+  footerAbove?: ReactNode;
   dismissDisabled?: boolean;
   /** See the note above: it decides alignment. */
   hasTextInput?: boolean;
@@ -106,6 +108,7 @@ function PromptScreenContent({
   footerDisabled,
   footerLoading,
   footerTint,
+  footerAbove,
   dismissDisabled = false,
   hasTextInput = false,
   topAligned = false,
@@ -115,7 +118,10 @@ function PromptScreenContent({
   bleed = false,
   children,
 }: PromptScreenProps) {
-  const hasFooter = footerLabel !== undefined && onFooterPress !== undefined;
+  // A footer of stacked actions alone (sign-in buttons) is a footer too.
+  const hasFooter =
+    (footerLabel !== undefined && onFooterPress !== undefined) ||
+    footerAbove !== undefined;
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
@@ -211,6 +217,7 @@ function PromptScreenContent({
             disabled={footerDisabled}
             loading={footerLoading}
             tint={footerTint}
+            above={footerAbove}
           />
         ) : null}
       </NativeHeaderScrollView>
@@ -289,6 +296,7 @@ function PromptScreenContent({
           disabled={footerDisabled}
           loading={footerLoading}
           tint={footerTint}
+          above={footerAbove}
         />
       ) : !topAligned ? (
         <View style={{ height: insets.bottom + 12 }} />

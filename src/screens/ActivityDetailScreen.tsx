@@ -67,7 +67,7 @@ import CalendarSheet, {
 } from '../components/CalendarSheet';
 import { normalizeDate, formatDate, formatDateLabel } from '../utils/dateUtils';
 import { distanceFromKm, weightFromKg } from '../utils/unitConversions';
-import { formatLocalizedNumber } from '../localization';
+import { formatLocalizedNumber, getAppLocale } from '../localization';
 import Toast from 'react-native-toast-message';
 import { addLog } from '../services/LogService';
 import type { RootStackScreenProps } from '../types/navigation';
@@ -75,7 +75,6 @@ import type { WorkoutDraftSet } from '../types/drafts';
 import { activityTelemetry } from '../utils/activityTelemetry';
 import type { ExerciseEntrySetResponse } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
-import { getAppLocale } from '../localization';
 
 /** The icon a shared photo draws above each kind of reading. */
 const DETAIL_METRIC_ICONS: Record<keyof typeof METRIC_COLORS, PhotoMetricIcon> =

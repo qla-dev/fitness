@@ -18,6 +18,8 @@ jest.mock('../../src/services/nativeTabBarPreference', () => ({
 }));
 
 jest.mock('../../src/hooks/useScreenHeader', () => ({
+  // NativeHeaderScrollView reads this to clear the native bar.
+  useNativeHeaderOffset: jest.fn(() => 0),
   useScreenHeader: jest.fn((props: { title: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -27,10 +29,6 @@ jest.mock('../../src/hooks/useScreenHeader', () => ({
       props.title
     );
   }),
-}));
-
-jest.mock('../../src/utils/liquidGlass', () => ({
-  canUseLiquidGlass: jest.fn(() => false),
 }));
 
 jest.mock('../../src/components/Icon', () => {
@@ -43,7 +41,7 @@ jest.mock('../../src/components/Icon', () => {
 
 jest.mock('uniwind', () => ({
   useCSSVariable: jest.fn((variables: string | string[]) =>
-    (Array.isArray(variables) ? variables : [variables]).map(() => '#000000')
+    Array.isArray(variables) ? variables.map(() => '#000000') : '#000000'
   ),
 }));
 
@@ -74,6 +72,27 @@ describe('WhatsNewScreen localization', () => {
 
     fireEvent.press(screen.getByText('Set up medications'));
     expect(navigation.navigate).toHaveBeenCalledWith('MedicationsList');
+  });
+
+  it('shows the programs and run/ride cards instead of the old ones', () => {
+    render(<WhatsNewScreen navigation={navigation} route={route} />);
+
+    expect(screen.getByText('Ready-made programs')).toBeTruthy();
+    expect(screen.getByText('Record runs and rides')).toBeTruthy();
+    expect(screen.queryByText('Revamped workout workflows')).toBeNull();
+    expect(screen.queryByText('A Liquid Glass look')).toBeNull();
+
+    fireEvent.press(screen.getByText('Browse programs'));
+    expect(navigation.navigate).toHaveBeenCalledWith('Tabs', {
+      screen: 'Exercises',
+    });
+  });
+
+  it('sends the photo logging card to MarkAI', () => {
+    render(<WhatsNewScreen navigation={navigation} route={route} />);
+
+    fireEvent.press(screen.getByText('Try it out'));
+    expect(navigation.navigate).toHaveBeenCalledWith('MarkAI');
   });
 
   it('renders Polish feature and mockup copy after switching language', async () => {

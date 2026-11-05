@@ -15,7 +15,7 @@ import { formatDate } from '../utils/dateUtils';
 import { babyWeek } from '@workspace/shared';
 import WombScene from './wellness/pregnancy/WombScene';
 import { localizeBabyWeek } from '../utils/pregnancyContentLocalization';
-import { formatLocalizedNumber } from '../localization';
+import { formatLocalizedNumber, getAppLocale } from '../localization';
 import CycleBeads from './wellness/CycleBeads';
 import { fireSelectionHaptic } from '../services/haptics';
 import { useWellnessTokens } from './wellness/theme/wellnessTokens';
@@ -23,7 +23,6 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
-import { getAppLocale } from '../localization';
 
 type CycleCardNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Diary'>,

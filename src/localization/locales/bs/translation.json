@@ -115,9 +115,9 @@
     "rows": {
       "server": "Server",
       "healthSync": "Sinhronizacija zdravstvenih podataka",
-      "appleHealthSync": "Sinhronizacija s Apple Health",
-      "healthConnectSync": "Sinhronizacija s Health Connect",
-      "fitPassSync": "FitPass sinhronizacija",
+      "appleHealthSync": "Apple Health konektor",
+      "healthConnectSync": "Health Connect konektor",
+      "fitPassSync": "FitPass konektor",
       "app": "Postavke aplikacije",
       "calories": "Kalorije i BMR",
       "food": "Hrana",
@@ -524,7 +524,8 @@
     "steady": {
       "title": "Danas umjeren trening",
       "body": "{{day}}. dan ciklusa. Ovoj fazi odgovaraju umjereni treninzi; prati umor i san."
-    }
+    },
+    "chatFollowUp": "Želiš li više informacija ili preporuka za danas?"
   },
   "cycleSettings": {
     "groups": {
@@ -828,6 +829,7 @@
   },
   "fitPass": {
     "title": "FitPass",
+    "comingSoon": "Uskoro",
     "intro": "Prijavi se da tvoje posjete teretani automatski stižu u dnevnik.",
     "rowSubtitle": "Unesi posjete teretani u dnevnik",
     "username": "Korisničko ime ili e-mail",
@@ -835,7 +837,7 @@
     "password": "Lozinka",
     "syncEnable": "Sinhronizuj FitPass",
     "syncSubtitle": "Unesi nove posjete pri svakoj sinhronizaciji zdravlja",
-    "notLiveNotice": "FitPass sinhronizacija još nije aktivna. Tvoji podaci su sačuvani samo na ovom uređaju.",
+    "notLiveNotice": "FitPass sinhronizacija stiže uskoro. Tvoji podaci su sačuvani samo na ovom uređaju.",
     "connect": "Poveži",
     "disconnect": "Prekini vezu s FitPassom",
     "connected": "FitPass povezan",
@@ -1607,6 +1609,20 @@
       "standardDescription": "Koristi veću vrijednost između tvog procijenjenog RMR-a i kliničkog minimuma.",
       "customDescription": "Zamjenjuje standardni minimum tvojim odabranim. Zdravstvene preporuke ostaju vidljive.",
       "disabledDescription": "Zaustavlja automatsko ograničavanje cilja. Zdravstvena upozorenja ostaju vidljiva."
+    },
+    "guide": {
+      "intro": "Odaberi kako aktivnost utiče na tvoj cilj. Način cilja ga prilagođava, a Sigurnosni minimum, kad je uključen, postavlja donju granicu.",
+      "burnedProjection": "Tvoj uređaj procjenjuje energiju koju trošiš tokom dana. Ako taj ukupni iznos nedostaje, aplikacija umjesto njega koristi energiju u mirovanju i aktivnost.",
+      "burnedWithResting": "Potrošene kalorije uključuju tvoju aktivnost i energiju koju tijelo troši u mirovanju (BMR).",
+      "burnedActivity": "Potrošene kalorije dolaze iz tvoje zabilježene aktivnosti. Uključi „Uključi kalorije u mirovanju“ da se računa i energija koju tijelo troši u mirovanju.",
+      "foodTitle": "Pojedene kalorije",
+      "foodBody": "Dodaj obroke i užine u dnevnik. Njihove kalorije se računaju kao pojedene; pojedeno minus potrošeno je tvoj neto energetski bilans.",
+      "remainingDynamic": "Tvoj dnevni cilj minus pojedene kalorije, uz dodane potrošene kalorije. Što se više krećeš, više ti ostaje u budžetu.",
+      "remainingPercentageWithResting": "Tvoj dnevni cilj minus pojedene kalorije, plus kalorije u mirovanju i {{percentage}}% kalorija od vježbanja.",
+      "remainingPercentage": "Tvoj dnevni cilj minus pojedene kalorije, plus {{percentage}}% kalorija od vježbanja. Promijeni postotak da odabereš koliko vježbanje vraća u budžet.",
+      "remainingProjection": "Aplikacija procjenjuje koliko ćeš potrošiti tokom cijelog dana, primjenjuje Način cilja, pa oduzima pojedene kalorije. Današnja procjena se ažurira kako stižu podaci s uređaja.",
+      "remainingAdaptive": "Tvoj cilj koristi procjenu iz tvojih tjelesnih podataka i Nivoa aktivnosti, ili sačuvani cilj ako tjelesni podaci nedostaju. Od tog cilja se oduzimaju pojedene kalorije.",
+      "remainingFixed": "Tvoj dnevni cilj minus pojedene kalorije. Aktivnost se prikazuje u dnevniku, ali ne dodaje kalorije u ovaj budžet."
     }
   },
   "dashboardSettings": {
@@ -3003,10 +3019,6 @@
       "day18": "18. dan",
       "symptomFlowLog": "Simptomi i krvarenje",
       "mildNormal": "Blago • Normalno",
-      "benchPress": "Bench press",
-      "threeSets": "3 serije",
-      "setOneReps": "Serija 1: 10 ponavljanja",
-      "doneWeight": "80 kg • Gotovo",
       "fauxprofen": "Fauxprofen",
       "dailyDose": "200 mg • Dnevno",
       "taken": "Uzeto",
@@ -3014,7 +3026,15 @@
       "caloriesInValue": "1.540",
       "caloriesOutValue": "255",
       "eightAm": "8:00",
-      "eyebrow": "iOS 26"
+      "eyebrow": "iOS 26",
+      "programName": "Osnove snage",
+      "programWeeks": "8 sedmica",
+      "programSessions": "3 treninga sedmično",
+      "programNutrition": "+ Plan ishrane",
+      "morningRun": "Jutarnje trčanje",
+      "runDistance": "5,2 km",
+      "runPace": "5'12\" /km • 148 bpm",
+      "runTime": "27:04"
     },
     "features": {
       "medications": {
@@ -3027,17 +3047,6 @@
         "eyebrow": "CIKLUS I TRUDNOĆA",
         "headline": "Prati ciklus i trudnoću",
         "body": "Sveobuhvatno praćenje faza ciklusa, simptoma, krvarenja i napretka trudnoće, uz prilagođene uvide i prilagodbe ciljeva."
-      },
-      "workout": {
-        "eyebrow": "TRENING I VJEŽBE",
-        "headline": "Obnovljen tok treninga",
-        "body": "Jednostavnije bilježenje vježbi, osvježeno upravljanje bibliotekom vježbi i bolje praćenje učinka kroz više serija."
-      },
-      "ios": {
-        "eyebrow": "iOS 26",
-        "headline": "Izgled Liquid Glass",
-        "body": "Uključi Liquid Glass navigaciju za prozirne kartice i zaglavlja koja preuzimaju boju iza sebe. Uključi ili isključi kad god želiš u postavkama aplikacije.",
-        "cta": "Otvori postavke"
       },
       "chat": {
         "eyebrow": "PITAJ MARKAI",
@@ -3055,6 +3064,17 @@
         "headline": "Uslikaj obrok, zabilježi makroe",
         "body": "Procijeni nutrijente s fotografije kad nemaš vremena.",
         "cta": "Isprobaj"
+      },
+      "programs": {
+        "eyebrow": "PROGRAMI TRENINGA",
+        "headline": "Gotovi programi",
+        "body": "Pregledaj 21 program treninga u kartici Vježbe, svaki sa svojim treninzima i planom ishrane, i pokreni ga jednim dodirom.",
+        "cta": "Pregledaj programe"
+      },
+      "runRide": {
+        "eyebrow": "TRČANJE I BICIKL",
+        "headline": "Snimaj trčanje i vožnju",
+        "body": "Prati udaljenost, tempo, brzinu i GPS rutu uživo, uz Bluetooth senzore otkucaja srca i kadence. Svaka sesija stiže u tvoj dnevnik."
       }
     }
   },
@@ -6120,7 +6140,7 @@
     "welcome": "Hajde da pričamo o tvojim ciljevima",
     "preview": "Pregled chata — AI odgovori još nisu povezani.",
     "proteinPrompt": "Pomozi mi s ciljem za proteine",
-    "metricsPrompt": "Objasni moje dnevne metrike",
+    "metricsPrompt": "Pomozi mi da razumijem svoje dnevne metrike.",
     "demoReply": "Ovo je demo odgovor. Kada se poveže, AI će ti pomoći da istražiš svoje ciljeve ishrane i dnevne metrike.",
     "placeholder": "Pitaj o svojim metrikama…",
     "send": "Pošalji poruku",
@@ -6476,17 +6496,18 @@
     "signInGeneric": "Prijavi se",
     "signInGoogle": "Prijavi se putem Googlea",
     "continueWithGoogle": "Nastavi putem Googlea",
-    "coins": "AI coins"
+    "coins": "AI coins",
+    "conflictBody": "Na ovom uređaju i na tvom računu su različite verzije nekih unosa. Ispod odaberi koju zadržavaš."
   },
   "markai": {
     "title": "MarkAI",
     "macros": "Izračunaj makrose",
     "training": "Pomoć za kretanje",
-    "macrosChip": "Svi makronutrijenti",
-    "trainingChip": "Kretanje",
-    "metricsChip": "Dnevne metrike",
+    "macrosChip": "Izračunaj makronutrijente",
+    "trainingChip": "Prijedlozi za kretanje",
+    "metricsChip": "Pomoć s dnevnim metrikama",
     "allMacros": "Izračunaj sve moje makrose",
-    "allMacrosPrompt": "Izračunaj sve moje makrose: kalorije, proteine, ugljikohidrate i masti za moj cilj",
+    "allMacrosPrompt": "Izračunaj mi kalorije i makronutrijente za moj cilj. Pitaj me sve što ti treba.",
     "free": "Slobodan chat",
     "dateError": "Unesi ispravan datum u formatu GGGG-MM-DD.",
     "register": "Prijavi se i dobij 30 AI coins. Svaki AI odgovor košta 1 AI coin; bilježenje kartice hrane je besplatno.",
@@ -6512,7 +6533,7 @@
     "noHistory": "Tvoji razgovori će se pojaviti ovdje.",
     "retry": "Nije poslano. Dodirni za ponovni pokušaj.",
     "logPrompt": "Pomozi mi da zabilježim obrok",
-    "trainingPrompt": "Pomozi mi da se više krećem i isplaniram sljedeću aktivnost",
+    "trainingPrompt": "Predloži mi kretanje za danas.",
     "lessPrompts": "Manje ideja",
     "morePrompts": "Više ideja",
     "analysing": "MarkAI analizira…",
@@ -6571,8 +6592,8 @@
       "more_other": "+{{count}} još",
       "save": "Sačuvaj kao listu za kupovinu"
     },
-    "goalsChip": "Moji ciljevi",
-    "goalsPrompt": "Pogledaj moje dnevne ciljeve i reci mi kako mi ide i šta da promijenim"
+    "goalsChip": "Pomozi mi s ciljevima",
+    "goalsPrompt": "Pomozi mi s ciljevima: kako mi ide i šta da promijenim?"
   },
   "weeklyPlans": {
     "addManual": "Sam napravi plan obroka",
@@ -6760,12 +6781,12 @@
     "renewsTomorrow": "sutra u {{time}}"
   },
   "markaiData": {
-    "title": "Dozvoliti MarkAI-ju da vidi tvoje podatke?",
-    "body": "MarkAI može čitati sažetak tvojih zadnjih 14 dana (hrana, aktivnost, treninzi, san i težina) da ti odgovara o tebi i prilagodi treninge. Šalje se uz svaku poruku.",
+    "title": "Da MarkAI vidi tvoje podatke?",
+    "body": "Da bi ti odgovori bili po mjeri, MarkAI uz svaku poruku dobije kratak pregled tvojih zadnjih 14 dana: ishranu, kretanje, treninge, san i težinu.",
     "decline": "Ne sada",
     "allow": "Dozvoli",
     "setting": "Koristi moje podatke",
-    "settingSubtitle": "Šalji MarkAI-ju sažetak tvojih zadnjih 14 dana uz svaku poruku.",
+    "settingSubtitle": "Uz svaku poruku MarkAI dobije kratak pregled tvojih zadnjih 14 dana.",
     "appSetting": "MarkAI vidi moje podatke"
   }
 }

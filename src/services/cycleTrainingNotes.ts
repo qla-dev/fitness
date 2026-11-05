@@ -1,4 +1,6 @@
 import * as Notifications from 'expo-notifications';
+// Named: the import plugin cannot see this enum through the namespace.
+import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { SharedCycle, SharedCycleSettings } from '@workspace/shared';
 import i18n from '../localization/i18n';
@@ -26,7 +28,7 @@ async function ensureChannel(): Promise<void> {
     name: i18n.t('notifications.channels.cycleTrainingNotes', {
       defaultValue: 'Daily training notes',
     }),
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: AndroidImportance.DEFAULT,
   });
 }
 

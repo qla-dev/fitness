@@ -216,7 +216,8 @@ const ProgressPhotoTimelapseScreen: React.FC<Props> = ({
             selected: range === window,
             onPress: () =>
               window === 'custom'
-                ? rangeSheetRef.current?.present()
+                ? // eslint-disable-next-line react-hooks/refs -- menu handlers run on press, never during render
+                  rangeSheetRef.current?.present()
                 : setRange(window),
           })),
         },

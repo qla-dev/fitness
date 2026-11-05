@@ -44,8 +44,6 @@ export const SHOPPING_CURRENCIES = [
   'USD',
 ] as const;
 
-
-
 /**
  * Regions whose meal plans are priced from official or published shelf
  * prices: Croatia (cijene.dev), Serbia (the retailers' price lists on
@@ -57,9 +55,50 @@ export const OFFICIAL_PRICE_REGIONS: readonly string[] = ['HR', 'RS', 'NL'];
 /** Regions whose stores can be compared chain by chain: the same three. */
 export const LIVE_PRICE_REGIONS = OFFICIAL_PRICE_REGIONS;
 
+/** A region's name in the app's language; an unknown code stays as it is. */
 export const regionName = (t: TFunction, code: string): string => {
-  const region = SHOPPING_REGIONS.find((item) => item.code === code);
-  return region ? t(`regions.${code}`, { defaultValue: region.name }) : code;
+  switch (code) {
+    case 'HR':
+      return t('regions.HR', { defaultValue: 'Croatia' });
+    case 'BA':
+      return t('regions.BA', { defaultValue: 'Bosnia and Herzegovina' });
+    case 'RS':
+      return t('regions.RS', { defaultValue: 'Serbia' });
+    case 'SI':
+      return t('regions.SI', { defaultValue: 'Slovenia' });
+    case 'ME':
+      return t('regions.ME', { defaultValue: 'Montenegro' });
+    case 'MK':
+      return t('regions.MK', { defaultValue: 'North Macedonia' });
+    case 'XK':
+      return t('regions.XK', { defaultValue: 'Kosovo' });
+    case 'DE':
+      return t('regions.DE', { defaultValue: 'Germany' });
+    case 'AT':
+      return t('regions.AT', { defaultValue: 'Austria' });
+    case 'FR':
+      return t('regions.FR', { defaultValue: 'France' });
+    case 'IT':
+      return t('regions.IT', { defaultValue: 'Italy' });
+    case 'ES':
+      return t('regions.ES', { defaultValue: 'Spain' });
+    case 'NL':
+      return t('regions.NL', { defaultValue: 'Netherlands' });
+    case 'BE':
+      return t('regions.BE', { defaultValue: 'Belgium' });
+    case 'CH':
+      return t('regions.CH', { defaultValue: 'Switzerland' });
+    case 'PL':
+      return t('regions.PL', { defaultValue: 'Poland' });
+    case 'SE':
+      return t('regions.SE', { defaultValue: 'Sweden' });
+    case 'GB':
+      return t('regions.GB', { defaultValue: 'United Kingdom' });
+    case 'US':
+      return t('regions.US', { defaultValue: 'United States' });
+    default:
+      return code;
+  }
 };
 
 /**

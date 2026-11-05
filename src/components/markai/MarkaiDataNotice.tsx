@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Keyboard, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useCSSVariable } from 'uniwind';
 import Icon from '../Icon';
@@ -27,6 +27,10 @@ export default function MarkaiDataNotice({
     <View
       className="bg-raised rounded-3xl"
       style={{ padding: 14, gap: 12, marginBottom: 8 }}
+      // A tap on the card's text puts the keyboard away; its buttons still
+      // take their own taps first.
+      onStartShouldSetResponder={() => true}
+      onResponderRelease={() => Keyboard.dismiss()}
     >
       <View className="flex-row items-center" style={{ gap: 12 }}>
         <View

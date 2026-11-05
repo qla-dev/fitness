@@ -79,6 +79,11 @@ export type MarkaiReply = {
   mode?: MarkaiMode;
   /** The week a `meal_plan` task planned, shown as its plan card. */
   meal_plan?: PlannedWeek | null;
+  /**
+   * MarkAI's opening message, written by the app rather than answered (a
+   * tapped notification's text). It has no user turn above it.
+   */
+  opener?: boolean;
   food_id: string;
   log_requested: boolean;
 };

@@ -91,6 +91,7 @@ const ReauthModal: React.FC<ReauthModalProps> = ({
   useEffect(() => {
     if (!visible) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the form each time the modal opens
     setError('');
     setEmail('');
     setPassword('');
@@ -135,6 +136,7 @@ const ReauthModal: React.FC<ReauthModalProps> = ({
   // the user can always attempt credentials.
   useEffect(() => {
     if (!visible || !config) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears settings when closed, before the async fetch below
       setAuthSettings(null);
       return;
     }

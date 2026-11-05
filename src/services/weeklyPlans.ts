@@ -257,7 +257,20 @@ export const weekdayName = (
   weekday: number
 ) => {
   const key = WEEKDAY_KEYS[weekday - 1] ?? 'monday';
-  return t(`mealPlans.weekdays.${key}`, {
-    defaultValue: key.charAt(0).toUpperCase() + key.slice(1),
-  });
+  switch (key) {
+    case 'monday':
+      return t('mealPlans.weekdays.monday', { defaultValue: 'Monday' });
+    case 'tuesday':
+      return t('mealPlans.weekdays.tuesday', { defaultValue: 'Tuesday' });
+    case 'wednesday':
+      return t('mealPlans.weekdays.wednesday', { defaultValue: 'Wednesday' });
+    case 'thursday':
+      return t('mealPlans.weekdays.thursday', { defaultValue: 'Thursday' });
+    case 'friday':
+      return t('mealPlans.weekdays.friday', { defaultValue: 'Friday' });
+    case 'saturday':
+      return t('mealPlans.weekdays.saturday', { defaultValue: 'Saturday' });
+    case 'sunday':
+      return t('mealPlans.weekdays.sunday', { defaultValue: 'Sunday' });
+  }
 };

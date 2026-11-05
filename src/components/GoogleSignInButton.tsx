@@ -2,15 +2,19 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import GoogleLogo from './GoogleLogo';
 import Button from './ui/Button';
+import LiquidGlassSurface from './LiquidGlassSurface';
+import { useLiquidGlassActive } from '../services/nativeTabBarPreference';
 import { fireSelectionHaptic } from '../services/haptics';
 
 const GOOGLE_TEXT = '#1F1F1F';
-const GOOGLE_BORDER = '#747775';
+const GOOGLE_WHITE = '#FFFFFF';
 
 /**
- * Sign in with Google, drawn in Google's light style (white capsule, grey
- * outline, dark label) under the Apple button, and labelled from the app's
- * own translations for the same reason AppleSignInButton is.
+ * Sign in with Google in Google's light style (white capsule, dark label),
+ * labelled from the app's own translations for the same reason
+ * AppleSignInButton is. Built like the Apple button above it: a white-tinted
+ * Liquid Glass capsule where glass is on, a filled white one elsewhere, and
+ * no outline either way.
  */
 export default function GoogleSignInButton({
   onPress,
@@ -32,19 +36,16 @@ export default function GoogleSignInButton({
       : t('online.continueWithGoogle', {
           defaultValue: 'Continue with Google',
         });
-  return (
+  const usesGlass = useLiquidGlassActive();
+  const button = (
     <Button
-      variant="primary"
+      variant={usesGlass ? 'ghost' : 'primary'}
       className="rounded-full"
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
-      style={{
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: GOOGLE_BORDER,
-      }}
+      style={usesGlass ? undefined : { backgroundColor: GOOGLE_WHITE }}
       onPress={() => {
         fireSelectionHaptic();
         onPress();
@@ -68,5 +69,17 @@ export default function GoogleSignInButton({
         </Text>
       </View>
     </Button>
+  );
+
+  if (!usesGlass) return button;
+
+  return (
+    <LiquidGlassSurface
+      isInteractive
+      tintColor={GOOGLE_WHITE}
+      style={{ borderRadius: 999, overflow: 'hidden' }}
+    >
+      {button}
+    </LiquidGlassSurface>
   );
 }

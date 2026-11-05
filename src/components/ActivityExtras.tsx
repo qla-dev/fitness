@@ -1,7 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { useCSSVariable } from 'uniwind';
-import type { ActivityExtraBlock } from '../constants/activityExtras';
+import {
+  activityExtraTitle,
+  type ActivityExtraBlock,
+} from '../constants/activityExtras';
 import type { RecordingSource } from '../utils/activityRecordingSource';
 import DashboardCardTitle from './DashboardCardTitle';
 import Icon from './Icon';
@@ -148,7 +151,7 @@ export default function ActivityExtras({
         <View key={block.titleKey} className="bg-surface rounded-2xl p-4 mb-3">
           <View className="mb-3">
             <DashboardCardTitle>
-              {t(block.titleKey, { defaultValue: block.defaultTitle })}
+              {activityExtraTitle(t, block.titleKey)}
             </DashboardCardTitle>
           </View>
           {block.kind === 'heatmap' ? (

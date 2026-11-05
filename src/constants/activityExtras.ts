@@ -10,23 +10,43 @@ import { resolveActivityKind } from '../services/shared/writebackActivityTypes';
  * would grow a second axis through all of it. A block names its kind and hands
  * over only the numbers; the screen owns how each kind draws.
  */
+/** The block titles, as static keys so the i18n audit can see them. */
+export type ActivityExtraTitleKey =
+  | 'activityExtras.heatmap'
+  | 'activityExtras.sprints'
+  | 'activityExtras.shooting';
+
+export const activityExtraTitle = (
+  t: TFunction,
+  key: ActivityExtraTitleKey
+): string => {
+  switch (key) {
+    case 'activityExtras.heatmap':
+      return t('activityExtras.heatmap', { defaultValue: 'Position heatmap' });
+    case 'activityExtras.sprints':
+      return t('activityExtras.sprints', { defaultValue: 'Sprints & speed' });
+    case 'activityExtras.shooting':
+      return t('activityExtras.shooting', { defaultValue: 'Shooting' });
+  }
+};
+
 export type ActivityExtraBlock =
   | {
       kind: 'metrics';
-      titleKey: string;
+      titleKey: ActivityExtraTitleKey;
       defaultTitle: string;
       items: { label: string; value: string }[];
     }
   | {
       kind: 'heatmap';
-      titleKey: string;
+      titleKey: ActivityExtraTitleKey;
       defaultTitle: string;
       /** Row-major occupancy grid, 0..1, drawn over a pitch. */
       grid: number[][];
     }
   | {
       kind: 'shooting';
-      titleKey: string;
+      titleKey: ActivityExtraTitleKey;
       defaultTitle: string;
       made: number;
       attempted: number;
@@ -72,7 +92,9 @@ const buildHeatmap = (session: ExerciseSessionResponse): ActivityExtraBlock => {
       // Weighted toward the middle third, which is where a field player spends
       // most of a match — a flat random grid reads as noise, not a heatmap.
       const centreBias = 1 - Math.abs(c - (cols - 1) / 2) / ((cols - 1) / 2);
-      row.push(Math.min(1, pseudo(seed, r * cols + c) * 0.6 + centreBias * 0.5));
+      row.push(
+        Math.min(1, pseudo(seed, r * cols + c) * 0.6 + centreBias * 0.5)
+      );
     }
     grid.push(row);
   }
@@ -127,7 +149,9 @@ const buildShooting = (
   const seed = seedOf(session);
   const zone = (index: number, label: string, cap: number) => {
     const attempted = 2 + Math.round(pseudo(seed, index) * cap);
-    const made = Math.round(attempted * (0.3 + pseudo(seed, index + 20) * 0.45));
+    const made = Math.round(
+      attempted * (0.3 + pseudo(seed, index + 20) * 0.45)
+    );
     return { zone: label, made, attempted };
   };
   const zones = [

@@ -221,11 +221,13 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
   }, [food.customNutrients, food.variantId, selectedVariantId, variants]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
     setFood(item);
   }, [item]);
 
   useEffect(() => {
     if (updatedItem) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- applies a one-shot navigation param, then clears it
       setFood(updatedItem);
       setSelectedVariantId(updatedSelectedVariantId ?? updatedItem.variantId);
       navigation.setParams({
@@ -237,6 +239,7 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
 
   useEffect(() => {
     if (updatedBarcode !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- applies a one-shot navigation param, then clears it
       setFood((prev) => ({ ...prev, barcode: updatedBarcode }));
       navigation.setParams({ updatedBarcode: undefined });
     }
@@ -244,6 +247,7 @@ const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({
 
   useEffect(() => {
     if (!selectedVariantId && localVariantOptions.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- defaults the selection once the variants arrive
       setSelectedVariantId(localVariantOptions[0].id);
     }
   }, [selectedVariantId, localVariantOptions]);

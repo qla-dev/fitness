@@ -157,10 +157,45 @@ export default function OnlineAccountScreen({
         defaultValue:
           'Create your free account to get 30 AI coins for MarkAI and keep your synced diary when you change phones.',
       })}
-      footerLabel={t('online.skip', { defaultValue: 'Continue offline' })}
-      onFooterPress={finish}
-      footerDisabled={busy}
+      // Skipping is the quiet way out, so it sits in the header as a text
+      // action, the way Usage does on MarkAI history; the footer is left to
+      // the sign-in buttons.
+      headerRight={{
+        kind: 'text',
+        label: t('online.skip', { defaultValue: 'Continue offline' }),
+        onPress: finish,
+        disabled: busy,
+      }}
       dismissDisabled={busy}
+      // Every choice sits in the footer, so the page above can scroll on a
+      // small phone without pushing a sign-in button out of reach.
+      topAligned
+      footerAbove={
+        apple.available || google.available ? (
+          <>
+            {/* Beside the buttons that raised it, not off in the scroll. */}
+            {error && (
+              <Text accessibilityRole="alert" className="text-text-primary">
+                {error}
+              </Text>
+            )}
+            {apple.available && (
+              <AppleSignInButton
+                disabled={busy}
+                busy={apple.busy}
+                onPress={() => void apple.signIn()}
+              />
+            )}
+            {google.available && (
+              <GoogleSignInButton
+                disabled={busy}
+                busy={google.busy}
+                onPress={() => void google.signIn()}
+              />
+            )}
+          </>
+        ) : undefined
+      }
     >
       <View className="gap-6">
         <AccountIllustration />
@@ -196,36 +231,12 @@ export default function OnlineAccountScreen({
             })}
           />
         </View>
-        {apple.available || google.available ? (
-          // Each button shows its own spinner while its sheet opens, so
-          // nothing appears under it and it stays where it was tapped.
-          <View className="gap-3">
-            {apple.available && (
-              <AppleSignInButton
-                disabled={busy}
-                busy={apple.busy}
-                onPress={() => void apple.signIn()}
-              />
-            )}
-            {google.available && (
-              <GoogleSignInButton
-                disabled={busy}
-                busy={google.busy}
-                onPress={() => void google.signIn()}
-              />
-            )}
-          </View>
-        ) : (
+        {apple.available || google.available ? null : (
           <Text className="text-text-secondary">
             {t('online.appleOnly', {
               defaultValue:
                 'Apple sign-in is available on supported Apple devices. You can keep using the app offline.',
             })}
-          </Text>
-        )}
-        {error && (
-          <Text accessibilityRole="alert" className="text-text-primary">
-            {error}
           </Text>
         )}
       </View>

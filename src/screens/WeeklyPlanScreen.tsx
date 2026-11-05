@@ -97,10 +97,33 @@ function WeeklyPlanContent({
     left: { kind: 'back' },
   });
 
-  const slotName = (slot: string) =>
-    t(`weeklyPlans.slots.${slot}`, {
-      defaultValue: slot.charAt(0).toUpperCase() + slot.slice(1),
-    });
+  const slotName = (slot: string) => {
+    switch (slot) {
+      case 'breakfast':
+        return t('weeklyPlans.slots.breakfast', { defaultValue: 'Breakfast' });
+      case 'lunch':
+        return t('weeklyPlans.slots.lunch', { defaultValue: 'Lunch' });
+      case 'dinner':
+        return t('weeklyPlans.slots.dinner', { defaultValue: 'Dinner' });
+      case 'snack':
+        return t('weeklyPlans.slots.snack', { defaultValue: 'Snack' });
+      default:
+        return slot.charAt(0).toUpperCase() + slot.slice(1);
+    }
+  };
+
+  const unitName = (unit: string) => {
+    switch (unit) {
+      case 'g':
+        return t('weeklyPlans.units.g', { defaultValue: 'g' });
+      case 'ml':
+        return t('weeklyPlans.units.ml', { defaultValue: 'ml' });
+      case 'piece':
+        return t('weeklyPlans.units.piece', { defaultValue: 'pcs' });
+      default:
+        return unit;
+    }
+  };
 
   const openList = (target: WeeklyPlan, days: PlanDay[], name: string) => {
     fireSelectionHaptic();
@@ -377,12 +400,7 @@ function WeeklyPlanContent({
                           >
                             {`${formatLocalizedNumber(
                               Math.round(ingredient.quantity * 10) / 10
-                            )} ${t(`weeklyPlans.units.${ingredient.unit}`, {
-                              defaultValue:
-                                ingredient.unit === 'piece'
-                                  ? 'pcs'
-                                  : ingredient.unit,
-                            })}`}
+                            )} ${unitName(ingredient.unit)}`}
                           </Text>
                         </MenuItem>
                       </Pressable>

@@ -1,4 +1,5 @@
 import ProfileSummary from '../components/ProfileSummary';
+import AppleHealthIcon from '../components/AppleHealthIcon';
 import {
   onlineRequest,
   updateOnlineAccount,
@@ -41,6 +42,8 @@ import { useDiscreetMode } from '../hooks/useDiscreetMode';
 import type { RootStackScreenProps } from '../types/navigation';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 import { getAppLocale } from '../localization';
+
+const FITPASS_ICON = require('../../assets/brand/fitpass-glyph.png');
 
 type SettingsScreenProps = RootStackScreenProps<'Profile'>;
 
@@ -99,7 +102,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     catCalories,
     catBlue,
     catAmber,
-    catGreen,
+    ,
     catTeal,
   ] = useCSSVariable([
     '--color-cat-slate',
@@ -269,13 +272,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             >
               <SettingsRow
                 icon="health-data-sync"
+                // The Health app's own icon on iOS; Health Connect keeps the
+                // glyph, which is not Apple's mark.
+                iconElement={
+                  Platform.OS === 'ios' ? <AppleHealthIcon /> : undefined
+                }
                 title={
                   Platform.OS === 'android'
                     ? t('settings.rows.healthConnectSync', {
-                        defaultValue: 'Health Connect Data Sync',
+                        defaultValue: 'Health Connect Connector',
                       })
                     : t('settings.rows.appleHealthSync', {
-                        defaultValue: 'Apple Health Data Sync',
+                        defaultValue: 'Apple Health Connector',
                       })
                 }
                 subtitle={syncSubtitle}
@@ -283,15 +291,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 iconColor={catPink}
               />
               <SettingsRow
-                icon="exercise-weights"
+                iconImage={FITPASS_ICON}
                 title={t('settings.rows.fitPassSync', {
-                  defaultValue: 'FitPass Sync',
+                  defaultValue: 'FitPass Connector',
                 })}
                 subtitle={t('fitPass.rowSubtitle', {
                   defaultValue: 'Bring your gym visits into the diary',
                 })}
                 onPress={() => fitPassSheet.current?.present()}
-                iconColor={catGreen}
               />
             </SettingsRowGroup>
 

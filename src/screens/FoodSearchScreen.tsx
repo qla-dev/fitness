@@ -269,6 +269,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
       preferences?.food_search_all_providers_default &&
       providers.length > 1
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- applies the saved provider preference once providers load
       setSelectedProvider(ALL_PROVIDERS_VALUE);
       return;
     }
@@ -339,6 +340,7 @@ const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({
   const [showAllFoods, setShowAllFoods] = useState(false);
   const [showAllMeals, setShowAllMeals] = useState(false);
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new query collapses the lists again
     setShowAllFoods(false);
     setShowAllMeals(false);
   }, [searchText]);

@@ -206,6 +206,7 @@ const WorkoutAddScreen: React.FC<Props> = ({ navigation, route }) => {
 
     // One-time initialization from the async-loaded session; setting state
     // synchronously here is intentional and mirrors the populate() side effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initialization from the async-loaded session
     setHasPopulatedEdit(true);
     populate(session, weightUnit as 'kg' | 'lbs', distanceUnit);
   }, [

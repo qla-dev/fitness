@@ -3,11 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { View, Text } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCSSVariable } from 'uniwind';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
 
-import Icon from '../components/Icon';
+import CoverFact from '../components/CoverFact';
 import BottomSheetPicker from '../components/BottomSheetPicker';
 import FormInput from '../components/FormInput';
 import SettingsRow, {
@@ -33,6 +32,7 @@ import {
   type GoalMode,
 } from '@workspace/shared';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
+import { formatLocalizedNumber } from '../localization';
 
 type CalorieSettingsScreenProps = RootStackScreenProps<'CalorieSettings'>;
 
@@ -191,9 +191,6 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
   const insets = useSafeAreaInsets();
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
-  const [accentPrimary] = useCSSVariable(['--color-accent-primary']) as [
-    string,
-  ];
 
   const queryClient = useQueryClient();
   const { preferences } = usePreferences();
@@ -377,7 +374,6 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
   }, [goalModePercentageText, mutation, normalized.goalModeCustomPercentage]);
 
   const optionsLayout = LinearTransition.delay(0).duration(250);
-  const pipelineLayout = LinearTransition.delay(50).duration(250);
 
   const showPercentage = normalized.mode === 'percentage';
   const showActivityLevel =
@@ -387,76 +383,68 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
   const explanation = useMemo(() => {
     const mode = normalized.mode;
     const bmr = normalized.includeBmrInNetCalories;
-    const pct = normalized.exerciseCaloriePercentage;
+    const percentage = formatLocalizedNumber(
+      normalized.exerciseCaloriePercentage
+    );
 
     const burned =
       mode === 'tdee'
-        ? t('calorieSettings.formulas.projectedTotal', {
+        ? t('calorieSettings.guide.burnedProjection', {
             defaultValue:
-              'Health Connect total calories (BMR + active calories fallback)',
+              'Your device estimates the energy you use throughout the day. If its total is missing, the app uses resting energy and activity instead.',
           })
         : bmr
-          ? t('calorieSettings.formulas.activityWithBmr', {
-              defaultValue: 'Activity + BMR',
+          ? t('calorieSettings.guide.burnedWithResting', {
+              defaultValue:
+                'Burned calories include your activity and the energy your body uses at rest (BMR).',
             })
-          : t('calorieSettings.formulas.activityOnly', {
-              defaultValue: 'Activity only (exercise + steps)',
+          : t('calorieSettings.guide.burnedActivity', {
+              defaultValue:
+                'Burned calories come from your recorded activity. Turn on Include Resting Calories to count the energy your body uses at rest too.',
             });
-    const net = t('calorieSettings.formulas.eatenBurned', {
-      defaultValue: 'Eaten − Burned',
-    });
 
-    let remainingFormula: string;
-    let remainingNote: string | null;
+    let remaining: string;
     switch (mode) {
       case 'dynamic':
-        remainingFormula = t('calorieSettings.formulas.dynamic', {
-          defaultValue: 'Goal − Net Energy',
-        });
-        remainingNote = t('calorieSettings.notes.dynamic', {
-          defaultValue: 'Goal grows as you move',
+        remaining = t('calorieSettings.guide.remainingDynamic', {
+          defaultValue:
+            'Your daily target minus eaten calories, with burned calories added back. Moving more leaves more room in your budget.',
         });
         break;
       case 'percentage':
-        remainingFormula = bmr
-          ? t('calorieSettings.formulas.percentageWithBmr', {
-              defaultValue: 'Goal − Eaten + BMR + {{percentage}}% of Exercise',
-              percentage: pct,
+        remaining = bmr
+          ? t('calorieSettings.guide.remainingPercentageWithResting', {
+              defaultValue:
+                'Your daily target minus eaten calories, plus resting calories and {{percentage}}% of your exercise calories.',
+              percentage,
             })
-          : t('calorieSettings.formulas.percentage', {
-              defaultValue: 'Goal − Eaten + {{percentage}}% of Exercise',
-              percentage: pct,
+          : t('calorieSettings.guide.remainingPercentage', {
+              defaultValue:
+                'Your daily target minus eaten calories, plus {{percentage}}% of your exercise calories. Change the percentage to choose how much exercise adds back.',
+              percentage,
             });
-        remainingNote = null;
         break;
       case 'tdee':
-        remainingFormula = t('calorieSettings.formulas.tdee', {
-          defaultValue: 'Projected TDEE × Goal Mode − Eaten',
-        });
-        remainingNote = t('calorieSettings.notes.tdee', {
+        remaining = t('calorieSettings.guide.remainingProjection', {
           defaultValue:
-            'The projection converges with the device total at midnight',
+            "The app estimates your full-day burn, applies Goal Mode, then subtracts eaten calories. Today's estimate updates as device data arrives.",
         });
         break;
       case 'adaptive':
-        remainingFormula = t('calorieSettings.formulas.adaptive', {
-          defaultValue: 'Goal − Eaten',
-        });
-        remainingNote = t('calorieSettings.notes.adaptive', {
-          defaultValue: 'Goal = Adaptive TDEE',
+        remaining = t('calorieSettings.guide.remainingAdaptive', {
+          defaultValue:
+            'Your target uses an estimate from your body data and Activity Level, or your saved goal if body data is missing. Eaten calories are subtracted from that target.',
         });
         break;
       default:
-        remainingFormula = t('calorieSettings.formulas.fixed', {
-          defaultValue: 'Goal − Eaten',
-        });
-        remainingNote = t('calorieSettings.notes.fixed', {
-          defaultValue: 'Activity does not change your budget',
+        remaining = t('calorieSettings.guide.remainingFixed', {
+          defaultValue:
+            'Your daily target minus eaten calories. Activity is shown in your diary, but does not add calories to this budget.',
         });
         break;
     }
 
-    return { burned, net, remainingFormula, remainingNote };
+    return { burned, remaining };
   }, [
     normalized.mode,
     normalized.includeBmrInNetCalories,
@@ -606,12 +594,20 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
           {/* Negative Adjustment Toggle */}
           {showNegativeAdjustment && (
             <Animated.View layout={optionsLayout}>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-base font-semibold text-text-primary">
-                  {t('calorieSettings.allowNegative', {
-                    defaultValue: 'Allow Lower Fallback Projection',
-                  })}
-                </Text>
+              <View className="flex-row items-center gap-4">
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-text-primary">
+                    {t('calorieSettings.allowNegative', {
+                      defaultValue: 'Allow Lower Fallback Projection',
+                    })}
+                  </Text>
+                  <Text className="text-text-secondary text-sm mt-1">
+                    {t('calorieSettings.negativeDescription', {
+                      defaultValue:
+                        'When a device total is unavailable, let the BMR + active calories fallback lower your target.',
+                    })}
+                  </Text>
+                </View>
                 <Switch
                   onValueChange={handleNegativeAdjustmentToggle}
                   value={normalized.tdeeAllowNegativeAdjustment}
@@ -620,38 +616,37 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
                   })}
                 />
               </View>
-              <Text className="text-text-secondary text-sm mt-3">
-                {t('calorieSettings.negativeDescription', {
-                  defaultValue:
-                    'When a device total is unavailable, let the BMR + active calories fallback lower your target.',
-                })}
-              </Text>
               <View className="border-t border-border-subtle my-3" />
             </Animated.View>
           )}
 
           {/* BMR Toggle */}
-          <Animated.View layout={optionsLayout}>
-            <View className="flex-row justify-between items-center">
+          {/* Laid out like a settings switch row: title over its line, the
+              switch beside both and centred on them. */}
+          <Animated.View
+            layout={optionsLayout}
+            className="flex-row items-center gap-4"
+          >
+            <View className="flex-1">
               <Text className="text-base font-semibold text-text-primary">
                 {t('calorieSettings.includeResting', {
                   defaultValue: 'Include Resting Calories',
                 })}
               </Text>
-              <Switch
-                onValueChange={handleBmrToggle}
-                value={normalized.includeBmrInNetCalories}
-                accessibilityLabel={t('calorieSettings.includeResting', {
-                  defaultValue: 'Include Resting Calories',
+              <Text className="text-text-secondary text-sm mt-1">
+                {t('calorieSettings.includeRestingDescription', {
+                  defaultValue:
+                    'Include your baseline energy (BMR) in net calculations.',
                 })}
-              />
+              </Text>
             </View>
-            <Text className="text-text-secondary text-sm mt-3">
-              {t('calorieSettings.includeRestingDescription', {
-                defaultValue:
-                  'Include your baseline energy (BMR) in net calculations.',
+            <Switch
+              onValueChange={handleBmrToggle}
+              value={normalized.includeBmrInNetCalories}
+              accessibilityLabel={t('calorieSettings.includeResting', {
+                defaultValue: 'Include Resting Calories',
               })}
-            </Text>
+            />
           </Animated.View>
         </Animated.View>
 
@@ -794,80 +789,46 @@ const CalorieSettingsScreen: React.FC<CalorieSettingsScreenProps> = () => {
           </SettingsRowGroup>
         </Animated.View>
 
-        {/* Calculation Pipeline */}
-        <Animated.View
-          className="rounded-xl p-4 mb-4"
-          layout={pipelineLayout}
-          style={{ backgroundColor: `${accentPrimary}15` }}
-        >
-          <View className="flex-row items-center mb-4">
-            <Icon name="info-circle" size={18} color={accentPrimary} />
-            <Text className="text-base font-semibold text-text-primary ml-2">
-              {t('calorieSettings.howThisWorks', {
-                defaultValue: 'How this works',
-              })}
-            </Text>
-          </View>
-
-          <Animated.View className="items-center" layout={pipelineLayout}>
-            {/* Step 1: Burned */}
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.burnedCalories', {
-                defaultValue: 'Burned Calories',
-              })}
-            </Text>
-            <Animated.View
-              key={`burned-${explanation.burned}`}
-              layout={pipelineLayout}
-            >
-              <Text className="text-sm text-text-secondary">
-                {explanation.burned}
-              </Text>
-            </Animated.View>
-
-            <Text className="text-text-muted text-lg my-1">{'\u2193'}</Text>
-
-            {/* Step 2: Net */}
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.netEnergy', { defaultValue: 'Net Energy' })}
-            </Text>
-            <Animated.View
-              key={`net-${explanation.net}`}
-              layout={pipelineLayout}
-            >
-              <Text className="text-sm text-text-secondary">
-                {explanation.net}
-              </Text>
-            </Animated.View>
-
-            <Text className="text-text-muted text-lg my-1">{'\u2193'}</Text>
-
-            {/* Step 3: Remaining */}
-            <Text className="text-base font-semibold text-text-primary">
-              {t('calorieSettings.remainingCalories', {
-                defaultValue: 'Remaining Calories',
-              })}
-            </Text>
-            <Animated.View
-              key={`remaining-${explanation.remainingFormula}`}
-              layout={pipelineLayout}
-            >
-              <Text className="text-sm text-text-secondary">
-                {explanation.remainingFormula}
-              </Text>
-            </Animated.View>
-            {explanation.remainingNote && (
-              <Animated.View
-                key={`note-${explanation.remainingNote}`}
-                layout={pipelineLayout}
-              >
-                <Text className="text-sm text-text-secondary mt-2 italic">
-                  ({explanation.remainingNote})
-                </Text>
-              </Animated.View>
-            )}
-          </Animated.View>
-        </Animated.View>
+        <View className="pt-6" testID="calorie-settings-guide">
+          <Text
+            accessibilityRole="header"
+            className="text-xl font-bold text-text-primary mb-2"
+          >
+            {t('calorieSettings.howThisWorks', {
+              defaultValue: 'How this works',
+            })}
+          </Text>
+          <Text className="text-base leading-6 text-text-secondary mb-4">
+            {t('calorieSettings.guide.intro', {
+              defaultValue:
+                'Choose how activity affects your target. Goal Mode adjusts it, and Safety Floor sets a minimum when enabled.',
+            })}
+          </Text>
+          <CoverFact
+            image={require('../../assets/goal-facts/calorie-burn.jpg')}
+            title={t('calorieSettings.burnedCalories', {
+              defaultValue: 'Burned Calories',
+            })}
+            body={explanation.burned}
+          />
+          <CoverFact
+            image={require('../../assets/goal-facts/calorie-food.jpg')}
+            title={t('calorieSettings.guide.foodTitle', {
+              defaultValue: 'Eaten Calories',
+            })}
+            body={t('calorieSettings.guide.foodBody', {
+              defaultValue:
+                'Add meals and snacks to your diary. Their calories count as eaten; eaten minus burned is your net energy.',
+            })}
+          />
+          <CoverFact
+            image={require('../../assets/goal-facts/calorie-remaining.jpg')}
+            title={t('calorieSettings.remainingCalories', {
+              defaultValue: 'Remaining Calories',
+            })}
+            body={explanation.remaining}
+          />
+        </View>
       </NativeHeaderScrollView>
     </View>
   );

@@ -23,6 +23,7 @@ import {
   registerLocalizedNotificationPresentation,
 } from '../services/notifications';
 import { initMedicationNotificationActions } from '../services/medicationNotificationHandler';
+import { initCycleTrainingNoteResponses } from '../services/cycleTrainingNoteResponse';
 import { initWorkoutLiveActivity } from '../services/workoutLiveActivity';
 import { ensureTimezoneBootstrapped } from '../services/api/preferencesApi';
 import { initializeRecorder } from '../services/recording/recorder';
@@ -91,6 +92,8 @@ export function useAppStartup({ shouldYieldObserverSync }: AppStartupArgs) {
       ]);
     });
     initMedicationNotificationActions();
+    // A tapped cycle training note opens MarkAI on it.
+    initCycleTrainingNoteResponses();
 
     // iOS-only (no-op on Android): keeps the workout Live Activity in sync
     // with the active-workout store.

@@ -60,12 +60,12 @@ const ProgressPhotoViewer: React.FC<ProgressPhotoViewerProps> = ({
   const savedTranslateY = useSharedValue(0);
 
   const resetTransform = useCallback(() => {
-    scale.value = withTiming(1, { duration: RESET_MS });
-    savedScale.value = 1;
-    translateX.value = withTiming(0, { duration: RESET_MS });
-    translateY.value = withTiming(0, { duration: RESET_MS });
-    savedTranslateX.value = 0;
-    savedTranslateY.value = 0;
+    scale.set(withTiming(1, { duration: RESET_MS }));
+    savedScale.set(1);
+    translateX.set(withTiming(0, { duration: RESET_MS }));
+    translateY.set(withTiming(0, { duration: RESET_MS }));
+    savedTranslateX.set(0);
+    savedTranslateY.set(0);
   }, [
     scale,
     savedScale,
@@ -86,17 +86,17 @@ const ProgressPhotoViewer: React.FC<ProgressPhotoViewerProps> = ({
   const pinch = Gesture.Pinch()
     .onUpdate((event) => {
       const next = savedScale.value * event.scale;
-      scale.value = Math.min(Math.max(next, MIN_SCALE), MAX_SCALE);
+      scale.set(Math.min(Math.max(next, MIN_SCALE), MAX_SCALE));
     })
     .onEnd(() => {
-      savedScale.value = scale.value;
+      savedScale.set(scale.value);
       // Snapping back at 1x also recentres, so a pinch-out-then-in cannot
       // strand the photo off-screen.
       if (scale.value <= MIN_SCALE) {
-        translateX.value = withTiming(0, { duration: RESET_MS });
-        translateY.value = withTiming(0, { duration: RESET_MS });
-        savedTranslateX.value = 0;
-        savedTranslateY.value = 0;
+        translateX.set(withTiming(0, { duration: RESET_MS }));
+        translateY.set(withTiming(0, { duration: RESET_MS }));
+        savedTranslateX.set(0);
+        savedTranslateY.set(0);
       }
     });
 
@@ -105,27 +105,27 @@ const ProgressPhotoViewer: React.FC<ProgressPhotoViewerProps> = ({
   const pan = Gesture.Pan()
     .onUpdate((event) => {
       if (scale.value <= MIN_SCALE) return;
-      translateX.value = savedTranslateX.value + event.translationX;
-      translateY.value = savedTranslateY.value + event.translationY;
+      translateX.set(savedTranslateX.value + event.translationX);
+      translateY.set(savedTranslateY.value + event.translationY);
     })
     .onEnd(() => {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
+      savedTranslateX.set(translateX.value);
+      savedTranslateY.set(translateY.value);
     });
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
       if (scale.value > MIN_SCALE) {
-        scale.value = withTiming(1, { duration: RESET_MS });
-        savedScale.value = 1;
-        translateX.value = withTiming(0, { duration: RESET_MS });
-        translateY.value = withTiming(0, { duration: RESET_MS });
-        savedTranslateX.value = 0;
-        savedTranslateY.value = 0;
+        scale.set(withTiming(1, { duration: RESET_MS }));
+        savedScale.set(1);
+        translateX.set(withTiming(0, { duration: RESET_MS }));
+        translateY.set(withTiming(0, { duration: RESET_MS }));
+        savedTranslateX.set(0);
+        savedTranslateY.set(0);
       } else {
-        scale.value = withTiming(2, { duration: RESET_MS });
-        savedScale.value = 2;
+        scale.set(withTiming(2, { duration: RESET_MS }));
+        savedScale.set(2);
       }
     });
 

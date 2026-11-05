@@ -72,6 +72,7 @@
   },
   "fitPass": {
     "title": "FitPass",
+    "comingSoon": "Coming soon",
     "intro": "Sign in to bring your gym visits into your diary automatically.",
     "rowSubtitle": "Bring your gym visits into the diary",
     "username": "Username or email",
@@ -79,7 +80,7 @@
     "password": "Password",
     "syncEnable": "Sync FitPass",
     "syncSubtitle": "Bring new visits in with every health sync",
-    "notLiveNotice": "FitPass syncing is not live yet. Your details are saved on this device only.",
+    "notLiveNotice": "FitPass sync is coming soon. Your details are saved on this device only.",
     "connect": "Connect",
     "disconnect": "Disconnect FitPass",
     "connected": "FitPass connected",
@@ -117,9 +118,9 @@
     "rows": {
       "server": "Server",
       "healthSync": "Health Data Sync",
-      "appleHealthSync": "Apple Health Data Sync",
-      "healthConnectSync": "Health Connect Data Sync",
-      "fitPassSync": "FitPass Sync",
+      "appleHealthSync": "Apple Health Connector",
+      "healthConnectSync": "Health Connect Connector",
+      "fitPassSync": "FitPass Connector",
       "app": "App Settings",
       "calories": "Calories & BMR",
       "food": "Food",
@@ -901,6 +902,20 @@
     "includeResting": "Include Resting Calories",
     "includeRestingDescription": "Include your baseline energy (BMR) in net calculations.",
     "howThisWorks": "How this works",
+    "guide": {
+      "intro": "Choose how activity affects your target. Goal Mode adjusts it, and Safety Floor sets a minimum when enabled.",
+      "burnedProjection": "Your device estimates the energy you use throughout the day. If its total is missing, the app uses resting energy and activity instead.",
+      "burnedWithResting": "Burned calories include your activity and the energy your body uses at rest (BMR).",
+      "burnedActivity": "Burned calories come from your recorded activity. Turn on Include Resting Calories to count the energy your body uses at rest too.",
+      "foodTitle": "Eaten Calories",
+      "foodBody": "Add meals and snacks to your diary. Their calories count as eaten; eaten minus burned is your net energy.",
+      "remainingDynamic": "Your daily target minus eaten calories, with burned calories added back. Moving more leaves more room in your budget.",
+      "remainingPercentageWithResting": "Your daily target minus eaten calories, plus resting calories and {{percentage}}% of your exercise calories.",
+      "remainingPercentage": "Your daily target minus eaten calories, plus {{percentage}}% of your exercise calories. Change the percentage to choose how much exercise adds back.",
+      "remainingProjection": "The app estimates your full-day burn, applies Goal Mode, then subtracts eaten calories. Today's estimate updates as device data arrives.",
+      "remainingAdaptive": "Your target uses an estimate from your body data and Activity Level, or your saved goal if body data is missing. Eaten calories are subtracted from that target.",
+      "remainingFixed": "Your daily target minus eaten calories. Activity is shown in your diary, but does not add calories to this budget."
+    },
     "burnedCalories": "Burned Calories",
     "netEnergy": "Net Energy",
     "remainingCalories": "Remaining Calories",
@@ -2756,10 +2771,6 @@
       "day18": "Day 18",
       "symptomFlowLog": "Symptom & Flow Log",
       "mildNormal": "Mild • Normal",
-      "benchPress": "Bench Press",
-      "threeSets": "3 Sets",
-      "setOneReps": "Set 1: 10 reps",
-      "doneWeight": "80 kg • Done",
       "fauxprofen": "Fauxprofen",
       "dailyDose": "200 mg • Daily",
       "taken": "Taken",
@@ -2767,7 +2778,15 @@
       "caloriesInValue": "1,540",
       "caloriesOutValue": "255",
       "eightAm": "8:00 AM",
-      "eyebrow": "iOS 26"
+      "eyebrow": "iOS 26",
+      "programName": "Strength Foundations",
+      "programWeeks": "8 weeks",
+      "programSessions": "3 sessions a week",
+      "programNutrition": "+ Nutrition plan",
+      "morningRun": "Morning run",
+      "runDistance": "5.2 km",
+      "runPace": "5'12\" /km • 148 bpm",
+      "runTime": "27:04"
     },
     "features": {
       "medications": {
@@ -2780,17 +2799,6 @@
         "eyebrow": "CYCLE & PREGNANCY",
         "headline": "Track your cycle & pregnancy",
         "body": "Comprehensive tracking for cycle phases, symptoms, flow, and pregnancy progress with tailored insights and goal adjustments."
-      },
-      "workout": {
-        "eyebrow": "WORKOUT & EXERCISES",
-        "headline": "Revamped workout workflows",
-        "body": "Streamlined exercise logging, updated exercise library management, and improved multi-set performance tracking."
-      },
-      "ios": {
-        "eyebrow": "iOS 26",
-        "headline": "A Liquid Glass look",
-        "body": "Turn on Liquid Glass navigation for translucent tabs and headers that pick up the color behind them. Toggle it anytime in App settings.",
-        "cta": "Open settings"
       },
       "chat": {
         "eyebrow": "ASK MARKAI",
@@ -2808,6 +2816,17 @@
         "headline": "Snap a meal, log the macros",
         "body": "Estimate nutrition from a photo when you're short on time.",
         "cta": "Try it out"
+      },
+      "programs": {
+        "eyebrow": "TRAINING PROGRAMS",
+        "headline": "Ready-made programs",
+        "body": "Browse 21 training programs in the Exercises tab, each with its sessions and a nutrition plan, and start one in a tap.",
+        "cta": "Browse programs"
+      },
+      "runRide": {
+        "eyebrow": "RUNNING & CYCLING",
+        "headline": "Record runs and rides",
+        "body": "Track distance, pace, speed and your GPS route live, with Bluetooth heart-rate and cadence sensors. Every session lands in your diary."
       }
     }
   },
@@ -5923,7 +5942,7 @@
     "welcome": "Let’s talk about your goals",
     "preview": "Chat preview — AI replies are not connected yet.",
     "proteinPrompt": "Help me with my protein goal",
-    "metricsPrompt": "Explain my daily metrics",
+    "metricsPrompt": "Help me understand my daily metrics.",
     "demoReply": "This is a demo reply. Once connected, AI will help you explore your nutrition goals and daily metrics.",
     "placeholder": "Ask about your metrics…",
     "send": "Send message",
@@ -6277,17 +6296,18 @@
     "signInGeneric": "Sign in",
     "signInGoogle": "Sign in with Google",
     "continueWithGoogle": "Continue with Google",
-    "coins": "AI coins"
+    "coins": "AI coins",
+    "conflictBody": "This device and your account have different versions of some entries. Choose which one to keep below."
   },
   "markai": {
     "title": "MarkAI",
     "macros": "Calculate macros",
     "training": "Moving help",
-    "macrosChip": "All my macronutrients",
-    "trainingChip": "Moving help",
-    "metricsChip": "Daily metrics",
+    "macrosChip": "Calculate my macros",
+    "trainingChip": "Activity ideas",
+    "metricsChip": "Help with daily metrics",
     "allMacros": "Calculate all my macros",
-    "allMacrosPrompt": "Calculate all my macros: calories, protein, carbs and fat for my goal",
+    "allMacrosPrompt": "Calculate my calories and macros for my goal. Ask me for anything you need.",
     "free": "Free chat",
     "dateError": "Enter a valid date as YYYY-MM-DD.",
     "register": "Sign in to get 30 AI coins. Each AI reply costs 1 coin; logging a food card is free.",
@@ -6313,7 +6333,7 @@
     "noHistory": "Your conversations will appear here.",
     "retry": "Not sent. Tap to retry.",
     "logPrompt": "Help me log my meal",
-    "trainingPrompt": "Help me move more and plan my next activity",
+    "trainingPrompt": "Suggest how I could move today.",
     "lessPrompts": "Fewer ideas",
     "morePrompts": "More ideas",
     "analysing": "MarkAI is analysing…",
@@ -6371,8 +6391,8 @@
       "more_other": "+{{count}} more",
       "save": "Save as grocery list"
     },
-    "goalsChip": "My goals",
-    "goalsPrompt": "Look at my daily goals and tell me how I am doing and what to change"
+    "goalsChip": "Help with my goals",
+    "goalsPrompt": "Help me with my goals: how am I doing and what should I change?"
   },
   "weeklyPlans": {
     "addManual": "Build a meal plan yourself",
@@ -6639,7 +6659,8 @@
     "steady": {
       "title": "Steady training today",
       "body": "Day {{day}} of your cycle. Moderate sessions suit this phase; keep an eye on fatigue and sleep."
-    }
+    },
+    "chatFollowUp": "Would you like more information or recommendations for today?"
   },
   "markaiData": {
     "title": "Let MarkAI see your data?",

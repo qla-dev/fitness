@@ -318,10 +318,12 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
       Gesture.Fling()
         .direction(Directions.RIGHT)
         .hitSlop({ left: -BACK_SWIPE_EDGE_WIDTH })
+        // eslint-disable-next-line react-hooks/refs -- gesture callbacks run on fling, never during render
         .onEnd(() => selectAdjacentTab(-1))
         .runOnJS(true),
       Gesture.Fling()
         .direction(Directions.LEFT)
+        // eslint-disable-next-line react-hooks/refs -- gesture callbacks run on fling, never during render
         .onEnd(() => selectAdjacentTab(1))
         .runOnJS(true)
     );
@@ -541,6 +543,7 @@ const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
     nativeTitle: exercise.name,
     borderless: true,
     left: { kind: 'back' },
+    // eslint-disable-next-line react-hooks/refs -- header item handlers run on press, never during render
     right: rightItems.length > 0 ? rightItems : null,
   });
 

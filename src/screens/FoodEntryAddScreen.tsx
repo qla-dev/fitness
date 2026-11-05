@@ -711,6 +711,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
             adjustedUnitSelectionFromNav.variant.id ??
             EXTERNAL_DRAFT_VARIANT_ID,
         };
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- applies a one-shot navigation param
         setSelectedVariantOverride(draftVariant);
         // selectedUnitSelection prefers selectedVariantOverride for UI/re-entry
         // consistency. For local foods, preserve the real persisted
@@ -795,6 +796,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
         selectedVariant?.serving_size,
         resolvedVariant?.servingSize
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setSelectedVariantId(resolvedLocalPickerVariantId);
       if (convertedQuantity !== undefined) {
         setQuantityText(formatServingSizeDisplay(convertedQuantity));
@@ -840,7 +842,7 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
         setQuantityText(String(externalVariant.servingSize));
       }
     },
-    [externalVariantOptions, localVariantOptions]
+    [externalVariantOptions, localVariantOptions, setQuantityText]
   );
 
   // The unit beside the amount opens the servings this food has, so switching

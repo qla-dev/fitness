@@ -2,6 +2,8 @@ import { Alert, Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStorageItem, storageKey } from './storageKeys';
 import * as Notifications from 'expo-notifications';
+// Named: the import plugin cannot see this enum through the namespace.
+import { AndroidImportance } from 'expo-notifications';
 import Toast from 'react-native-toast-message';
 import { addLog } from './LogService';
 import i18n from '../localization/i18n';
@@ -59,12 +61,12 @@ export async function registerLocalizedNotificationPresentation(): Promise<void>
         'notifications.channels.workoutTimer',
         'Workout timer'
       ),
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: AndroidImportance.HIGH,
       enableVibrate: true,
     });
     await Notifications.setNotificationChannelAsync(FASTING_CHANNEL_ID, {
       name: notificationCopy('notifications.channels.fasting', 'Fasting'),
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: AndroidImportance.HIGH,
       enableVibrate: true,
     });
     await Notifications.setNotificationChannelAsync(
@@ -74,7 +76,7 @@ export async function registerLocalizedNotificationPresentation(): Promise<void>
           'notifications.channels.medicationReminders',
           'Medication reminders'
         ),
-        importance: Notifications.AndroidImportance.HIGH,
+        importance: AndroidImportance.HIGH,
         enableVibrate: true,
       }
     );
@@ -119,7 +121,7 @@ export async function ensureMedicationReminderChannel(): Promise<void> {
         'notifications.channels.medicationReminders',
         'Medication reminders'
       ),
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: AndroidImportance.HIGH,
       enableVibrate: true,
     }
   );

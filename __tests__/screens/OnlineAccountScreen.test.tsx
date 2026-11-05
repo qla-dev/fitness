@@ -36,16 +36,21 @@ jest.mock('expo-apple-authentication', () => {
 });
 jest.mock('../../src/components/ui/PromptScreen', () => {
   const { View, Button } = require('react-native');
+  // The page, its footer actions and the header's text action, as the
+  // screen hands them over.
   return ({
     children,
-    onFooterPress,
+    footerAbove,
+    headerRight,
   }: {
     children: React.ReactNode;
-    onFooterPress: () => void;
+    footerAbove?: React.ReactNode;
+    headerRight: { label: string; onPress: () => void };
   }) => (
     <View>
       {children}
-      <Button title="Continue offline" onPress={onFooterPress} />
+      {footerAbove}
+      <Button title={headerRight.label} onPress={headerRight.onPress} />
     </View>
   );
 });
@@ -60,7 +65,9 @@ it('closes after authentication without waiting for sync or showing a credit scr
   jest.mocked(signInWithApple).mockResolvedValue(true);
   jest.mocked(syncOnline).mockReturnValue(new Promise(() => {}));
   const screen = render(<OnlineAccountScreen {...props} />);
-  await waitFor(() => expect(screen.getByText('Continue with Apple')).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getByText('Continue with Apple')).toBeTruthy()
+  );
   fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(goBack).toHaveBeenCalledTimes(1));
   expect(syncOnline).toHaveBeenCalledTimes(1);
@@ -71,7 +78,9 @@ it('keeps the sign-in sheet open when authentication fails', async () => {
   goBack.mockClear();
   jest.mocked(signInWithApple).mockRejectedValue(new Error('Sign-in failed'));
   const screen = render(<OnlineAccountScreen {...props} />);
-  await waitFor(() => expect(screen.getByText('Continue with Apple')).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getByText('Continue with Apple')).toBeTruthy()
+  );
   fireEvent.press(screen.getByText('Continue with Apple'));
   await waitFor(() => expect(screen.getByText('Sign-in failed')).toBeTruthy());
   expect(goBack).not.toHaveBeenCalled();
@@ -82,7 +91,9 @@ it('signs in with Google beside Apple', async () => {
   jest.mocked(signInWithGoogle).mockResolvedValue(true);
   jest.mocked(syncOnline).mockReturnValue(new Promise(() => {}));
   const screen = render(<OnlineAccountScreen {...props} />);
-  await waitFor(() => expect(screen.getByText('Continue with Google')).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getByText('Continue with Google')).toBeTruthy()
+  );
   expect(screen.getByText('Continue with Apple')).toBeTruthy();
   fireEvent.press(screen.getByText('Continue with Google'));
   await waitFor(() => expect(goBack).toHaveBeenCalledTimes(1));

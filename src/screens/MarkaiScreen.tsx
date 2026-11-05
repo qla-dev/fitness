@@ -153,6 +153,12 @@ function MarkaiContent() {
   const pendingPreset = useRef(route.params?.preset ?? null);
   // Opened by the questionnaire: a proposed goal goes back to it.
   const returnToSetup = useRef(!!route.params?.preset?.returnToSetup);
+  // An opener shown in a conversation the server has not seen yet. It goes
+  // out with the user's first message there, so the server keeps it in the
+  // thread and MarkAI knows what is being answered.
+  const unsavedOpener = useRef<{ conversation: string; text: string } | null>(
+    null
+  );
   const accent = useCSSVariable('--color-accent-primary') as string;
   const { preferences } = usePreferences();
   const distanceUnit =
@@ -513,6 +519,9 @@ function MarkaiContent() {
         ...(image ? { image: image.data } : null),
         ...(task ? { task } : null),
         ...(context ? { context } : null),
+        ...(unsavedOpener.current?.conversation === conversation
+          ? { opener: unsavedOpener.current.text }
+          : null),
         // The phone's own language (hr-BA, sr-RS, …), so MarkAI writes the
         // right variant: ijekavian for Bosnian and Croatian, ekavian for
         // Serbian. A meal plan sends its own language below.
@@ -534,6 +543,8 @@ function MarkaiContent() {
           : null),
       });
       delivered = true;
+      if (unsavedOpener.current?.conversation === conversation)
+        unsavedOpener.current = null;
       // The planned week is saved on the device under the reply's id, so its
       // card opens it, and becomes the active plan.
       if (response.reply.meal_plan) {
@@ -604,7 +615,28 @@ function MarkaiContent() {
   // it in and an account to send it from.
   useEffect(() => {
     const preset = pendingPreset.current;
-    if (!preset || loading || busy || !conversation || !session) return;
+    if (!preset || loading || busy || !conversation) return;
+    // An opener is MarkAI speaking first: shown at once, nothing sent, so it
+    // costs nothing until the user answers it.
+    if (preset.opener) {
+      pendingPreset.current = null;
+      unsavedOpener.current = { conversation, text: preset.opener };
+      setMessages([
+        {
+          id: randomUUID(),
+          prompt: '',
+          reply: {
+            text: preset.opener,
+            food: null,
+            food_id: '',
+            log_requested: false,
+            opener: true,
+          },
+        },
+      ]);
+      return;
+    }
+    if (!session) return;
     pendingPreset.current = null;
     void send(
       preset.prompt,
@@ -739,6 +771,10 @@ function MarkaiContent() {
             },
             emptyLift,
           ]}
+          // A tap on the empty space puts the keyboard away, as it does in
+          // the chat; the suggestions still take their own taps first.
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={() => Keyboard.dismiss()}
         >
           <MarkaiEmptyState
             disabled={busy || loading || !session}
@@ -808,11 +844,14 @@ function MarkaiContent() {
           {loading ? <ActivityIndicator /> : null}
           {messages.map((message) => (
             <View key={message.id} style={{ gap: 22 }}>
-              <MarkaiUserMessage
-                text={message.label || message.prompt}
-                imageUri={message.imageUri}
-                hasImage={message.has_image}
-              />
+              {/* An opener is MarkAI speaking first: no user turn above it. */}
+              {message.reply.opener ? null : (
+                <MarkaiUserMessage
+                  text={message.label || message.prompt}
+                  imageUri={message.imageUri}
+                  hasImage={message.has_image}
+                />
+              )}
               {typingId === message.id ? (
                 <MarkaiTypewriterText
                   text={plainReplyText(message.reply.text)}

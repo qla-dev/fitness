@@ -4,8 +4,6 @@ import type {
   RecordingGoal,
   RecordingSport,
 } from '../services/recording/types';
-
-type WorkoutGoalKind = 'time' | 'distance' | 'calories';
 import type { HealthTrendKey } from '../constants/healthTrends';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -41,6 +39,8 @@ import type { MealPlanPickerTarget, MealPlanTemplate } from './mealPlans';
 import type { WorkoutPreset } from './workoutPresets';
 import type { MarkaiTask, MealPlanRequest } from '../services/online/markai';
 
+type WorkoutGoalKind = 'time' | 'distance' | 'calories';
+
 export type FoodPickerMode =
   'log-entry' | 'meal-builder' | 'meal-plan' | 'library';
 
@@ -72,6 +72,12 @@ export type RootStackParamList = {
           label?: string;
           mode: 'macros' | 'training' | 'free';
           returnToSetup?: boolean;
+          /**
+           * Opens the new conversation with this as MarkAI's own message and
+           * sends nothing: the user answers it. A tapped cycle training note
+           * arrives this way, its text as the opener.
+           */
+          opener?: string;
           /** A priced request, such as the ten-coin macro plan. */
           task?: MarkaiTask;
           /** What a `meal_plan` task plans the week from. */

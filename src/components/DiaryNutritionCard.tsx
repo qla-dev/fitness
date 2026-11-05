@@ -350,11 +350,20 @@ export default function DiaryNutritionCard({
   );
   const { paddingLeft, scrollX } = centreStrip(stripWidth);
 
-  // Re-centre on entry, expansion or a viewport resize, never on data updates.
+  // Centre on first entry, on expanding the strip again or on a viewport
+  // resize; never on data updates, and never on regaining focus. Coming back
+  // from a goal opened off one of these rings re-focused the screen and threw
+  // the strip back to the middle, away from the ring the user had scrolled to.
+  const centredAt = useRef<number | null>(null);
   useEffect(() => {
-    if (!isFocused || !macrosVisible) return;
+    if (!macrosVisible) {
+      centredAt.current = null;
+      return;
+    }
+    if (!isFocused || centredAt.current === scrollX) return;
     const frame = requestAnimationFrame(() => {
       macroStripRef.current?.scrollTo({ x: scrollX, animated: false });
+      centredAt.current = scrollX;
     });
     return () => cancelAnimationFrame(frame);
   }, [isFocused, macrosVisible, scrollX, stripWidth]);

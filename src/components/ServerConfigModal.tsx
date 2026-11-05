@@ -71,6 +71,9 @@ interface ServerConfigModalProps {
   onDismiss: () => void;
 }
 
+/** A new config's id; outside the component, as a clock read is not render-pure. */
+const newConfigId = () => Date.now().toString();
+
 const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
   visible,
   editingConfig,
@@ -102,6 +105,9 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
   const [password, setPassword] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [proxyHeaders, setProxyHeaders] = useState<ProxyHeader[]>([]);
+  /** Strip empty rows so we only persist real headers. */
+  const cleanedHeaders = () =>
+    proxyHeaders.filter((h) => h.name.trim() && h.value.trim());
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -127,6 +133,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
   // Reset form when modal opens or closes
   useEffect(() => {
     if (!visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the form each time the modal opens or closes
       setServerUrl('');
       setError('');
       setAuthSettings(null);
@@ -150,7 +157,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     setShowHeaders({});
 
     setAdvancedExpanded(false);
-    chevronRotation.value = -90;
+    chevronRotation.set(-90);
 
     if (editingConfig) {
       setServerUrl(editingConfig.url);
@@ -175,6 +182,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
   // Fetch settings dynamically whenever the URL changes
   useEffect(() => {
     if (!visible || !serverUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears settings when there is no URL, before the debounced fetch
       setAuthSettings(null);
       return;
     }
@@ -248,7 +256,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const next = !advancedExpanded;
     setAdvancedExpanded(next);
-    chevronRotation.value = withTiming(next ? 0 : -90, { duration: 200 });
+    chevronRotation.set(withTiming(next ? 0 : -90, { duration: 200 }));
   };
 
   const handleAddHeader = () => {
@@ -269,11 +277,7 @@ const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
     );
   };
 
-  /** Strip empty rows so we only persist real headers. */
-  const cleanedHeaders = () =>
-    proxyHeaders.filter((h) => h.name.trim() && h.value.trim());
-
-  const getConfigId = () => editingConfig?.id ?? Date.now().toString();
+  const getConfigId = () => editingConfig?.id ?? newConfigId();
 
   const saveConfig = async (url: string, overrides: Partial<ServerConfig>) => {
     await saveServerConfig({

@@ -36,7 +36,7 @@ import {
   canReorderDraftExercises,
   exerciseFromSnapshot,
 } from '../utils/workoutSession';
-import { formatLocalizedNumber } from '../localization';
+import { formatLocalizedNumber, getAppLocale } from '../localization';
 import {
   useDeleteWorkout,
   useUpdateWorkout,
@@ -79,7 +79,6 @@ import { useSupersetBorders } from '../components/ActiveWorkoutRail';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { UpdatePresetSessionRequest } from '@workspace/shared';
 import { canEditGroupedWorkout } from '@workspace/shared';
-import { getAppLocale } from '../localization';
 
 type Props = RootStackScreenProps<'WorkoutDetail'>;
 
@@ -133,7 +132,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     (anchor: AnchorRect, clampedToRpe: boolean) => {
       setMetricMenu({ anchor, clampedToRpe });
     },
-    []
+    [setMetricMenu]
   );
 
   // Active workout state (narrow selector to avoid re-rendering on unrelated
@@ -276,13 +275,13 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     setEditNotes(session.notes ?? '');
     setEligibleIds(new Set());
     setIsEditing(true);
-  }, [populate, session, weightUnit, distanceUnit]);
+  }, [populate, session, weightUnit, distanceUnit, setEditNotes]);
 
   const cancelEditing = useCallback(() => {
     setIsEditing(false);
     setEditNotes('');
     deactivateSet();
-  }, [deactivateSet]);
+  }, [deactivateSet, setEditNotes]);
 
   useSelectedExercise(route.params, handleAddExercise);
 
@@ -364,7 +363,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       setSetMenuTargetId(setId);
       setMenuSheetRef.current?.present();
     },
-    [canEdit]
+    [canEdit, setSetMenuTargetId]
   );
 
   const setMenuItems = useMemo<ActionSheetItem[]>(() => {
@@ -484,6 +483,7 @@ const WorkoutDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     submission,
     normalizedDate,
     editNotes,
+    setEditNotes,
     updateSession,
     session,
     invalidateSessionCache,

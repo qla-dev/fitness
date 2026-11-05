@@ -109,35 +109,37 @@ export default function MarkaiEmptyState({
       icon: 'food' as const,
     },
     {
-      label: t('markai.goalsChip', { defaultValue: 'My goals' }),
+      label: t('markai.goalsChip', { defaultValue: 'Help with my goals' }),
       prompt: t('markai.goalsPrompt', {
         defaultValue:
-          'Look at my daily goals and tell me how I am doing and what to change',
+          'Help me with my goals: how am I doing and what should I change?',
       }),
       mode: 'free' as const,
       icon: 'sparkles' as const,
     },
     {
-      label: t('markai.macrosChip', { defaultValue: 'All my macronutrients' }),
+      label: t('markai.macrosChip', { defaultValue: 'Calculate my macros' }),
       prompt: t('markai.allMacrosPrompt', {
         defaultValue:
-          'Calculate all my macros: calories, protein, carbs and fat for my goal',
+          'Calculate my calories and macros for my goal. Ask me for anything you need.',
       }),
       mode: 'macros' as const,
       icon: 'calculator' as const,
     },
     {
-      label: t('markai.trainingChip', { defaultValue: 'Moving help' }),
+      label: t('markai.trainingChip', { defaultValue: 'Activity ideas' }),
       prompt: t('markai.trainingPrompt', {
-        defaultValue: 'Help me move more and plan my next activity',
+        defaultValue: 'Suggest how I could move today.',
       }),
       mode: 'training' as const,
       icon: 'exercise-walking' as const,
     },
     {
-      label: t('markai.metricsChip', { defaultValue: 'Daily metrics' }),
+      label: t('markai.metricsChip', {
+        defaultValue: 'Help with daily metrics',
+      }),
       prompt: t('macros.metricsPrompt', {
-        defaultValue: 'Explain my daily metrics',
+        defaultValue: 'Help me understand my daily metrics.',
       }),
       mode: 'free' as const,
       icon: 'sparkles' as const,

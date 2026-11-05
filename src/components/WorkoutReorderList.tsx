@@ -244,11 +244,11 @@ export function createReorderRowPanGesture({
   return Gesture.Pan()
     .activateAfterLongPress(REORDER_LONG_PRESS_MS)
     .onStart(() => {
-      activeDragIndex.value = index;
-      panY.value = 0;
+      activeDragIndex.set(index);
+      panY.set(0);
     })
     .onUpdate((event) => {
-      panY.value = event.translationY;
+      panY.set(event.translationY);
     })
     .onEnd((_event, success) => {
       const from = activeDragIndex.value;
@@ -261,13 +261,13 @@ export function createReorderRowPanGesture({
         // Commit handoff: keep the active row's final translate while the JS reorder
         // state commits — no snap-back to origin before React re-renders the row at its
         // destination.
-        committingTranslate.value = panY.value;
+        committingTranslate.set(panY.value);
         // Worklet -> JS boundary: onMove must run on the JS thread.
         runOnJS(onMove)(from, to);
         return;
       }
-      activeDragIndex.value = -1;
-      panY.value = 0;
+      activeDragIndex.set(-1);
+      panY.set(0);
     });
 }
 
@@ -284,9 +284,9 @@ export function resetReorderDragPreview(
   panY: SharedValue<number>,
   committingTranslate: SharedValue<number>
 ): void {
-  committingTranslate.value = 0;
-  activeDragIndex.value = -1;
-  panY.value = 0;
+  committingTranslate.set(0);
+  activeDragIndex.set(-1);
+  panY.set(0);
 }
 
 interface ReorderItemRowProps {
@@ -382,16 +382,16 @@ function ReorderItemRow({
         .activateAfterLongPress(REORDER_LONG_PRESS_MS)
         .onStart(() => {
           'worklet';
-          activeIndex.value = index;
-          committing.value = false;
-          dragStartScrollY.value = scrollY.value;
-          panY.value = 0;
+          activeIndex.set(index);
+          committing.set(false);
+          dragStartScrollY.set(scrollY.value);
+          panY.set(0);
           runOnJS(setScrollEnabled)(false);
         })
         .onUpdate((event) => {
           'worklet';
-          panY.value = event.translationY;
-          pointerAbsY.value = event.absoluteY;
+          panY.set(event.translationY);
+          pointerAbsY.set(event.absoluteY);
         })
         .onEnd(() => {
           'worklet';
@@ -401,15 +401,15 @@ function ReorderItemRow({
           // post-commit effect clears them once the reordered rows have rendered,
           // so the finger's preview hands off seamlessly instead of snapping back
           // to the pre-drag order for a frame while the JS state update lands.
-          committing.value = from >= 0 && to >= 0 && from !== to;
+          committing.set(from >= 0 && to >= 0 && from !== to);
           runOnJS(onCommit)(from, to);
         })
         .onFinalize(() => {
           'worklet';
           runOnJS(setScrollEnabled)(true);
           if (committing.value) return;
-          activeIndex.value = -1;
-          panY.value = 0;
+          activeIndex.set(-1);
+          panY.set(0);
         }),
     [
       index,
@@ -601,7 +601,7 @@ function WorkoutReorderList({
   );
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
+    scrollY.set(event.contentOffset.y);
   });
 
   const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -635,12 +635,9 @@ function WorkoutReorderList({
   useEffect(() => {
     if (!pendingReset.current) return;
     pendingReset.current = false;
-    committing.value = false;
-    // Writing Reanimated shared values from an effect is the supported API; the
-    // compiler's immutability rule flags it as a mutation regardless.
-    // eslint-disable-next-line react-hooks/immutability
-    activeIndex.value = -1;
-    panY.value = 0;
+    committing.set(false);
+    activeIndex.set(-1);
+    panY.set(0);
   }, [items, committing, activeIndex, panY]);
 
   // One selection tick each time the drop target changes, guarded so the
@@ -711,7 +708,7 @@ function WorkoutReorderList({
         </View>
 
         <Animated.ScrollView
-      showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           ref={scrollRef}
           onScroll={scrollHandler}
           scrollEventThrottle={16}

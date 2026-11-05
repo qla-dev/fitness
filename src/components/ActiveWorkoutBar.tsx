@@ -399,6 +399,7 @@ const ActiveWorkoutBar: React.FC<ActiveWorkoutBarProps> = ({
 
   useEffect(() => {
     if (!usesNativeTabs) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets to the snapshot when native tabs switch off
       setStackTransition(stackTransitionSnapshot);
       return;
     }

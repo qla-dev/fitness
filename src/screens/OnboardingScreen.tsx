@@ -88,6 +88,9 @@ const checkReachability = async (url: string): Promise<boolean> => {
 
 type Props = RootStackScreenProps<'Onboarding'>;
 
+/** A new config's id; outside the component, as a clock read is not render-pure. */
+const newConfigId = () => Date.now().toString();
+
 export default function OnboardingScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -136,6 +139,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   // leave a stale focus flag suppressing the URL echo and keeping the focused
   // border highlight.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a page change unmounts the focused input without onBlur
     setIsServerUrlFocused(false);
     setIsApiKeyFocused(false);
   }, [page]);
@@ -251,14 +255,12 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   // --- Page 2: Auth handlers ---
 
-  const getConfigId = () => Date.now().toString();
-
   const saveConfig = async (
     url: string,
     overrides: Record<string, unknown>
   ) => {
     await saveServerConfig({
-      id: getConfigId(),
+      id: newConfigId(),
       url,
       apiKey: '',
       proxyHeaders: [],

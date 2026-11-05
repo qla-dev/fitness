@@ -1,4 +1,6 @@
 import * as Notifications from 'expo-notifications';
+// Named: the import plugin cannot see this enum through the namespace.
+import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { reconcileMedicationReminders } from '../../src/services/medicationReminderService';
@@ -581,7 +583,7 @@ describe('reconcileMedicationReminders', () => {
       expect(mockSetChannel).toHaveBeenCalledWith(
         'medication-reminders',
         expect.objectContaining({
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: AndroidImportance.HIGH,
         })
       );
     });

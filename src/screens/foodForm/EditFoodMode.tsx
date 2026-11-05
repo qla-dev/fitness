@@ -169,6 +169,7 @@ export function EditFoodMode({
   // badge surfaces on first render (not only after switching units and back).
   useEffect(() => {
     if (savedUnitVariants.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
     setPendingUnitSelection((prev) => {
       if (!prev || prev.kind !== 'existing' || !prev.variant.id) return prev;
       const match = savedUnitVariants.find((v) => v.id === prev.variant.id);

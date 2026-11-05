@@ -343,6 +343,7 @@ const MeasurementsAddScreen: React.FC<Props> = ({ navigation, route }) => {
     if (isLoading || isPreferencesLoading) {
       // Syncs the form to the latest measurements snapshot (cached-then-fresh)
       // with dirty-field tracking; a legitimate external-data sync effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setForm(EMPTY_FORM);
       setPrefilledKeys(new Set());
       return;

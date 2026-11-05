@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedNumber } from '../localization';
+import { formatLocalizedNumber, getAppLocale } from '../localization';
 import {
   View,
   Text,
@@ -81,7 +81,6 @@ import {
   nextQuantity,
 } from '../utils/foodDetails';
 import { DECIMAL_INPUT_REGEX, parseDecimalInput } from '../utils/numericInput';
-import { getAppLocale } from '../localization';
 
 type FoodEntryViewScreenProps = RootStackScreenProps<'FoodEntryView'>;
 

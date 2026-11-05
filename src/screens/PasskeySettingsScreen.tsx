@@ -112,6 +112,7 @@ const PasskeySettingsScreen: React.FC<PasskeySettingsScreenProps> = () => {
   }, [activeConfig, t]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loads the list on mount and when the account changes
     fetchList();
   }, [fetchList]);
 

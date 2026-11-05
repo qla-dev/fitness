@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+// Named: the import plugin cannot see this enum through the namespace.
+import { AndroidImportance } from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { createAudioPlayer } from 'expo-audio';
 import { Alert, AppState, Platform } from 'react-native';
@@ -151,7 +153,7 @@ describe('notifications service', () => {
       expect(mockSetChannel).toHaveBeenCalledWith(
         'workout-timer',
         expect.objectContaining({
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: AndroidImportance.HIGH,
         })
       );
     });
@@ -165,7 +167,7 @@ describe('notifications service', () => {
       expect(mockSetChannel).toHaveBeenCalledWith(
         'fasting',
         expect.objectContaining({
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: AndroidImportance.HIGH,
         })
       );
     });

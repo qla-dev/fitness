@@ -159,6 +159,7 @@ const FoodPhotoImproveScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     if (!mutation.isPending) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restarts the elapsed counter when a request starts
     setElapsedSec(0);
     const startedAt = Date.now();
     const id = setInterval(() => {

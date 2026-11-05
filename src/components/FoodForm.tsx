@@ -186,6 +186,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
     setCustomNutrientForm((prev) => {
       const next: Record<string, string> = {};
       if (customNutrientsProp) {
@@ -490,6 +491,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
     const normalizedSelection = normalizeSelectedUnitSelection(
       unitSelector?.selectedSelection
     );
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
     setSelectedUnitSelection(normalizedSelection);
     setShowManualUpdateBanner(
       Boolean(
@@ -521,6 +523,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
   useEffect(() => {
     if (!selection) return;
     if (selection.kind === 'draft' && selection.requiresNutritionUpdate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setForm((prev) =>
         prev.servingUnit === selection.variant.serving_unit
           ? prev
@@ -548,6 +551,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
 
   useEffect(() => {
     if (!unitSelector?.variants?.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setSelectedSavedVariantId(undefined);
       trustedAnchorRef.current = null;
       return;
@@ -578,6 +582,7 @@ const FoodForm: React.FC<FoodFormProps> = ({
   useEffect(() => {
     if (!showAutoScaleNutrition) {
       hasTouchedAutoScaleRef.current = false;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors a prop or loaded data into local edit state when it changes
       setAutoScaleNutrition(false);
       return;
     }
@@ -1073,7 +1078,8 @@ const FoodForm: React.FC<FoodFormProps> = ({
           ) : null}
 
           {showManualUpdateBanner
-            ? (() => {
+            ? // eslint-disable-next-line react-hooks/refs -- the refs are written by the same effects that set showManualUpdateBanner, so this render sees them
+              (() => {
                 // AI eligibility for this swap. When true, the Convert with AI
                 // button appears below the banner. The banner text itself is
                 // unconditional now — the button is the affordance.

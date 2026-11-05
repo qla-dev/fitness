@@ -620,6 +620,7 @@ const FoodScanScreen: React.FC<FoodScanScreenProps> = ({
     if (aiSettingQuery.isLoading) return;
 
     if (!photoModeAvailable) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- opens the gate once AI availability has loaded
       setPhotoGateVisible(true);
       return;
     }

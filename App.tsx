@@ -77,7 +77,6 @@ import {
   SafeProgressPhotos,
   SafeProgressPhotoCompare,
   SafeProgressPhotoTimelapse,
-  SafeChat,
   SafeExerciseProgram,
   SafeProgramPurchase,
   SafeCart,
@@ -605,7 +604,8 @@ function AppContent() {
           />
           <Stack.Screen
             name="Chat"
-            component={SafeChat}
+            // The old self-hosted chat is retired: anything still opening it lands in MarkAI.
+            component={SafeMarkAI}
             options={createStackScreenOptions(t('screens.markai', { defaultValue: 'MarkAI' }), { headerBackButtonDisplayMode: 'minimal' })}
           />
           <Stack.Screen

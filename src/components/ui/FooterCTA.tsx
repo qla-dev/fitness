@@ -67,12 +67,19 @@ export default function FooterCTA({
   tint,
   onHeightChange,
   note,
+  above,
   action: customAction,
 }: {
   label?: ReactNode;
   onPress?: () => void;
   /** A line of small print above the action, pinned with it. */
   note?: ReactNode;
+  /**
+   * Further actions stacked above the main one, pinned with it: the sign-in
+   * buttons over "Continue offline", so every choice stays in reach however
+   * the page above scrolls.
+   */
+  above?: ReactNode;
   /**
    * Replaces the standard button, for an action with its own required look
    * (Sign in with Apple) that still belongs in this footer's slot.
@@ -127,9 +134,10 @@ export default function FooterCTA({
     onPress?.();
   };
 
+  // A footer of `above` actions alone has no button of its own.
   const action = customAction ? (
     customAction
-  ) : usesGlass ? (
+  ) : label === undefined ? null : usesGlass ? (
     // Tinted rather than clear: the action keeps its accent fill and white
     // label, and the glass only adds the material and the press response.
     <LiquidGlassSurface
@@ -175,6 +183,9 @@ export default function FooterCTA({
     >
       {note ? (
         <Text className="text-text-secondary text-sm mb-3">{note}</Text>
+      ) : null}
+      {above ? (
+        <View className={action ? 'gap-3 mb-3' : 'gap-3'}>{above}</View>
       ) : null}
       {action}
     </View>

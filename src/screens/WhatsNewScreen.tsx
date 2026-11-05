@@ -9,8 +9,6 @@ import Icon, { type IconName } from '../components/Icon';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { useScreenHeader } from '../hooks/useScreenHeader';
-import { getTodayDate } from '../utils/dateUtils';
-import { canUseLiquidGlass } from '../utils/liquidGlass';
 import type { RootStackScreenProps } from '../types/navigation';
 import NativeHeaderScrollView from '../components/ui/NativeHeaderScrollView';
 
@@ -193,85 +191,6 @@ const ChatMockup: React.FC = () => {
   );
 };
 
-const LiquidGlassMockup: React.FC = () => {
-  const { t } = useTranslation();
-  const [textPrimary, accentPrimary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-accent-primary',
-  ]) as [string, string];
-
-  const tabs: { name: IconName; label: string; active?: boolean }[] = [
-    {
-      name: 'tab-dashboard',
-      label: t('navigation.dashboard', { defaultValue: 'Activities' }),
-    },
-    {
-      name: 'document-text',
-      label: t('navigation.diary', { defaultValue: 'Tracker' }),
-    },
-    {
-      name: 'book',
-      label: t('navigation.library', { defaultValue: 'Library' }),
-    },
-    {
-      name: 'settings',
-      label: t('profile.title', { defaultValue: 'Profile' }),
-    },
-  ];
-
-  const glassStyle = {
-    backgroundColor: `${textPrimary}1F`,
-    borderWidth: 1,
-    borderColor: `${textPrimary}1F`,
-  };
-
-  return (
-    <View
-      className="h-44 justify-end overflow-hidden"
-      style={{
-        experimental_backgroundImage: `linear-gradient(0deg, #FFFFFF, ${accentPrimary}20)`,
-      }}
-    >
-      <View className="flex-row items-center mx-4 mb-6">
-        <View
-          className="flex-1 flex-row items-center justify-around py-2 rounded-3xl"
-          style={glassStyle}
-        >
-          {tabs.map((tab) => (
-            <View
-              key={tab.label}
-              className="items-center px-2 py-1 rounded-2xl"
-              style={
-                tab.active ? { backgroundColor: `${textPrimary}26` } : undefined
-              }
-            >
-              <Icon
-                name={tab.name}
-                size={20}
-                color={tab.active ? accentPrimary : '#000000'}
-                weight={tab.active ? 'semibold' : 'regular'}
-              />
-              <Text
-                className="text-xs mt-0.5"
-                style={{ color: tab.active ? accentPrimary : '#000000' }}
-              >
-                {tab.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View
-          className="ml-2 rounded-full items-center justify-center"
-          style={{ width: 52, height: 52, ...glassStyle }}
-        >
-          <Icon name="add" size={24} color="#000000" />
-        </View>
-      </View>
-    </View>
-  );
-};
-
 const PhotoMockup: React.FC = () => {
   const { t } = useTranslation();
   const [catOrange, macroProtein, macroCarbs, macroFat, textPrimary] =
@@ -438,65 +357,113 @@ const CycleMockup: React.FC = () => {
   );
 };
 
-const WorkoutMockup: React.FC = () => {
-  const { t } = useTranslation();
-  const [exercise, textSecondary] = useCSSVariable([
-    '--color-exercise',
-    '--color-text-secondary',
-  ]) as [string, string];
+type MockupRowProps = {
+  color: string;
+  icon: IconName;
+  title: string;
+  badge: string;
+  detail: string;
+  value: string;
+};
 
+/** The small card every feature hero here draws: a titled row over a detail line. */
+const MockupCard: React.FC<MockupRowProps> = ({
+  color,
+  icon,
+  title,
+  badge,
+  detail,
+  value,
+}) => {
+  const textSecondary = useCSSVariable('--color-text-secondary') as string;
   return (
     <View
       className="h-44 items-center justify-center overflow-hidden"
-      style={{ backgroundColor: `${exercise}20` }}
+      style={{ backgroundColor: `${color}20` }}
     >
       <View
         className="bg-surface rounded-2xl shadow-md justify-center px-4 py-3 border border-border-subtle"
         style={{ width: 220, height: 110 }}
       >
         <View className="flex-row items-center justify-between mb-2">
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-2 flex-1 mr-2">
             <View
               className="w-7 h-7 rounded-full items-center justify-center"
-              style={{ backgroundColor: `${exercise}30` }}
+              style={{ backgroundColor: `${color}30` }}
             >
-              <Icon name="exercise-weights" size={14} color={exercise} />
+              <Icon name={icon} size={14} color={color} />
             </View>
-            <Text className="text-xs font-bold text-text-primary">
-              {t('whatsNewPage.mockup.benchPress', {
-                defaultValue: 'Bench Press',
-              })}
+            <Text
+              className="text-xs font-bold text-text-primary flex-1"
+              numberOfLines={1}
+            >
+              {title}
             </Text>
           </View>
           <View
             className="px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: `${exercise}25` }}
+            style={{ backgroundColor: `${color}25` }}
           >
-            <Text
-              className="text-[10px] font-semibold"
-              style={{ color: exercise }}
-            >
-              {t('whatsNewPage.mockup.threeSets', {
-                defaultValue: '3 Sets',
-              })}
+            <Text className="text-[10px] font-semibold" style={{ color }}>
+              {badge}
             </Text>
           </View>
         </View>
 
         <View className="flex-row items-center justify-between mt-1 pt-2 border-t border-border-subtle">
           <Text className="text-[11px]" style={{ color: textSecondary }}>
-            {t('whatsNewPage.mockup.setOneReps', {
-              defaultValue: 'Set 1: 10 reps',
-            })}
+            {detail}
           </Text>
           <Text className="text-[11px] font-medium text-text-primary">
-            {t('whatsNewPage.mockup.doneWeight', {
-              defaultValue: '80 kg • Done',
-            })}
+            {value}
           </Text>
         </View>
       </View>
     </View>
+  );
+};
+
+const ProgramsMockup: React.FC = () => {
+  const { t } = useTranslation();
+  const exercise = useCSSVariable('--color-exercise') as string;
+  return (
+    <MockupCard
+      color={exercise}
+      icon="exercise-weights"
+      title={t('whatsNewPage.mockup.programName', {
+        defaultValue: 'Strength Foundations',
+      })}
+      badge={t('whatsNewPage.mockup.programWeeks', {
+        defaultValue: '8 weeks',
+      })}
+      detail={t('whatsNewPage.mockup.programSessions', {
+        defaultValue: '3 sessions a week',
+      })}
+      value={t('whatsNewPage.mockup.programNutrition', {
+        defaultValue: '+ Nutrition plan',
+      })}
+    />
+  );
+};
+
+const RunRideMockup: React.FC = () => {
+  const { t } = useTranslation();
+  const catOrange = useCSSVariable('--color-cat-orange') as string;
+  return (
+    <MockupCard
+      color={catOrange}
+      icon="exercise-running"
+      title={t('whatsNewPage.mockup.morningRun', {
+        defaultValue: 'Morning run',
+      })}
+      badge={t('whatsNewPage.mockup.runDistance', {
+        defaultValue: '5.2 km',
+      })}
+      detail={t('whatsNewPage.mockup.runPace', {
+        defaultValue: '5\'12" /km • 148 bpm',
+      })}
+      value={t('whatsNewPage.mockup.runTime', { defaultValue: '27:04' })}
+    />
   );
 };
 
@@ -564,10 +531,6 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
   const activeWorkoutBarPadding = useActiveWorkoutBarPadding('stack');
   const usesNativeHeader = useNativeIOSHeadersActive();
 
-  // The Liquid Glass toggle only exists on iOS 26+ devices with the glass APIs,
-  // so its card is gated on the same capability check the setting uses.
-  const showLiquidGlassCard = canUseLiquidGlass();
-
   // Added or changed a card below? Bump WHATS_NEW_CONTENT_VERSION in
   // services/whatsNewBanner.ts so the banner re-appears for existing users.
   const features: Feature[] = [
@@ -604,41 +567,37 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
       hero: <CycleMockup />,
     },
     {
-      eyebrow: t('whatsNewPage.features.workout.eyebrow', {
-        defaultValue: 'WORKOUT & EXERCISES',
+      eyebrow: t('whatsNewPage.features.programs.eyebrow', {
+        defaultValue: 'TRAINING PROGRAMS',
       }),
-      headline: t('whatsNewPage.features.workout.headline', {
-        defaultValue: 'Revamped workout workflows',
+      headline: t('whatsNewPage.features.programs.headline', {
+        defaultValue: 'Ready-made programs',
       }),
-      body: t('whatsNewPage.features.workout.body', {
+      body: t('whatsNewPage.features.programs.body', {
         defaultValue:
-          'Streamlined exercise logging, updated exercise library management, and improved multi-set performance tracking.',
+          'Browse 21 training programs in the Exercises tab, each with its sessions and a nutrition plan, and start one in a tap.',
       }),
-      hero: <WorkoutMockup />,
+      hero: <ProgramsMockup />,
+      cta: {
+        label: t('whatsNewPage.features.programs.cta', {
+          defaultValue: 'Browse programs',
+        }),
+        onPress: () => navigation.navigate('Tabs', { screen: 'Exercises' }),
+      },
     },
-    ...(showLiquidGlassCard
-      ? [
-          {
-            eyebrow: t('whatsNewPage.features.ios.eyebrow', {
-              defaultValue: 'iOS 26',
-            }),
-            headline: t('whatsNewPage.features.ios.headline', {
-              defaultValue: 'A Liquid Glass look',
-            }),
-            body: t('whatsNewPage.features.ios.body', {
-              defaultValue:
-                'Turn on Liquid Glass navigation for translucent tabs and headers that pick up the color behind them. Toggle it anytime in App settings.',
-            }),
-            hero: <LiquidGlassMockup />,
-            cta: {
-              label: t('whatsNewPage.features.ios.cta', {
-                defaultValue: 'Open settings',
-              }),
-              onPress: () => navigation.navigate('AppSettings'),
-            },
-          } satisfies Feature,
-        ]
-      : []),
+    {
+      eyebrow: t('whatsNewPage.features.runRide.eyebrow', {
+        defaultValue: 'RUNNING & CYCLING',
+      }),
+      headline: t('whatsNewPage.features.runRide.headline', {
+        defaultValue: 'Record runs and rides',
+      }),
+      body: t('whatsNewPage.features.runRide.body', {
+        defaultValue:
+          'Track distance, pace, speed and your GPS route live, with Bluetooth heart-rate and cadence sensors. Every session lands in your diary.',
+      }),
+      hero: <RunRideMockup />,
+    },
     {
       eyebrow: t('whatsNewPage.features.chat.eyebrow', {
         defaultValue: 'ASK MARKAI',
@@ -655,7 +614,7 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
         label: t('whatsNewPage.features.chat.cta', {
           defaultValue: 'Start chatting',
         }),
-        onPress: () => navigation.navigate('Chat'),
+        onPress: () => navigation.navigate('MarkAI'),
       },
     },
     {
@@ -687,11 +646,9 @@ const WhatsNewScreen: React.FC<WhatsNewScreenProps> = ({ navigation }) => {
         label: t('whatsNewPage.features.photo.cta', {
           defaultValue: 'Try it out',
         }),
-        onPress: () =>
-          navigation.navigate('FoodScan', {
-            date: getTodayDate(),
-            initialMode: 'photo',
-          }),
+        // Logging from a photo happens in MarkAI, where the meal photo is one
+        // attachment away, the same place the Add hub sends it.
+        onPress: () => navigation.navigate('MarkAI'),
       },
     },
   ];
