@@ -149,12 +149,10 @@ it('plans nothing when the last question is answered Not now', async () => {
   );
 });
 
-it('edits preferences without the plan question', async () => {
+it('has no separate preferences row', async () => {
   const screen = renderScreen();
-  fireEvent.press(await screen.findByText('My food & kitchen preferences'));
-  expect(
-    getSetupWizardSession()!.steps.some((step) => step.id === 'planWeek')
-  ).toBe(false);
+  await screen.findByText('Plan a week of meals');
+  expect(screen.queryByText('My food & kitchen preferences')).toBeNull();
 });
 
 it('builds a plan by hand from the header +, and lists hand-built plans', async () => {

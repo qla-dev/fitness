@@ -47,12 +47,18 @@ export const SHOPPING_CURRENCIES = [
 /**
  * Regions whose meal plans are priced from official or published shelf
  * prices: Croatia (cijene.dev), Serbia (the retailers' price lists on
- * data.gov.rs) and the Netherlands (Checkjebon). Everywhere else MarkAI
+ * data.gov.rs), the Netherlands (Checkjebon) and the US (Kroger). Everywhere else MarkAI
  * estimates the prices. Keep in step with the backend's price sources.
  */
-export const OFFICIAL_PRICE_REGIONS: readonly string[] = ['HR', 'RS', 'NL'];
+// Matches the backend's MealPlanController::PRICED_REGIONS.
+export const OFFICIAL_PRICE_REGIONS: readonly string[] = [
+  'HR',
+  'RS',
+  'NL',
+  'US',
+];
 
-/** Regions whose stores can be compared chain by chain: the same three. */
+/** Regions whose stores can be compared chain by chain: the same ones. */
 export const LIVE_PRICE_REGIONS = OFFICIAL_PRICE_REGIONS;
 
 /** A region's name in the app's language; an unknown code stays as it is. */

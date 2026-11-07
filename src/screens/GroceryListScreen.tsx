@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   Text,
   TextInput,
   View,
@@ -15,13 +16,21 @@ import ProductThumb from '../components/ProductThumb';
 import SwipeableDeleteRow from '../components/SwipeableDeleteRow';
 import GroceryCheck from '../components/GroceryCheck';
 import SettingsRow from '../components/SettingsRow';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import { MenuItemDivider } from '../components/MenuItem';
+import { fireSelectionHaptic } from '../services/haptics';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import { withList, type GroceryList } from '../services/personalSetup';
 import { listTotal } from '../services/online/prices';
 import { planMoney } from '../services/weeklyPlans';
 import type { RootStackScreenProps } from '../types/navigation';
+
+/** Where a row's text starts: padding 16 + tick 26 + gap 12 + tile 39 + gap 12. */
+const ROW_TEXT_INSET = 105;
 
 /**
  * One grocery list, pushed onto the stack from the list of lists so it
@@ -36,6 +45,7 @@ export default function GroceryListScreen({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const native = useNativeIOSHeadersActive();
+  const headerOffset = useNativeHeaderOffset();
   const setup = usePersonalSetup();
   const saved = setup.state?.lists.find(
     (list) => list.id === (route.params.listId ?? route.params.draft?.id)
@@ -50,6 +60,10 @@ export default function GroceryListScreen({
     setPick(route.params.pickedList);
     if (route.params.pickedList) setDraft(route.params.pickedList);
   }
+  // Only a list being written now can be edited. A list opened from the
+  // list of lists is finished: it is ticked off, not rewritten. Decided once,
+  // so a new list that autosaves mid-typing stays editable for this visit.
+  const [editable] = useState(!route.params.listId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const lock = useRef(false);
@@ -128,6 +142,9 @@ export default function GroceryListScreen({
       navigation.navigate('ShopComparison', { list: draft, mode: 'pick' });
   };
   const header = useScreenHeader({
+    // Transparent, as the list of lists: content scrolls under the Liquid
+    // Glass bar instead of starting below a filled one.
+    variant: 'transparent',
     title:
       draft?.name.trim() || t('screens.cart', { defaultValue: 'Grocery List' }),
     left: { kind: 'back' },
@@ -189,11 +206,13 @@ export default function GroceryListScreen({
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentInsetAdjustmentBehavior={native ? 'automatic' : 'never'}
+        // Padded by the measured bar rather than the automatic inset, which
+        // Liquid Glass applied twice once the list had been dragged.
+        contentInsetAdjustmentBehavior="never"
         bottomOffset={24}
         contentContainerStyle={{
           padding: 20,
-          paddingTop: 0,
+          paddingTop: native ? headerOffset : 0,
           paddingBottom: insets.bottom + 40,
         }}
       >
@@ -217,42 +236,60 @@ export default function GroceryListScreen({
             })}
           />
         ) : null}
-        <Text className="text-text-secondary mb-2">
-          {t('groceries.listName', { defaultValue: 'List name' })}
-        </Text>
-        <TextInput
-          accessibilityLabel={t('groceries.listName', {
-            defaultValue: 'List name',
-          })}
-          value={draft.name}
-          maxLength={100}
-          onChangeText={(name) => update({ name })}
-          className="text-text-primary bg-surface rounded-2xl p-4 text-2xl font-bold mb-4"
-        />
-        <Text className="text-text-secondary mb-2">
-          {t('groceries.store', { defaultValue: 'Store' })}
-        </Text>
-        <TextInput
-          accessibilityLabel={t('groceries.store', { defaultValue: 'Store' })}
-          value={draft.store}
-          maxLength={160}
-          // A store typed by hand is no longer the compared chain.
-          onChangeText={(store) => update({ store, vendor: undefined })}
-          className="text-text-primary bg-surface rounded-2xl p-4 mb-4"
-        />
-        <Text className="text-text-secondary mb-2">
-          {t('groceries.notes', { defaultValue: 'Notes' })}
-        </Text>
-        <TextInput
-          accessibilityLabel={t('groceries.notes', { defaultValue: 'Notes' })}
-          value={draft.note}
-          multiline
-          maxLength={4000}
-          onChangeText={(note) => update({ note })}
-          className="text-text-primary bg-surface rounded-2xl p-4 mb-5"
-        />
-        {/* One compact card: what is left to buy first, ticked items under it,
-            dimmed. Swipe a row left (or long-press it) to remove it. */}
+        {editable ? (
+          <>
+            <Text className="text-text-secondary mb-2">
+              {t('groceries.listName', { defaultValue: 'List name' })}
+            </Text>
+            <TextInput
+              accessibilityLabel={t('groceries.listName', {
+                defaultValue: 'List name',
+              })}
+              value={draft.name}
+              maxLength={100}
+              onChangeText={(name) => update({ name })}
+              className="text-text-primary bg-surface rounded-2xl p-4 text-2xl font-bold mb-4"
+            />
+            <Text className="text-text-secondary mb-2">
+              {t('groceries.store', { defaultValue: 'Store' })}
+            </Text>
+            <TextInput
+              accessibilityLabel={t('groceries.store', {
+                defaultValue: 'Store',
+              })}
+              value={draft.store}
+              maxLength={160}
+              // A store typed by hand is no longer the compared chain.
+              onChangeText={(store) => update({ store, vendor: undefined })}
+              className="text-text-primary bg-surface rounded-2xl p-4 mb-4"
+            />
+            <Text className="text-text-secondary mb-2">
+              {t('groceries.notes', { defaultValue: 'Notes' })}
+            </Text>
+            <TextInput
+              accessibilityLabel={t('groceries.notes', {
+                defaultValue: 'Notes',
+              })}
+              value={draft.note}
+              multiline
+              maxLength={4000}
+              onChangeText={(note) => update({ note })}
+              className="text-text-primary bg-surface rounded-2xl p-4 mb-5"
+            />
+          </>
+        ) : (
+          <>
+            {draft.store && !draft.region ? (
+              <Text className="text-text-secondary mb-2">{draft.store}</Text>
+            ) : null}
+            {draft.note ? (
+              <Text className="text-text-secondary mb-5">{draft.note}</Text>
+            ) : null}
+          </>
+        )}
+        {/* One compact card, in the list's own order: a ticked item dims in
+            place rather than jumping to the end under your thumb. While the
+            list is being written, swipe a row left (or long-press) to remove. */}
         {draft.items.length > 0 ? (
           <View className="flex-row items-center justify-between mb-2 px-1">
             <Text className="text-text-secondary text-sm font-semibold">
@@ -278,42 +315,30 @@ export default function GroceryListScreen({
           </View>
         ) : null}
         <View className="bg-surface rounded-2xl overflow-hidden mb-3">
-          {[...draft.items]
-            .sort((x, y) => Number(x.checked) - Number(y.checked))
-            .map((item, index) => (
-              <SwipeableDeleteRow
-                key={item.id}
-                title={
-                  item.name || t('groceries.item', { defaultValue: 'Item' })
-                }
-                onConfirmDelete={() =>
-                  update({
-                    items: draft.items.filter((i) => i.id !== item.id),
-                  })
-                }
-                className={index > 0 ? 'border-t border-border-subtle' : ''}
+          {draft.items.map((item, index) => {
+            // The Tracker's compact food row: a 39pt tile, the name over a
+            // small quantity line, the price on the right, all centred on one
+            // axis. Editable in place only while the list is being written.
+            const row = (
+              <View
+                className="flex-row items-center px-4"
+                style={{
+                  minHeight: 64,
+                  gap: 12,
+                  opacity: item.checked ? 0.55 : 1,
+                }}
               >
-                {/* The Tracker's compact food row: a 39pt tile, the name over
-                    a small quantity line, the price on the right, all centred
-                    on one axis. The text stays editable in place. */}
-                <View
-                  className="flex-row items-center px-4"
-                  style={{
-                    minHeight: 64,
-                    gap: 12,
-                    opacity: item.checked ? 0.55 : 1,
-                  }}
-                >
-                  <GroceryCheck
-                    checked={item.checked}
-                    label={
-                      item.name || t('groceries.item', { defaultValue: 'Item' })
-                    }
-                    onToggle={() =>
-                      updateItem(item.id, { checked: !item.checked })
-                    }
-                  />
-                  <ProductThumb ean={item.ean} size={39} />
+                <GroceryCheck
+                  checked={item.checked}
+                  label={
+                    item.name || t('groceries.item', { defaultValue: 'Item' })
+                  }
+                  onToggle={() =>
+                    updateItem(item.id, { checked: !item.checked })
+                  }
+                />
+                <ProductThumb ean={item.ean} size={39} />
+                {editable ? (
                   <View className="flex-1 justify-center" style={{ gap: 3 }}>
                     <TextInput
                       accessibilityLabel={t('groceries.item', {
@@ -344,31 +369,84 @@ export default function GroceryListScreen({
                       style={{ fontSize: 12, paddingVertical: 0 }}
                     />
                   </View>
-                  {typeof item.price === 'number' ? (
+                ) : (
+                  <View className="flex-1 justify-center" style={{ gap: 3 }}>
                     <Text
-                      className="text-text-secondary"
-                      style={{ fontSize: 14, fontWeight: '500' }}
+                      className={`text-text-primary ${item.checked ? 'line-through' : ''}`}
+                      style={{ fontSize: 16 }}
                     >
-                      {planMoney(item.price, currency)}
+                      {item.name}
                     </Text>
-                  ) : null}
-                </View>
-              </SwipeableDeleteRow>
-            ))}
+                    {item.quantity ? (
+                      <Text
+                        className="text-text-secondary"
+                        style={{ fontSize: 12 }}
+                      >
+                        {item.quantity}
+                      </Text>
+                    ) : null}
+                  </View>
+                )}
+                {typeof item.price === 'number' ? (
+                  <Text
+                    className="text-text-secondary"
+                    style={{ fontSize: 14, fontWeight: '500' }}
+                  >
+                    {planMoney(item.price, currency)}
+                  </Text>
+                ) : null}
+              </View>
+            );
+            return (
+              <View key={item.id}>
+                {/* Inset past the tick and the tile, as in menu lists. */}
+                {index > 0 ? <MenuItemDivider inset={ROW_TEXT_INSET} /> : null}
+                {!editable ? (
+                  // The whole row ticks the item, not just the circle.
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: item.checked }}
+                    accessibilityLabel={item.name}
+                    onPress={() => {
+                      fireSelectionHaptic();
+                      updateItem(item.id, { checked: !item.checked });
+                    }}
+                  >
+                    {row}
+                  </Pressable>
+                ) : (
+                  <SwipeableDeleteRow
+                    title={
+                      item.name || t('groceries.item', { defaultValue: 'Item' })
+                    }
+                    onConfirmDelete={() =>
+                      update({
+                        items: draft.items.filter((i) => i.id !== item.id),
+                      })
+                    }
+                  >
+                    {row}
+                  </SwipeableDeleteRow>
+                )}
+              </View>
+            );
+          })}
         </View>
-        <Button
-          variant="secondary"
-          onPress={() =>
-            update({
-              items: [
-                ...draft.items,
-                { id: randomUUID(), name: '', quantity: '', checked: false },
-              ],
-            })
-          }
-        >
-          {t('groceries.addItem', { defaultValue: 'Add item' })}
-        </Button>
+        {editable ? (
+          <Button
+            variant="secondary"
+            onPress={() =>
+              update({
+                items: [
+                  ...draft.items,
+                  { id: randomUUID(), name: '', quantity: '', checked: false },
+                ],
+              })
+            }
+          >
+            {t('groceries.addItem', { defaultValue: 'Add item' })}
+          </Button>
+        ) : null}
         {error && (
           <Text accessibilityRole="alert" className="text-icon-danger mt-3">
             {t('setup.saveError', {
@@ -395,15 +473,6 @@ export default function GroceryListScreen({
               }
             >
               {t('groceries.duplicate', { defaultValue: 'Duplicate list' })}
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={busy || !draft.name.trim()}
-              onPress={() => void save({ ...draft, archived: !draft.archived })}
-            >
-              {draft.archived
-                ? t('groceries.restore', { defaultValue: 'Restore list' })
-                : t('groceries.archive', { defaultValue: 'Archive list' })}
             </Button>
             <Button
               variant="destructive"

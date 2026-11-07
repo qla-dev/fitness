@@ -22,6 +22,7 @@ import type {
   CreateExercisePayload,
   UpdateExercisePayload,
 } from '../services/api/exerciseApi';
+import SelectField from '../components/ui/SelectField';
 
 const CATEGORY_OPTIONS = [
   { value: 'general' },
@@ -221,21 +222,14 @@ const ExerciseFormBody: React.FC<ExerciseFormBodyProps> = ({
         onSelect={onSelect}
         title={t('workout.select', { defaultValue: 'Select {{label}}', label })}
         renderTrigger={({ onPress }) => (
-          <TouchableOpacity
+          <SelectField
             onPress={onPress}
-            activeOpacity={0.7}
-            className="bg-raised rounded-lg border border-border-subtle px-3 py-2.5 flex-row items-center justify-between"
-            style={{ height: 44 }}
-          >
-            <Text className="text-text-primary" style={{ fontSize: 16 }}>
-              {labelForOption(
-                options,
-                value,
-                t('workout.selectValue', { defaultValue: 'Select…' })
-              )}
-            </Text>
-            <Icon name="chevron-down" size={16} color={textMuted} />
-          </TouchableOpacity>
+            label={labelForOption(
+              options,
+              value,
+              t('workout.selectValue', { defaultValue: 'Select…' })
+            )}
+          />
         )}
       />
     </View>

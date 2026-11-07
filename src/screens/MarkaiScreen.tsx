@@ -57,7 +57,13 @@ import MarkaiDataNotice from '../components/markai/MarkaiDataNotice';
 import { getLocales } from 'expo-localization';
 import { getAppLocale } from '../localization';
 import MarkaiGroceryCard from '../components/markai/MarkaiGroceryCard';
-import { setupScope, updateSetup, withList } from '../services/personalSetup';
+import {
+  setupScope,
+  updateSetup,
+  withList,
+  type PersonalSetup,
+} from '../services/personalSetup';
+import { OFFICIAL_PRICE_REGIONS } from '../constants/regions';
 import { buildMarkaiContext } from '../services/online/markaiContext';
 import { useAppPreferencesStore } from '../stores/appPreferencesStore';
 import MarkaiLimitNotice, {
@@ -505,6 +511,22 @@ function MarkaiContent() {
         dataAccess === 'allowed'
           ? await buildMarkaiContext().catch(() => undefined)
           : undefined;
+      // Where the user shops, from their food and kitchen answers, so a
+      // grocery list MarkAI proposes is priced there and can be compared
+      // across stores. Only regions with shelf prices change anything.
+      // Read from the loaded setup rather than storage: no extra wait before
+      // the message goes out.
+      const shopRegion = mealPlan
+        ? undefined
+        : String(
+            queryClient.getQueryData<{ state?: PersonalSetup }>([
+              'personalSetup',
+            ])?.state?.grocery?.region ?? ''
+          );
+      const pricedRegion =
+        shopRegion && OFFICIAL_PRICE_REGIONS.includes(shopRegion)
+          ? shopRegion
+          : undefined;
       const response = await onlineRequest<{
         id: string;
         reply: MarkaiReply;
@@ -519,6 +541,7 @@ function MarkaiContent() {
         ...(image ? { image: image.data } : null),
         ...(task ? { task } : null),
         ...(context ? { context } : null),
+        ...(pricedRegion ? { region: pricedRegion } : null),
         ...(unsavedOpener.current?.conversation === conversation
           ? { opener: unsavedOpener.current.text }
           : null),
@@ -965,11 +988,30 @@ function MarkaiContent() {
                                 store: '',
                                 archived: false,
                                 createdAt: new Date().toISOString(),
+                                // A priced list keeps its region, prices and
+                                // staples, which store comparison works from.
+                                ...(grocery.region
+                                  ? {
+                                      region: grocery.region,
+                                      currency: grocery.currency ?? 'EUR',
+                                    }
+                                  : null),
                                 items: grocery.items.map((item, index) => ({
                                   id: `${message.id}-${index}`,
                                   name: item.name,
                                   quantity: item.quantity ?? '',
                                   checked: false,
+                                  ...(grocery.region &&
+                                  typeof item.price === 'number'
+                                    ? {
+                                        price: item.price,
+                                        basePrice: item.price,
+                                      }
+                                    : null),
+                                  ...(item.staple
+                                    ? { staple: item.staple }
+                                    : null),
+                                  ...(item.ean ? { ean: item.ean } : null),
                                 })),
                               })
                         )

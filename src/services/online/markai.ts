@@ -64,7 +64,17 @@ export type WorkoutSuggestion = {
 /** A shopping list MarkAI proposed, saved to My lists with one tap. */
 export type GroceryProposal = {
   name: string;
-  items: { name: string; quantity?: string | null }[];
+  items: {
+    name: string;
+    quantity?: string | null;
+    /** Priced lists only: the item's price and the staple it came from. */
+    price?: number | null;
+    staple?: string | null;
+    ean?: string | null;
+  }[];
+  /** Set when the list was priced from a region's shelf prices. */
+  region?: string | null;
+  currency?: string | null;
 };
 export type MarkaiReply = {
   text: string;

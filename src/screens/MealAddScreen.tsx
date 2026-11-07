@@ -52,6 +52,7 @@ import {
   useNativeHeaderOffset,
   useScreenHeader,
 } from '../hooks/useScreenHeader';
+import SelectField from '../components/ui/SelectField';
 
 type MealAddScreenProps = RootStackScreenProps<'MealAdd'>;
 
@@ -676,10 +677,8 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
                   defaultValue: 'Select Unit',
                 })}
                 renderTrigger={({ onPress, selectedOption }) => (
-                  <TouchableOpacity
+                  <SelectField
                     onPress={onPress}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
                     accessibilityLabel={t('mealBuilder.unitPickerLabel', {
                       defaultValue: 'Unit, {{unit}}',
                       unit: getServingUnitLabel(servingUnit, t),
@@ -687,23 +686,11 @@ const MealAddScreen: React.FC<MealAddScreenProps> = ({ navigation, route }) => {
                     accessibilityHint={t('common.openSelectionMenu', {
                       defaultValue: 'Opens selection menu',
                     })}
-                    className="bg-raised rounded-lg border border-border-subtle px-3 py-2.5 flex-row items-center justify-between"
-                    style={{ minHeight: 44 }}
-                  >
-                    <Text
-                      className="text-text-primary"
-                      style={{ fontSize: 16 }}
-                    >
-                      {selectedOption?.label ??
-                        getServingUnitLabel(servingUnit, t)}
-                    </Text>
-                    <Icon
-                      name="chevron-down"
-                      size={12}
-                      color={textMuted}
-                      weight="medium"
-                    />
-                  </TouchableOpacity>
+                    label={
+                      selectedOption?.label ??
+                      getServingUnitLabel(servingUnit, t)
+                    }
+                  />
                 )}
               />
             </View>

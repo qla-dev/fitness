@@ -17,7 +17,6 @@ import { useCSSVariable } from 'uniwind';
 import { MenuView } from '@expo/ui/community/menu';
 import Icon from '../components/Icon';
 import FooterCTA from '../components/ui/FooterCTA';
-import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import { useScreenHeader } from '../hooks/useScreenHeader';
 import { usePersonalSetup } from '../hooks/usePersonalSetup';
 import { useNativeIOSHeadersActive } from '../services/nativeTabBarPreference';
@@ -168,24 +167,19 @@ function WeeklyPlansContent({
   // moment it is clearly finished.
   const saved = useRef<SetupAnswers | null>(null);
   const plan = useRef(false);
-  const openQuestionnaire = (create: boolean) => {
+  // The questions, then whether to plan; always from the first question,
+  // with earlier answers filled in.
+  const openQuestionnaire = () => {
     if (!setup.state || isSetupWizardOpen()) return;
-    if (create && !session) {
+    if (!session) {
       navigation.navigate('OnlineAccount');
       return;
     }
     saved.current = null;
     plan.current = false;
     openSetupWizardSession({
-      steps: [...grocerySteps(t, vendorsFor), ...(create ? [planStep] : [])],
+      steps: [...grocerySteps(t, vendorsFor), planStep],
       initial: setup.state.grocery,
-      // Editing answers already given opens on them, with Save.
-      ...(!create && setup.state.groceryDone
-        ? {
-            openOnReview: true,
-            finishLabel: t('common.save', { defaultValue: 'Save' }),
-          }
-        : null),
       onSave: async (answers, done) => {
         // The plan question is this visit's, not a food preference.
         const { [PLAN_WEEK]: planWeek, ...grocery } = answers;
@@ -199,7 +193,7 @@ function WeeklyPlansContent({
       },
       onClose: () => {
         const answers = saved.current ?? setup.state?.grocery;
-        if (create && plan.current && answers) planInChat(answers);
+        if (plan.current && answers) planInChat(answers);
       },
     });
     navigation.navigate('SetupWizard');
@@ -317,23 +311,10 @@ function WeeklyPlansContent({
           <Text className="text-text-secondary">
             {t('weeklyPlans.heroBody', {
               defaultValue:
-                'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go, priced from real store prices in Croatia, Serbia and the Netherlands and estimated elsewhere.',
+                'Answer a few questions about your kitchen, budget and tastes. MarkAI plans 7 days you can shop for in one go, priced from real store prices in Croatia, Serbia, the Netherlands and the US and estimated elsewhere.',
             })}
           </Text>
         </View>
-
-        <SettingsRowGroup>
-          <SettingsRow
-            icon="food"
-            title={t('groceries.preferences', {
-              defaultValue: 'My food & kitchen preferences',
-            })}
-            subtitle={t('weeklyPlans.preferencesHint', {
-              defaultValue: 'Diet, allergies, budget, region and appliances',
-            })}
-            onPress={() => openQuestionnaire(false)}
-          />
-        </SettingsRowGroup>
 
         {isLoading ? <ActivityIndicator /> : null}
         {manualPlans.length > 0 ? (
@@ -397,7 +378,7 @@ function WeeklyPlansContent({
                 defaultValue: 'Sign in to plan with MarkAI',
               })
         }
-        onPress={() => openQuestionnaire(true)}
+        onPress={openQuestionnaire}
       />
     </View>
   );

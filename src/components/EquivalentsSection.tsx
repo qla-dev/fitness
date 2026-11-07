@@ -8,6 +8,7 @@ import Icon from './Icon';
 import type { EquivalentUnit } from '../types/foodUnitVariants';
 import { makeServingUnitSections } from '../utils/foodFormState';
 import { DECIMAL_INPUT_REGEX, parseDecimalInput } from '../utils/numericInput';
+import SelectField from './ui/SelectField';
 
 let equivalentKeyCounter = 0;
 function makeEquivalentKey(): string {
@@ -93,28 +94,14 @@ const EquivalentsSection: React.FC<EquivalentsSectionProps> = ({
                 })}
                 placeholder={t('foodForm.unit', { defaultValue: 'unit' })}
                 renderTrigger={({ onPress, selectedOption }) => (
-                  <TouchableOpacity
+                  <SelectField
                     onPress={onPress}
-                    activeOpacity={0.7}
-                    className="bg-raised rounded-lg border border-border-subtle px-3 py-2.5 flex-row items-center justify-between"
-                    style={{ height: 44 }}
-                  >
-                    <Text
-                      className={
-                        selectedOption ? 'text-text-primary' : 'text-text-muted'
-                      }
-                      style={{ fontSize: 16 }}
-                    >
-                      {selectedOption?.label ??
-                        t('foodForm.unit', { defaultValue: 'unit' })}
-                    </Text>
-                    <Icon
-                      name="chevron-down"
-                      size={12}
-                      color={textMuted}
-                      weight="medium"
-                    />
-                  </TouchableOpacity>
+                    placeholder={!selectedOption}
+                    label={
+                      selectedOption?.label ??
+                      t('foodForm.unit', { defaultValue: 'unit' })
+                    }
+                  />
                 )}
               />
             </View>

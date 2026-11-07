@@ -1,52 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedNumber, getAppLocale } from '../../localization';
-import { View, TouchableOpacity, Platform, Text } from 'react-native';
+import { View, Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCSSVariable } from 'uniwind';
 import { StackActions } from '@react-navigation/native';
-import Icon from '../../components/Icon';
-import StepperInput from '../../components/StepperInput';
 import FoodForm, { type FoodFormData } from '../../components/FoodForm';
 import FoodImagePicker from '../../components/FoodImagePicker';
 import { usableFoodImages } from '../../utils/foodImages';
 import { splitPickerImages, type PickerImage } from '../../utils/pickerImages';
-import BottomSheetPicker from '../../components/BottomSheetPicker';
-import CalendarSheet, {
-  type CalendarSheetRef,
-} from '../../components/CalendarSheet';
-import Switch from '../../components/ui/Switch';
 import { setPendingMealIngredientSelection } from '../../services/mealBuilderSelection';
 import {
   buildMealPlanFoodAssignment,
   setPendingMealPlanSelection,
 } from '../../services/mealPlanSelection';
-import { useMealTypes, usePreferences } from '../../hooks';
+import { usePreferences } from '../../hooks';
 import { useSaveFood } from '../../hooks/useSaveFood';
-import { useAddFoodEntry } from '../../hooks/useAddFoodEntry';
-import { getLocalizedMealLabel } from '../../constants/meals';
-import {
-  getTodayDate,
-  normalizeDate,
-  formatDateLabel,
-} from '../../utils/dateUtils';
-import { parseOptional } from '../../types/foodInfo';
+import { foodItemToFoodInfo, parseOptional } from '../../types/foodInfo';
 import { createFoodVariant } from '../../services/api/foodsApi';
 import type { FoodFormScreenProps } from '../FoodFormScreen';
 import type {
   EquivalentUnit,
   FoodUnitSelectionResult,
 } from '../../types/foodUnitVariants';
-import {
-  formatServingSizeDisplay,
-  formatServingUnit,
-} from '../../utils/foodDetails';
 import { buildMealIngredientDraftFromSavedFood } from '../../utils/mealBuilderDraft';
-import {
-  DECIMAL_INPUT_REGEX,
-  parseDecimalInput,
-} from '../../utils/numericInput';
+import { parseDecimalInput } from '../../utils/numericInput';
 import { useNativeIOSHeadersActive } from '../../services/nativeTabBarPreference';
 import {
   useNativeHeaderOffset,
@@ -78,21 +56,16 @@ export function CreateFoodMode({
   routeKey: string;
 }) {
   const { t } = useTranslation();
-  const dateLocale = getAppLocale();
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
-  const [textPrimary, textSecondary] = useCSSVariable([
-    '--color-text-primary',
-    '--color-text-secondary',
-  ]) as [string, string];
+  const textSecondary = useCSSVariable('--color-text-secondary') as string;
   const pickerMode = params.pickerMode ?? 'log-entry';
   const returnDepth = params.returnDepth ?? 1;
   const isMealBuilderMode = pickerMode === 'meal-builder';
   const isMealPlanMode = pickerMode === 'meal-plan';
   const isSelectionMode = isMealBuilderMode || isMealPlanMode;
   const isLibraryMode = pickerMode === 'library';
-  const isLogEntryMode = !isSelectionMode && !isLibraryMode;
   const showBarcodeField = !isMealBuilderMode;
   const initialFood = params.initialFood;
   const hasImportedInitialFood = !!initialFood;
@@ -153,43 +126,6 @@ export function CreateFoodMode({
     return unsub;
   }, [navigation, equivalentDraft]);
 
-  const [selectedDate, setSelectedDate] = useState(
-    params.date ?? getTodayDate()
-  );
-  const calendarRef = useRef<CalendarSheetRef>(null);
-  const { mealTypes, defaultMealTypeId } = useMealTypes();
-  const [selectedMealId, setSelectedMealId] = useState<string | undefined>();
-  const effectiveMealId = selectedMealId ?? defaultMealTypeId;
-  const selectedMealType = mealTypes.find((mt) => mt.id === effectiveMealId);
-  const mealTypeLabel = (mealType: (typeof mealTypes)[number]) =>
-    mealType.user_id == null
-      ? getLocalizedMealLabel(
-          t,
-          mealType.name.toLowerCase() === 'snack'
-            ? 'snacks'
-            : mealType.name.toLowerCase()
-        )
-      : mealType.name;
-
-  const [saveToDatabase, setSaveToDatabase] = useState(true);
-  const initialServingSize =
-    parseDecimalInput(initialFood?.servingSize ?? '') || 100;
-  const [formServingSize, setFormServingSize] = useState(initialServingSize);
-  const [formServingUnit, setFormServingUnit] = useState(
-    initialFood?.servingUnit ?? 'g'
-  );
-  const [quantityText, setQuantityText] = useState(String(initialServingSize));
-  const [quantityTouched, setQuantityTouched] = useState(false);
-  const quantity = parseDecimalInput(quantityText) || 0;
-  const servings = formServingSize > 0 ? quantity / formServingSize : 0;
-
-  const handleServingChange = (sizeStr: string, unit: string) => {
-    const size = parseDecimalInput(sizeStr) || 0;
-    setFormServingSize(size);
-    setFormServingUnit(unit);
-    if (size > 0 && !quantityTouched) setQuantityText(String(size));
-  };
-
   const handleImportedUnitSelectionChange = useCallback(
     async (
       selection: FoodUnitSelectionResult
@@ -200,47 +136,6 @@ export function CreateFoodMode({
     []
   );
 
-  const updateQuantityText = (text: string) => {
-    if (DECIMAL_INPUT_REGEX.test(text)) {
-      setQuantityText(text);
-      setQuantityTouched(true);
-    }
-  };
-
-  const clampQuantity = () => {
-    const step = formServingSize > 0 ? formServingSize : 1;
-    const fallbackQuantity = step * 0.5;
-    if (quantity <= 0) {
-      setQuantityText(String(fallbackQuantity));
-    }
-  };
-
-  const adjustQuantity = (delta: number) => {
-    const step = formServingSize > 0 ? formServingSize : 1;
-    const increment = step * 0.5;
-    const minQuantity = increment;
-    if (quantity < minQuantity) {
-      if (delta > 0) {
-        setQuantityText(String(minQuantity));
-        setQuantityTouched(true);
-      }
-      return;
-    }
-    const boundary =
-      delta > 0
-        ? Math.ceil(quantity / increment) * increment
-        : Math.floor(quantity / increment) * increment;
-    const next =
-      boundary !== quantity ? boundary : quantity + delta * increment;
-    setQuantityText(String(Math.max(minQuantity, next)));
-    setQuantityTouched(true);
-  };
-
-  const mealPickerOptions = mealTypes.map((mt) => ({
-    label: mealTypeLabel(mt),
-    value: mt.id,
-  }));
-
   const [customNutrientValues, setCustomNutrientValues] = useState<
     Record<string, number>
   >({});
@@ -250,11 +145,6 @@ export function CreateFoodMode({
     pickerImages.length > 0 ? splitPickerImages(pickerImages) : undefined;
 
   const { saveFoodAsync, isPending: isSavePending } = useSaveFood();
-  // Holds the equivalent-save function for the current submit so onSuccess can
-  // fire it after the food+entry are both confirmed, without a separate pre-save.
-  const pendingEquivalentSaveRef = useRef<((foodId: string) => void) | null>(
-    null
-  );
 
   // Only already-saved photos can be embedded in a note: a staged file exists
   // solely on the device until the food is saved, so it has no path to link to.
@@ -267,23 +157,7 @@ export function CreateFoodMode({
       ),
     [pickerImages]
   );
-  const {
-    addEntry,
-    isPending: isAddPending,
-    invalidateCache,
-  } = useAddFoodEntry({
-    onSuccess: (entry) => {
-      isSavingRef.current = true;
-      if (entry.food_id && pendingEquivalentSaveRef.current) {
-        pendingEquivalentSaveRef.current(entry.food_id);
-        pendingEquivalentSaveRef.current = null;
-      }
-      invalidateCache(normalizeDate(entry.entry_date));
-      navigation.dispatch(StackActions.popToTop());
-    },
-  });
-
-  const isSubmitting = isAddPending || isSavePending;
+  const isSubmitting = isSavePending;
 
   const handleSubmit = async (data: FoodFormData) => {
     if (!data.name.trim()) {
@@ -352,7 +226,7 @@ export function CreateFoodMode({
       vitamin_a: parseOptional(data.vitaminA),
       vitamin_c: parseOptional(data.vitaminC),
       is_custom: true,
-      is_quick_food: isLogEntryMode ? !saveToDatabase : false,
+      is_quick_food: false,
       is_default: true,
       barcode: resolvedBarcode,
       provider_type: providerType ?? null,
@@ -465,47 +339,22 @@ export function CreateFoodMode({
       return;
     }
 
-    if (!quantity) {
-      Toast.show({
-        type: 'error',
-        text1: t('createFood.errors.invalidAmount', {
-          defaultValue: 'Invalid amount',
-        }),
-        text2: t('createFood.errors.amountRequired', {
-          defaultValue: 'Amount must be greater than zero.',
-        }),
-      });
-      return;
+    // Logging: save the food, then hand it to the regular entry screen, which
+    // already owns date, time, meal and amount. This screen used to carry its
+    // own cut-down copy of those controls.
+    try {
+      const savedFood = await saveFoodAsync(saveFoodPayload, imageArgs);
+      isSavingRef.current = true;
+      saveEquivalentsAsync(savedFood.id);
+      navigation.dispatch(
+        StackActions.replace('FoodEntryAdd', {
+          item: foodItemToFoodInfo(savedFood),
+          ...(params.date ? { date: params.date } : {}),
+        })
+      );
+    } catch {
+      // Error toast is handled in the save hook.
     }
-    if (!effectiveMealId) {
-      Toast.show({
-        type: 'error',
-        text1: t('createFood.errors.noMealType', {
-          defaultValue: 'No meal type',
-        }),
-        text2: t('createFood.errors.noMealTypesAvailable', {
-          defaultValue:
-            'No meal types are available. Please check your account settings.',
-        }),
-      });
-      return;
-    }
-
-    // Always overwrite the ref so a stale callback from a previous failed
-    // attempt can never fire on this retry with the wrong equivalents.
-    pendingEquivalentSaveRef.current =
-      cleanEquivalents.length > 0 ? saveEquivalentsAsync : null;
-    // isSavingRef is set in onSuccess so it stays false if addEntry fails.
-    addEntry({
-      saveFoodPayload,
-      saveFoodImages: imageArgs,
-      createEntryPayload: {
-        meal_type_id: effectiveMealId,
-        quantity,
-        unit: data.servingUnit || 'serving',
-        entry_date: selectedDate,
-      },
-    });
   };
 
   // Library mode saves a food record (a form Save); the diary/meal-builder
@@ -546,7 +395,6 @@ export function CreateFoodMode({
         onSubmit={(data) => {
           void handleSubmit(data);
         }}
-        onServingChange={handleServingChange}
         submitRequestRef={submitRequestRef}
         isSubmitting={isSubmitting}
         initialValues={initialFood}
@@ -578,112 +426,6 @@ export function CreateFoodMode({
         equivalents={{ items: equivalentDraft, onChange: setEquivalentDraft }}
         onCustomNutrientsChange={setCustomNutrientValues}
       >
-        {isLogEntryMode ? (
-          <View className="gap-4 bg-surface rounded-xl p-4">
-            <View className="flex-row items-start">
-              {/* Date */}
-              <TouchableOpacity
-                onPress={() => calendarRef.current?.present()}
-                activeOpacity={0.7}
-                className="flex-1 flex-row items-center"
-              >
-                <Text className="text-text-secondary text-base mr-3">
-                  {t('common.date', { defaultValue: 'Date' })}
-                </Text>
-                <Text className="text-text-primary text-base font-medium mx-1.5">
-                  {formatDateLabel(selectedDate, t, dateLocale)}
-                </Text>
-                <Icon
-                  name="chevron-down"
-                  size={12}
-                  color={textPrimary}
-                  weight="medium"
-                />
-              </TouchableOpacity>
-
-              {/* Meal */}
-              {selectedMealType ? (
-                <View className="flex-1 flex-row items-center">
-                  <Text className="text-text-secondary text-base mx-3">
-                    {t('createFood.meal', { defaultValue: 'Meal' })}
-                  </Text>
-                  <BottomSheetPicker
-                    value={effectiveMealId!}
-                    options={mealPickerOptions}
-                    onSelect={setSelectedMealId}
-                    title={t('createFood.selectMeal', {
-                      defaultValue: 'Select Meal',
-                    })}
-                    renderTrigger={({ onPress }) => (
-                      <TouchableOpacity
-                        onPress={onPress}
-                        activeOpacity={0.7}
-                        className="flex-row items-center"
-                      >
-                        <Text className="text-text-primary text-base font-medium mx-1.5">
-                          {mealTypeLabel(selectedMealType)}
-                        </Text>
-                        <Icon
-                          name="chevron-down"
-                          size={12}
-                          color={textPrimary}
-                          weight="medium"
-                        />
-                      </TouchableOpacity>
-                    )}
-                  />
-                </View>
-              ) : null}
-            </View>
-            {/* Amount */}
-            <View>
-              <View className="flex-row items-center">
-                <StepperInput
-                  value={quantityText}
-                  onChangeText={updateQuantityText}
-                  onBlur={clampQuantity}
-                  onDecrement={() => adjustQuantity(-1)}
-                  onIncrement={() => adjustQuantity(1)}
-                />
-                <Text className="text-text-primary text-base font-medium ml-2">
-                  {formServingUnit}
-                </Text>
-              </View>
-              <Text className="text-text-secondary text-sm mt-2">
-                {t('foodEntryAdd.labels.mealMakes', {
-                  defaultValue: 'meal makes {{formattedCount}} servings',
-                  defaultValue_one: 'meal makes {{formattedCount}} serving',
-                  defaultValue_other: 'meal makes {{formattedCount}} servings',
-                  count: servings,
-                  formattedCount: formatLocalizedNumber(servings, {
-                    maximumFractionDigits: 1,
-                  }),
-                })}
-                {' \u00b7 '}
-                {formatServingSizeDisplay(formServingSize)}{' '}
-                {formatServingUnit(formServingUnit)}{' '}
-                {t('foodEntryAdd.labels.perServing', {
-                  defaultValue: 'per serving',
-                })}
-              </Text>
-            </View>
-            {/* Save to Database */}
-            <View className="flex-row items-center justify-between">
-              <Text className="text-text-secondary text-base">
-                {t('createFood.saveToDatabase', {
-                  defaultValue: 'Save to Database',
-                })}
-              </Text>
-              <Switch
-                accessibilityLabel={t('createFood.saveToDatabase', {
-                  defaultValue: 'Save to Database',
-                })}
-                value={saveToDatabase}
-                onValueChange={setSaveToDatabase}
-              />
-            </View>
-          </View>
-        ) : null}
         {showBarcodeField ? (
           <BarcodeField
             value={barcodeInput}
@@ -698,14 +440,6 @@ export function CreateFoodMode({
           />
         ) : null}
       </FoodForm>
-
-      {isLogEntryMode ? (
-        <CalendarSheet
-          ref={calendarRef}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-        />
-      ) : null}
     </View>
   );
 }

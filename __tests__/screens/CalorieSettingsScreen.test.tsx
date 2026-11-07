@@ -109,29 +109,36 @@ describe('CalorieSettingsScreen', () => {
     };
   });
 
-  it('explains Device Projection in three illustrated guide cards', () => {
+  it('offers only the typed and adaptive goals, and reads a legacy mode as the typed goal', () => {
+    // A mode the device never applied (Device Projection) behaves as the
+    // typed goal, so it is shown as one.
     mockPreferences.calorie_goal_adjustment_mode = 'tdee';
-    const { getByText, getByTestId } = render(
+    const { getByRole, queryByRole, queryByText, getByTestId } = render(
       <CalorieSettingsScreen navigation={navigation} route={route} />
     );
 
-    expect(
-      getByText(
-        'Current-day Health Connect total calories are projected to midnight; completed days use the recorded total. Goal Mode is applied to that TDEE, with BMR + active calories as a fallback.'
-      )
-    ).toBeTruthy();
+    expect(getByRole('radio', { name: 'Fixed Goal' })).toBeTruthy();
+    expect(getByRole('radio', { name: 'Adaptive Goal' })).toBeTruthy();
+    for (const removed of [
+      'Dynamic Goal',
+      'Percentage Earn-Back',
+      'Device Projection',
+    ]) {
+      expect(queryByRole('radio', { name: removed })).toBeNull();
+    }
+    expect(queryByText('Include Resting Calories')).toBeNull();
+    expect(queryByText('Allow Lower Fallback Projection')).toBeNull();
+    expect(queryByText('Exercise Calories Applied')).toBeNull();
+    // Activity Level only feeds the adaptive estimate.
+    expect(queryByRole('radio', { name: 'Sedentary (x1.2)' })).toBeNull();
+
     const guide = within(getByTestId('calorie-settings-guide'));
     expect(guide.getByText('Burned Calories')).toBeTruthy();
     expect(guide.getByText('Eaten Calories')).toBeTruthy();
     expect(guide.getByText('Remaining Calories')).toBeTruthy();
     expect(
       guide.getByText(
-        'Your device estimates the energy you use throughout the day. If its total is missing, the app uses resting energy and activity instead.'
-      )
-    ).toBeTruthy();
-    expect(
-      guide.getByText(
-        "The app estimates your full-day burn, applies Goal Mode, then subtracts eaten calories. Today's estimate updates as device data arrives."
+        'Your daily target minus eaten calories. Activity is shown in your diary, but does not add calories to this budget.'
       )
     ).toBeTruthy();
   });

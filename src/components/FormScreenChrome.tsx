@@ -15,6 +15,7 @@ import {
 } from '../hooks/useScreenHeader';
 import { useCSSVariable } from 'uniwind';
 import Button from './ui/Button';
+import BottomEdgeEffect from './ui/BottomEdgeEffect';
 import LiquidGlassSurface from './LiquidGlassSurface';
 
 /**
@@ -106,6 +107,15 @@ interface FooterSaveBarProps {
    * commit is not.
    */
   leading?: React.ReactNode;
+  /**
+   * Floats over the content instead of ending the column: no fill of its own,
+   * the shared bottom edge (native scroll-edge material with Liquid Glass, a
+   * page-colour fade otherwise) behind the controls, as the Food dashboard's
+   * search row and the MarkAI composer have. The screen pads its scroll view
+   * by the height reported through `onHeightChange`.
+   */
+  floating?: boolean;
+  onHeightChange?: (height: number) => void;
 }
 
 /**
@@ -119,6 +129,8 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
   busy,
   label,
   leading,
+  floating = false,
+  onHeightChange,
 }) => {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -138,11 +150,22 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
     onPress();
   }, [allowPress, onPress]);
 
+  const Container = floating ? BottomEdgeEffect : View;
   return (
     // No rule above it, as FooterCTA: the capsule stands apart on its own.
-    <View
-      className="px-4 py-3 bg-background"
-      style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+    <Container
+      className={floating ? 'px-4 py-3' : 'px-4 py-3 bg-background'}
+      style={[
+        { paddingBottom: Math.max(insets.bottom, 12) },
+        floating
+          ? { position: 'absolute', left: 0, right: 0, bottom: 0 }
+          : null,
+      ]}
+      onLayout={
+        onHeightChange
+          ? (event) => onHeightChange(event.nativeEvent.layout.height)
+          : undefined
+      }
     >
       <View
         className="flex-row items-center"
@@ -185,7 +208,7 @@ export const FooterSaveBar: React.FC<FooterSaveBarProps> = ({
           </FooterSaveButton>
         </View>
       </View>
-    </View>
+    </Container>
   );
 };
 

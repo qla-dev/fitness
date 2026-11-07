@@ -38,6 +38,10 @@ jest.mock('@react-navigation/native', () => {
     StackActions: {
       pop: (count: number) => mockPop(count),
       popToTop: () => mockPopToTop(),
+      replace: (name: string, params: unknown) => ({
+        type: 'REPLACE',
+        payload: { name, params },
+      }),
     },
   };
 });
@@ -449,7 +453,21 @@ describe('FoodFormScreen', () => {
     expect(mockAddEntry).not.toHaveBeenCalled();
   });
 
-  it('keeps the normal save-and-log flow outside meal-builder mode and pops to top on success', async () => {
+  it('saves the food and opens it in the regular logging screen outside meal-builder mode', async () => {
+    mockSaveFoodAsync.mockResolvedValue({
+      id: 'new-food-1',
+      name: 'Custom Meal Food',
+      brand: 'Brand Co',
+      default_variant: {
+        id: 'variant-1',
+        serving_size: 100,
+        serving_unit: 'g',
+        calories: 120,
+        protein: 10,
+        carbs: 5,
+        fat: 3,
+      },
+    });
     const screen = renderScreen({
       mode: 'create-food',
       date: '2026-04-23',
@@ -458,8 +476,8 @@ describe('FoodFormScreen', () => {
     fireEvent.press(screen.getByText('Add Food'));
 
     await waitFor(() => {
-      expect(mockAddEntry).toHaveBeenCalledWith({
-        saveFoodPayload: expect.objectContaining({
+      expect(mockSaveFoodAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
           name: 'Custom Meal Food',
           brand: 'Brand Co',
           serving_size: 100,
@@ -470,16 +488,24 @@ describe('FoodFormScreen', () => {
           barcode: null,
           provider_type: null,
         }),
-        createEntryPayload: {
-          meal_type_id: 'meal-1',
-          quantity: 100,
-          unit: 'g',
-          entry_date: '2026-04-23',
-        },
-      });
+        undefined
+      );
     });
-    expect(mockInvalidateCache).toHaveBeenCalledWith('2026-04-23');
-    expect(navigation.dispatch).toHaveBeenCalledWith({ type: 'POP_TO_TOP' });
+    await waitFor(() => {
+      expect(navigation.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'REPLACE',
+          payload: expect.objectContaining({
+            name: 'FoodEntryAdd',
+            params: expect.objectContaining({
+              date: '2026-04-23',
+              item: expect.objectContaining({ id: 'new-food-1' }),
+            }),
+          }),
+        })
+      );
+    });
+    expect(mockAddEntry).not.toHaveBeenCalled();
     expect(mockSetPendingMealIngredientSelection).not.toHaveBeenCalled();
   });
 
@@ -498,20 +524,18 @@ describe('FoodFormScreen', () => {
     expect(screen.queryByTestId('calendar-sheet')).toBeNull();
   });
 
-  it('renders the logging controls and the barcode field with a pre-filled value in normal mode', () => {
+  it('has no inline logging controls and keeps the pre-filled barcode in normal mode', () => {
     const screen = renderScreen({
       mode: 'create-food',
       barcode: '0123456789',
     });
 
-    expect(screen.getByText('Date')).toBeTruthy();
-    expect(screen.getByText('Meal')).toBeTruthy();
-    expect(screen.getByText('Save to Database')).toBeTruthy();
+    expect(screen.queryByText('Date')).toBeNull();
+    expect(screen.queryByText('Save to Database')).toBeNull();
+    expect(screen.queryByTestId('calendar-sheet')).toBeNull();
     expect(screen.getByText('Barcode')).toBeTruthy();
     expect(screen.getByText('Scan with camera')).toBeTruthy();
     expect(screen.getByDisplayValue('0123456789')).toBeTruthy();
-    expect(screen.getByText(/100 g per serving/)).toBeTruthy();
-    expect(screen.getByTestId('calendar-sheet')).toBeTruthy();
   });
 
   it('renders the barcode field in library mode without the logging controls', () => {

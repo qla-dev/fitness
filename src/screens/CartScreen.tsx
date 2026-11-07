@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import { randomUUID } from 'expo-crypto';
-import { getLocales } from 'expo-localization';
 import { grocerySteps } from '../constants/setupSteps';
 import { LIVE_PRICE_REGIONS } from '../constants/regions';
 import {
@@ -14,13 +12,8 @@ import {
   isSetupWizardOpen,
   openSetupWizardSession,
 } from '../services/setupWizardSession';
-import {
-  onlineRequest,
-  refreshOnlineAccount,
-  useOnlineAccount,
-} from '../services/online/account';
-import type { MarkaiReply } from '../services/online/markai';
-import { withList, type SetupAnswers } from '../services/personalSetup';
+import { useOnlineAccount } from '../services/online/account';
+import type { SetupAnswers } from '../services/personalSetup';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -63,7 +56,6 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
   const native = useNativeIOSHeadersActive();
   const padding = useActiveWorkoutBarPadding('stack');
   const setup = usePersonalSetup();
-  const [archived, setArchived] = useState(false);
   const state = setup.state;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -74,8 +66,8 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
     navigation.navigate('GroceryList', { draft: blankGroceryList() });
 
   // The AI list: the meal plan's food and kitchen questionnaire, then MarkAI
-  // writes a week's shopping list straight from the answers. It is saved
-  // and opened here, without a chat or a meal plan in between.
+  // writes a week's shopping list from the answers in a chat, the way a meal
+  // plan is made; the list card there saves it to My lists.
   const client = useQueryClient();
   useQueries({
     queries: LIVE_PRICE_REGIONS.map((region) => ({
@@ -87,66 +79,21 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
   const vendorsFor = (region: string) =>
     client.getQueryData<Vendor[]>(vendorsQueryKey(region)) ?? [];
   const session = useOnlineAccount((s) => s.session);
-  const [generating, setGenerating] = useState(false);
   const answered = useRef<SetupAnswers | null>(null);
-  const generate = async (answers: SetupAnswers) => {
-    setGenerating(true);
-    try {
-      const response = await onlineRequest<{
-        id: string;
-        reply: MarkaiReply;
-      }>('/markai/messages', {
-        id: randomUUID(),
-        conversation_id: randomUUID(),
-        mode: 'macros',
+  const listInChat = (answers: SetupAnswers) =>
+    navigation.navigate('MarkAI', {
+      preset: {
         prompt: t('groceries.aiPrompt', {
           defaultValue:
             'Make me a grocery list for one week from my food and kitchen answers, and return it as a grocery list: {{answers}}',
           answers: JSON.stringify(answers),
         }).slice(0, 6000),
-        label: t('groceries.aiNew', {
-          defaultValue: 'New AI grocery list',
-        }),
-        language: (getLocales()[0]?.languageTag ?? 'en').slice(0, 12),
-      });
-      void refreshOnlineAccount();
-      const grocery = response.reply.grocery;
-      if (!grocery?.items.length) {
-        Alert.alert(
-          t('groceries.aiFailed', {
-            defaultValue: 'MarkAI could not make a list this time.',
-          }),
-          response.reply.text
-        );
-        return;
-      }
-      await setup.save((current) =>
-        withList(current, {
-          ...blankGroceryList(),
-          id: response.id,
-          name: grocery.name,
-          items: grocery.items.map((item, index) => ({
-            id: `${response.id}-${index}`,
-            name: item.name,
-            quantity: item.quantity ?? '',
-            checked: false,
-          })),
-        })
-      );
-      navigation.navigate('GroceryList', { listId: response.id });
-    } catch (error) {
-      Alert.alert(
-        t('groceries.aiFailed', {
-          defaultValue: 'MarkAI could not make a list this time.',
-        }),
-        error instanceof Error ? error.message : undefined
-      );
-    } finally {
-      setGenerating(false);
-    }
-  };
+        label: t('groceries.aiNew', { defaultValue: 'New AI grocery list' }),
+        mode: 'macros',
+      },
+    });
   const newAiList = () => {
-    if (generating || !setup.state || isSetupWizardOpen()) return;
+    if (!setup.state || isSetupWizardOpen()) return;
     if (!session) {
       navigation.navigate('OnlineAccount');
       return;
@@ -155,10 +102,11 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
     openSetupWizardSession({
       steps: grocerySteps(t, vendorsFor),
       initial: setup.state.grocery,
-      // Answers already given open on their review, ready to go.
+      // Always from the first question, with the earlier answers filled in:
+      // jumping straight to the review skipped every question the user had
+      // come to look at.
       ...(setup.state.groceryDone
         ? {
-            openOnReview: true,
             finishLabel: t('groceries.aiMake', {
               defaultValue: 'Make my list',
             }),
@@ -173,7 +121,7 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
         if (done) answered.current = answers;
       },
       onClose: () => {
-        if (answered.current) void generate(answered.current);
+        if (answered.current) listInChat(answered.current);
       },
     });
     navigation.navigate('SetupWizard');
@@ -234,75 +182,49 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
                   defaultValue: 'Good food. A little less planning.',
                 })}
               </Text>
-              <Text className="text-text-secondary mb-5">
+              <Text className="text-text-secondary">
                 {t('groceries.heroHint', {
                   defaultValue:
                     'Build a sample meal plan around your kitchen, budget and tastes. Or start with a simple list.',
                 })}
               </Text>
-              <Button
-                variant="secondary"
-                onPress={() => navigation.navigate('WeeklyPlans')}
-              >
-                {t('groceries.planMeals', {
-                  defaultValue: 'Plan meals for the week',
-                })}
-              </Button>
             </View>
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-text-primary text-xl font-bold">
-                {t('groceries.yourLists', { defaultValue: 'Your lists' })}
-              </Text>
-              <Button variant="ghost" onPress={() => setArchived((v) => !v)}>
-                {archived
-                  ? t('groceries.showActive', { defaultValue: 'Show active' })
-                  : t('groceries.showArchived', {
-                      defaultValue: 'Show archived',
-                    })}
-              </Button>
-            </View>
+            {/* Every list, archived ones included: there is no archive view
+                any more, so hiding them would lose them. */}
             <View className="flex-row flex-wrap gap-3">
-              {state?.lists
-                .filter((l) => l.archived === archived)
-                .map((list) => (
-                  <Pressable
-                    key={list.id}
-                    accessibilityRole="button"
-                    onPress={() => openList(list.id)}
-                    className="bg-surface rounded-2xl p-5"
-                    style={{ width: '47%' }}
-                  >
-                    <Text className="text-text-primary text-lg font-semibold mb-2">
-                      {list.name}
+              {state?.lists.map((list) => (
+                <Pressable
+                  key={list.id}
+                  accessibilityRole="button"
+                  onPress={() => openList(list.id)}
+                  className="bg-surface rounded-2xl p-5"
+                  style={{ width: '47%' }}
+                >
+                  <Text className="text-text-primary text-lg font-semibold mb-2">
+                    {list.name}
+                  </Text>
+                  <Text className="text-text-secondary">{list.store}</Text>
+                  {listTotal(list) !== null ? (
+                    <Text className="text-text-primary font-semibold mt-1">
+                      {planMoney(listTotal(list) ?? 0, list.currency ?? 'EUR')}
                     </Text>
-                    <Text className="text-text-secondary">{list.store}</Text>
-                    {listTotal(list) !== null ? (
-                      <Text className="text-text-primary font-semibold mt-1">
-                        {planMoney(
-                          listTotal(list) ?? 0,
-                          list.currency ?? 'EUR'
-                        )}
-                      </Text>
-                    ) : null}
-                    <Text className="text-accent-primary mt-3">
-                      {t('groceries.checked', {
-                        defaultValue: '{{done}} / {{total}} checked',
-                        done: formatLocalizedNumber(
-                          list.items.filter((i) => i.checked).length
-                        ),
-                        total: formatLocalizedNumber(list.items.length),
-                      })}
-                    </Text>
-                    <Text
-                      numberOfLines={3}
-                      className="text-text-secondary mt-2"
-                    >
-                      {list.note}
-                    </Text>
-                  </Pressable>
-                ))}
+                  ) : null}
+                  <Text className="text-accent-primary mt-3">
+                    {t('groceries.checked', {
+                      defaultValue: '{{done}} / {{total}} checked',
+                      done: formatLocalizedNumber(
+                        list.items.filter((i) => i.checked).length
+                      ),
+                      total: formatLocalizedNumber(list.items.length),
+                    })}
+                  </Text>
+                  <Text numberOfLines={3} className="text-text-secondary mt-2">
+                    {list.note}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-            {!state?.lists.some((l) => l.archived === archived) && (
+            {!state?.lists.length && (
               <Text className="text-text-secondary py-5">
                 {t('groceries.noLists', {
                   defaultValue:
@@ -320,8 +242,6 @@ function CartContent({ route }: RootStackScreenProps<'Cart'>) {
         edgeEffect
         onHeightChange={setFooterHeight}
         label={t('groceries.aiNew', { defaultValue: 'New AI grocery list' })}
-        loading={generating}
-        disabled={generating}
         onPress={newAiList}
       />
     </View>

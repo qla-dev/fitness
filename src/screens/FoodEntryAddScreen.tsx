@@ -1033,6 +1033,8 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
   const insets = useSafeAreaInsets();
   const usesNativeHeader = useNativeIOSHeadersActive();
   const headerOffset = useNativeHeaderOffset();
+  // The floating footer's height, so the end of the page scrolls clear of it.
+  const [footerHeight, setFooterHeight] = useState(0);
   const [accentColor, textPrimary] = useCSSVariable([
     '--color-accent-primary',
     '--color-text-primary',
@@ -1739,11 +1741,13 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerClassName="px-4 pb-4 gap-4"
+        contentContainerClassName="px-4 gap-4"
         // The transparent bar reserves no space, so the content starts
         // below it by hand.
         contentContainerStyle={{
           paddingTop: usesNativeHeader ? headerOffset : 0,
+          // The footer floats over the content; scroll the end clear of it.
+          paddingBottom: footerHeight + 16,
         }}
       >
         <FoodNutritionHeader
@@ -1951,6 +1955,8 @@ const FoodEntryAddScreen: React.FC<FoodEntryAddScreenProps> = ({
           and "log it" are one decision. Changing the number used to mean
           scrolling back up past the nutrition card to reach the stepper. */}
       <FooterSaveBar
+        floating
+        onHeightChange={setFooterHeight}
         leading={
           <View
             className="flex-row items-center"
