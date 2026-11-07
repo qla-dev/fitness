@@ -37,7 +37,10 @@ import { useFoods } from '../hooks/useFoods';
 import { useAddActions } from '../components/AddActionsContext';
 import { useActiveWorkoutBarPadding } from '../components/ActiveWorkoutBar';
 import { useNativeIOSTabsActive } from '../services/nativeTabBarPreference';
-import { useScreenHeader } from '../hooks/useScreenHeader';
+import {
+  useNativeHeaderOffset,
+  useScreenHeader,
+} from '../hooks/useScreenHeader';
 import { useTabPress } from '../hooks/useTabPress';
 import { useScrollTopOffset } from '../hooks/useScrollTopOffset';
 import { fireSelectionHaptic } from '../services/haptics';
@@ -156,6 +159,27 @@ export default function AddHubScreen() {
   const focusSearch = useCallback(() => setSearchOpen(true), []);
   const searching = searchOpen || query.trim().length > 0;
 
+  // The content's top padding, decided in the same render as the content swap.
+  // UIKit hides the bar while the search is active, but the measured header
+  // height only catches up a frame or more later, so padding by it showed the
+  // search state at the bar's height first and then snapped it up (and the
+  // landing snapped down again on close). Searching, the bar is gone and only
+  // the status bar is left to clear; otherwise it is the last full bar height
+  // measured, kept so closing does not wait for the measurement either.
+  const headerOffset = useNativeHeaderOffset();
+  const [barHeight, setBarHeight] = useState(headerOffset);
+  if (!searching && headerOffset > insets.top && headerOffset !== barHeight) {
+    setBarHeight(headerOffset);
+  }
+  // Only on iOS 26's native tabs, where the field is the tab bar's search role
+  // and the whole bar goes away; below 26 the field lives in the bar itself,
+  // which stays, so the measured height is still the right answer there.
+  const contentTop = usesNativeTabs
+    ? searching
+      ? insets.top
+      : barHeight
+    : undefined;
+
   const openFood = useCallback(
     (item: FoodInfoItem) => {
       // Picking a result is what makes a query worth keeping — more so than
@@ -254,9 +278,12 @@ export default function AddHubScreen() {
       // and a JS title view takes the place of the native one — which is what
       // took the scroll edge effect with it. A plain string leaves the bar
       // native, and the edge effect is the bar's to draw.
-      title: searching
-        ? t('addHub.searchTitle', { defaultValue: 'Log food for today' })
-        : t('addHub.title', { defaultValue: 'Food dashboard' }),
+      // Fixed, unlike the custom bar's title above: UIKit hides this bar
+      // itself while the search is active, so a search title is never seen
+      // here. Changing it on focus re-ran setOptions in the middle of that
+      // hide animation, rebuilding the bar so it flashed the new title and
+      // then hid a second time.
+      title: t('addHub.title', { defaultValue: 'Food dashboard' }),
       // The screen-level option, which the library keeps for compatibility.
       // The supported path is `ScrollViewMarker`, but its native component is
       // not in the current binary — it needs a prebuild and a rebuild, not a
@@ -514,6 +541,7 @@ export default function AddHubScreen() {
   const content = (
     <NativeHeaderScrollView
       ref={scrollRef}
+      topOffset={contentTop}
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
       onScrollBeginDrag={onScrollBeginDrag}

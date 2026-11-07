@@ -31,6 +31,7 @@ import Button from '../components/ui/Button';
 import FooterCTA from '../components/ui/FooterCTA';
 import Switch from '../components/ui/Switch';
 import Icon from '../components/Icon';
+import AppleHealthIcon from '../components/AppleHealthIcon';
 import SettingsRow, { SettingsRowGroup } from '../components/SettingsRow';
 import BottomSheetPicker from '../components/BottomSheetPicker';
 import DateRangeSheet, {
@@ -116,6 +117,16 @@ function HealthHeroIcon() {
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  // iOS shows the Health app's real icon; Health Connect keeps the plain
+  // heart, which is not Apple's mark.
+  if (Platform.OS === 'ios') {
+    return (
+      <Animated.View style={pulseStyle}>
+        <AppleHealthIcon variant="app" size={HERO_SIZE} />
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View style={pulseStyle}>
