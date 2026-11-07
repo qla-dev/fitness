@@ -103,6 +103,31 @@ object WearHealth {
     fun supports(sport: WearSport): Boolean =
         _supportedTypes.value?.contains(sport.exerciseType) ?: true
 
+    /**
+     * The readings to ask this sport for, and only the ones it can give.
+     *
+     * Health Services refuses the whole session if the config names a type the
+     * exercise does not produce — it does not drop the type and carry on. Every
+     * sport was being asked for distance, so HIIT died at the door with
+     * "Exercise Type HIGH_INTENSITY_INTERVAL_TRAINING does not support Data
+     * types: [Distance]", and so would strength, yoga, boxing and the rest of
+     * the sports that cover no ground. The watch reported that as missing
+     * sensor permission, which was the one thing it was not.
+     *
+     * Falling back to [TRACKED] when the capabilities cannot be read keeps the
+     * old behaviour for a watch that will not answer, rather than starting a
+     * session that measures nothing.
+     */
+    private suspend fun trackedFor(
+        exerciseClient: ExerciseClient,
+        sport: WearSport,
+    ): Set<DataType<*, *>> = runCatching {
+        val supported = exerciseClient.getCapabilitiesAsync().await()
+            .getExerciseTypeCapabilities(sport.exerciseType)
+            .supportedDataTypes
+        TRACKED.filterTo(mutableSetOf()) { it in supported }.takeIf { it.isNotEmpty() }
+    }.getOrNull() ?: TRACKED
+
     suspend fun start(context: Context, sport: WearSport): Boolean {
         if (_phase.value == WearSessionPhase.Running) return true
         _phase.value = WearSessionPhase.Preparing
@@ -112,7 +137,7 @@ object WearHealth {
             val exerciseClient = client(context)
             exerciseClient.setUpdateCallback(callback)
             val config = ExerciseConfig.builder(sport.exerciseType)
-                .setDataTypes(TRACKED)
+                .setDataTypes(trackedFor(exerciseClient, sport))
                 // The watch is the clock for a watch-started session, so it
                 // keeps running while the screen is off and while the phone is
                 // out of range — which is the whole point of recording here.

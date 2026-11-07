@@ -112,6 +112,7 @@ private fun SportRow(sport: WearSport, enabled: Boolean, onStart: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = CARD_SIDE_MARGIN)
             .clip(RoundedCornerShape(26.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .clickable(enabled = enabled, onClick = onStart)
@@ -190,6 +191,7 @@ fun WearProgramsScreen(listState: ScalingLazyListState) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = CARD_SIDE_MARGIN)
                     .clip(RoundedCornerShape(26.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainer)
                     .clickable { openId = program.id }
@@ -238,7 +240,7 @@ private fun ProgramDetail(program: WearProgram, listState: ScalingLazyListState,
         item { Text(program.name, style = MaterialTheme.typography.titleMedium) }
         item {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                 enabled = canStart,
                 onClick = {
                     scope.launch {
@@ -265,6 +267,7 @@ private fun ProgramDetail(program: WearProgram, listState: ScalingLazyListState,
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(horizontal = CARD_SIDE_MARGIN)
                             .clip(RoundedCornerShape(14.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainer)
                             .padding(horizontal = 10.dp, vertical = 6.dp),

@@ -1,6 +1,5 @@
 import {
   ConfigPlugin,
-  withAppBuildGradle,
   withDangerousMod,
   withSettingsGradle,
 } from 'expo/config-plugins';
@@ -15,9 +14,19 @@ import * as path from 'path';
  * the generated project, the same way `withCalorieWidget` places the home
  * screen widget. Nothing here is hand-edited in `android/`.
  *
- * The module is attached to the phone app through `wearApp project(':wear')`,
- * which is what makes Play deliver the watch APK inside the phone's bundle and
- * offer it on a paired watch.
+ * The watch APK is NOT embedded in the phone's. It used to be, through
+ * `wearApp project(':wear')`, but AGP 9 removed that configuration — the
+ * embedded APK is Google's legacy delivery model, and a build against it now
+ * dies at configuration time with "Could not find method wearApp()".
+ *
+ * The watch app is a separate artifact uploaded to the same Play listing,
+ * which is how Wear OS has been delivered for years. Play matches it to the
+ * phone app by package name and signing certificate, so both halves have to
+ * keep sharing both — the same pair the Data Layer itself routes on, and the
+ * reason build.gradle.tmpl reads the phone's signing config.
+ *
+ * Built on its own: `:wear:assembleRelease`, or `:wear:bundleRelease` for the
+ * Play upload.
  */
 
 const SOURCE_DIR = 'targets/android-wear';
@@ -161,28 +170,6 @@ const withWearApp: ConfigPlugin = (config) => {
     if (!config.modResults.contents.includes(`':${MODULE_NAME}'`)) {
       config.modResults.contents += `\ninclude ':${MODULE_NAME}'\n`;
     }
-    return config;
-  });
-
-  config = withAppBuildGradle(config, (config) => {
-    const contents = config.modResults.contents;
-    if (contents.includes(`wearApp project(':${MODULE_NAME}')`)) return config;
-
-    // Into the existing dependencies block rather than appending a second one,
-    // which Gradle accepts but which splits the app's dependencies in two.
-    const marker = 'dependencies {';
-    const at = contents.indexOf(marker);
-    if (at === -1) {
-      throw new Error(
-        'withWearApp: no dependencies block in app/build.gradle — the ' +
-          'template changed, so this plugin needs updating.'
-      );
-    }
-    const insertAt = at + marker.length;
-    config.modResults.contents =
-      contents.slice(0, insertAt) +
-      `\n    wearApp project(':${MODULE_NAME}')\n` +
-      contents.slice(insertAt);
     return config;
   });
 

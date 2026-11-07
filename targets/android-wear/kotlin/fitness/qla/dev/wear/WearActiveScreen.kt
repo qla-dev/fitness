@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -272,7 +276,7 @@ private fun DetailsPage(session: WearActiveSession) {
         } else {
             item {
                 FilledTonalButton(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                     onClick = {
                         scope.launch {
                             if (phase == WearSessionPhase.Paused) WearSession.resume(context)
@@ -285,7 +289,7 @@ private fun DetailsPage(session: WearActiveSession) {
             }
             item {
                 Button(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                     onClick = { confirmStop = true },
                     colors = ButtonDefaults.buttonColors(containerColor = SwiftColor.Red, contentColor = Color.White),
                     icon = { QlaIcon(WearIcon.Stop, tint = Color.White) },
@@ -341,7 +345,7 @@ private fun ProgramPage(program: WearProgram) {
             }
             item {
                 Button(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                     onClick = {
                         if (WearSession.completeSet()) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     },
@@ -425,15 +429,32 @@ private fun Note(text: String) {
     )
 }
 
-/** Each page scrolls on its own, as the Digital Crown does page by page. */
+/**
+ * Each page scrolls on its own, as the Digital Crown does page by page.
+ *
+ * Left-aligned, which is the Apple Watch's layout and right for reading a
+ * column of figures — but on a rectangle the left edge is the left edge at
+ * every height, and on a circle it is not. A row near the top or bottom lost
+ * its first characters: "Avg pace · min/km" wrapped and its second line fell
+ * off, and the leading digit of the elapsed clock went with it. So these
+ * pages take a wider inset than a centred list needs, bought back from a
+ * margin that left-aligned text was never using.
+ */
 @Composable
 private fun PageColumn(content: ScalingLazyListScope.() -> Unit) {
+    val base = roundContentPadding()
+    val direction = LocalLayoutDirection.current
     ScalingLazyColumn(
         state = rememberScalingLazyListState(initialCenterItemIndex = 1),
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = roundContentPadding(),
+        contentPadding = PaddingValues(
+            start = base.calculateStartPadding(direction) + CARD_SIDE_MARGIN,
+            end = base.calculateEndPadding(direction) + CARD_SIDE_MARGIN,
+            top = base.calculateTopPadding(),
+            bottom = base.calculateBottomPadding(),
+        ),
         content = content,
     )
 }

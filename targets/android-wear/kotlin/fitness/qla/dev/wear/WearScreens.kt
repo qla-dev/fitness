@@ -48,6 +48,7 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.launch
@@ -91,7 +92,14 @@ private val WaterColor = Color(0xFF0A84FF)
 private val CardShape = RoundedCornerShape(14.dp)
 
 private fun Modifier.tintedCard(color: Color, alpha: Float, padding: Dp): Modifier =
-    fillMaxWidth().clip(CardShape).background(color.copy(alpha = alpha)).padding(padding)
+    // Inset before the fill, so the margin is outside the card rather than
+    // inside it: padding after `background` would only move the text and leave
+    // the corners where the glass already cut them.
+    fillMaxWidth()
+        .padding(horizontal = CARD_SIDE_MARGIN)
+        .clip(CardShape)
+        .background(color.copy(alpha = alpha))
+        .padding(padding)
 
 /** One card under the rings, known before any data arrives. */
 private data class DashboardCard(
@@ -426,7 +434,7 @@ private fun NutrientGoalEditor(nutrient: WearNutrient, listState: ScalingLazyLis
         }
         item {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                 enabled = !saving,
                 onClick = {
                     saving = true
@@ -501,7 +509,7 @@ fun WearMeasurementScreen(kind: MeasurementKind, listState: ScalingLazyListState
         if (updatedAt > 0) item { LastSynced(updatedAt) }
         item {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                 onClick = { editing = true },
                 colors = ButtonDefaults.buttonColors(containerColor = kind.color, contentColor = Color.Black),
                 label = { Text("Add entry") },
@@ -543,6 +551,17 @@ private fun MeasurementEditor(
 
     LaunchedEffect(kind) { listState.scrollToItem(1) }
 
+    // The failure note is three lines, which pushes Retry off the bottom of a
+    // round screen just as it becomes the only thing worth tapping — the way
+    // out of the error, below the fold and unannounced. Bringing it up is what
+    // makes the note's own instruction ("tap Retry") true on screen.
+    // Index 3 is the button: back link, the value with its steppers, the note
+    // this branch adds, then the button. A ScalingLazyColumn centres what it
+    // is given, so this lands the button mid-screen with the note above it.
+    LaunchedEffect(unconfirmed) {
+        if (unconfirmed) listState.animateScrollToItem(3)
+    }
+
     fun adjust(delta: Double) {
         if (locked || value + delta < kind.minimum || value + delta > kind.maximum) return
         value += delta
@@ -568,7 +587,7 @@ private fun MeasurementEditor(
         }
         item {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = CARD_SIDE_MARGIN),
                 enabled = !saving,
                 onClick = {
                     val entry = pending ?: PendingMeasurement(
@@ -786,17 +805,46 @@ internal fun format(value: Double): String =
     else String.format(Locale.US, "%.1f", value)
 
 /**
- * Room for the bezel and the clock.
+ * Room for the bezel and the clock, as a share of the screen rather than a
+ * fixed figure.
  *
- * A round screen cuts the corners off every row, so the first line ran under
- * the time at the top and the caption lost a word at each side. The side inset
- * is generous on purpose: text near the top and bottom of a circle has far
- * less width than text across its middle.
+ * This was 20dp a side, which is what a line of text needs and nowhere near
+ * what a filled card does. The watch is 227dp across, so a full-width card at
+ * that inset is 187dp — and a 187dp chord only fits inside a 114dp radius
+ * within 64dp of the middle. Everything past that had its corners outside the
+ * glass: the ring card, every metric card, the sport buttons, and the Retry
+ * button on a failed entry, which is the one that mattered because it was the
+ * way out of the error.
+ *
+ * A share of the screen rather than a figure in dp, so this holds on a 41mm
+ * watch as well as the 45mm one it was measured against. Wear keeps its own
+ * `PaddingDefaults` for this, but it is `internal` to the library and cannot
+ * be called from here — the fractions below are ours, and the comment above
+ * is the arithmetic behind them.
+ *
+ * Filled surfaces take [CARD_SIDE_MARGIN] on top of this; see [tintedCard].
  */
+private const val HORIZONTAL_PADDING_FRACTION = 0.088f
+private const val VERTICAL_PADDING_FRACTION = 0.14f
+
 @Composable
-internal fun roundContentPadding() = androidx.compose.foundation.layout.PaddingValues(
-    start = 20.dp,
-    end = 20.dp,
-    top = 32.dp,
-    bottom = 32.dp,
-)
+internal fun roundContentPadding(): androidx.compose.foundation.layout.PaddingValues {
+    val configuration = LocalConfiguration.current
+    val horizontal = configuration.screenWidthDp.dp * HORIZONTAL_PADDING_FRACTION
+    val vertical = configuration.screenHeightDp.dp * VERTICAL_PADDING_FRACTION
+    return androidx.compose.foundation.layout.PaddingValues(
+        start = horizontal,
+        end = horizontal,
+        top = vertical,
+        bottom = vertical,
+    )
+}
+
+/**
+ * What a filled card gives back beyond the list's own inset.
+ *
+ * Text may overhang the glass by a hair and still read; a card's corner cannot
+ * — it is simply gone, and takes the rounding with it. A card is narrower than
+ * the rows around it for that reason, which is also how Wear's own lists look.
+ */
+internal val CARD_SIDE_MARGIN = 20.dp
